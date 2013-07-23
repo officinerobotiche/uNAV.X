@@ -16,6 +16,7 @@
 #include <stdint.h>          /* For uint16_t definition                       */
 #include <stdbool.h>         /* For true/false definition                     */
 #include <pwm12.h>
+#include <string.h>
 
 #include "system.h"          /* variables/params used by system.c             */
 #include "packet.h"
@@ -25,6 +26,10 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
+
+unsigned int reset_count = 0;
+unsigned char version_date_[] = __DATE__;
+unsigned char version_time_[] = __TIME__;
 
 extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
 
@@ -64,24 +69,42 @@ unsigned char update_frequency(void) {
     return NACK;
 }
 
-services_t services(void) {
-    services_t service;
+services_t services(services_t service) {
+    switch (service.command) {
+        case RESET:
+            if (reset_count < 3) {
+                reset_count++;
+                //ResetPort = Port;
+                service.buffer[0] = ACK;
+                service.buffer[1] = reset_count;
+            } else {
+                SET_CPU_IPL(7); // disable all user interrupts
+                //DelayN1ms(200);
+                asm("RESET");
+            }
+            break;
+        case VERSION_CODE:
+            memcpy(service.buffer,version_time_,sizeof(version_time_));
+            break;
+        default:
+            break;
+    }
     return service;
 }
 
 void ConfigureOscillator(void) {
-PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
-CLKDIVbits.PLLPOST = 0; // N1=2
-CLKDIVbits.PLLPRE = 0; // N2=2
-// Disable Watch Dog Timer
-RCONbits.SWDTEN = 0;
-// Clock switching to incorporate PLL
-// Initiate Clock Switch to Primary
-__builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
-__builtin_write_OSCCONL(0x01); // Start clock switching
-while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
-while (OSCCONbits.LOCK != 1) {
-}; // Wait for PLL to lock
+    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
+    CLKDIVbits.PLLPOST = 0; // N1=2
+    CLKDIVbits.PLLPRE = 0; // N2=2
+    // Disable Watch Dog Timer
+    RCONbits.SWDTEN = 0;
+    // Clock switching to incorporate PLL
+    // Initiate Clock Switch to Primary
+    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
+    __builtin_write_OSCCONL(0x01); // Start clock switching
+    while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
+    while (OSCCONbits.LOCK != 1) {
+    }; // Wait for PLL to lock
 }
 
 void InitPWM(void) {

@@ -50,7 +50,7 @@ go here. */
 void init_process(void);
 unsigned char update_priority(void);
 unsigned char update_frequency(void);
-services_t services(void);
+services_t services(services_t service);
 void ConfigureOscillator(void); /* Handles clock switching/osc initialization */
 void InitPWM(void); /* Initalization PWM for drive engine left & right */
 void InitQEI1(void); /* Initalization QEI - Motor left */

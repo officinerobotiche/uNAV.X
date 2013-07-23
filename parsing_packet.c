@@ -25,16 +25,6 @@
 #include "user.h"
 #include "system.h"
 
-unsigned int reset_count = 0;
-//            if (reset_count < 3) {
-//                reset_count++;
-//                //ResetPort = Port;
-//            } else {
-//                SET_CPU_IPL(7); // disable all user interrupts
-//                DelayN1ms(200);
-//                asm("RESET");
-//            }
-//            break;
 
 // From Interrupt
 extern volatile process_t time, priority, frequency;
@@ -92,6 +82,7 @@ int parse_packet(void) {
 information_packet_t decode_single_pkg(Ptr_packet send, char command, unsigned char* Buffer, unsigned int position) {
     information_packet_t packet;
     Ptr_abstract_packet ptr_packet_send;
+    abstract_packet_t packet_send;
     services_t service;
     unsigned char process_return;
     switch (command) {
@@ -153,10 +144,13 @@ information_packet_t decode_single_pkg(Ptr_packet send, char command, unsigned c
             return addPacket(send, command, process_return, NULL);
             break;
         case SERVICES:
-            //TODO
-            service = services();
+            //Save packet
             ptr_packet_send = (Ptr_abstract_packet) & service;
-            return addChangePacket(send, command, Buffer, position, LNG_SERVICES, ptr_packet_send);
+            addChangePacket(send, command, Buffer, position, LNG_SERVICES, ptr_packet_send);
+            //Esecution service
+            packet_send.services = services(service);
+            //Send return service packet
+            return buildRequestPacket(send, command, LNG_SERVICES, &packet_send);
             break;
         default:
             pkg_error(ERROR_PKG);
