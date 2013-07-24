@@ -4,9 +4,15 @@
 
 #include "packet.h"
 
-/* Interrupt enable */
-#define DEAD_RECK_ENABLE IEC3bits.RTCIE
+/* Name interrupt */
+#define VEL_PID_PRIORITY IPC0bits.OC1IP
+#define RX_PARSER_PRIORITY IPC1bits.OC2IP
+#define DEAD_RECK_PRIORITY IPC15bits.RTCIP
 
+/* Interrupt enable */
+#define VEL_PID_ENABLE IEC0bits.OC1IE
+#define RX_PARSER_ENABLE IEC0bits.OC2IE
+#define DEAD_RECK_ENABLE IEC3bits.RTCIE
 
 /* Interrupt priority */
 /* Max priority 7 - Min priority 1 */

@@ -39,6 +39,9 @@ extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(
 // From motors PID
 extern parameter_t parameter;
 
+// From Interrupt
+extern volatile process_t time, priority, frequency;
+
 /******************************************************************************/
 /* System Level Functions                                                     */
 /*                                                                            */
@@ -59,14 +62,38 @@ __builtin functions.*/
 void init_process(void) {
     parameter.step_timer = (int) (TMR1_VALUE);
     parameter.int_tm_mill = (int) (TCTMR1 * 1000);
+    priority.idle = 0;
+    priority.pid_l = VEL_PID_LEVEL;
+    priority.pid_r = VEL_PID_LEVEL;
+    priority.velocity = VEL_PID_LEVEL;
+    priority.dead_reckoning = DEAD_RECK_LEVEL;
+    priority.parse_packet = RX_PARSER_LEVEL;
+    frequency.idle = 0;
+    frequency.parse_packet = 0;
+    frequency.pid_l = 1;
+    frequency.pid_r = 1;
+    frequency.velocity = 1;
+    frequency.dead_reckoning = 10;
 }
 
 unsigned char update_priority(void) {
-    return NACK;
+    priority.idle = 0;
+    InitInterrupts();
+    return ACK;
 }
 
 unsigned char update_frequency(void) {
-    return NACK;
+    frequency.idle = 0;
+    frequency.parse_packet = 0;
+    if (frequency.pid_l == 0 || frequency.pid_r == 0 || frequency.velocity == 0) {
+        VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
+    } else
+        VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
+    if (frequency.dead_reckoning == 0) {
+        DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
+    } else
+        DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
+    return ACK;
 }
 
 services_t services(services_t service) {
@@ -84,12 +111,32 @@ services_t services(services_t service) {
             }
             break;
         case VERSION_CODE:
-            memcpy(service.buffer,version_time_,sizeof(version_time_));
+            memcpy(service.buffer, version_time_, sizeof (version_time_));
             break;
         default:
             break;
     }
     return service;
+}
+
+void InitInterrupts(void) {
+    //For PID velocity control
+    VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
+    VEL_PID_PRIORITY = priority.pid_l; // Set Output Compare Channel 1 Priority Level
+    IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
+    VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
+
+    //For Parsing UART message
+    RX_PARSER_ENABLE = 0; // Disable Output Compare Channel 2 interrupt
+    RX_PARSER_PRIORITY = priority.parse_packet; // Set Output Compare Channel 2 Priority Level
+    IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
+    RX_PARSER_ENABLE = 1; // Enable Output Compare Channel 2 interrupt
+
+    // For dead reckoning
+    DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
+    DEAD_RECK_PRIORITY = priority.dead_reckoning; // Set RTC Priority Level
+    IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
+    DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
 }
 
 void ConfigureOscillator(void) {
@@ -240,23 +287,6 @@ void InitTimer2(void) {
     IEC0bits.T2IE = 1; // Enable Timer1 interrupt
 
     T2CONbits.TON = 1; // Start Timer
-}
-
-void InitInterrupts(void) {
-    //For PID velocity control
-    IPC0bits.OC1IP = VEL_PID_LEVEL; // Set Output Compare Channel 1 Priority Level
-    IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
-    IEC0bits.OC1IE = 1; // Enable Output Compare Channel 1 interrupt
-
-    //For Parsing UART message
-    IPC1bits.OC2IP = RX_PARSER_LEVEL; // Set Output Compare Channel 2 Priority Level
-    IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
-    IEC0bits.OC2IE = 1; // Enable Output Compare Channel 2 interrupt
-
-    // For dead reckoning
-    IPC15bits.RTCIP = DEAD_RECK_LEVEL; // Set RTC Priority Level
-    IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
-    DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
 }
 
 void InitUART1(void) {

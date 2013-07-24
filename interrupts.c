@@ -32,6 +32,7 @@
 
 unsigned int counter = 0;
 unsigned int counter_odo = 0;
+unsigned int counter_pid = 0;
 volatile unsigned int overTmrL = 0;
 volatile unsigned int overTmrR = 0;
 volatile unsigned long timePeriodL = 0; //Periodo Ruota Sinistra
@@ -184,8 +185,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
 
-    PID_FLAG = 1; //Start OC1Interrupt for PID control
-    if (!(counter_odo % 10)) {
+    if (!(counter_pid % frequency.pid_l)) {
+        PID_FLAG = 1; //Start OC1Interrupt for PID control
+        counter_pid = 0;
+    }
+    if (!(counter_odo % frequency.dead_reckoning)) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
@@ -193,6 +197,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         LED ^= 1;
         counter = 0;
     }
+    counter_pid++;
     counter++;
     counter_odo++;
 }

@@ -84,7 +84,6 @@ information_packet_t decode_single_pkg(Ptr_packet send, char command, unsigned c
     Ptr_abstract_packet ptr_packet_send;
     abstract_packet_t packet_send;
     services_t service;
-    unsigned char process_return;
     switch (command) {
         case MOTOR_L:
             // Impossible to change measure motor left
@@ -136,12 +135,16 @@ information_packet_t decode_single_pkg(Ptr_packet send, char command, unsigned c
             return addPacket(send, command, NACK, NULL);
             break;
         case PRIORITY_PROCESS:
-            process_return = update_priority();
-            return addPacket(send, command, process_return, NULL);
+            ptr_packet_send = (Ptr_abstract_packet) & priority;
+            packet = addChangePacket(send, command, Buffer, position, LNG_PROCESS, ptr_packet_send);
+            update_priority();
+            return packet;
             break;
         case FRQ_PROCESS:
-            process_return = update_frequency();
-            return addPacket(send, command, process_return, NULL);
+            ptr_packet_send = (Ptr_abstract_packet) & frequency;
+            packet = addChangePacket(send, command, Buffer, position, LNG_PROCESS, ptr_packet_send);
+            update_frequency();
+            return packet;
             break;
         case SERVICES:
             //Save packet
