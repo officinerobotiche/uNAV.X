@@ -36,8 +36,8 @@
 #define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
 
 //UART
-//#define BAUDRATE 115200
-#define BAUDRATE 57600
+#define BAUDRATE 115200
+//#define BAUDRATE 57600
 #define BRGVAL   ((FCY/BAUDRATE)/16)-1
 
 // Current ADC buffer dimension
@@ -54,6 +54,7 @@ functions, and other non-peripheral microcontroller initialization functions
 go here. */
 
 void init_process(void);
+process_buffer_t decodeNameProcess(int number);
 unsigned char update_priority(void);
 unsigned char update_frequency(void);
 services_t services(services_t service);

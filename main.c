@@ -19,8 +19,10 @@
 
 #include "system.h"        /* System funct/params, like osc/peripheral config */
 #include "user.h"          /* User funct/params, such as InitApp              */
+#include "serial.h"
 #include "motors_PID.h"
 #include "high_level_control.h"
+#include "parsing_packet.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -38,7 +40,10 @@ int16_t main(void) {
     /* Configure the oscillator for the device */
     ConfigureOscillator();
 
+    /* Initialize hashmap packet */
+    init_hashmap();
     /* Initialize variables for robots */
+    init_buff_serial_error();
     init_parameter();
     init_process();
     init_pid_control();

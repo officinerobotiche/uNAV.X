@@ -30,17 +30,19 @@
 unsigned int reset_count = 0;
 unsigned char version_date_[] = __DATE__;
 unsigned char version_time_[] = __TIME__;
+unsigned char author_code[] = "Raffaello Bonghi";
+unsigned char name_board[] = "Motion Control";
+unsigned char version_code[] = "v2.0";
+parameter_system_t parameter_system;
 
 extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
 
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
-// From motors PID
-extern parameter_t parameter;
-
 // From Interrupt
 extern volatile process_t time, priority, frequency;
+extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
 
 /******************************************************************************/
 /* System Level Functions                                                     */
@@ -60,20 +62,56 @@ compiler installation directory /doc folder for documentation on the
 __builtin functions.*/
 
 void init_process(void) {
-    parameter.step_timer = (int) (TMR1_VALUE);
-    parameter.int_tm_mill = (int) (TCTMR1 * 1000);
+    // Init name process
+    name_process_pid_l.name = PROCESS_PID_LEFT;
+    strcpy(name_process_pid_l.buffer, PID_LEFT_STRING);
+    name_process_pid_r.name = PROCESS_PID_RIGHT;
+    strcpy(name_process_pid_r.buffer, PID_RIGHT_STRING);
+    name_process_velocity.name = PROCESS_VELOCITY;
+    strcpy(name_process_velocity.buffer, VELOCITY_STRING);
+    name_process_odometry.name = PROCESS_ODOMETRY;
+    strcpy(name_process_odometry.buffer, ODOMETRY_STRING);
+    
+    parameter_system.step_timer = (int) (TMR1_VALUE);
+    parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
+
+    priority.length = PROCESS_MOTION_LENGTH;
     priority.idle = 0;
-    priority.pid_l = VEL_PID_LEVEL;
-    priority.pid_r = VEL_PID_LEVEL;
-    priority.velocity = VEL_PID_LEVEL;
-    priority.dead_reckoning = DEAD_RECK_LEVEL;
     priority.parse_packet = RX_PARSER_LEVEL;
+    priority.process[PROCESS_PID_LEFT] = VEL_PID_LEVEL;
+    priority.process[PROCESS_PID_RIGHT] = VEL_PID_LEVEL;
+    priority.process[PROCESS_VELOCITY] = VEL_PID_LEVEL;
+    priority.process[PROCESS_ODOMETRY] = DEAD_RECK_LEVEL;
+    frequency.length = PROCESS_MOTION_LENGTH;
     frequency.idle = 0;
     frequency.parse_packet = 0;
-    frequency.pid_l = 1;
-    frequency.pid_r = 1;
-    frequency.velocity = 1;
-    frequency.dead_reckoning = 10;
+    frequency.process[PROCESS_PID_LEFT] = 1;
+    frequency.process[PROCESS_PID_RIGHT] = 1;
+    frequency.process[PROCESS_VELOCITY] = 1;
+    frequency.process[PROCESS_ODOMETRY] = 10;
+    time.length = PROCESS_MOTION_LENGTH;
+}
+
+process_buffer_t decodeNameProcess(int number) {
+    process_buffer_t process;
+    switch (number) {
+        case -1:
+            process.name = PROCESS_MOTION_LENGTH;
+            break;
+        case PROCESS_PID_LEFT:
+            process = name_process_pid_l;
+            break;
+        case PROCESS_PID_RIGHT:
+            process = name_process_pid_r;
+            break;
+        case PROCESS_VELOCITY:
+            process = name_process_velocity;
+            break;
+        case PROCESS_ODOMETRY:
+            process = name_process_odometry;
+            break;
+    }
+    return process;
 }
 
 unsigned char update_priority(void) {
@@ -85,11 +123,12 @@ unsigned char update_priority(void) {
 unsigned char update_frequency(void) {
     frequency.idle = 0;
     frequency.parse_packet = 0;
-    if (frequency.pid_l == 0 || frequency.pid_r == 0 || frequency.velocity == 0) {
+    if (frequency.process[PROCESS_PID_LEFT] == 0
+            || frequency.process[PROCESS_PID_RIGHT] == 0 || frequency.process[PROCESS_VELOCITY] == 0) {
         VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
     } else
         VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
-    if (frequency.dead_reckoning == 0) {
+    if (frequency.process[PROCESS_ODOMETRY] == 0) {
         DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
     } else
         DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
@@ -97,32 +136,42 @@ unsigned char update_frequency(void) {
 }
 
 services_t services(services_t service) {
+    services_t service_send;
+    service_send.command = service.command;
     switch (service.command) {
         case RESET:
             if (reset_count < 3) {
                 reset_count++;
-                //ResetPort = Port;
-                service.buffer[0] = ACK;
-                service.buffer[1] = reset_count;
             } else {
                 SET_CPU_IPL(7); // disable all user interrupts
                 //DelayN1ms(200);
                 asm("RESET");
             }
             break;
+        case DATE_CODE:
+            memcpy(service_send.buffer, version_date_, sizeof (version_date_));
+            service_send.buffer[sizeof (version_date_) - 1] = ' ';
+            memcpy(service_send.buffer + sizeof (version_date_), version_time_, sizeof (version_time_));
+            break;
+        case NAME_BOARD:
+            memcpy(service_send.buffer, name_board, sizeof (name_board));
+            break;
         case VERSION_CODE:
-            memcpy(service.buffer, version_time_, sizeof (version_time_));
+            memcpy(service_send.buffer, version_code, sizeof (version_code));
+            break;
+        case AUTHOR_CODE:
+            memcpy(service_send.buffer, author_code, sizeof (author_code));
             break;
         default:
             break;
     }
-    return service;
+    return service_send;
 }
 
 void InitInterrupts(void) {
     //For PID velocity control
     VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-    VEL_PID_PRIORITY = priority.pid_l; // Set Output Compare Channel 1 Priority Level
+    VEL_PID_PRIORITY = priority.process[PROCESS_PID_LEFT]; // Set Output Compare Channel 1 Priority Level
     IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
     VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
 
@@ -134,7 +183,7 @@ void InitInterrupts(void) {
 
     // For dead reckoning
     DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
-    DEAD_RECK_PRIORITY = priority.dead_reckoning; // Set RTC Priority Level
+    DEAD_RECK_PRIORITY = priority.process[PROCESS_ODOMETRY]; // Set RTC Priority Level
     IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
     DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
 }

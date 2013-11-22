@@ -48,7 +48,7 @@ volatile int PulsEncR = 0; //Buffer for deadReckoning
 //volatile pid_control_t pid_left, pid_right;
 //volatile enable_motor_t enable_motors;
 
-parameter_t parameter;
+parameter_motors_t parameter_motors;
 constraint_t constraint;
 velocity_t vel_rif, vel_mis;
 pid_control_t pid_left, pid_right;
@@ -83,14 +83,15 @@ extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
 /******************************************************************************/
 
 void init_parameter(void) {
-    parameter.radius_l = 0.04; //Raggio ruota sinistra
-    parameter.radius_r = 0.04; //Raggio ruota destra
-    parameter.wheelbase = 0.20; //Interasse
-    parameter.k_vel_l = K_VEL; //Costante velocità
-    parameter.k_vel_r = K_VEL;
-    parameter.k_ang_l = K_ANG; //Constante angolare
-    parameter.k_ang_r = K_ANG;
-    parameter.sp_min = 0.0001; // FLT_MIN
+    parameter_motors.radius_l = 0.04; //Raggio ruota sinistra
+    parameter_motors.radius_r = 0.04; //Raggio ruota destra
+    parameter_motors.wheelbase = 0.20; //Interasse
+    parameter_motors.k_vel_l = K_VEL; //Costante velocità
+    parameter_motors.k_vel_r = K_VEL;
+    parameter_motors.k_ang_l = K_ANG; //Constante angolare
+    parameter_motors.k_ang_r = K_ANG;
+    parameter_motors.sp_min = 0.0001; // FLT_MIN
+    parameter_motors.pwm_step = 4096;
 
     update_parameter();
 
@@ -116,14 +117,14 @@ void init_parameter(void) {
 }
 
 void update_parameter(void) {
-    parameter_int.radius_l = ((int) (parameter.radius_l * 1000.0));
-    parameter_int.radius_r = ((int) (parameter.radius_r * 1000.0));
-    parameter_int.wheelbase = ((int) (parameter.wheelbase * 1000.0));
-    parameter_int.k_vel_r = parameter.k_vel_r;
-    parameter_int.k_vel_l = parameter.k_vel_l;
-    k_odo.k_left = parameter.radius_l * parameter.k_ang_l;
-    k_odo.k_right = parameter.radius_r * parameter.k_ang_r;
-    wheel_m = parameter.wheelbase / 2;
+    parameter_int.radius_l = ((int) (parameter_motors.radius_l * 1000.0));
+    parameter_int.radius_r = ((int) (parameter_motors.radius_r * 1000.0));
+    parameter_int.wheelbase = ((int) (parameter_motors.wheelbase * 1000.0));
+    parameter_int.k_vel_r = parameter_motors.k_vel_r;
+    parameter_int.k_vel_l = parameter_motors.k_vel_l;
+    k_odo.k_left = parameter_motors.radius_l * parameter_motors.k_ang_l;
+    k_odo.k_right = parameter_motors.radius_r * parameter_motors.k_ang_r;
+    wheel_m = parameter_motors.wheelbase / 2;
 }
 
 void init_pid_control(void) {
@@ -179,20 +180,20 @@ int Velocity(void) {
     MOTOR_ENABLE1 = enable_motors;
     MOTOR_ENABLE2 = enable_motors;
     long vel_v = (parameter_int.radius_r * motor_right.measure_vel + parameter_int.radius_l * motor_left.measure_vel) / 2;
-    long vel_w = -(parameter_int.radius_r * motor_right.measure_vel - parameter_int.radius_l * motor_left.measure_vel) / (2 * parameter_int.wheelbase);
+    long vel_w = (parameter_int.radius_r * motor_right.measure_vel - parameter_int.radius_l * motor_left.measure_vel) / (2 * parameter_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
 
-    rifer_con_left = (int) ((1 / parameter.radius_r)*(vel_rif.v + (parameter.wheelbase * vel_rif.w))*1000);
-    rifer_con_right = (int) ((1 / parameter.radius_l)*(vel_rif.v - (parameter.wheelbase * vel_rif.w))*1000);
+    rifer_con_left = (int) ((1 / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+    rifer_con_right = (int) ((1 / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
     // Calculating constraint
     if (abs(rifer_con_left) > constraint.max_left) {
-        motor_left.rifer_vel = constraint.max_left;
+        motor_left.rifer_vel = SGN(rifer_con_left) * constraint.max_left;
     } else {
         motor_left.rifer_vel = rifer_con_left;
     }
     if (abs(rifer_con_right) > constraint.max_right) {
-        motor_right.rifer_vel = constraint.max_right;
+        motor_right.rifer_vel = SGN(rifer_con_right) * constraint.max_right;
     } else {
         motor_right.rifer_vel = rifer_con_right;
     }
@@ -214,11 +215,11 @@ int MotorPIDL(void) {
     POS1CNT = 0; //Reset registro
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
-    if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter.k_vel_l / timePeriodLtmp);
-    PIDstruct1.controlReference = -motor_left.rifer_vel; //Riferimento Ruota Sinistra
-    PIDstruct1.measuredOutput = -motor_left.measure_vel; //Misura velocità
+    if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motors.k_vel_l / timePeriodLtmp);
+    PIDstruct1.controlReference = motor_left.rifer_vel; //Riferimento Ruota Sinistra
+    PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
-    motor_left.control_vel = (PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    motor_left.control_vel = -(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
     SetDCMCPWM1(1, motor_left.control_vel, 0);
 
@@ -240,8 +241,8 @@ int MotorPIDR(void) {
     POS2CNT = 0; //Reset registro
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
-    if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter.k_vel_r / timePeriodRtmp);
-    PIDstruct2.controlReference = motor_right.rifer_vel; //Riferimento Ruota Sinistra
+    if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motors.k_vel_r / timePeriodRtmp);
+    PIDstruct2.controlReference = motor_right.rifer_vel; //Riferimento Ruota Destra
     PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
     PID(&PIDstruct2); //Esecuzione funzione PID
     motor_right.control_vel = (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM

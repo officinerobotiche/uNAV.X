@@ -15,6 +15,7 @@
 
 #include <stdint.h>        /* Includes uint16_t definition   */
 #include <stdbool.h>       /* Includes true/false definition */
+#include <string.h>
 
 #include "serial.h"
 
@@ -25,7 +26,9 @@
 int (*pkg_parse) (unsigned char inchar) = &pkg_header;
 unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
 packet_t receive_pkg;
+char receive_header;
 unsigned int index_data = 0;
+error_pkg_t serial_error;
 
 /******************************************************************************/
 /* Comunication Functions                                                     */
@@ -38,12 +41,17 @@ unsigned int index_data = 0;
  *     1        2             3 -> n          n+1
  */
 
+void init_buff_serial_error(){
+    memset(serial_error.number, 0, BUFF_SERIAL_ERROR);
+}
+
 int decode_pkgs(unsigned char rxchar) {
     return (*pkg_parse)(rxchar);
 }
 
 int pkg_header(unsigned char rxchar) {
-    if (rxchar == HEADER) {
+    if ((rxchar == HEADER_SYNC) || (rxchar == HEADER_ASYNC)) {
+        receive_header = rxchar;
         pkg_parse = &pkg_length;
         return false;
     } else {
@@ -80,9 +88,9 @@ int pkg_data(unsigned char rxchar) {
 }
 
 int pkg_error(int error) {
-    // TODO complete task error
     index_data = 0;
     pkg_parse = &pkg_header; //Restart parse serial packet
+    serial_error.number[(-error - 1)] += 1;
     return error;
 }
 
@@ -100,7 +108,7 @@ unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int La
  * \param s string to write
  * \throws boost::system::system_error on failure
  */
-void pkg_send(packet_t packet) {
+void pkg_send(char header, packet_t packet) {
     /* on packet:
      * -------------------------- ---------------------------- -----------------------
      * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
@@ -108,8 +116,10 @@ void pkg_send(packet_t packet) {
      *    1        2 -> length    length+1 length+2 length+3   ....
      */
 
+    while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
+
     int i;
-    BufferTx[0] = HEADER;
+    BufferTx[0] = header;
     BufferTx[1] = packet.length;
 
     for (i = 0; i < packet.length; i++) {

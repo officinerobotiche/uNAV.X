@@ -14,7 +14,8 @@ extern "C" {
 
 #include "packet.h"
 
-#define HEADER '#'
+#define HEADER_SYNC '#'
+#define HEADER_ASYNC '@'
 #define HEAD_PKG 2
 
 #define ERROR_FRAMMING -1   //Framing Error bit
@@ -34,8 +35,10 @@ extern "C" {
     /* System Function Prototypes                                                 */
     /******************************************************************************/
 
+    //init serial buffer
+    void init_buff_serial_error();
     //Function to encoding packet
-    void pkg_send(packet_t packet);
+    void pkg_send(char header, packet_t packet);
     //Function for decoding packet
     int decode_pkgs(unsigned char rxchar);
     int pkg_header(unsigned char rxchar);

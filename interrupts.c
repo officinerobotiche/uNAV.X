@@ -22,10 +22,6 @@
 #include "motors_PID.h"
 #include "high_level_control.h"
 
-#define PID_FLAG IFS0bits.OC1IF
-#define PARSER_FLAG IFS0bits.OC2IF
-#define DEAD_RECKONING_FLAG IFS3bits.RTCIF
-
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
@@ -40,6 +36,7 @@ volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
 volatile unsigned SIG_VELL = 0; //Verso rotazione ruota sinistra
 volatile unsigned SIG_VELR = 0; //Verso rotazione ruota destra
 volatile process_t time, priority, frequency;
+process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
 
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
@@ -183,13 +180,13 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
-    IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
+    IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
 
-    if (!(counter_pid % frequency.pid_l)) {
+    if (!(counter_pid % frequency.process[PROCESS_PID_LEFT])) {
         PID_FLAG = 1; //Start OC1Interrupt for PID control
         counter_pid = 0;
     }
-    if (!(counter_odo % frequency.dead_reckoning)) {
+    if (!(counter_odo % frequency.process[PROCESS_ODOMETRY])) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
@@ -210,9 +207,9 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
     PID_FLAG = 0; // interrupt flag reset
-    time.velocity = Velocity();
-    time.pid_l = MotorPIDL();
-    time.pid_r = MotorPIDR();
+    time.process[PROCESS_VELOCITY] = Velocity();
+    time.process[PROCESS_PID_LEFT] = MotorPIDL();
+    time.process[PROCESS_PID_RIGHT] = MotorPIDR();
 }
 
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
@@ -222,7 +219,7 @@ void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
     DEAD_RECKONING_FLAG = 0; //interrupt flag reset
-    time.dead_reckoning = deadReckoning();
+    time.process[PROCESS_ODOMETRY] = deadReckoning();
 }
 
 unsigned int ReadUART1(void) {

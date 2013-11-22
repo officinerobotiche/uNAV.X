@@ -15,6 +15,7 @@ extern "C" {
 #include "packet.h"
 
     void init_coordinate(void);
+    void update_coord(void);
     int deadReckoning(void);
 
 #ifdef	__cplusplus

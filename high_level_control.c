@@ -27,7 +27,7 @@ coordinate_t coordinate;
 float sinTh_old = 0, cosTh_old = 1;
 
 // From motors PID
-extern volatile parameter_t parameter;
+extern volatile parameter_motors_t parameter_motors;
 extern volatile int PulsEncL, PulsEncR;
 extern k_odo_t k_odo;
 extern float wheel_m;
@@ -44,6 +44,11 @@ void init_coordinate(void) {
     coordinate.space = 0;
 }
 
+void update_coord(void) {
+    sinTh_old = sinf(coordinate.theta);
+    cosTh_old = cosf(coordinate.theta);
+}
+
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
     volatile coordinate_t delta;
@@ -54,13 +59,13 @@ int deadReckoning(void) {
     PulsEncL = 0; // Flush variabile
     PulsEncR = 0; // Flush variabile
 
-    if (fabs(DifSp) <= parameter.sp_min) {
+    if (fabs(DifSp) <= parameter_motors.sp_min) {
         delta.theta = 0;
         delta.space = WheelSpR;
         delta.x = delta.space * cosTh_old;
         delta.y = delta.space * sinTh_old;
-    } else if (fabs(SumSp) <= parameter.sp_min) {
-        delta.theta = DifSp / parameter.wheelbase;
+    } else if (fabs(SumSp) <= parameter_motors.sp_min) {
+        delta.theta = DifSp / parameter_motors.wheelbase;
         coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
         sinTh_old = sinf(coordinate.theta);
         cosTh_old = cosf(coordinate.theta);
@@ -68,7 +73,7 @@ int deadReckoning(void) {
         delta.y = 0;
         delta.space = 0;
     } else {
-        delta.theta = DifSp / parameter.wheelbase;
+        delta.theta = DifSp / parameter_motors.wheelbase;
         coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
         float cosTh_new = cosf(coordinate.theta);
         float sinTh_new = sinf(coordinate.theta);

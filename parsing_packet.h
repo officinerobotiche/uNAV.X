@@ -14,16 +14,15 @@ extern "C" {
 
 #include "packet.h"
 
-    int parse_packet(void);
-    information_packet_t decode_single_pkg(Ptr_packet send, char command, unsigned char* Buffer, unsigned int position);
-    information_packet_t addChangePacket(Ptr_packet send, char command, unsigned char* Buffer, unsigned int position, unsigned int length, Ptr_abstract_packet packet);
-    information_packet_t addPacket(Ptr_packet send, unsigned char command, unsigned char option, Ptr_abstract_packet packet);
-    information_packet_t addRequestPacket(Ptr_packet send, unsigned char command, Ptr_abstract_packet pkg);
-    information_packet_t addInformationPacket(Ptr_packet send, unsigned char command, unsigned char option);
-    information_packet_t buildRequestPacket(Ptr_packet send, unsigned char command, const unsigned int length, Ptr_abstract_packet packet);
+    void init_hashmap();
+    int parse_packet();
+    void saveData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void sendData(information_packet_t* list_send, size_t len, information_packet_t info);
+    packet_t encoder(information_packet_t *list_send, size_t len);
+    packet_t encoderSingle(information_packet_t list_send);
 
-
-
+    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_packet_t * packet);
+    information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet);
 
 #ifdef	__cplusplus
 }
