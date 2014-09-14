@@ -17,6 +17,7 @@ extern "C" {
     void init_coordinate(void);
     void update_coord(void);
     int deadReckoning(void);
+    int odometry(coordinate_t delta);
 
 #ifdef	__cplusplus
 }

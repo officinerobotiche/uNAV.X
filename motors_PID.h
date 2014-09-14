@@ -21,6 +21,7 @@ void update_pid_l(void);
 void update_pid_r(void);
 void InitPid1(void); /* PID data structure: PIDstruct for PID 1 (Motor left) */
 void InitPid2(void); /* PID data structure: PIDstruct for PID 2 (Motor right) */
+bool Emergency(void);
 int Velocity(void);
 int MotorPIDL(void); /* Esecution velocity PID for left motor */
 int MotorPIDR(void); /* Esecution velocity PID for right motor */

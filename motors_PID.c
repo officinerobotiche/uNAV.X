@@ -39,14 +39,11 @@ fractional kCoeffs2[3]; //Coefficienti KP, KI, KD Per PID2 Destra
 int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
 /** */
+//From System
+extern parameter_system_t parameter_system;
 
 volatile int PulsEncL = 0; //Buffer for deadReckoning
 volatile int PulsEncR = 0; //Buffer for deadReckoning
-
-//volatile parameter_t parameter;
-//volatile velocity_t vel_rif, vel_mis;
-//volatile pid_control_t pid_left, pid_right;
-//volatile enable_motor_t enable_motors;
 
 parameter_motors_t parameter_motors;
 constraint_t constraint;
@@ -54,6 +51,11 @@ velocity_t vel_rif, vel_mis;
 pid_control_t pid_left, pid_right;
 enable_motor_t enable_motors;
 motor_t motor_left, motor_right;
+
+//variables for emergency
+emergency_t emergency;
+velocity_t last_vel_rif;
+bool save_velocity = true;
 
 float const_vel[3];
 
@@ -125,6 +127,8 @@ void update_parameter(void) {
     k_odo.k_left = parameter_motors.radius_l * parameter_motors.k_ang_l;
     k_odo.k_right = parameter_motors.radius_r * parameter_motors.k_ang_r;
     wheel_m = parameter_motors.wheelbase / 2;
+    emergency.time = 1.0;
+    emergency.timeout = 500;
 }
 
 void init_pid_control(void) {
@@ -172,6 +176,23 @@ void InitPid2(void) {
     PIDInit(&PIDstruct2);
     //Derive the a,b, & c coefficients from the Kp, Ki & Kd
     PIDCoeffCalc(&kCoeffs2[0], &PIDstruct2);
+}
+
+bool Emergency(void) {
+    if (save_velocity) {
+        last_vel_rif.v = vel_rif.v;
+        last_vel_rif.w = vel_rif.w;
+        save_velocity = false;
+    }
+    vel_rif.v -= last_vel_rif.v * (((float)parameter_system.int_tm_mill) / 1000) / emergency.time;
+    vel_rif.w -= last_vel_rif.w * (((float)parameter_system.int_tm_mill) / 1000) / emergency.time;
+    if (SGN(last_vel_rif.v) * vel_rif.v < 0) vel_rif.v = 0;
+    if (SGN(last_vel_rif.w) * vel_rif.w < 0) vel_rif.w = 0;
+    if((vel_rif.v == 0) && (vel_rif.w == 0)) {
+        save_velocity = true;
+        return true;
+    }
+    return false;
 }
 
 int Velocity(void) {

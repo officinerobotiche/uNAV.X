@@ -25,7 +25,7 @@
 #include "system.h"
 
 static unsigned int hashmap_default[10];
-static unsigned int hashmap_motion[10];
+static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
 //From System
 extern parameter_system_t parameter_system;
@@ -183,7 +183,7 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
                 break;
             default:
-                //TODO trohw
+                //TODO throw
                 break;
         }
     } else {

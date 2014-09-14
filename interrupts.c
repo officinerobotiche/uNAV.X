@@ -26,6 +26,7 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
+unsigned int counter_stop = 0;
 unsigned int counter = 0;
 unsigned int counter_odo = 0;
 unsigned int counter_pid = 0;
@@ -37,6 +38,9 @@ volatile unsigned SIG_VELL = 0; //Verso rotazione ruota sinistra
 volatile unsigned SIG_VELR = 0; //Verso rotazione ruota destra
 volatile process_t time, priority, frequency;
 process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+
+//From Motors_PID
+extern emergency_t emergency;
 
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
@@ -193,6 +197,13 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     if (!(counter % 500)) {
         LED ^= 1;
         counter = 0;
+    }
+    if (!((counter_stop + 1) % emergency.timeout)) {
+        if (Emergency()) {
+            counter_stop = 0;
+        }
+    } else {
+        counter_stop++;
     }
     counter_pid++;
     counter++;

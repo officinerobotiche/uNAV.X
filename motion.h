@@ -8,6 +8,14 @@
 #ifndef MOTION_H
 #define	MOTION_H
 
+#define BUFFER_ODOMETRY 100
+
+typedef struct emergency {
+    float time;
+    int16_t timeout;
+} emergency_t;
+#define LNG_EMERGENCY sizeof(emergency_t)
+
 typedef struct constraint {
     float max_left;
     float max_right;
@@ -36,6 +44,11 @@ typedef struct coordinate {
     float space;
 } coordinate_t;
 #define LNG_COORDINATE sizeof(coordinate_t)
+
+typedef struct delta_odometry {
+    coordinate_t delta[BUFFER_ODOMETRY];
+} delta_odometry_t;
+#define LNG_DELTA_ODOMETRY sizeof(delta_odometry_t)
 
 typedef struct parameter_motors {
     float radius_r;
@@ -67,6 +80,8 @@ typedef uint8_t enable_motor_t;
         enable_motor_t enable;                  \
         motor_t motor;                          \
         constraint_t constraint;                \
+        emergency_t emergency;                  \
+        delta_odometry_t delta_odometry;
 
 #define PID_CONTROL_L 0
 #define PID_CONTROL_R 1
@@ -78,6 +93,8 @@ typedef uint8_t enable_motor_t;
 #define VELOCITY 7
 #define VELOCITY_MIS 8
 #define ENABLE 9
+#define EMERGENCY 10
+#define DELTA_ODOMETRY 11
 
 #define PROCESS_MOTION_LENGTH 4
 #define PROCESS_PID_LEFT 0
@@ -90,18 +107,21 @@ typedef uint8_t enable_motor_t;
 #define ODOMETRY_STRING "Odometry"
 
 #define HASHMAP_MOTION 'M'
-//static unsigned int hashmap_motion[10];
+#define HASHMAP_MOTION_NUMBER 15
+//static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
-#define INITIALIZE_HASHMAP_MOTION hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;    \
-                                  hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL; \
-                                  hashmap_motion[MOTOR_L] = LNG_MOTOR; \
-                                  hashmap_motion[MOTOR_R] = LNG_MOTOR; \
-                                  hashmap_motion[COORDINATE] = LNG_COORDINATE; \
-                                  hashmap_motion[PARAMETER_MOTORS] = LNG_PARAMETER_MOTORS; \
-                                  hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT; \
-                                  hashmap_motion[VELOCITY] = LNG_VELOCITY; \
-                                  hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY; \
-                                  hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;
+#define INITIALIZE_HASHMAP_MOTION hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;          \
+                                  hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;          \
+                                  hashmap_motion[MOTOR_L] = LNG_MOTOR;                      \
+                                  hashmap_motion[MOTOR_R] = LNG_MOTOR;                      \
+                                  hashmap_motion[COORDINATE] = LNG_COORDINATE;              \
+                                  hashmap_motion[PARAMETER_MOTORS] = LNG_PARAMETER_MOTORS;  \
+                                  hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;              \
+                                  hashmap_motion[VELOCITY] = LNG_VELOCITY;                  \
+                                  hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;              \
+                                  hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                \
+                                  hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                \
+                                  hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;      \
 
 #endif	/* MOTION_H */
 

@@ -21,8 +21,13 @@
 
 #include "high_level_control.h"
 #include "motors_PID.h"
+#include "serial.h"
+#include "parsing_packet.h"
 
 coordinate_t coordinate;
+delta_odometry_t delta_odometry;
+unsigned int counter_delta = 0;
+bool autosend_delta_odometry = false;
 
 float sinTh_old = 0, cosTh_old = 1;
 
@@ -85,6 +90,29 @@ int deadReckoning(void) {
         sinTh_old = sinTh_new;
         cosTh_old = cosTh_new;
     }
+
+    if (autosend_delta_odometry) {
+        // Add delta step in buffer
+        delta_odometry.delta[counter_delta] = delta;
+        counter_delta++;
+        if (counter_delta == BUFFER_ODOMETRY) {
+            abstract_packet_t packet;
+            packet.delta_odometry = delta_odometry;
+            packet_t send = encoderSingle(createDataPacket(DELTA_ODOMETRY, HASHMAP_MOTION, &packet));
+            pkg_send(HEADER_ASYNC, send);
+            counter_delta = 0;
+        }
+    }
+
+    // Calculate odometry
+    odometry(delta);
+
+    return TMR1 - t; // Time of esecution
+}
+
+int odometry(coordinate_t delta) {
+    unsigned int t = TMR1; // Timing function
+
     coordinate.space += delta.space;
     coordinate.x += delta.x;
     coordinate.y += delta.y;

@@ -25,6 +25,9 @@
 #include "user.h"
 #include "system.h"
 
+//From interrupt
+extern unsigned int counter_stop;
+
 // From motors PID
 extern parameter_motors_t parameter_motors;
 extern constraint_t constraint;
@@ -32,9 +35,11 @@ extern velocity_t vel_rif, vel_mis;
 extern pid_control_t pid_left, pid_right;
 extern enable_motor_t enable_motors;
 extern motor_t motor_left, motor_right;
+extern emergency_t emergency;
 
 // From high level control
 extern coordinate_t coordinate;
+extern delta_odometry_t delta_odometry;
 extern bool coord_busy;
 
 /******************************************************************************/
@@ -70,12 +75,18 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info.packet.velocity;
+                counter_stop = 0;
                 list_send[len] = createPacket(info.command, ACK, info.type, NULL);
                 break;
             case ENABLE:
                 enable_motors = info.packet.enable;
                 list_send[len] = createPacket(info.command, ACK, info.type, NULL);
                 break;
+            case EMERGENCY:
+                emergency = info.packet.emergency;
+                list_send[len] = createPacket(info.command, ACK, info.type, NULL);
+                break;
+            case DELTA_ODOMETRY:
             case MOTOR_L:
             case MOTOR_R:
             case VELOCITY_MIS:
@@ -101,6 +112,10 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case COORDINATE:
                 send.coordinate = coordinate;
+                list_send[len] = createDataPacket(info.command, info.type, &send);
+                break;
+            case DELTA_ODOMETRY:
+                send.delta_odometry = delta_odometry;
                 list_send[len] = createDataPacket(info.command, info.type, &send);
                 break;
             case PARAMETER_MOTORS:
@@ -129,6 +144,10 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY_MIS:
                 send.velocity = vel_mis;
+                list_send[len] = createDataPacket(info.command, info.type, &send);
+                break;
+            case EMERGENCY:
+                send.emergency = emergency;
                 list_send[len] = createDataPacket(info.command, info.type, &send);
                 break;
             default:

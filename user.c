@@ -73,7 +73,7 @@ void InitApp(void) {
     _TRISB6 = 1;
     _TRISB10 = 1;
     _TRISB11 = 1;
-    // TODO Add analog funcionality for ADC
+    // TODO Add analog functionality for ADC
 
     /* Initialize peripherals */
     LED = 0;
