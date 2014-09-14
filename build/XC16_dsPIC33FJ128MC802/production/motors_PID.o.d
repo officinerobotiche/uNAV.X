@@ -3,4 +3,5 @@ motors_PID.c  \
  motors_PID.h  \
 system.h  \
 packet.h  \
+motion.h  \
 user.h 
