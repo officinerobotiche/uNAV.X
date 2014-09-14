@@ -5,7 +5,8 @@ the user.
 
 ADVANCED USER TIP
 
-From the main menu, refer to the Task list by going to Window > Tasks (Ctrl+6).
+From the main menu, refer to the Task list by going to Window > Tasks
+(Ctrl+6 on Windows or Cmd+6 on OSX).
 As long as the task window is not configured to filter out any tasks,
 the getting started TODO list embedded in this project will be displayed.
 
