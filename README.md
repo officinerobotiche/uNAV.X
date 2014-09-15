@@ -58,7 +58,7 @@ License
 
 [Officine Robotiche]:http://www.officinerobotiche.it/
 [Code]:http://www.officinerobotiche.it/
-[Stato]:http://www.officinerobotiche.it/
+[Status]:http://www.officinerobotiche.it/
 [RoadMap]:http://www.officinerobotiche.it/
 [BUG]:http://www.officinerobotiche.it/
 [Logo]:https://scontent-a-mxp.xx.fbcdn.net/hphotos-xfa1/v/t1.0-9/10599358_766967393361373_116218374349722998_n.png?oh=ca9cdc1c3da69ac9d5ba0c4556802b48&oe=548774A0 "Officine Robotiche"
