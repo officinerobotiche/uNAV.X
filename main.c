@@ -1,3 +1,20 @@
+/*
+ µNAV v 0.0.0 alpha 15/09/2014
+
+ Processor : DSPIC33FJ128MC804 clock 40 MHz
+
+ Authors:
+ Guido Ottaviani
+ Marco d'Ambrosio
+ Raffaello Bonghi
+ Roberto D'Amico
+
+ License MIT
+
+ */
+
+/* inserire template doxygen */
+
 /******************************************************************************/
 /* Files to Include                                                           */
 /******************************************************************************/
