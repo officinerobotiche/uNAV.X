@@ -32,7 +32,7 @@ unsigned char version_date_[] = __DATE__;
 unsigned char version_time_[] = __TIME__;
 unsigned char author_code[] = "Raffaello Bonghi";
 unsigned char name_board[] = "uNAV";
-unsigned char version_code[] = "v0.2a";
+unsigned char version_code[] = "v0.0.0 alpha";
 parameter_system_t parameter_system;
 
 extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
