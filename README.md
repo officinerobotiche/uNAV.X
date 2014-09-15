@@ -1,6 +1,7 @@
 µNAV
 =========
-µNAV is a project in development by [Officine Robotiche], to control motors ... code functionalities are:
+µNAV is a project in development by [Officine Robotiche], to control motors.
+Code functionalities are:
 
   - PID control
   - Encoders management 
