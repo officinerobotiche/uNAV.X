@@ -1,12 +1,12 @@
 <Application Description for Project Goes Here>
 
-Project Owner(s):
-Author(s):
-Hardware Platform:
+Project Owner(s): Officine Robotiche
+Author(s): Raffaello Bonghi, Guido Ottaviani, Marco D'Ambrosio, Roberto D'Amico
+Hardware Platform: uNAV
 Debuggers Used:
 Programmers Used:
-MPLAB Version:
-C Compiler Version:
+MPLAB Version: 2.20
+C Compiler Version: 1.20
 Final Checksum:
 
 FILES INCLUDED IN THE PROJECT TREE:
