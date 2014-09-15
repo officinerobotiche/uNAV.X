@@ -11,6 +11,7 @@
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
         <itemPath>packet.h</itemPath>
+        <itemPath>motion.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="System" projectFiles="true">
         <itemPath>system.h</itemPath>

@@ -1,3 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?><project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/D:/Dropbox/MicrochipProject/uNAV.X/parsing_packet.c</file>
+        <file>file:/D:/Dropbox/MicrochipProject/uNAV.X/main.c</file>
+        <file>file:/D:/Dropbox/MicrochipProject/uNAV.X/decode_packet.c</file>
+        <file>file:/D:/Dropbox/MicrochipProject/uNAV.X/serial.c</file>
+        <file>file:/D:/Dropbox/MicrochipProject/uNAV.X/packet.h</file>
+        <file>file:/D:/Dropbox/MicrochipProject/uNAV.X/motion.h</file>
+    </open-files>
 </project-private>
