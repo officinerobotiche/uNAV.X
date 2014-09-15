@@ -1,0 +1,16 @@
+#############
+## MPLAB X ##
+#############
+/Code/rSensorUS.X/build/
+/Code/rSensorUS.X/dist/
+/Code/rSensorUS.X/nbproject/private/
+/Code/rSensorUS.X/nbproject/*.mk
+/Code/rSensorUS.X/nbproject/*.properties
+/Code/rSensorUS.X/nbproject/*.bash
+#/Code/rSensorUS.X/nbproject/Makefile-default.mk
+#/Code/rSensorUS.X/nbproject/Makefile-genesis.properties
+#/Code/rSensorUS.X/nbproject/Makefile-impl.mk
+#/Code/rSensorUS.X/nbproject/Makefile-local-default.mk
+#/Code/rSensorUS.X/nbproject/Makefile-variables.mk
+#/Code/rSensorUS.X/nbproject/Package-default.bash
+#/Code/rSensorUS.X/nbproject/private/configurations.xml
