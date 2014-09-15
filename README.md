@@ -1,16 +1,16 @@
 µNAV
 =========
-µNAV è un progetto realizzato dal gruppo [Officine Robotiche], per il controllo motori ... le funzionalità offerte dal codice sono:
+µNAV is a project in development by [Officine Robotiche], to control motors ... code functionalities are:
 
-  - Controllo PID
-  - Gestione Encoder
-  - Misura corrente assorbimento motori
+  - PID control
+  - Encoders management 
+  - Motors current measurement
 
-####Importante####
+####ATTENTION####
 
-> Tutto il codice viene rilasciato con licenza "....." ed è scritto per funzionare con la scheda µNAV anchessa sviluppata e rilascata con licenza "....."
+> All the code is released under "....." license and is dedicated to µNAV board released under "....." license
 
-[--E possibile collaborare allo sviluppo del progetto, per farlo si possono utilizzare gli strumenti messi a disposizione del sistema.--]
+[--it's possible to collaborate to this project development using system tools --]
 
 Version
 ----
@@ -20,12 +20,12 @@ Version
 
 Tech
 -----------
-Linee guida per gli sviluppatori:
+Developers guide lines:
 
-* [Code] - "linee guida" scrittura del codice
-* [Stato] - Stato avanzamento lavori
-* [RoadMap] - Stati di avanzamento del progetto
-* [BUG] - BUG in lavorazione
+* [Code] - code writing "guide lines"
+* [Status] - work progress
+* [RoadMap] - project progress
+* [BUG] - BUG in analisys
 
 Installation
 --------------
