@@ -31,9 +31,13 @@
 #define SYS_FREQ        80000000
 #define FCY             SYS_FREQ/2
 
-#define TCTMR1 0.001            // Timer1 - Value in second [s]
+#define TCTMR1 0.001            // Timer1 - Value in seconds [s]
 #define TMR1_VALUE TCTMR1*FCY   // Timer1 - Value in CLK
 #define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
+
+//Blink LED
+#define BLINK_LED 0.5 //Value in seconds [s]
+#define BLINKSW (int)(BLINK_LED/TCTMR1)
 
 //UART
 #define BAUDRATE 115200

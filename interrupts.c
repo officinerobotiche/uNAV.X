@@ -18,6 +18,7 @@
 
 #include "user.h"
 #include "serial.h"
+#include "system.h"
 #include "parsing_packet.h"
 #include "motors_PID.h"
 #include "high_level_control.h"
@@ -186,19 +187,19 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
 
-    if (!(counter_pid % frequency.process[PROCESS_PID_LEFT])) {
+    if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
         PID_FLAG = 1; //Start OC1Interrupt for PID control
         counter_pid = 0;
     }
-    if (!(counter_odo % frequency.process[PROCESS_ODOMETRY])) {
+    if (counter_odo >= frequency.process[PROCESS_ODOMETRY]) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
-    if (!(counter % 500)) {
+    if (counter >= BLINK_LED) {
         LED ^= 1;
         counter = 0;
     }
-    if (!((counter_stop + 1) % emergency.timeout)) {
+    if ((counter_stop + 1) >= emergency.timeout) {
         if (Emergency()) {
             counter_stop = 0;
         }

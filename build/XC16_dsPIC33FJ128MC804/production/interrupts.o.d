@@ -4,6 +4,7 @@ user.h  \
  serial.h  \
 packet.h  \
 motion.h  \
+system.h  \
 parsing_packet.h  \
 motors_PID.h  \
  high_level_control.h 
