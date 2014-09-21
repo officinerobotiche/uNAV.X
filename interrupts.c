@@ -196,7 +196,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         counter_odo = 0;
     }
     if (counter >= BLINK_LED) {
-        LED ^= 1;
+        LED1 ^= 1;
         counter = 0;
     }
     if ((counter_stop + 1) >= emergency.timeout) {

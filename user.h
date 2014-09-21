@@ -2,9 +2,13 @@
 /* User Level #define Macros                                                  */
 /******************************************************************************/
 
-#define LED _LATA4              // Led Blu
-#define MOTOR_ENABLE1 _LATB2    // Enable Motore 1
-#define MOTOR_ENABLE2 _LATB3    // Enable Motore 2
+#define LED1 _LATC6              // Led 1 green
+#define LED2 _LATC7              // Led 2 green
+#define LED3 _LATC8              // Led 3 yellow
+#define LED4 _LATC9              // Led 4 red
+
+#define MOTOR_ENABLE1 _LATA7     // Enable Motore 1
+#define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
 #define PID_FLAG IFS0bits.OC1IF
 #define PARSER_FLAG IFS0bits.OC2IF
 #define DEAD_RECKONING_FLAG IFS3bits.RTCIF
