@@ -4,50 +4,68 @@
  * GPIO remapping
  * Hardware init
  *
- * v 0.5 alpha 20/09/2014
+ * v 1.0 beta 21/09/2014
  *
  **********************************************************************/
-/*
-RA4  LED 1
-RB4  LED 2
 
-RA0  AN0 current sensing 1 (Vref+ = Avdd = 3.3V)
-RA1  AN1 current sensing 2 (Vref+ = Avdd = 3.3V)
+/* 
 
-RB0  AN2 Temperature M2 (PGD) (Ruota Sx)
-RB1  AN3 Temperature M1 (PGC) (Ruota Dx)
+ *  µNAV pin map
 
-RP5  RB5  QEA1
-RP6  RB6  QEA2
-RP10 RB7  QEB1
-RP11 RB8  QEB2
+// input ADC
+AN0 -> RA0
+AN1 -> RA1
+AN2 -> RB0
+AN3 -> RB1
 
-RP7  RB7  U1RX
-RP8	 RB8  U1TX
+// input encoder (5V tolerant)
+E1CHA -> RB10 (RP10)
+E1CHB -> RB11 (RP11)
+E2CHA -> RB6 (RP6)
+E2CHB -> RB5 (RP5)
 
-RP2  RB2  U2TX	(XBEE o 485)
-RP3  RB3  U1RX	(XBEE o 485)
+// input capture)
+IC1 -> RB10 (RP10)
+IC2 -> RB6 (RP6)
 
-RP8  RB8  SCL
-RP9  RB9  SDA
+// OUT PWM
+H1A -> RB14
+H1B -> RB15
+H2A -> RB12
+H2B -> RB13
 
-RP10 RB10 PWM-E1
-RP11 RB11 PWM-E2
+// H Bridge control
+H1EN   -> RA7
+H2EN   -> RA10
+(nota: AU1 e AU2 sono NC)
 
-RP12 RB12 PWM2-H
-RP13 RB13 PWM2-L
-RP14 RB14 PWM1-H
-RP15 RB15 PWM1-L
+// UART (5V tolerant)
+U1RX -> RC5 (RP21)
+U1TX -> RC4 (RP20)
+U2RX -> RB3 (RP3)
+U2TX -> RB2 (RP2)
 
- */
+// I2C
+SDA -> RB9
+SCL -> RB8
 
-/*
+// LED
+LED1 -> RC6
+LED2 -> RC7
+LED3 -> RC8
+LED4 ->	RC9
 
-    LATA = 0x0000;
-    LATB = 0x0000;
-    TRISA = 0b1111111111101111;
-    TRISB = 0b0000111111101111;
- 
+// GPIO
+GP1 -> RC0 (CN8)
+GP2 -> RC1 (CN9)
+GP3 -> RC2 (CN10)
+GP4 -> RC3 (CN28)
+GP5 -> RA4 (CN0)
+GP6 -> RB4 (CN1)
+GP7 -> RB7 (CN23)
+GP8 -> RA8
+HLT -> RA9
+
  */
 
 /******************************************************************************/
@@ -95,58 +113,54 @@ void InitApp(void) {
                 "mov.b w3, [w1] \n"
                 "bclr OSCCON, #6 ");
 
+    // Input capture
     //***************************
     // Assign IC1 To Pin RP10
     //***************************
     RPINR7bits.IC1R = 10;
-
     //***************************
     // IC2 To Pin RP6
     //***************************
     RPINR7bits.IC2R = 6;
 
+    // QEI
     //***************************
     // QEA1 To Pin RP10
     //***************************
     RPINR14bits.QEA1R = 10;
-
     //***************************
     // QEB1 To Pin RP11
     //***************************
     RPINR14bits.QEB1R = 11;
-
     //***************************
     // QEA2 To Pin RP5
     //***************************
     RPINR16bits.QEA2R = 5;
-
     //***************************
     // QEB2 To Pin RP6
     //***************************
     RPINR16bits.QEB2R = 6;
 
-
+    // UART
     //***************************
-    // Assign U1RX To Pin RP3, CTS tied Vss
+    // Assign U2RX To Pin RP3, CTS tied Vss
     //***************************
-    RPINR18bits.U1RXR = 3;
-    RPINR18bits.U1CTSR = 0x1f;
-
-    //***************************
-    // Assign U1Tx To Pin RP2
-    //***************************
-    RPOR1bits.RP2R = 3;
-
-    //***************************
-    // Assign U2RX To Pin RP7, CTS tied Vss
-    //***************************
-    RPINR19bits.U2RXR = 7;
+    RPINR19bits.U2RXR = 3;
     RPINR19bits.U2CTSR = 0x1f;
+    //***************************
+    // Assign U2Tx To Pin RP2
+    //***************************
+    RPOR1bits.RP2R = 5;
 
     //***************************
-    // Assign U2Tx To Pin RP8
+    // Assign U1RX To Pin RP21, CTS tied Vss
     //***************************
-    RPOR4bits.RP8R = 5;
+    RPINR18bits.U1RXR = 21;
+    RPINR18bits.U1CTSR = 0x1f;
+    //***************************
+    // Assign U1Tx To Pin RP20
+    //***************************
+    RPOR10bits.RP20R = 3;
 
     //************************************************************
     // Lock Registers
@@ -159,19 +173,55 @@ void InitApp(void) {
                 "bset OSCCON, #6");
     // *********************************** Peripheral PIN selection
 
+    /* Setup port direction */
 
-    /* Setup analog functionality and port direction */
-    _TRISA4 = 0; //Led
-    _TRISB2 = 0; //Enable - Motor 1
-    _TRISB3 = 0; //Enable - Motor 2
-    _TRISB5 = 1;
-    _TRISB6 = 1;
+    // weak pullups enable
+    CNPU1 = 0xffff;
+    CNPU2 = 0xffff;
+
+    // led
+    _TRISC6 = 0; //Led1
+    _TRISC7 = 0; //Led2
+    _TRISC8 = 0; //Led3
+    _TRISC9 = 0; //Led4
+
+    // encoder
     _TRISB10 = 1;
     _TRISB11 = 1;
-    // TODO Add analog functionality for ADC
+    _TRISB6 = 1;
+    _TRISB5 = 1;
 
-    /* Initialize peripherals */
-    LED = 0;
+    // H bridge
+    _TRISA7 = 0; //Enable - Motor 1
+    _TRISA10 = 0; //Enable - Motor 2
+    _TRISB12 = 0; // PWM1 +
+    _TRISB12 = 0; // PWM1 -
+    _TRISB12 = 0; // PWM2 +
+    _TRISB12 = 0; // PWM2 -
+
+    // GPIO
+    _TRISC0 = 1; // GPIO1
+    _TRISC1 = 1; // GPIO2
+    _TRISC2 = 1; // GPIO3
+    _TRISC3 = 1; // GPIO4
+    _TRISA4 = 1; // GPIO5
+    _TRISB4 = 1; // GPIO6
+    _TRISB7 = 1; // GPIO7
+    _TRISB8 = 1; // GPIO8
+    _TRISB9 = 1; // HALT
+
+    // ADC
+    _TRISA0 = 1; // CH1
+    _TRISA1 = 1; // CH2
+    _TRISB0 = 1; // CH3
+    _TRISB1 = 1; // CH4
+
+    /* Initialize peripherals */ // da controllare e adattare
+    LED1 = 0;
+    LED2 = 0;
+    LED3 = 0;
+    LED4 = 0;
+    
     InitPWM(); //Open PWM
     InitQEI1(); //Open QEI1
     InitQEI2(); //Open QEI2
