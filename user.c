@@ -28,7 +28,8 @@ RP8	 RB8  U1TX
 RP2  RB2  U2TX	(XBEE o 485)
 RP3  RB3  U1RX	(XBEE o 485)
 
-RP9  RB9  DIR
+RP8  RB8  SCL
+RP9  RB9  SDA
 
 RP10 RB10 PWM-E1
 RP11 RB11 PWM-E2
@@ -182,6 +183,8 @@ void InitApp(void) {
 
     InitUART1(); //Open UART1 for serial comunication
     InitDMA1(); //Open DMA1 for Tx UART1
+
+    InitI2C(); //GO- Open I2C module
 
     InitTimer1(); //Open Timer1 for clock system
     InitInterrupts(); //Start others interrupts

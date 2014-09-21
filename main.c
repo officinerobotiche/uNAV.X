@@ -46,6 +46,7 @@
 #include "motors_PID.h"
 #include "high_level_control.h"
 #include "parsing_packet.h"
+#include "I2c.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
