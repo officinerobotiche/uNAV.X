@@ -23,8 +23,11 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
+/*! Pointer to function, initialized for pkg_header */
 int (*pkg_parse) (unsigned char inchar) = &pkg_header;
+/*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
+/*! Receive packet */
 packet_t receive_pkg;
 char receive_header;
 unsigned int index_data = 0;
@@ -34,24 +37,43 @@ error_pkg_t serial_error;
 /* Comunication Functions                                                     */
 /******************************************************************************/
 
-/* Data structure:
- * ------------------------------------------------
- * | HEADER | LENGTH |       DATA           | CKS |
- * ------------------------------------------------
- *     1        2             3 -> n          n+1
+/**
+ * Init buffer serial_error to zero
  */
-
 void init_buff_serial_error(){
     memset(serial_error.number, 0, BUFF_SERIAL_ERROR);
 }
 
+/**
+ * Function called on _U1RXInterrupt for decode packet
+ * Data structure:
+ * ------------------------------------------------
+ * | HEADER | LENGTH |       DATA           | CKS |
+ * ------------------------------------------------
+ *     1        2             3 -> n          n+1
+ *
+ * Only element of packet have a relative function to decode
+ * 1) Header -> pkg_header
+ * 2) Length -> pkg_length
+ * 3 to n+1) Data -> pkg_data
+ * @param rxchar char character received from interrupt
+ * @return boolean result from pointer function called on decode
+ */
 int decode_pkgs(unsigned char rxchar) {
     return (*pkg_parse)(rxchar);
 }
 
+/**
+ * First function to decode Header from Serial interrupt
+ * Verify if rxchar is a HEADER_SYNC or HEADER_ASYNC then
+ * update pointer function pkg_parse for next function pkg_length
+ * and save type of header, else save error header and going to pkg_error
+ * @param rxchar character received from interrupt
+ * @return boolean result, only false
+ */
 int pkg_header(unsigned char rxchar) {
     if ((rxchar == HEADER_SYNC) || (rxchar == HEADER_ASYNC)) {
-        receive_header = rxchar;
+        receive_header = rxchar;    // Save
         pkg_parse = &pkg_length;
         return false;
     } else {
@@ -59,6 +81,14 @@ int pkg_header(unsigned char rxchar) {
     }
 }
 
+/**
+ * Second function for decode packet, this function is to able to verify
+ * length of packet. If length (rxchar) is larger than MAX_RX_BUFF
+ * call function pkg_error with ERROR_LENGTH. Else change function to call
+ * pkg_data and save information on length in receive_pkg
+ * @param rxchar character received from interrupt
+ * @return boolean result, only false
+ */
 int pkg_length(unsigned char rxchar) {
     if (rxchar > MAX_RX_BUFF) {
         return pkg_error(ERROR_LENGTH);
@@ -69,6 +99,13 @@ int pkg_length(unsigned char rxchar) {
     }
 }
 
+/**
+ * Function for decode packet, save in receive_pkg.buffer all bytes. In (n+1)
+ * start pkg_checksum() function to verify correct receive packet.
+ * @param rxchar character received from interrupt
+ * @return boolean result. True if don't have any error else start pkg_error
+ * and return false.
+ */
 int pkg_data(unsigned char rxchar) {
     int cks_clc;
     if ((index_data + 1) == (receive_pkg.length + 1)) {
@@ -87,6 +124,12 @@ int pkg_data(unsigned char rxchar) {
     }
 }
 
+/**
+ * Reset all function about decode packet and save increase counter error
+ * for type.
+ * @param error Number of type error.
+ * @return same number error.
+ */
 int pkg_error(int error) {
     index_data = 0;
     pkg_parse = &pkg_header; //Restart parse serial packet
@@ -94,6 +137,14 @@ int pkg_error(int error) {
     return error;
 }
 
+/**
+ * Function to evaluate checksum. Count all bytes in a Buffer and return
+ * number for checksum.
+ * @param Buffer It's a buffer to sum all bytes
+ * @param FirstIndx The number for first element buffer to count all bytes.
+ * @param LastIndx The number for last element buffer.
+ * @return number evaluated for sum bytes
+ */
 unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int LastIndx) {
     unsigned char ChkSum = 0;
     int ChkCnt;
@@ -104,28 +155,25 @@ unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int La
 }
 
 /**
- * Write a string to the serial device.
- * \param s string to write
- * \throws boost::system::system_error on failure
+ * Function to send a packet. Copy on DMA buffer all bytes 
+ * @param header type of packet. SYNC or ASYNC packet
+ * @param packet packet to send.
  */
 void pkg_send(char header, packet_t packet) {
-    /* on packet:
-     * -------------------------- ---------------------------- -----------------------
-     * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
-     * -------------------------- ---------------------------- -----------------------
-     *    1        2 -> length    length+1 length+2 length+3   ....
-     */
 
+    //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
 
     int i;
     BufferTx[0] = header;
     BufferTx[1] = packet.length;
 
+    //Copy all element to DMA buffer
     for (i = 0; i < packet.length; i++) {
         BufferTx[i + HEAD_PKG] = packet.buffer[i];
     }
 
+    // Create a checksum
     BufferTx[packet.length + HEAD_PKG] = pkg_checksum(BufferTx, HEAD_PKG, packet.length + HEAD_PKG);
 
     DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests

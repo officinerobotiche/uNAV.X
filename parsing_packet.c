@@ -114,6 +114,15 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t 
     } else sendOtherData(list_send, len, info);
 }
 
+/**
+ * on packet:
+ * -------------------------- ---------------------------- -----------------------
+ * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
+ * -------------------------- ---------------------------- -----------------------
+ *    1        2 -> length    length+1 length+2 length+3   ....
+ *
+ * @return
+ */
 int parse_packet() {
     int i;
     unsigned int t = TMR1; // Timing function
