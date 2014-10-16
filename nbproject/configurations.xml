@@ -4,22 +4,24 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <logicalFolder name="f2" displayName="Comunication" projectFiles="true">
-        <itemPath>serial.h</itemPath>
-        <itemPath>parsing_packet.h</itemPath>
-        <itemPath>decode_packet.h</itemPath>
+      <logicalFolder name="f2" displayName="communication" projectFiles="true">
+        <itemPath>includes/communication/decode_packet.h</itemPath>
+        <itemPath>includes/communication/parsing_packet.h</itemPath>
+        <itemPath>includes/communication/serial.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f4" displayName="control" projectFiles="true">
+        <itemPath>includes/control/high_level_control.h</itemPath>
+        <itemPath>includes/control/motors_PID.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
-        <itemPath>packet.h</itemPath>
-        <itemPath>motion.h</itemPath>
+        <itemPath>includes/packet/packet.h</itemPath>
+        <itemPath>includes/packet/motion.h</itemPath>
       </logicalFolder>
-      <logicalFolder name="f3" displayName="System" projectFiles="true">
-        <itemPath>system.h</itemPath>
-        <itemPath>user.h</itemPath>
+      <logicalFolder name="f3" displayName="system" projectFiles="true">
+        <itemPath>includes/system/user.h</itemPath>
+        <itemPath>includes/system/system.h</itemPath>
       </logicalFolder>
-      <itemPath>motors_PID.h</itemPath>
-      <itemPath>high_level_control.h</itemPath>
-      <itemPath>I2c.h</itemPath>
+      <itemPath>includes/I2c.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LibraryFiles"
                    displayName="Library Files"
@@ -37,22 +39,24 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <logicalFolder name="f1" displayName="Comunication" projectFiles="true">
-        <itemPath>parsing_packet.c</itemPath>
-        <itemPath>serial.c</itemPath>
-        <itemPath>decode_packet.c</itemPath>
+      <logicalFolder name="f1" displayName="communication" projectFiles="true">
+        <itemPath>src/communication/decode_packet.c</itemPath>
+        <itemPath>src/communication/parsing_packet.c</itemPath>
+        <itemPath>src/communication/serial.c</itemPath>
       </logicalFolder>
-      <logicalFolder name="f2" displayName="System" projectFiles="true">
-        <itemPath>system.c</itemPath>
-        <itemPath>interrupts.c</itemPath>
-        <itemPath>configuration_bits.c</itemPath>
-        <itemPath>traps.c</itemPath>
-        <itemPath>user.c</itemPath>
+      <logicalFolder name="f3" displayName="control" projectFiles="true">
+        <itemPath>src/control/high_level_control.c</itemPath>
+        <itemPath>src/control/motors_PID.c</itemPath>
       </logicalFolder>
-      <itemPath>main.c</itemPath>
-      <itemPath>motors_PID.c</itemPath>
-      <itemPath>high_level_control.c</itemPath>
-      <itemPath>I2c.c</itemPath>
+      <logicalFolder name="f2" displayName="system" projectFiles="true">
+        <itemPath>src/system/system.c</itemPath>
+        <itemPath>src/system/traps.c</itemPath>
+        <itemPath>src/system/user.c</itemPath>
+        <itemPath>src/system/configuration_bits.c</itemPath>
+        <itemPath>src/system/interrupts.c</itemPath>
+      </logicalFolder>
+      <itemPath>src/I2c.c</itemPath>
+      <itemPath>src/main.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -61,8 +65,6 @@
     </logicalFolder>
     <itemPath>getting_started.txt</itemPath>
     <itemPath>legal_disclaimer.txt</itemPath>
-    <itemPath>project_information.txt</itemPath>
-    <itemPath>program_architecture.txt</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -74,7 +76,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.22</languageToolchainVersion>
+        <languageToolchainVersion></languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -113,7 +115,7 @@
         <property key="enable-short-double" value="false"/>
         <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
-        <property key="extra-include-directories" value=""/>
+        <property key="extra-include-directories" value="includes"/>
         <property key="isolate-each-function" value="false"/>
         <property key="keep-inline" value="false"/>
         <property key="oXC16gcc-align-arr" value="false"/>

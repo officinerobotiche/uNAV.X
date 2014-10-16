@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=parsing_packet.c serial.c decode_packet.c system.c interrupts.c configuration_bits.c traps.c user.c main.c motors_PID.c high_level_control.c I2c.c
+SOURCEFILES_QUOTED_IF_SPACED=src/I2c.c src/main.c src/communication/decode_packet.c src/communication/parsing_packet.c src/communication/serial.c src/system/system.c src/system/traps.c src/system/user.c src/system/configuration_bits.c src/system/interrupts.c src/control/high_level_control.c src/control/motors_PID.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/parsing_packet.o ${OBJECTDIR}/serial.o ${OBJECTDIR}/decode_packet.o ${OBJECTDIR}/system.o ${OBJECTDIR}/interrupts.o ${OBJECTDIR}/configuration_bits.o ${OBJECTDIR}/traps.o ${OBJECTDIR}/user.o ${OBJECTDIR}/main.o ${OBJECTDIR}/motors_PID.o ${OBJECTDIR}/high_level_control.o ${OBJECTDIR}/I2c.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/parsing_packet.o.d ${OBJECTDIR}/serial.o.d ${OBJECTDIR}/decode_packet.o.d ${OBJECTDIR}/system.o.d ${OBJECTDIR}/interrupts.o.d ${OBJECTDIR}/configuration_bits.o.d ${OBJECTDIR}/traps.o.d ${OBJECTDIR}/user.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/motors_PID.o.d ${OBJECTDIR}/high_level_control.o.d ${OBJECTDIR}/I2c.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/I2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/communication/decode_packet.o ${OBJECTDIR}/src/communication/parsing_packet.o ${OBJECTDIR}/src/communication/serial.o ${OBJECTDIR}/src/system/system.o ${OBJECTDIR}/src/system/traps.o ${OBJECTDIR}/src/system/user.o ${OBJECTDIR}/src/system/configuration_bits.o ${OBJECTDIR}/src/system/interrupts.o ${OBJECTDIR}/src/control/high_level_control.o ${OBJECTDIR}/src/control/motors_PID.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/src/I2c.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/communication/decode_packet.o.d ${OBJECTDIR}/src/communication/parsing_packet.o.d ${OBJECTDIR}/src/communication/serial.o.d ${OBJECTDIR}/src/system/system.o.d ${OBJECTDIR}/src/system/traps.o.d ${OBJECTDIR}/src/system/user.o.d ${OBJECTDIR}/src/system/configuration_bits.o.d ${OBJECTDIR}/src/system/interrupts.o.d ${OBJECTDIR}/src/control/high_level_control.o.d ${OBJECTDIR}/src/control/motors_PID.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/parsing_packet.o ${OBJECTDIR}/serial.o ${OBJECTDIR}/decode_packet.o ${OBJECTDIR}/system.o ${OBJECTDIR}/interrupts.o ${OBJECTDIR}/configuration_bits.o ${OBJECTDIR}/traps.o ${OBJECTDIR}/user.o ${OBJECTDIR}/main.o ${OBJECTDIR}/motors_PID.o ${OBJECTDIR}/high_level_control.o ${OBJECTDIR}/I2c.o
+OBJECTFILES=${OBJECTDIR}/src/I2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/communication/decode_packet.o ${OBJECTDIR}/src/communication/parsing_packet.o ${OBJECTDIR}/src/communication/serial.o ${OBJECTDIR}/src/system/system.o ${OBJECTDIR}/src/system/traps.o ${OBJECTDIR}/src/system/user.o ${OBJECTDIR}/src/system/configuration_bits.o ${OBJECTDIR}/src/system/interrupts.o ${OBJECTDIR}/src/control/high_level_control.o ${OBJECTDIR}/src/control/motors_PID.o
 
 # Source Files
-SOURCEFILES=parsing_packet.c serial.c decode_packet.c system.c interrupts.c configuration_bits.c traps.c user.c main.c motors_PID.c high_level_control.c I2c.c
+SOURCEFILES=src/I2c.c src/main.c src/communication/decode_packet.c src/communication/parsing_packet.c src/communication/serial.c src/system/system.c src/system/traps.c src/system/user.c src/system/configuration_bits.c src/system/interrupts.c src/control/high_level_control.c src/control/motors_PID.c
 
 
 CFLAGS=
@@ -82,174 +82,174 @@ MP_LINKER_FILE_OPTION=,--script=p33FJ128MC804.gld
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/parsing_packet.o: parsing_packet.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/parsing_packet.o.d 
-	@${RM} ${OBJECTDIR}/parsing_packet.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  parsing_packet.c  -o ${OBJECTDIR}/parsing_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/parsing_packet.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/parsing_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/I2c.o: src/I2c.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src 
+	@${RM} ${OBJECTDIR}/src/I2c.o.d 
+	@${RM} ${OBJECTDIR}/src/I2c.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/I2c.c  -o ${OBJECTDIR}/src/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/I2c.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/serial.o: serial.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/serial.o.d 
-	@${RM} ${OBJECTDIR}/serial.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  serial.c  -o ${OBJECTDIR}/serial.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/serial.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/serial.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/main.o: src/main.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src 
+	@${RM} ${OBJECTDIR}/src/main.o.d 
+	@${RM} ${OBJECTDIR}/src/main.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/main.c  -o ${OBJECTDIR}/src/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/main.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/decode_packet.o: decode_packet.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/decode_packet.o.d 
-	@${RM} ${OBJECTDIR}/decode_packet.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  decode_packet.c  -o ${OBJECTDIR}/decode_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/decode_packet.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/decode_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/communication/decode_packet.o: src/communication/decode_packet.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/communication 
+	@${RM} ${OBJECTDIR}/src/communication/decode_packet.o.d 
+	@${RM} ${OBJECTDIR}/src/communication/decode_packet.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/decode_packet.c  -o ${OBJECTDIR}/src/communication/decode_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/decode_packet.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/communication/decode_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/system.o: system.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/system.o.d 
-	@${RM} ${OBJECTDIR}/system.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  system.c  -o ${OBJECTDIR}/system.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/system.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/system.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/communication/parsing_packet.o: src/communication/parsing_packet.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/communication 
+	@${RM} ${OBJECTDIR}/src/communication/parsing_packet.o.d 
+	@${RM} ${OBJECTDIR}/src/communication/parsing_packet.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/parsing_packet.c  -o ${OBJECTDIR}/src/communication/parsing_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/parsing_packet.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/communication/parsing_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/interrupts.o: interrupts.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/interrupts.o.d 
-	@${RM} ${OBJECTDIR}/interrupts.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  interrupts.c  -o ${OBJECTDIR}/interrupts.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/interrupts.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/interrupts.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/communication/serial.o: src/communication/serial.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/communication 
+	@${RM} ${OBJECTDIR}/src/communication/serial.o.d 
+	@${RM} ${OBJECTDIR}/src/communication/serial.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/serial.c  -o ${OBJECTDIR}/src/communication/serial.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/serial.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/communication/serial.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/configuration_bits.o: configuration_bits.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/configuration_bits.o.d 
-	@${RM} ${OBJECTDIR}/configuration_bits.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  configuration_bits.c  -o ${OBJECTDIR}/configuration_bits.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/configuration_bits.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/configuration_bits.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/system.o: src/system/system.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/system.o.d 
+	@${RM} ${OBJECTDIR}/src/system/system.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/system.c  -o ${OBJECTDIR}/src/system/system.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/system.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/system.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/traps.o: traps.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/traps.o.d 
-	@${RM} ${OBJECTDIR}/traps.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  traps.c  -o ${OBJECTDIR}/traps.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/traps.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/traps.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/traps.o: src/system/traps.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/traps.o.d 
+	@${RM} ${OBJECTDIR}/src/system/traps.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/traps.c  -o ${OBJECTDIR}/src/system/traps.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/traps.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/traps.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/user.o: user.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/user.o.d 
-	@${RM} ${OBJECTDIR}/user.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  user.c  -o ${OBJECTDIR}/user.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/user.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/user.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/user.o: src/system/user.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/user.o.d 
+	@${RM} ${OBJECTDIR}/src/system/user.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/user.c  -o ${OBJECTDIR}/src/system/user.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/user.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/user.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/main.o.d 
-	@${RM} ${OBJECTDIR}/main.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  main.c  -o ${OBJECTDIR}/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/configuration_bits.o: src/system/configuration_bits.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/configuration_bits.o.d 
+	@${RM} ${OBJECTDIR}/src/system/configuration_bits.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/configuration_bits.c  -o ${OBJECTDIR}/src/system/configuration_bits.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/configuration_bits.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/configuration_bits.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/motors_PID.o: motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/motors_PID.o.d 
-	@${RM} ${OBJECTDIR}/motors_PID.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  motors_PID.c  -o ${OBJECTDIR}/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/motors_PID.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/interrupts.o: src/system/interrupts.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/interrupts.o.d 
+	@${RM} ${OBJECTDIR}/src/system/interrupts.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/interrupts.c  -o ${OBJECTDIR}/src/system/interrupts.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/interrupts.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/interrupts.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/high_level_control.o: high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/high_level_control.o.d 
-	@${RM} ${OBJECTDIR}/high_level_control.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  high_level_control.c  -o ${OBJECTDIR}/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/high_level_control.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/control/high_level_control.o: src/control/high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o.d 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/high_level_control.c  -o ${OBJECTDIR}/src/control/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/high_level_control.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/I2c.o: I2c.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/I2c.o.d 
-	@${RM} ${OBJECTDIR}/I2c.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  I2c.c  -o ${OBJECTDIR}/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/I2c.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/control/motors_PID.o: src/control/motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o.d 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/motors_PID.c  -o ${OBJECTDIR}/src/control/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/motors_PID.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 else
-${OBJECTDIR}/parsing_packet.o: parsing_packet.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/parsing_packet.o.d 
-	@${RM} ${OBJECTDIR}/parsing_packet.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  parsing_packet.c  -o ${OBJECTDIR}/parsing_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/parsing_packet.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/parsing_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/I2c.o: src/I2c.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src 
+	@${RM} ${OBJECTDIR}/src/I2c.o.d 
+	@${RM} ${OBJECTDIR}/src/I2c.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/I2c.c  -o ${OBJECTDIR}/src/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/I2c.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/serial.o: serial.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/serial.o.d 
-	@${RM} ${OBJECTDIR}/serial.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  serial.c  -o ${OBJECTDIR}/serial.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/serial.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/serial.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/main.o: src/main.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src 
+	@${RM} ${OBJECTDIR}/src/main.o.d 
+	@${RM} ${OBJECTDIR}/src/main.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/main.c  -o ${OBJECTDIR}/src/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/main.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/decode_packet.o: decode_packet.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/decode_packet.o.d 
-	@${RM} ${OBJECTDIR}/decode_packet.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  decode_packet.c  -o ${OBJECTDIR}/decode_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/decode_packet.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/decode_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/communication/decode_packet.o: src/communication/decode_packet.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/communication 
+	@${RM} ${OBJECTDIR}/src/communication/decode_packet.o.d 
+	@${RM} ${OBJECTDIR}/src/communication/decode_packet.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/decode_packet.c  -o ${OBJECTDIR}/src/communication/decode_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/decode_packet.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/communication/decode_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/system.o: system.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/system.o.d 
-	@${RM} ${OBJECTDIR}/system.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  system.c  -o ${OBJECTDIR}/system.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/system.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/system.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/communication/parsing_packet.o: src/communication/parsing_packet.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/communication 
+	@${RM} ${OBJECTDIR}/src/communication/parsing_packet.o.d 
+	@${RM} ${OBJECTDIR}/src/communication/parsing_packet.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/parsing_packet.c  -o ${OBJECTDIR}/src/communication/parsing_packet.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/parsing_packet.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/communication/parsing_packet.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/interrupts.o: interrupts.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/interrupts.o.d 
-	@${RM} ${OBJECTDIR}/interrupts.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  interrupts.c  -o ${OBJECTDIR}/interrupts.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/interrupts.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/interrupts.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/communication/serial.o: src/communication/serial.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/communication 
+	@${RM} ${OBJECTDIR}/src/communication/serial.o.d 
+	@${RM} ${OBJECTDIR}/src/communication/serial.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/serial.c  -o ${OBJECTDIR}/src/communication/serial.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/serial.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/communication/serial.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/configuration_bits.o: configuration_bits.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/configuration_bits.o.d 
-	@${RM} ${OBJECTDIR}/configuration_bits.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  configuration_bits.c  -o ${OBJECTDIR}/configuration_bits.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/configuration_bits.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/configuration_bits.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/system.o: src/system/system.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/system.o.d 
+	@${RM} ${OBJECTDIR}/src/system/system.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/system.c  -o ${OBJECTDIR}/src/system/system.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/system.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/system.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/traps.o: traps.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/traps.o.d 
-	@${RM} ${OBJECTDIR}/traps.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  traps.c  -o ${OBJECTDIR}/traps.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/traps.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/traps.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/traps.o: src/system/traps.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/traps.o.d 
+	@${RM} ${OBJECTDIR}/src/system/traps.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/traps.c  -o ${OBJECTDIR}/src/system/traps.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/traps.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/traps.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/user.o: user.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/user.o.d 
-	@${RM} ${OBJECTDIR}/user.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  user.c  -o ${OBJECTDIR}/user.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/user.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/user.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/user.o: src/system/user.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/user.o.d 
+	@${RM} ${OBJECTDIR}/src/system/user.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/user.c  -o ${OBJECTDIR}/src/system/user.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/user.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/user.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/main.o: main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/main.o.d 
-	@${RM} ${OBJECTDIR}/main.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  main.c  -o ${OBJECTDIR}/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/main.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/configuration_bits.o: src/system/configuration_bits.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/configuration_bits.o.d 
+	@${RM} ${OBJECTDIR}/src/system/configuration_bits.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/configuration_bits.c  -o ${OBJECTDIR}/src/system/configuration_bits.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/configuration_bits.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/configuration_bits.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/motors_PID.o: motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/motors_PID.o.d 
-	@${RM} ${OBJECTDIR}/motors_PID.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  motors_PID.c  -o ${OBJECTDIR}/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/motors_PID.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/system/interrupts.o: src/system/interrupts.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/system 
+	@${RM} ${OBJECTDIR}/src/system/interrupts.o.d 
+	@${RM} ${OBJECTDIR}/src/system/interrupts.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/interrupts.c  -o ${OBJECTDIR}/src/system/interrupts.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/interrupts.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/system/interrupts.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/high_level_control.o: high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/high_level_control.o.d 
-	@${RM} ${OBJECTDIR}/high_level_control.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  high_level_control.c  -o ${OBJECTDIR}/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/high_level_control.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/control/high_level_control.o: src/control/high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o.d 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/high_level_control.c  -o ${OBJECTDIR}/src/control/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/high_level_control.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/I2c.o: I2c.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR} 
-	@${RM} ${OBJECTDIR}/I2c.o.d 
-	@${RM} ${OBJECTDIR}/I2c.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  I2c.c  -o ${OBJECTDIR}/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/I2c.o.d"        -g -omf=elf -mlarge-data -O0 -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/control/motors_PID.o: src/control/motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o.d 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/motors_PID.c  -o ${OBJECTDIR}/src/control/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/motors_PID.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 endif
 
