@@ -45,17 +45,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=src/I2c.c src/main.c src/communication/decode_packet.c src/communication/parsing_packet.c src/communication/serial.c src/system/system.c src/system/traps.c src/system/user.c src/system/configuration_bits.c src/system/interrupts.c src/control/high_level_control.c src/control/motors_PID.c
+SOURCEFILES_QUOTED_IF_SPACED=src/communication/decode_packet.c src/communication/parsing_packet.c src/communication/serial.c src/control/high_level_control.c src/control/motors_PID.c src/system/system.c src/system/traps.c src/system/user.c src/system/configuration_bits.c src/system/interrupts.c src/I2c.c src/main.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/I2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/communication/decode_packet.o ${OBJECTDIR}/src/communication/parsing_packet.o ${OBJECTDIR}/src/communication/serial.o ${OBJECTDIR}/src/system/system.o ${OBJECTDIR}/src/system/traps.o ${OBJECTDIR}/src/system/user.o ${OBJECTDIR}/src/system/configuration_bits.o ${OBJECTDIR}/src/system/interrupts.o ${OBJECTDIR}/src/control/high_level_control.o ${OBJECTDIR}/src/control/motors_PID.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/src/I2c.o.d ${OBJECTDIR}/src/main.o.d ${OBJECTDIR}/src/communication/decode_packet.o.d ${OBJECTDIR}/src/communication/parsing_packet.o.d ${OBJECTDIR}/src/communication/serial.o.d ${OBJECTDIR}/src/system/system.o.d ${OBJECTDIR}/src/system/traps.o.d ${OBJECTDIR}/src/system/user.o.d ${OBJECTDIR}/src/system/configuration_bits.o.d ${OBJECTDIR}/src/system/interrupts.o.d ${OBJECTDIR}/src/control/high_level_control.o.d ${OBJECTDIR}/src/control/motors_PID.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/src/communication/decode_packet.o ${OBJECTDIR}/src/communication/parsing_packet.o ${OBJECTDIR}/src/communication/serial.o ${OBJECTDIR}/src/control/high_level_control.o ${OBJECTDIR}/src/control/motors_PID.o ${OBJECTDIR}/src/system/system.o ${OBJECTDIR}/src/system/traps.o ${OBJECTDIR}/src/system/user.o ${OBJECTDIR}/src/system/configuration_bits.o ${OBJECTDIR}/src/system/interrupts.o ${OBJECTDIR}/src/I2c.o ${OBJECTDIR}/src/main.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/src/communication/decode_packet.o.d ${OBJECTDIR}/src/communication/parsing_packet.o.d ${OBJECTDIR}/src/communication/serial.o.d ${OBJECTDIR}/src/control/high_level_control.o.d ${OBJECTDIR}/src/control/motors_PID.o.d ${OBJECTDIR}/src/system/system.o.d ${OBJECTDIR}/src/system/traps.o.d ${OBJECTDIR}/src/system/user.o.d ${OBJECTDIR}/src/system/configuration_bits.o.d ${OBJECTDIR}/src/system/interrupts.o.d ${OBJECTDIR}/src/I2c.o.d ${OBJECTDIR}/src/main.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/src/I2c.o ${OBJECTDIR}/src/main.o ${OBJECTDIR}/src/communication/decode_packet.o ${OBJECTDIR}/src/communication/parsing_packet.o ${OBJECTDIR}/src/communication/serial.o ${OBJECTDIR}/src/system/system.o ${OBJECTDIR}/src/system/traps.o ${OBJECTDIR}/src/system/user.o ${OBJECTDIR}/src/system/configuration_bits.o ${OBJECTDIR}/src/system/interrupts.o ${OBJECTDIR}/src/control/high_level_control.o ${OBJECTDIR}/src/control/motors_PID.o
+OBJECTFILES=${OBJECTDIR}/src/communication/decode_packet.o ${OBJECTDIR}/src/communication/parsing_packet.o ${OBJECTDIR}/src/communication/serial.o ${OBJECTDIR}/src/control/high_level_control.o ${OBJECTDIR}/src/control/motors_PID.o ${OBJECTDIR}/src/system/system.o ${OBJECTDIR}/src/system/traps.o ${OBJECTDIR}/src/system/user.o ${OBJECTDIR}/src/system/configuration_bits.o ${OBJECTDIR}/src/system/interrupts.o ${OBJECTDIR}/src/I2c.o ${OBJECTDIR}/src/main.o
 
 # Source Files
-SOURCEFILES=src/I2c.c src/main.c src/communication/decode_packet.c src/communication/parsing_packet.c src/communication/serial.c src/system/system.c src/system/traps.c src/system/user.c src/system/configuration_bits.c src/system/interrupts.c src/control/high_level_control.c src/control/motors_PID.c
+SOURCEFILES=src/communication/decode_packet.c src/communication/parsing_packet.c src/communication/serial.c src/control/high_level_control.c src/control/motors_PID.c src/system/system.c src/system/traps.c src/system/user.c src/system/configuration_bits.c src/system/interrupts.c src/I2c.c src/main.c
 
 
 CFLAGS=
@@ -82,20 +82,6 @@ MP_LINKER_FILE_OPTION=,--script=p33FJ128MC804.gld
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/src/I2c.o: src/I2c.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/src 
-	@${RM} ${OBJECTDIR}/src/I2c.o.d 
-	@${RM} ${OBJECTDIR}/src/I2c.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/I2c.c  -o ${OBJECTDIR}/src/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/I2c.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/src/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-${OBJECTDIR}/src/main.o: src/main.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/src 
-	@${RM} ${OBJECTDIR}/src/main.o.d 
-	@${RM} ${OBJECTDIR}/src/main.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/main.c  -o ${OBJECTDIR}/src/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/main.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/src/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
 ${OBJECTDIR}/src/communication/decode_packet.o: src/communication/decode_packet.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/src/communication 
 	@${RM} ${OBJECTDIR}/src/communication/decode_packet.o.d 
@@ -116,6 +102,20 @@ ${OBJECTDIR}/src/communication/serial.o: src/communication/serial.c  nbproject/M
 	@${RM} ${OBJECTDIR}/src/communication/serial.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/serial.c  -o ${OBJECTDIR}/src/communication/serial.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/serial.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/src/communication/serial.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/src/control/high_level_control.o: src/control/high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o.d 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/high_level_control.c  -o ${OBJECTDIR}/src/control/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/high_level_control.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/src/control/motors_PID.o: src/control/motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o.d 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/motors_PID.c  -o ${OBJECTDIR}/src/control/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/motors_PID.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/src/system/system.o: src/system/system.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/src/system 
@@ -152,35 +152,21 @@ ${OBJECTDIR}/src/system/interrupts.o: src/system/interrupts.c  nbproject/Makefil
 	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/interrupts.c  -o ${OBJECTDIR}/src/system/interrupts.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/interrupts.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/src/system/interrupts.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/src/control/high_level_control.o: src/control/high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/src/control 
-	@${RM} ${OBJECTDIR}/src/control/high_level_control.o.d 
-	@${RM} ${OBJECTDIR}/src/control/high_level_control.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/high_level_control.c  -o ${OBJECTDIR}/src/control/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/high_level_control.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/src/control/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-${OBJECTDIR}/src/control/motors_PID.o: src/control/motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/src/control 
-	@${RM} ${OBJECTDIR}/src/control/motors_PID.o.d 
-	@${RM} ${OBJECTDIR}/src/control/motors_PID.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/motors_PID.c  -o ${OBJECTDIR}/src/control/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/motors_PID.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/src/control/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
-	
-else
 ${OBJECTDIR}/src/I2c.o: src/I2c.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/src 
 	@${RM} ${OBJECTDIR}/src/I2c.o.d 
 	@${RM} ${OBJECTDIR}/src/I2c.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/I2c.c  -o ${OBJECTDIR}/src/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/I2c.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/I2c.c  -o ${OBJECTDIR}/src/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/I2c.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/src/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/src/main.o: src/main.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/src 
 	@${RM} ${OBJECTDIR}/src/main.o.d 
 	@${RM} ${OBJECTDIR}/src/main.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/main.c  -o ${OBJECTDIR}/src/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/main.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/main.c  -o ${OBJECTDIR}/src/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/main.o.d"      -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1    -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/src/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
+else
 ${OBJECTDIR}/src/communication/decode_packet.o: src/communication/decode_packet.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/src/communication 
 	@${RM} ${OBJECTDIR}/src/communication/decode_packet.o.d 
@@ -201,6 +187,20 @@ ${OBJECTDIR}/src/communication/serial.o: src/communication/serial.c  nbproject/M
 	@${RM} ${OBJECTDIR}/src/communication/serial.o 
 	${MP_CC} $(MP_EXTRA_CC_PRE)  src/communication/serial.c  -o ${OBJECTDIR}/src/communication/serial.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/communication/serial.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/src/communication/serial.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/src/control/high_level_control.o: src/control/high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o.d 
+	@${RM} ${OBJECTDIR}/src/control/high_level_control.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/high_level_control.c  -o ${OBJECTDIR}/src/control/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/high_level_control.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+	
+${OBJECTDIR}/src/control/motors_PID.o: src/control/motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src/control 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o.d 
+	@${RM} ${OBJECTDIR}/src/control/motors_PID.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/motors_PID.c  -o ${OBJECTDIR}/src/control/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/motors_PID.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/control/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 ${OBJECTDIR}/src/system/system.o: src/system/system.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/src/system 
@@ -237,19 +237,19 @@ ${OBJECTDIR}/src/system/interrupts.o: src/system/interrupts.c  nbproject/Makefil
 	${MP_CC} $(MP_EXTRA_CC_PRE)  src/system/interrupts.c  -o ${OBJECTDIR}/src/system/interrupts.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/system/interrupts.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
 	@${FIXDEPS} "${OBJECTDIR}/src/system/interrupts.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/src/control/high_level_control.o: src/control/high_level_control.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/src/control 
-	@${RM} ${OBJECTDIR}/src/control/high_level_control.o.d 
-	@${RM} ${OBJECTDIR}/src/control/high_level_control.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/high_level_control.c  -o ${OBJECTDIR}/src/control/high_level_control.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/high_level_control.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/src/control/high_level_control.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/I2c.o: src/I2c.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src 
+	@${RM} ${OBJECTDIR}/src/I2c.o.d 
+	@${RM} ${OBJECTDIR}/src/I2c.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/I2c.c  -o ${OBJECTDIR}/src/I2c.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/I2c.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/I2c.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
-${OBJECTDIR}/src/control/motors_PID.o: src/control/motors_PID.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/src/control 
-	@${RM} ${OBJECTDIR}/src/control/motors_PID.o.d 
-	@${RM} ${OBJECTDIR}/src/control/motors_PID.o 
-	${MP_CC} $(MP_EXTRA_CC_PRE)  src/control/motors_PID.c  -o ${OBJECTDIR}/src/control/motors_PID.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/control/motors_PID.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
-	@${FIXDEPS} "${OBJECTDIR}/src/control/motors_PID.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
+${OBJECTDIR}/src/main.o: src/main.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/src 
+	@${RM} ${OBJECTDIR}/src/main.o.d 
+	@${RM} ${OBJECTDIR}/src/main.o 
+	${MP_CC} $(MP_EXTRA_CC_PRE)  src/main.c  -o ${OBJECTDIR}/src/main.o  -c -mcpu=$(MP_PROCESSOR_OPTION)  -MMD -MF "${OBJECTDIR}/src/main.o.d"        -g -omf=elf -mlarge-data -O0 -I"includes" -msmart-io=1 -Wall -msfr-warn=off
+	@${FIXDEPS} "${OBJECTDIR}/src/main.o.d" $(SILENT)  -rsi ${MP_CC_DIR}../ 
 	
 endif
 
