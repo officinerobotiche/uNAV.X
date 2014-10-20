@@ -35,7 +35,7 @@
 #include <pwm12.h>
 #include <string.h>
 
-#include "system/system.h"          /* variables/params used by system.c             */
+#include "system/system.h"   /* variables/params used by system.c             */
 #include "packet/packet.h"
 #include "communication/serial.h"
 

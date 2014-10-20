@@ -74,21 +74,85 @@
 functions, and other non-peripheral microcontroller initialization functions
 go here. */
 
+/**
+ * 
+ */
 void init_process(void);
+
+/**
+ * 
+ * @param number
+ * @return 
+ */
 process_buffer_t decodeNameProcess(int number);
+
+/**
+ * 
+ * @return 
+ */
 unsigned char update_priority(void);
+
+/**
+ * 
+ * @return 
+ */
 unsigned char update_frequency(void);
+
+/**
+ * 
+ * @param service
+ * @return 
+ */
 services_t services(services_t service);
-void ConfigureOscillator(void); /* Handles clock switching/osc initialization */
-void InitPWM(void); /* Initalization PWM for drive engine left & right */
-void InitQEI1(void); /* Initalization QEI - Motor left */
-void InitQEI2(void); /* Initalization QEI - Motor right */
-void InitIC1(void); /* Initialization Input Capture - Motor left */
-void InitIC2(void); /* Initialization Input Capture - Motor right */
-void InitTimer1(void); /* Initialization Timer 1 - Timer system */
-void InitTimer2(void); /* Initalization Timer 2 for IC (Input Capture) */
-void InitInterrupts(void); /* Initalization others interrupts */
-void InitUART1(void); /* Initialization UART1 for comunication */
-void InitDMA0(void); /* Initialization DMA0 for ADC current */
-void InitDMA1(void); /* Initialization DMA1 for UART Tx transmition */
-void InitADC(void); /* Initialization ADC for measure current motors*/
+
+/** Handles clock switching/osc initialization
+ */
+void ConfigureOscillator(void);
+
+/** Initalization PWM for drive engine left & right
+ */
+void InitPWM(void);
+
+/** Initalization QEI - Motor left
+ */
+void InitQEI1(void);
+
+/** Initalization QEI - Motor right
+ */
+void InitQEI2(void);
+
+/** Initialization Input Capture - Motor left
+ */
+void InitIC1(void);
+
+/** Initialization Input Capture - Motor right
+ */
+void InitIC2(void);
+
+/** Initialization Timer 1 - Timer system
+ */
+void InitTimer1(void);
+
+/** Initalization Timer 2 for IC (Input Capture)
+ */
+void InitTimer2(void);
+
+/** Initalization others interrupts
+ */
+void InitInterrupts(void);
+
+/** Initialization UART1 for comunication
+ */
+void InitUART1(void);
+
+/** Initialization DMA0 for ADC current
+ */
+void InitDMA0(void);
+
+/** Initialization DMA1 for UART Tx transmition
+ */
+void InitDMA1(void);
+
+/** Initialization ADC for measure current motors
+ */
+void InitADC(void);
