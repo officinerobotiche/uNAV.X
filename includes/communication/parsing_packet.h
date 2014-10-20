@@ -24,14 +24,70 @@ extern "C" {
 
 #include "packet/packet.h"
 
+    /**
+     * Init hashmap for decode packets
+     */
     void init_hashmap();
+    
+    /**
+     * on packet:
+     * -------------------------- ---------------------------- -----------------------
+     * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
+     * -------------------------- ---------------------------- -----------------------
+     *    1        2 -> length    length+1 length+2 length+3   ...
+     *
+     * @return
+     */
     int parse_packet();
+    
+    /**
+     * 
+     * @param list_send
+     * @param len
+     * @param info
+     */
     void saveData(information_packet_t* list_send, size_t len, information_packet_t info);
+    
+    /**
+     * 
+     * @param list_send
+     * @param len
+     * @param info
+     */
     void sendData(information_packet_t* list_send, size_t len, information_packet_t info);
+    
+    /**
+     * 
+     * @param list_send
+     * @param len
+     * @return 
+     */
     packet_t encoder(information_packet_t *list_send, size_t len);
+
+    /**
+     *
+     * @param list_send
+     * @return
+     */
     packet_t encoderSingle(information_packet_t list_send);
 
+    /**
+     *
+     * @param command
+     * @param option
+     * @param type
+     * @param packet
+     * @return
+     */
     information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_packet_t * packet);
+    
+    /**
+     * 
+     * @param command
+     * @param type
+     * @param packet
+     * @return 
+     */
     information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet);
 
 #ifdef	__cplusplus
