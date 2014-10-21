@@ -22,12 +22,20 @@
 extern "C" {
 #endif
 
+/******************************************************************************/
+/* System Level #define Macros                                                */
+/******************************************************************************/
+
     //add one byte for each char, two for each int, four for each float
-#define I2C_EEPROM_BUFF_SIZE_WRITE 7                    //$$$$$$$$$$ define buffer size according to variables used
-#define I2C_EEPROM_BUFF_SIZE_READ 7                     //$$$$$$$$$$ define buffer size according to variables used
+    #define I2C_EEPROM_BUFF_SIZE_WRITE 7   //$$$$$$$$$$ define buffer size according to variables used
+    #define I2C_EEPROM_BUFF_SIZE_READ 7    //$$$$$$$$$$ define buffer size according to variables used
 
-#define EEPROM_COMMAND 0X24                             //$$$$$$$$$$ define EEPROM address
+    #define EEPROM_COMMAND 0X24            //$$$$$$$$$$ define EEPROM address
 
+/******************************************************************************/
+/* System Function Prototypes                                                 */
+/******************************************************************************/
+    
     typedef char boolean;
     typedef void (*I2C_callbackFunc)(boolean);
 
