@@ -105,8 +105,8 @@ HLT -> RA9
 #include <dsp.h>             /* For DSP functionality                         */
 #include <string.h>
 #include <assert.h>
-#include "I2c.h"
-#include "system/user.h"            /* variables/params used by user.c               */
+#include "communication/I2c.h"
+#include "system/user.h"     /* variables/params used by user.c               */
 #include "system/system.h"
 
 /******************************************************************************/
@@ -252,7 +252,7 @@ void InitApp(void) {
     InitUART1(); //Open UART1 for serial comunication
     InitDMA1(); //Open DMA1 for Tx UART1
 
-    //InitI2C(); //GO- Open I2C module
+    InitI2C(); //GO- Open I2C module
 
     InitTimer1(); //Open Timer1 for clock system
     InitInterrupts(); //Start others interrupts
