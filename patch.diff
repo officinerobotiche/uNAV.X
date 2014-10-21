@@ -1,0 +1,70 @@
+From bbd5a0c6d49df0d25f94b6a945063e77a9e0d082 Mon Sep 17 00:00:00 2001
+From: Guido Ottaviani <guido@guiott.com>
+Date: Mon, 20 Oct 2014 16:09:11 +0200
+Subject: [PATCH] no message
+
+---
+ includes/I2c.h | 23 -----------------------
+ src/I2c.c      | 20 --------------------
+ 2 files changed, 43 deletions(-)
+ delete mode 100644 includes/I2c.h
+ delete mode 100644 src/I2c.c
+
+diff --git a/includes/I2c.h b/includes/I2c.h
+deleted file mode 100644
+index 099ffe8..0000000
+--- a/includes/I2c.h
++++ /dev/null
+@@ -1,23 +0,0 @@
+-/* 
+- * File:   I2c.h
+- * Author: guiott
+- *
+- * Created on 21 settembre 2014, 18.42
+- */
+-
+-#ifndef I2C_H
+-#define	I2C_H
+-
+-#ifdef	__cplusplus
+-extern "C" {
+-#endif
+-
+-    void I2cInit(void);
+-
+-
+-#ifdef	__cplusplus
+-}
+-#endif
+-
+-#endif	/* I2C_H */
+-
+diff --git a/src/I2c.c b/src/I2c.c
+deleted file mode 100644
+index b42f35b..0000000
+--- a/src/I2c.c
++++ /dev/null
+@@ -1,20 +0,0 @@
+-/* ////////////////////////////////////////////////////////////////////////////
+-** GUIOTT
+-** It contains all functions related to I2C communication
+-** It works fully interrupt driven using a queued method to execute
+-** multiple communication sequences with multiple peripherals
+-**
+-/////////////////////////////////////////////////////////////////////////////*/
+-
+-
+-/**
+- * initialize the I2C peripheral
+- *
+- * @param
+- *
+- * @out 
+- */
+-void InitI2C(void)
+-{
+-
+-}
+-- 
+1.8.4.2
+
