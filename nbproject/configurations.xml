@@ -8,6 +8,8 @@
         <itemPath>includes/communication/decode_packet.h</itemPath>
         <itemPath>includes/communication/parsing_packet.h</itemPath>
         <itemPath>includes/communication/serial.h</itemPath>
+        <itemPath>includes/communication/eeprom.h</itemPath>
+        <itemPath>includes/communication/I2c.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="control" projectFiles="true">
         <itemPath>includes/control/high_level_control.h</itemPath>
@@ -21,7 +23,6 @@
         <itemPath>includes/system/user.h</itemPath>
         <itemPath>includes/system/system.h</itemPath>
       </logicalFolder>
-      <itemPath>includes/I2c.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LibraryFiles"
                    displayName="Library Files"
@@ -43,6 +44,8 @@
         <itemPath>src/communication/decode_packet.c</itemPath>
         <itemPath>src/communication/parsing_packet.c</itemPath>
         <itemPath>src/communication/serial.c</itemPath>
+        <itemPath>src/communication/eeprom.c</itemPath>
+        <itemPath>src/communication/I2c.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="control" projectFiles="true">
         <itemPath>src/control/high_level_control.c</itemPath>
@@ -55,7 +58,6 @@
         <itemPath>src/system/configuration_bits.c</itemPath>
         <itemPath>src/system/interrupts.c</itemPath>
       </logicalFolder>
-      <itemPath>src/I2c.c</itemPath>
       <itemPath>src/main.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -66,6 +68,10 @@
     <itemPath>getting_started.txt</itemPath>
     <itemPath>legal_disclaimer.txt</itemPath>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>src/communication</Elem>
+    <Elem>includes/communication</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="XC16_dsPIC33FJ128MC804" type="2">
