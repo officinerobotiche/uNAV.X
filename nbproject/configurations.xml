@@ -8,8 +8,6 @@
         <itemPath>includes/communication/decode_packet.h</itemPath>
         <itemPath>includes/communication/parsing_packet.h</itemPath>
         <itemPath>includes/communication/serial.h</itemPath>
-        <itemPath>includes/communication/I2c.h</itemPath>
-        <itemPath>includes/communication/eeprom.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="control" projectFiles="true">
         <itemPath>includes/control/high_level_control.h</itemPath>
@@ -44,8 +42,6 @@
         <itemPath>src/communication/decode_packet.c</itemPath>
         <itemPath>src/communication/parsing_packet.c</itemPath>
         <itemPath>src/communication/serial.c</itemPath>
-        <itemPath>src/communication/I2c.c</itemPath>
-        <itemPath>src/communication/eeprom.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="control" projectFiles="true">
         <itemPath>src/control/high_level_control.c</itemPath>
