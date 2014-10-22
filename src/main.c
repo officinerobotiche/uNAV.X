@@ -38,7 +38,6 @@
 #include "communication/parsing_packet.h"
 #include "control/motors_PID.h"
 #include "control/high_level_control.h"
-#include "I2c.h" // <-- Why is it load here?
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
