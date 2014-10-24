@@ -10,5 +10,6 @@ nbactions.xml
 nb-configuration.xml
 
 ### MPLAB X ###
+disassembly/
 nbproject/Package-*.bash
 nbproject/Makefile-*.mk
