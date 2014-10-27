@@ -48,7 +48,7 @@
 /******************************************************************************/
 
 _FOSCSEL(FNOSC_PRI); /* Primary (XT, HS, EC) Oscillator */
-_FOSC(FCKSM_CSECMD & OSCIOFNC_OFF & POSCMD_XT);
+_FOSC(FCKSM_CSECMD & OSCIOFNC_OFF & POSCMD_HS);
 /** Clock Switching is enabled and Fail Safe Clock Monitor is disabled
  * OSC2 Pin Function: OSC2 is Clock Output
  * Primary Oscillator Mode : XT Crystal
