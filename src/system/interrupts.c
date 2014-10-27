@@ -212,7 +212,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
-    if (counter >= BLINK_LED) {
+    if (counter >= BLINKSW) {
         LED1 ^= 1;
         counter = 0;
     }
