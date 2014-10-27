@@ -47,7 +47,7 @@
 /* paste into this project.                                                   */
 /******************************************************************************/
 
-_FOSCSEL(FNOSC_PRI); /* Primary (XT, HS, EC) Oscillator */
+_FOSCSEL(FNOSC_PRIPLL); /* Primary (XT, HS, EC) Oscillator */
 _FOSC(FCKSM_CSECMD & OSCIOFNC_OFF & POSCMD_HS);
 /** Clock Switching is enabled and Fail Safe Clock Monitor is disabled
  * OSC2 Pin Function: OSC2 is Clock Output
