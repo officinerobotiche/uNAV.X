@@ -21,17 +21,19 @@
 
 /* Device header file */
 #if defined(__XC16__)
-    #include <xc.h>
+#include <xc.h>
 #elif defined(__C30__)
     #if defined(__dsPIC33E__)
-    	#include <p33Exxxx.h>
+        #include <p33Exxxx.h>
     #elif defined(__dsPIC33F__)
-    	#include <p33Fxxxx.h>
+        #include <p33Fxxxx.h>
     #endif
 #endif
 
 #include <stdint.h>        /* Includes uint16_t definition */
 #include <stdbool.h>       /* Includes true/false definition */
+#include <libpic30.h>      /* Includes for delay definition */
+#include "system/user.h"   /* User funct/params, such as InitApp */
 
 /******************************************************************************/
 /* Trap Function Prototypes                                                   */
@@ -89,36 +91,99 @@ void __attribute__((interrupt,no_auto_psv)) _SoftTrapError(void);
 /* www.microchip.com/codeexamples                                             */
 /******************************************************************************/
 
+/**
+ * Traps table
+ *
+ * *    TRAPS           F.ERR   LED1    LED2    LED3    LED4
+ * * _OscillatorFail    1       blink   1       0       0
+ * * _AltOscillatorFail 1       blink   1       0       0
+ * * _AddressError      2       blink   0       1       0
+ * * _AltAddressError   2       blink   0       1       0
+ * * _StackError        3       blink   1       1       0
+ * * _AltStackError     3       blink   1       1       0
+ * * _MathError         4       blink   0       0       1
+ * * _AltMathError      4       blink   0       0       1
+ * * _DMACError         5       blink   1       0       1
+ * * _AltDMACError      5       blink   1       0       1
+ * * _DefaultInterrupt  6       blink   0       1       1
+ *
+ */
+
 /* Primary (non-alternate) address error trap function declarations */
-void __attribute__((interrupt,no_auto_psv)) _OscillatorFail(void)
-{
-        INTCON1bits.OSCFAIL = 0;        /* Clear the trap flag */
-        while(1);
+void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
+    INTCON1bits.OSCFAIL = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(200000); // delay of 8 MHz RC oscillator
+        LED1 = 0;
+        __delay32(200000);
+        // fatal error 1
+        LED2 = 1;
+        LED3 = 0;
+        LED4 = 0;
+    }
 }
 
-void __attribute__((interrupt,no_auto_psv)) _AddressError(void)
-{
-        INTCON1bits.ADDRERR = 0;        /* Clear the trap flag */
-        while (1);
-}
-void __attribute__((interrupt,no_auto_psv)) _StackError(void)
-{
-        INTCON1bits.STKERR = 0;         /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
+    INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 2
+        LED2 = 0;
+        LED3 = 1;
+        LED4 = 0;
+    };
 }
 
-void __attribute__((interrupt,no_auto_psv)) _MathError(void)
-{
-        INTCON1bits.MATHERR = 0;        /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
+    INTCON1bits.STKERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 3
+        LED2 = 1;
+        LED3 = 1;
+        LED4 = 0;
+    };
+}
+
+void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
+    INTCON1bits.MATHERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 4
+        LED2 = 0;
+        LED3 = 0;
+        LED4 = 1;
+    };
 }
 
 #if defined(__HAS_DMA__)
 
-void __attribute__((interrupt,no_auto_psv)) _DMACError(void)
-{
-        INTCON1bits.DMACERR = 0;        /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
+    INTCON1bits.DMACERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 5
+        LED2 = 1;
+        LED3 = 0;
+        LED4 = 1;
+    };
 }
 
 #endif
@@ -126,39 +191,84 @@ void __attribute__((interrupt,no_auto_psv)) _DMACError(void)
 #if defined(__dsPIC33F__)
 
 /* Alternate address error trap function declarations */
-void __attribute__((interrupt,no_auto_psv)) _AltOscillatorFail(void)
-{
-        INTCON1bits.OSCFAIL = 0;        /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
+    INTCON1bits.OSCFAIL = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 1
+        LED2 = 1;
+        LED3 = 0;
+        LED4 = 0;
+    };
 }
 
-void __attribute__((interrupt,no_auto_psv)) _AltAddressError(void)
-{
-        INTCON1bits.ADDRERR = 0;        /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
+    INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 2
+        LED2 = 0;
+        LED3 = 1;
+        LED4 = 0;
+    };
 }
 
-void __attribute__((interrupt,no_auto_psv)) _AltStackError(void)
-{
-        INTCON1bits.STKERR = 0;         /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
+    INTCON1bits.STKERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 3
+        LED2 = 1;
+        LED3 = 1;
+        LED4 = 0;
+    };
 }
 
-void __attribute__((interrupt,no_auto_psv)) _AltMathError(void)
-{
-        INTCON1bits.MATHERR = 0;        /* Clear the trap flag */
-        while (1);
+void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
+    INTCON1bits.MATHERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 4
+        LED2 = 0;
+        LED3 = 0;
+        LED4 = 1;
+    };
 }
 
-    #if defined(__HAS_DMA__)
+#if defined(__HAS_DMA__)
 
-    void __attribute__((interrupt,no_auto_psv)) _AltDMACError(void)
-    {
-         INTCON1bits.DMACERR = 0;        /* Clear the trap flag */
-         while (1);
-    }
+void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
+    INTCON1bits.DMACERR = 0; /* Clear the trap flag */
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
 
-    #endif
+        // fatal error 5
+        LED2 = 1;
+        LED3 = 0;
+        LED4 = 1;
+    };
+}
+
+#endif
 
 #endif
 
@@ -167,23 +277,32 @@ void __attribute__((interrupt,no_auto_psv)) _AltMathError(void)
 /*                                                                            */
 /* This executes when an interrupt occurs for an interrupt source with an     */
 /* improperly defined or undefined interrupt handling routine.                */
+
 /******************************************************************************/
-void __attribute__((interrupt,no_auto_psv)) _DefaultInterrupt(void)
-{
-        while(1);
+void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void) {
+    while (1) {
+        LED1 = 1;
+        __delay32(2000000);
+        LED1 = 0;
+        __delay32(2000000);
+
+        // fatal error 6
+        LED2 = 0;
+        LED3 = 1;
+        LED4 = 1;
+    };
 }
 
 #if defined(__dsPIC33E__)
 
 /* These traps are new to the dsPIC33E family.  Refer to the device Interrupt
 chapter of the FRM to understand trap priority. */
-void __attribute__((interrupt,no_auto_psv)) _HardTrapError(void)
-{
-    while(1);
+void __attribute__((interrupt, no_auto_psv)) _HardTrapError(void) {
+    while (1);
 }
-void __attribute__((interrupt,no_auto_psv)) _SoftTrapError(void)
-{
-    while(1);
+
+void __attribute__((interrupt, no_auto_psv)) _SoftTrapError(void) {
+    while (1);
 }
 
 #endif
