@@ -47,15 +47,24 @@
 /* paste into this project.                                                   */
 /******************************************************************************/
 
-_FOSCSEL(FNOSC_PRI); /* Primary (XT, HS, EC) Oscillator */
-_FOSC(FCKSM_CSECMD & OSCIOFNC_OFF & POSCMD_XT);
-/** Clock Switching is enabled and Fail Safe Clock Monitor is disabled
- * OSC2 Pin Function: OSC2 is Clock Output
- * Primary Oscillator Mode : XT Crystal
+/** Oscillator selection configuration
+ * * FNOSC_PRIPLL -> Primary (XT, HS, EC) Oscillator
+ * * IESO_ON -> Start-up device with FRC, then automatically switch to 
+ * user-selected oscillator source when ready
  */
-_FWDT(FWDTEN_OFF);
+_FOSCSEL(FNOSC_PRIPLL & IESO_ON);
+
+/** Oscillator configuration
+ * * FCKSM_CSECME -> Both Clock Switching and Fail-Safe Clock Monitor are enabled
+ * * OSCIOFNC_OFF -> OSC2 pin has clock out function
+ * * POSCMD_HS -> Primary Oscillator Mode, HS Crystal
+*/
+_FOSC(FCKSM_CSECME & OSCIOFNC_OFF & POSCMD_HS);
+
 /** Watchdog Timer Enabled/disabled by user software
  * (LPRC can be disabled by clearing SWDTEN bit in RCON register
  */
+_FWDT(FWDTEN_OFF);
+
 _FICD(JTAGEN_OFF & ICS_PGD1);
 _FGS(GSS_OFF & GCP_OFF & GWRP_OFF);
