@@ -68,6 +68,8 @@ extern "C" {
      */
     int maxValue(float myArray[], size_t size);
 
+    void blinkflush();
+
 #ifdef	__cplusplus
 }
 #endif

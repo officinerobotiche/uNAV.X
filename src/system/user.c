@@ -103,6 +103,7 @@ HLT -> RA9
 #include <stdint.h>          /* For uint16_t definition                       */
 #include <stdbool.h>         /* For true/false definition                     */
 #include <dsp.h>             /* For DSP functionality                         */
+#include <libpic30.h>        /* Includes for delay definition */
 #include <string.h>
 #include <assert.h>
 #include "system/user.h"     /* variables/params used by user.c               */
@@ -278,4 +279,22 @@ int maxValue(float myArray[], size_t size) {
         }
     }
     return maxValue;
+}
+
+void blinkflush() {
+    LED1 = 1;
+    __delay32(8000000); // delay 200 ms;
+    LED2 = 1;
+    __delay32(8000000); // delay 200 ms;
+    LED3 = 1;
+    __delay32(8000000); // delay 200 ms;
+    LED4 = 1;
+    __delay32(8000000); // delay 200 ms;
+    LED4 = 0;
+    __delay32(8000000); // delay 200 ms;
+    LED3 = 0;
+    __delay32(8000000); // delay 200 ms;
+    LED2 = 0;
+    __delay32(8000000); // delay 200 ms;
+    LED1 = 0;
 }

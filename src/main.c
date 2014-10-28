@@ -99,6 +99,9 @@ int16_t main(void) {
     /* Initialize IO ports and peripherals */
     InitApp();
 
+    /* Start LED blink show */
+    blinkflush();
+
     while (1) {
 
     }
