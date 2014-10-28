@@ -155,15 +155,6 @@ services_t services(services_t service) {
     services_t service_send;
     service_send.command = service.command;
     switch (service.command) {
-        case RESET:
-            if (reset_count < 3) {
-                reset_count++;
-            } else {
-                SET_CPU_IPL(7); // disable all user interrupts
-                //DelayN1ms(200);
-                asm("RESET");
-            }
-            break;
         case DATE_CODE:
             memcpy(service_send.buffer, version_date_, sizeof (version_date_));
             service_send.buffer[sizeof (version_date_) - 1] = ' ';
@@ -177,6 +168,15 @@ services_t services(services_t service) {
             break;
         case AUTHOR_CODE:
             memcpy(service_send.buffer, author_code, sizeof (author_code));
+            break;
+        case RESET:
+            if (reset_count < 3) {
+                reset_count++;
+            } else {
+                SET_CPU_IPL(7); // disable all user interrupts
+                //DelayN1ms(200);
+                asm("RESET");
+            }
             break;
         default:
             break;
@@ -205,18 +205,22 @@ void InitInterrupts(void) {
 }
 
 void ConfigureOscillator(void) {
-    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
+
+    _ROI = 0x00; // Recover on Interrupt bit
+    _DOZE = 0x03; // Processor Clock Reduction Select bits
+    _DOZEN = 0x00; // DOZE Mode Enable bit
+    _FRCDIV = 0x00; // Internal Fast RC Oscillator Postscaler bits
+    _PLLDIV = 0x1E; // PLL divider (M=32)
+    //PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
+    // PLL VCO Output Divider Select bits (N2)
     CLKDIVbits.PLLPOST = 0; // N1=2
+    // PLL Phase Detector Input Divider bits (N1)
     CLKDIVbits.PLLPRE = 0; // N2=2
     // Disable Watch Dog Timer
     RCONbits.SWDTEN = 0;
-    // Clock switching to incorporate PLL
-    // Initiate Clock Switch to Primary
-    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
-    __builtin_write_OSCCONL(0x01); // Start clock switching
+
     while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
-    while (OSCCONbits.LOCK != 1) {
-    }; // Wait for PLL to lock
+    while (OSCCONbits.LOCK != 1); // Wait for PLL to lock
 }
 
 void InitPWM(void) {
