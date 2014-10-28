@@ -30,7 +30,7 @@ extern "C" {
     #define I2C_EEPROM_BUFF_SIZE_WRITE 7   //$$$$$$$$$$ define buffer size according to variables used
     #define I2C_EEPROM_BUFF_SIZE_READ 7    //$$$$$$$$$$ define buffer size according to variables used
 
-    #define EEPROM_COMMAND 0X24            //$$$$$$$$$$ define EEPROM address
+    #define EEPROM_COMMAND 0xA0//EEPROM address. 0xA0 to 0xAE->8 pages x 256Byte
 
 /******************************************************************************/
 /* System Function Prototypes                                                 */
