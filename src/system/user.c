@@ -224,8 +224,8 @@ void InitApp(void) {
     _TRISA4 = 1; // GPIO5
     _TRISB4 = 1; // GPIO6
     _TRISB7 = 1; // GPIO7
-    _TRISB8 = 1; // GPIO8
-    _TRISB9 = 1; // HALT
+    _TRISA8 = 1; // GPIO8
+    _TRISA9 = 1; // HALT
 
     // ADC
     _TRISA0 = 1; // CH1
