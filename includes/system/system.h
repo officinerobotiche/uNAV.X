@@ -82,33 +82,35 @@ functions, and other non-peripheral microcontroller initialization functions
 go here. */
 
     /**
-     *
+     * Initialization name process and set standard priority for all procesees
      */
     void init_process(void);
 
     /**
-     *
-     * @param number
-     * @return
+     * From name recived, return a process required.
+     * @param number name process
+     * @return save in process_buffer name associated for process
      */
     process_buffer_t decodeNameProcess(int number);
 
     /**
-     *
-     * @return
+     * Update priority for process, restart function Init Interrupt for restart
+     * process with correct value
+     * @return ACK value for correct update priority
      */
     unsigned char update_priority(void);
 
     /**
-     *
-     * @return
+     * Upgdate frequency for working processes. If value is equal to zero,
+     * the process are disabled.
+     * @return ACK value for correct update priority
      */
     unsigned char update_frequency(void);
 
     /**
-     *
-     * @param service
-     * @return
+     * Managment services messages. Return a service message for correct parsing
+     * @param service to parsing
+     * @return a new service message
      */
     services_t services(services_t service);
 

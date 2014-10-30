@@ -73,7 +73,7 @@
 
 /**
  * Define messages about parameter system:
- * * Clock of System timer
+     * * Clock of System timer
  * * Colck in milliseconds
  */
 typedef struct parameter_system {
@@ -127,7 +127,7 @@ typedef struct process {
     int16_t process[BUFF_ALL_PROCESS];
 } process_t;
 #define LNG_PROCESS sizeof(process_t)
-/* EO Messages */
+/**** EO Messages ****/
 
 /**
  * This is a definition for convertion packets in a big data packet to send in 
@@ -168,9 +168,9 @@ typedef union abstract_message {
     ABSTRACT_MESSAGE_UNAV
 #endif
 #ifdef NAVIGATION_BOARD
-    ABSTRACT_PACKET_NAVIGATION
+    ABSTRACT_MESSAGE_NAVIGATION
 #endif
-} abstract_message_t;
+} abstract_message_u;
 
 /**
  * Struct with information about a packet:
@@ -190,7 +190,7 @@ typedef struct information_packet {
     unsigned char option;
     unsigned char type;
     unsigned char command;
-    abstract_message_t packet;
+    abstract_message_u packet;
 } information_packet_t;
 
 /**

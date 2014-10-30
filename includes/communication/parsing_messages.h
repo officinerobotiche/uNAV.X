@@ -106,7 +106,7 @@ extern "C" {
      * @param packet abstract_message to convert in a information_packet
      * @return information_packet ready to send
      */
-    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_t * packet);
+    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet);
     
     /**
      * Create an information packet for a message with data (D).
@@ -116,7 +116,7 @@ extern "C" {
      * @param packet abstract_message to convert in a information_packet
      * @return information_packet ready to send
      */
-    information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_t * packet);
+    information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet);
 
 #ifdef	__cplusplus
 }

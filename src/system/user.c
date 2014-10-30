@@ -15,76 +15,6 @@
  * Public License for more details
 */
 
-/**********************************************************************
- * © 2014 µNAV crew
- *
- * GPIO remapping
- * Hardware init
- *
- * v 1.0 beta 21/09/2014
- *
- **********************************************************************/
-
-/* 
-
- *  µNAV pin map
-
-// input ADC
-AN0 -> RA0
-AN1 -> RA1
-AN2 -> RB0
-AN3 -> RB1
-
-// input encoder (5V tolerant)
-E1CHA -> RB10 (RP10)
-E1CHB -> RB11 (RP11)
-E2CHA -> RB6 (RP6)
-E2CHB -> RB5 (RP5)
-
-// input capture)
-IC1 -> RB10 (RP10)
-IC2 -> RB6 (RP6)
-
-// OUT PWM
-H1A -> RB14
-H1B -> RB15
-H2A -> RB12
-H2B -> RB13
-
-// H Bridge control
-H1EN   -> RA7
-H2EN   -> RA10
-(nota: AU1 e AU2 sono NC)
-
-// UART (5V tolerant)
-U1RX -> RC5 (RP21)
-U1TX -> RC4 (RP20)
-U2RX -> RB3 (RP3)
-U2TX -> RB2 (RP2)
-
-// I2C
-SDA -> RB9
-SCL -> RB8
-
-// LED
-LED1 -> RC6
-LED2 -> RC7
-LED3 -> RC8
-LED4 ->	RC9
-
-// GPIO
-GP1 -> RC0 (CN8)
-GP2 -> RC1 (CN9)
-GP3 -> RC2 (CN10)
-GP4 -> RC3 (CN28)
-GP5 -> RA4 (CN0)
-GP6 -> RB4 (CN1)
-GP7 -> RB7 (CN23)
-GP8 -> RA8
-HLT -> RA9
-
- */
-
 /******************************************************************************/
 /* Files to Include                                                           */
 /******************************************************************************/
@@ -116,11 +46,10 @@ HLT -> RA9
 /* User Functions                                                             */
 /******************************************************************************/
 
-/* <Initialize variables in user.h and insert code for user algorithms.> */
-
 void InitApp(void) {
 
     // Peripheral PIN remapping
+    //*************************************************************
     // Unlock Registers
     //*************************************************************
     asm volatile ( "mov #OSCCONL, w1 \n"
@@ -179,9 +108,9 @@ void InitApp(void) {
     //***************************
     RPOR10bits.RP20R = 3;
 
-    //************************************************************
+    //*************************************************************
     // Lock Registers
-    //************************************************************
+    //*************************************************************
     asm volatile ( "mov #OSCCONL, w1 \n"
                 "mov #0x45, w2 \n"
                 "mov #0x57, w3 \n"
@@ -238,7 +167,8 @@ void InitApp(void) {
     LED2 = 0;
     LED3 = 0;
     LED4 = 0;
-    
+
+    /* Peripherical initalization */
     InitPWM(); //Open PWM
     InitQEI1(); //Open QEI1
     InitQEI2(); //Open QEI2
@@ -255,7 +185,6 @@ void InitApp(void) {
     InitInterrupts(); //Start others interrupts
 }
 
-/* Protected Memcpy */
 void inline protectedMemcpy(unsigned reg, void *destination, const void *source, size_t num) {
     if (1 == reg) {
         reg = 0;

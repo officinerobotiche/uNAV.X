@@ -67,7 +67,7 @@ void init_hashmap() {
 }
 
 void saveData(information_packet_t* list_send, size_t len, information_packet_t info) {
-    abstract_message_t send;
+    abstract_message_u send;
     if (info.type == HASHMAP_DEFAULT) {
         switch (info.command) {
             case SERVICES:
@@ -98,7 +98,7 @@ void saveData(information_packet_t* list_send, size_t len, information_packet_t 
 }
 
 void sendData(information_packet_t* list_send, size_t len, information_packet_t info) {
-    abstract_message_t send;
+    abstract_message_u send;
     if (info.type == HASHMAP_DEFAULT) {
         switch (info.command) {
             case SERVICES:
@@ -187,7 +187,7 @@ packet_t encoderSingle(information_packet_t send) {
     return packet_send;
 }
 
-information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_t * packet) {
+information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet) {
     information_packet_t information;
     information.command = command;
     information.option = option;
@@ -208,11 +208,11 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
         information.length = LNG_HEAD_INFORMATION_PACKET;
     }
     if (packet != NULL) {
-        memcpy(&information.packet, packet, sizeof (abstract_message_t));
+        memcpy(&information.packet, packet, sizeof (abstract_message_u));
     }
     return information;
 }
 
-information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_t * packet) {
+information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet) {
     return createPacket(command, DATA, type, packet);
 }

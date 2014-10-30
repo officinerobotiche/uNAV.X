@@ -56,7 +56,6 @@ extern float wheel_m;
 
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
-
 /******************************************************************************/
 
 void init_coordinate(void) {
@@ -113,7 +112,7 @@ int deadReckoning(void) {
         delta_odometry.delta[counter_delta] = delta;
         counter_delta++;
         if (counter_delta == BUFFER_ODOMETRY) {
-            abstract_message_t packet;
+            abstract_message_u packet;
             packet.delta_odometry = delta_odometry;
             packet_t send = encoderSingle(createDataPacket(DELTA_ODOMETRY, HASHMAP_UNAV, &packet));
             pkg_send(HEADER_ASYNC, send);

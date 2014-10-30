@@ -24,9 +24,27 @@ extern "C" {
 
 #include "packet/packet.h"
 
+    /**
+     * Initalization coordinate for odometry
+     */
     void init_coordinate(void);
+
+    /**
+     * Update stored sine and cosine with new theta value
+     */
     void update_coord(void);
+
+    /**
+     * Start deadReckoning operation
+     * @return
+     */
     int deadReckoning(void);
+
+    /**
+     *
+     * @param delta
+     * @return
+     */
     int odometry(coordinate_t delta);
 
 #ifdef	__cplusplus
