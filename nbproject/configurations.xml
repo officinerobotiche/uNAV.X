@@ -5,9 +5,9 @@
                    displayName="Header Files"
                    projectFiles="true">
       <logicalFolder name="f2" displayName="communication" projectFiles="true">
-        <itemPath>includes/communication/decode_packet.h</itemPath>
-        <itemPath>includes/communication/parsing_packet.h</itemPath>
         <itemPath>includes/communication/serial.h</itemPath>
+        <itemPath>includes/communication/parsing_other_messages.h</itemPath>
+        <itemPath>includes/communication/parsing_messages.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="control" projectFiles="true">
         <itemPath>includes/control/high_level_control.h</itemPath>
@@ -15,7 +15,7 @@
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
         <itemPath>includes/packet/packet.h</itemPath>
-        <itemPath>includes/packet/motion.h</itemPath>
+        <itemPath>includes/packet/unav.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
         <itemPath>includes/system/user.h</itemPath>
@@ -43,9 +43,9 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="f1" displayName="communication" projectFiles="true">
-        <itemPath>src/communication/decode_packet.c</itemPath>
-        <itemPath>src/communication/parsing_packet.c</itemPath>
         <itemPath>src/communication/serial.c</itemPath>
+        <itemPath>src/communication/parsing_messages.c</itemPath>
+        <itemPath>src/communication/parsing_other_messages.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="control" projectFiles="true">
         <itemPath>src/control/high_level_control.c</itemPath>

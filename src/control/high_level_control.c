@@ -39,7 +39,7 @@
 #include "control/high_level_control.h"
 #include "control/motors_PID.h"
 #include "communication/serial.h"
-#include "communication/parsing_packet.h"
+#include "communication/parsing_messages.h"
 
 coordinate_t coordinate;
 delta_odometry_t delta_odometry;
@@ -113,9 +113,9 @@ int deadReckoning(void) {
         delta_odometry.delta[counter_delta] = delta;
         counter_delta++;
         if (counter_delta == BUFFER_ODOMETRY) {
-            abstract_packet_t packet;
+            abstract_message_t packet;
             packet.delta_odometry = delta_odometry;
-            packet_t send = encoderSingle(createDataPacket(DELTA_ODOMETRY, HASHMAP_MOTION, &packet));
+            packet_t send = encoderSingle(createDataPacket(DELTA_ODOMETRY, HASHMAP_UNAV, &packet));
             pkg_send(HEADER_ASYNC, send);
             counter_delta = 0;
         }
