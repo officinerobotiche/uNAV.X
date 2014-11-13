@@ -261,23 +261,29 @@
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>
         <property key="memories.configurationmemory" value="false"/>
+        <property key="memories.configurationmemory2" value="true"/>
         <property key="memories.dataflash" value="true"/>
         <property key="memories.eeprom" value="true"/>
         <property key="memories.flashdata" value="true"/>
-        <property key="memories.id" value="true"/>
         <property key="memories.programmemory" value="true"/>
         <property key="memories.programmemory.end" value="0x157ff"/>
+        <property key="memories.programmemory.partition2" value="true"/>
+        <property key="memories.programmemory.partition2.end"
+                  value="${memories.programmemory.partition2.end.value}"/>
+        <property key="memories.programmemory.partition2.start"
+                  value="${memories.programmemory.partition2.start.value}"/>
         <property key="memories.programmemory.start" value="0x0"/>
-        <property key="memories.userotp" value="false"/>
         <property key="poweroptions.powerenable" value="false"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preserveeeprom" value="false"/>
         <property key="programoptions.preserveprogramrange" value="false"/>
         <property key="programoptions.preserveprogramrange.end" value="0x157ff"/>
         <property key="programoptions.preserveprogramrange.start" value="0x0"/>
         <property key="programoptions.preserveuserid" value="false"/>
         <property key="programoptions.programcalmem" value="false"/>
+        <property key="programoptions.programuserotp" value="false"/>
         <property key="programoptions.testmodeentrymethod" value="VPPFirst"/>
         <property key="programoptions.usehighvoltageonmclr" value="false"/>
         <property key="programoptions.uselvpprogramming" value="false"/>
@@ -459,6 +465,13 @@
         <property key="periphADC2.altscl" value="false"/>
         <property key="periphADC2.minTacq" value=""/>
         <property key="periphADC2.tacqunits" value="microseconds"/>
+        <property key="tracecontrol.include.timestamp" value="false"/>
+        <property key="tracecontrol.select" value="0"/>
+        <property key="tracecontrol.stallontracebufferfull" value="false"/>
+        <property key="tracecontrol.timestamp" value="0"/>
+        <property key="tracecontrol.tracebufmax" value="546000"/>
+        <property key="tracecontrol.tracefile" value="defmplabxtrace.log"/>
+        <property key="tracecontrol.traceresetonrun" value="false"/>
         <property key="uart10io.output" value="window"/>
         <property key="uart10io.outputfile" value=""/>
         <property key="uart10io.uartioenabled" value="false"/>

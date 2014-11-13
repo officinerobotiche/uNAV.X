@@ -41,7 +41,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void saveData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void saveData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
     /**
      * Send for all standard messages the data. The information are saved
@@ -51,7 +51,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void sendData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void sendData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
     /**
      * In a packet we have more messages. A typical data packet

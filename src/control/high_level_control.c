@@ -42,7 +42,7 @@
 #include "communication/parsing_messages.h"
 
 coordinate_t coordinate;
-delta_odometry_t delta_odometry;
+//delta_odometry_t delta_odometry;
 unsigned int counter_delta = 0;
 bool autosend_delta_odometry = false;
 
@@ -107,6 +107,7 @@ int deadReckoning(void) {
         cosTh_old = cosTh_new;
     }
 
+    /* TODO Verify
     if (autosend_delta_odometry) {
         // Add delta step in buffer
         delta_odometry.delta[counter_delta] = delta;
@@ -119,6 +120,7 @@ int deadReckoning(void) {
             counter_delta = 0;
         }
     }
+    */
 
     // Calculate odometry
     odometry(delta);

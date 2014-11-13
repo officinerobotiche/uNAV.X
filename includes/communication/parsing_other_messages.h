@@ -29,7 +29,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void saveOtherData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void saveOtherData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
     /**
      * Similar to sendData (in parsing_messages.h) this function send messages
@@ -38,7 +38,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void sendOtherData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void sendOtherData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
 
 #ifdef	__cplusplus
