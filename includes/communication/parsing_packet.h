@@ -46,7 +46,7 @@ extern "C" {
      * @param len
      * @param info
      */
-    void saveData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void saveData(information_packet_t* list_send, size_t len, information_packet_t* info);
     
     /**
      * 
@@ -54,7 +54,7 @@ extern "C" {
      * @param len
      * @param info
      */
-    void sendData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void sendData(information_packet_t* list_send, size_t len, information_packet_t* info);
     
     /**
      * 

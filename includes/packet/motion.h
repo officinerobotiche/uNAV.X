@@ -55,10 +55,11 @@ typedef struct coordinate {
 } coordinate_t;
 #define LNG_COORDINATE sizeof(coordinate_t)
 
-typedef struct delta_odometry {
-    coordinate_t delta[BUFFER_ODOMETRY];
-} delta_odometry_t;
-#define LNG_DELTA_ODOMETRY sizeof(delta_odometry_t)
+//TODO correction this messages TOO LARGE
+//typedef struct delta_odometry {
+//    coordinate_t delta[BUFFER_ODOMETRY];
+//} delta_odometry_t;
+//#define LNG_DELTA_ODOMETRY sizeof(delta_odometry_t)
 
 typedef struct parameter_motors {
     float radius_r;
@@ -90,8 +91,8 @@ typedef uint8_t enable_motor_t;
         enable_motor_t enable;                  \
         motor_t motor;                          \
         constraint_t constraint;                \
-        emergency_t emergency;                  \
-        delta_odometry_t delta_odometry;
+        emergency_t emergency;                  
+        //delta_odometry_t delta_odometry;
 
 #define PID_CONTROL_L 0
 #define PID_CONTROL_R 1
@@ -130,8 +131,8 @@ typedef uint8_t enable_motor_t;
                                   hashmap_motion[VELOCITY] = LNG_VELOCITY;                  \
                                   hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;              \
                                   hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                \
-                                  hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                \
-                                  hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;      \
+                                  hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                
+                                  //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
 
 #endif	/* MOTION_H */
 

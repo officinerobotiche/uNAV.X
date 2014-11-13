@@ -28,7 +28,7 @@ extern "C" {
      * @param len
      * @param info
      */
-    void saveOtherData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void saveOtherData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
     /**
      * 
@@ -36,7 +36,7 @@ extern "C" {
      * @param len
      * @param info
      */
-    void sendOtherData(information_packet_t* list_send, size_t len, information_packet_t info);
+    void sendOtherData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
 
 #ifdef	__cplusplus
