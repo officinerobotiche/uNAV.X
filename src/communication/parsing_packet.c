@@ -65,67 +65,67 @@ void init_hashmap() {
     INITIALIZE_HASHMAP_MOTION
 }
 
-void saveData(information_packet_t* list_send, size_t len, information_packet_t info) {
+void saveData(information_packet_t* list_send, size_t len, information_packet_t* info) {
     abstract_packet_t send;
-    if (info.type == HASHMAP_DEFAULT) {
-        switch (info.command) {
+    if (info->type == HASHMAP_DEFAULT) {
+        switch (info->command) {
             case SERVICES:
-                send.services = services(info.packet.services);
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                send.services = services(info->packet.services);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PRIORITY_PROCESS:
-                priority = info.packet.process;
-                list_send[len] = createPacket(info.command, ACK, info.type, NULL);
+                priority = info->packet.process;
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
             case FRQ_PROCESS:
-                frequency = info.packet.process;
-                list_send[len] = createPacket(info.command, ACK, info.type, NULL);
+                frequency = info->packet.process;
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case NAME_PROCESS:
-                send.process_name = decodeNameProcess(info.packet.process_name.name);
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                send.process_name = decodeNameProcess(info->packet.process_name.name);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case TIME_PROCESS:
             case PARAMETER_SYSTEM:
             case ERROR_SERIAL:
-                list_send[len] = createPacket(info.command, NACK, info.type, NULL);
+                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 return;
             default:
-                list_send[len] = createPacket(info.command, NACK, info.type, NULL);
+                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 break;
         }
     } else saveOtherData(list_send, len, info);
 }
 
-void sendData(information_packet_t* list_send, size_t len, information_packet_t info) {
+void sendData(information_packet_t* list_send, size_t len, information_packet_t* info) {
     abstract_packet_t send;
-    if (info.type == HASHMAP_DEFAULT) {
-        switch (info.command) {
+    if (info->type == HASHMAP_DEFAULT) {
+        switch (info->command) {
             case SERVICES:
-                send.services = services(info.packet.services);
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                send.services = services(info->packet.services);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PRIORITY_PROCESS:
                 send.process = priority;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
             case FRQ_PROCESS:
                 send.process = frequency;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case TIME_PROCESS:
                 send.process = time;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PARAMETER_SYSTEM:
                 send.parameter_system = parameter_system;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case ERROR_SERIAL:
                 send.error_pkg = serial_error;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case NAME_PROCESS:
             default:
-                list_send[len] = createPacket(info.command, NACK, info.type, NULL);
+                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 break;
         }
     } else sendOtherData(list_send, len, info);
@@ -137,16 +137,13 @@ int parse_packet() {
     information_packet_t list_data[10];
     unsigned int counter = 0;
     //Save single packet
-    for (i = 0; i < receive_pkg.length;) {
-        buffer_packet_u buffer_packet;
-        memcpy(&buffer_packet.buffer, &receive_pkg.buffer[i], receive_pkg.buffer[i]);
-        list_data[counter++] = buffer_packet.information_packet;
-        i += receive_pkg.buffer[i];
+    for (i = 0; i < receive_pkg.length; i += receive_pkg.buffer[i]) {
+        memcpy((unsigned char*) &list_data[counter++], &receive_pkg.buffer[i], receive_pkg.buffer[i]);
     }
     //Compute packet
     for (i = 0; i < counter; ++i) {
-        information_packet_t info = list_data[i];
-        switch (info.option) {
+        information_packet_t* info = &list_data[i];
+        switch (info->option) {
             case DATA:
                 saveData(&list_data[0], i, info);
                 break;
