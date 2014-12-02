@@ -44,7 +44,7 @@
 //Table to convertion name (number) of message in a length
 //See packet/packet.h and packet/unav.h
 static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
-static unsigned int hashmap_motion[HASHMAP_UNAV_NUMBER];
+static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
 /** GLOBAL VARIBLES */
 // From system/system.c
@@ -63,7 +63,7 @@ extern char receive_header;
 
 void init_hashmap() {
     INITIALIZE_HASHMAP_DEFAULT
-    INITIALIZE_HASHMAP_UNAV
+    INITIALIZE_HASHMAP_MOTION
 }
 
 void saveData(information_packet_t* list_send, size_t len, information_packet_t* info) {
@@ -194,7 +194,7 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
             case HASHMAP_DEFAULT:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_default[command];
                 break;
-            case HASHMAP_UNAV:
+            case HASHMAP_MOTION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
                 break;
             default:

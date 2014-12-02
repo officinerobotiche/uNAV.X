@@ -15,8 +15,8 @@
  * Public License for more details
 */
 
-#ifndef UNAV_H
-#define	UNAV_H
+#ifndef MOTION_H
+#define	MOTION_H
 
 #include <stdint.h>
 
@@ -137,14 +137,14 @@ typedef uint8_t enable_motor_t;
 #define LNG_ENABLE_MOTOR sizeof(enable_motor_t)
 
 //List of all motion messages
-#define ABSTRACT_MESSAGE_UNAV                  \
-        pid_control_t pid;                      \
-        coordinate_t coordinate;                \
-        parameter_motors_t parameter_motors;    \
-        velocity_t velocity;                    \
-        enable_motor_t enable;                  \
-        motor_t motor;                          \
-        constraint_t constraint;                \
+#define ABSTRACT_MESSAGE_MOTION                  \
+        pid_control_t pid;                       \
+        coordinate_t coordinate;                 \
+        parameter_motors_t parameter_motors;     \
+        velocity_t velocity;                     \
+        enable_motor_t enable;                   \
+        motor_t motor;                           \
+        constraint_t constraint;                 \
         emergency_t emergency;                  
         //delta_odometry_t delta_odometry;
 
@@ -174,27 +174,27 @@ typedef uint8_t enable_motor_t;
 #define ODOMETRY_STRING "Odometry"
 
 //Name for HASHMAP with information about motion messages
-#define HASHMAP_UNAV 'M'
-#define HASHMAP_UNAV_NUMBER 15
+#define HASHMAP_MOTION 'M'
+#define HASHMAP_MOTION_NUMBER 15
 
 // Definition on communication/parsing_packet.c
-//static unsigned int hashmap_motion[HASHMAP_UNAV_NUMBER];
+//static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
 /**
  * Table with convertion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_UNAV   hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;          \
-                                  hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;          \
-                                  hashmap_motion[MOTOR_L] = LNG_MOTOR;                      \
-                                  hashmap_motion[MOTOR_R] = LNG_MOTOR;                      \
-                                  hashmap_motion[COORDINATE] = LNG_COORDINATE;              \
-                                  hashmap_motion[PARAMETER_MOTORS] = LNG_PARAMETER_MOTORS;  \
-                                  hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;              \
-                                  hashmap_motion[VELOCITY] = LNG_VELOCITY;                  \
-                                  hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;              \
-                                  hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                \
-                                  hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                
-                                  //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
+#define INITIALIZE_HASHMAP_MOTION   hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;          \
+                                    hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;          \
+                                    hashmap_motion[MOTOR_L] = LNG_MOTOR;                      \
+                                    hashmap_motion[MOTOR_R] = LNG_MOTOR;                      \
+                                    hashmap_motion[COORDINATE] = LNG_COORDINATE;              \
+                                    hashmap_motion[PARAMETER_MOTORS] = LNG_PARAMETER_MOTORS;  \
+                                    hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;              \
+                                    hashmap_motion[VELOCITY] = LNG_VELOCITY;                  \
+                                    hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;              \
+                                    hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                \
+                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
+                                    //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
 
-#endif	/* UNAV_H */
+#endif	/* MOTION_H */
 

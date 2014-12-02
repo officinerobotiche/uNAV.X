@@ -65,7 +65,7 @@ extern bool coord_busy;
 /******************************************************************************/
 
 void saveOtherData(information_packet_t* list_send, size_t len, information_packet_t* info) {
-    if (info->type == HASHMAP_UNAV)
+    if (info->type == HASHMAP_MOTION)
         switch (info->command) {
             case PID_CONTROL_L:
                 pid_left = info->packet.pid;
@@ -118,7 +118,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
 
 void sendOtherData(information_packet_t* list_send, size_t len, information_packet_t* info) {
     abstract_message_u send;
-    if (info->type == HASHMAP_UNAV)
+    if (info->type == HASHMAP_MOTION)
         switch (info->command) {
             case PID_CONTROL_L:
                 send.pid = pid_left;
