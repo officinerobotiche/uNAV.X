@@ -69,6 +69,7 @@
   <sourceRootList>
     <Elem>src/communication</Elem>
     <Elem>includes/communication</Elem>
+    <Elem>includes/packet</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -80,8 +81,8 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
-        <platform>4</platform>
+        <languageToolchainVersion>1.22</languageToolchainVersion>
+        <platform>2</platform>
       </toolsSet>
       <compileType>
         <linkerTool>
@@ -298,7 +299,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>Simulator</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
+        <languageToolchainVersion>1.22</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>

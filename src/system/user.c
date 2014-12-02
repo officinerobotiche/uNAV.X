@@ -60,8 +60,8 @@ void InitApp(void) {
                 "bclr OSCCON, #6 ");
 
 
-#ifdef UNAV //{
-    #warning -- compiling for uNav board *************************************
+#ifdef UNAV
+    #warning -- compiling for uNav board : Set USER.H **************************
     // Input capture
     //***************************
     // Assign IC1 To Pin RP10
@@ -172,8 +172,8 @@ void InitApp(void) {
     LED4 = 0;
 #endif
 
-#ifdef ROBOCONTROLLER_V3 //{
-    #warning -- compiling for uNav board *************************************
+#ifdef ROBOCONTROLLER_V3
+    #warning -- compiling for RoboController V3 board : Set USER.H *************
     // Input capture
     //***************************
     // Assign IC1 To Pin RP10
@@ -283,24 +283,22 @@ void InitApp(void) {
     LED3 = 0;
     LED4 = 0;
 #endif
-
-
 
     /* Peripherical initalization */
-    InitPWM(); //Open PWM
-    InitQEI1(); //Open QEI1
-    InitQEI2(); //Open QEI2
-    InitIC1(); //Open Input Capture 1
-    InitIC2(); //Open Input Capture 2
-    InitTimer2(); //Open Timer2 for InputCapture 1 & 2
-    InitADC(); //Open ADC for measure current motors
-    InitDMA0(); //Open DMA0 for buffering measures ADC
+    InitPWM();          //Open PWM
+    InitQEI1();         //Open QEI1
+    InitQEI2();         //Open QEI2
+    InitIC1();          //Open Input Capture 1
+    InitIC2();          //Open Input Capture 2
+    InitTimer2();       //Open Timer2 for InputCapture 1 & 2
+    InitADC();          //Open ADC for measure current motors
+    InitDMA0();         //Open DMA0 for buffering measures ADC
 
-    InitUART1(); //Open UART1 for serial comunication
-    InitDMA1(); //Open DMA1 for Tx UART1
+    InitUART1();        //Open UART1 for serial comunication
+    InitDMA1();         //Open DMA1 for Tx UART1
 
-    InitTimer1(); //Open Timer1 for clock system
-    InitInterrupts(); //Start others interrupts
+    InitTimer1();       //Open Timer1 for clock system
+    InitInterrupts();   //Start others interrupts
 }
 
 void inline protectedMemcpy(unsigned reg, void *destination, const void *source, size_t num) {

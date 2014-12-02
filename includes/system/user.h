@@ -24,6 +24,12 @@ extern "C" {
 
     #include <stddef.h>
 
+
+
+    /* Board usage*/
+    #define UNAV 1
+    //#define ROBOCONTROLLER_V3 1
+    
 /******************************************************************************/
 /* µNAV pin map                                                               */
 /*                                                                            */
