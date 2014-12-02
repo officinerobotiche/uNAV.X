@@ -15,7 +15,7 @@
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
         <itemPath>includes/packet/packet.h</itemPath>
-        <itemPath>includes/packet/unav.h</itemPath>
+        <itemPath>includes/packet/motion.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
         <itemPath>includes/system/user.h</itemPath>

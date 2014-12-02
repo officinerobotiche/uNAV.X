@@ -37,12 +37,12 @@
  * Other messages for this board are in packet/unav.h
  */
 
-#define UNAV
+#define MOTION
 
 /*******/
 
-#ifdef UNAV
-#include "packet/unav.h"
+#ifdef MOTION
+#include "packet/motion.h"
 #endif
 
 /** Buffers dimension */
@@ -164,8 +164,8 @@ typedef union abstract_message {
     error_pkg_t error_pkg;
     parameter_system_t parameter_system;
     process_buffer_t process_name;
-#ifdef UNAV
-    ABSTRACT_MESSAGE_UNAV
+#ifdef MOTION
+    ABSTRACT_MESSAGE_MOTION
 #endif
 #ifdef NAVIGATION_BOARD
     ABSTRACT_MESSAGE_NAVIGATION
