@@ -59,6 +59,9 @@ void InitApp(void) {
                 "mov.b w3, [w1] \n"
                 "bclr OSCCON, #6 ");
 
+
+#ifdef UNAV //{
+    #warning -- compiling for uNav board *************************************
     // Input capture
     //***************************
     // Assign IC1 To Pin RP10
@@ -167,6 +170,121 @@ void InitApp(void) {
     LED2 = 0;
     LED3 = 0;
     LED4 = 0;
+#endif
+
+#ifdef ROBOCONTROLLER_V3 //{
+    #warning -- compiling for uNav board *************************************
+    // Input capture
+    //***************************
+    // Assign IC1 To Pin RP10
+    //***************************
+    RPINR7bits.IC1R = 10;
+    //***************************
+    // IC2 To Pin RP6
+    //***************************
+    RPINR7bits.IC2R = 6;
+
+    // QEI
+    //***************************
+    // QEA1 To Pin RP10
+    //***************************
+    RPINR14bits.QEA1R = 10;
+    //***************************
+    // QEB1 To Pin RP11
+    //***************************
+    RPINR14bits.QEB1R = 11;
+    //***************************
+    // QEA2 To Pin RP5
+    //***************************
+    RPINR16bits.QEA2R = 5;
+    //***************************
+    // QEB2 To Pin RP6
+    //***************************
+    RPINR16bits.QEB2R = 6;
+
+    // UART
+    //***************************
+    // Assign U2RX To Pin RP3, CTS tied Vss
+    //***************************
+    RPINR19bits.U2RXR = 3;
+    RPINR19bits.U2CTSR = 0x1f;
+    //***************************
+    // Assign U2Tx To Pin RP2
+    //***************************
+    RPOR1bits.RP2R = 5;
+
+    //***************************
+    // Assign U1RX To Pin RP21, CTS tied Vss
+    //***************************
+    RPINR18bits.U1RXR = 21;
+    RPINR18bits.U1CTSR = 0x1f;
+    //***************************
+    // Assign U1Tx To Pin RP20
+    //***************************
+    RPOR10bits.RP20R = 3;
+
+    //*************************************************************
+    // Lock Registers
+    //*************************************************************
+    asm volatile ( "mov #OSCCONL, w1 \n"
+                "mov #0x45, w2 \n"
+                "mov #0x57, w3 \n"
+                "mov.b w2, [w1] \n"
+                "mov.b w3, [w1] \n"
+                "bset OSCCON, #6");
+    // *********************************** Peripheral PIN selection
+
+    /* Setup port direction */
+
+    // weak pullups enable
+    CNPU1 = 0xffff;
+    CNPU2 = 0xffff;
+
+    // led
+    _TRISC6 = 0; //Led1
+    _TRISC7 = 0; //Led2
+    _TRISC8 = 0; //Led3
+    _TRISC9 = 0; //Led4
+
+    // encoder
+    _TRISB10 = 1;
+    _TRISB11 = 1;
+    _TRISB6 = 1;
+    _TRISB5 = 1;
+
+    // H bridge
+    _TRISA7 = 0; //Enable - Motor 1
+    _TRISA10 = 0; //Enable - Motor 2
+    _TRISB12 = 0; // PWM1 +
+    _TRISB12 = 0; // PWM1 -
+    _TRISB12 = 0; // PWM2 +
+    _TRISB12 = 0; // PWM2 -
+
+    // GPIO
+    _TRISC0 = 1; // GPIO1
+    _TRISC1 = 1; // GPIO2
+    _TRISC2 = 1; // GPIO3
+    _TRISC3 = 1; // GPIO4
+    _TRISA4 = 1; // GPIO5
+    _TRISB4 = 1; // GPIO6
+    _TRISB7 = 1; // GPIO7
+    _TRISA8 = 1; // GPIO8
+    _TRISA9 = 1; // HALT
+
+    // ADC
+    _TRISA0 = 1; // CH1
+    _TRISA1 = 1; // CH2
+    _TRISB0 = 1; // CH3
+    _TRISB1 = 1; // CH4
+
+    /* Initialize peripherals */ // da controllare e adattare
+    LED1 = 0;
+    LED2 = 0;
+    LED3 = 0;
+    LED4 = 0;
+#endif
+
+
 
     /* Peripherical initalization */
     InitPWM(); //Open PWM
