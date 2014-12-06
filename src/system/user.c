@@ -41,6 +41,15 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
+#ifdef UNAV
+    #warning -- compiling for uNav board : Set USER.H **************************
+    #define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
+#endif
+#ifdef ROBOCONTROLLER_V3
+    #warning -- compiling for RoboController V3 board : Set USER.H *************
+/*  Remember, in RoboController V3 there are only 2 leds and no EEPROM
+ */
+#endif
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -61,7 +70,6 @@ void InitApp(void) {
 
 
 #ifdef UNAV
-    #warning -- compiling for uNav board : Set USER.H **************************
     // Input capture
     //***************************
     // Assign IC1 To Pin RP10
@@ -173,7 +181,6 @@ void InitApp(void) {
 #endif
 
 #ifdef ROBOCONTROLLER_V3
-    #warning -- compiling for RoboController V3 board : Set USER.H *************
     // Input capture
     //***************************
     // Assign IC1 To Pin RP22
@@ -266,7 +273,6 @@ void InitApp(void) {
     /*---------------------------------------------------------------------------*/
     /* Port	A   			    											     */
     /*---------------------------------------------------------------------------*/
-    #warning -- only 2 LED in RoboController V3 board****************************
     _TRISA1 = 0;		// MOTOR_EN1
     _TRISA4 = 0;		// MOTOR_EN2
     _TRISA8 = 0;		// LED1
