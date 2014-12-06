@@ -119,8 +119,11 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
         __delay32(200000);
         // fatal error 1
         LED2 = 1;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 0;
         LED4 = 0;
+#endif
     }
 }
 
@@ -134,8 +137,11 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
 
         // fatal error 2
         LED2 = 0;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 1;
         LED4 = 0;
+#endif
     };
 }
 
@@ -149,8 +155,11 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
 
         // fatal error 3
         LED2 = 1;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 1;
         LED4 = 0;
+#endif
     };
 }
 
@@ -164,8 +173,11 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
 
         // fatal error 4
         LED2 = 0;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 0;
         LED4 = 1;
+#endif
     };
 }
 
@@ -181,8 +193,11 @@ void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
 
         // fatal error 5
         LED2 = 1;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 0;
         LED4 = 1;
+#endif
     };
 }
 
@@ -201,8 +216,11 @@ void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
 
         // fatal error 1
         LED2 = 1;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 0;
         LED4 = 0;
+#endif
     };
 }
 
@@ -216,8 +234,11 @@ void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
 
         // fatal error 2
         LED2 = 0;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 1;
         LED4 = 0;
+#endif
     };
 }
 
@@ -231,8 +252,11 @@ void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
 
         // fatal error 3
         LED2 = 1;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 1;
         LED4 = 0;
+#endif
     };
 }
 
@@ -246,8 +270,11 @@ void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
 
         // fatal error 4
         LED2 = 0;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 0;
         LED4 = 1;
+#endif
     };
 }
 
@@ -263,8 +290,11 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
 
         // fatal error 5
         LED2 = 1;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 0;
         LED4 = 1;
+#endif
     };
 }
 
@@ -288,8 +318,11 @@ void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void) {
 
         // fatal error 6
         LED2 = 0;
+#ifdef UNAV
+    #warning LED3 & LED4 available on uNAV only
         LED3 = 1;
         LED4 = 1;
+#endif
     };
 }
 
