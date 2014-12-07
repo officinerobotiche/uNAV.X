@@ -48,7 +48,8 @@ unsigned char version_date_[] = __DATE__;
 unsigned char version_time_[] = __TIME__;
 unsigned char author_code[] = "Raffaello Bonghi";
 unsigned char name_board[] = "uNAV";
-unsigned char version_code[] = "v0.0.0 alpha";
+unsigned char version_code[] = "v0.4";
+unsigned char type_board[] = "Motor Control";
 parameter_system_t parameter_system;
 
 extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
@@ -162,6 +163,9 @@ services_t services(services_t service) {
             break;
         case NAME_BOARD:
             memcpy(service_send.buffer, name_board, sizeof (name_board));
+            break;
+        case TYPE_BOARD:
+            memcpy(service_send.buffer, type_board, sizeof (type_board));
             break;
         case VERSION_CODE:
             memcpy(service_send.buffer, version_code, sizeof (version_code));

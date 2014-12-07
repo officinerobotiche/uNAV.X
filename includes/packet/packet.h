@@ -217,6 +217,7 @@ typedef union buffer_packet {
 #define NAME_BOARD 'n'
 #define VERSION_CODE 'v'
 #define AUTHOR_CODE 'a'
+#define TYPE_BOARD 't'
 
 //Name for HASHMAP with information about standard messages
 #define HASHMAP_DEFAULT 'D'
