@@ -24,17 +24,6 @@ extern "C" {
 
     #include <stddef.h>
 
-
-
-    /* Board usage*/
-    /* remove comment of relative board to change hardware.
-     */
-    //#define UNAV 1
-    #define ROBOCONTROLLER_V3 1
-
-
-
-
 /******************************************************************************/
 /* µNAV pin map                                                               */
 /*                                                                            */
@@ -96,9 +85,7 @@ extern "C" {
 /******************************************************************************/
 /* User Level #define Macros                                                  */
 /******************************************************************************/
-
-    
-#ifdef UNAV
+#ifdef UNAV_V1
     #define LED1 _LATC6              // Led 1 green
     #define LED2 _LATC7              // Led 2 green
     #define LED3 _LATC8              // Led 3 yellow
@@ -110,8 +97,6 @@ extern "C" {
 #ifdef ROBOCONTROLLER_V3
     #define LED1 _LATA8              // Led 1 green
     #define LED2 _LATA9              // Led 2 green
-    //#define LED3 _LATC8              // Led 3 yellow
-    //#define LED4 _LATC9              // Led 4 red
 
     #define MOTOR_ENABLE1 _LATA1     // Enable Motore 1
     #define MOTOR_ENABLE2 _LATA4    // Enable Motore 2
