@@ -272,11 +272,11 @@ void InitQEI1(void) {
     QEI1CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
     QEI1CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
 
-#ifdef UNAV_V1
-    QEI1CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
-#endif
+
 #ifdef ROBOCONTROLLER_V3
     QEI1CONbits.SWPAB = 0; // Phase A and Phase B inputs swapped
+#else
+    QEI1CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
 #endif
 
     QEI1CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
@@ -296,13 +296,12 @@ void InitQEI2(void) {
     QEI2CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
     QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
 
-#ifdef UNAV_V1
-    QEI2CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
-#endif
 #ifdef ROBOCONTROLLER_V3
     QEI2CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
+#else
+    QEI2CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
 #endif
-    
+
     QEI2CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
     //QEI2CONbits.TQGATE= 0  // Timer gated time accumulation disabled
     //QEI2CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -425,8 +424,6 @@ void InitDMA1(void) {
     DMA1CONbits.NULLW = 0;
     DMA1CONbits.AMODE = 0;
     DMA1CONbits.MODE = 1;
-
-
 
     DMA1CNT = MAX_TX_BUFF - 1; // 32 DMA requests
     DMA1REQ = 0x000c; // Select UART1 Transmitter

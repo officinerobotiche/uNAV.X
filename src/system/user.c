@@ -41,15 +41,7 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-#ifdef UNAV_V1
-    //#warning -- Compiling for uNav board --
-    #define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
-#endif
-#ifdef ROBOCONTROLLER_V3
-    //#warning -- Compiling for RoboController V3 board --
-/*  Remember, in RoboController V3 there are only 2 leds and no EEPROM
- */
-#endif
+
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -84,8 +76,7 @@ void InitApp(void) {
     RPINR19bits.U2RXR = 3;  // U2RX To Pin RP3, CTS tied Vss
     RPINR19bits.U2CTSR = 0x1f;
     RPOR1bits.RP2R = 5;     // U2Tx To Pin RP2
-#endif
-#ifdef ROBOCONTROLLER_V3
+#elif ROBOCONTROLLER_V3
     // Input capture
     RPINR7bits.IC1R = 22;   // IC1 To Pin RP22
     RPINR7bits.IC2R = 24;   // IC2 To Pin RP24
@@ -100,6 +91,20 @@ void InitApp(void) {
 
     RPINR19bits.U2RXR = 6;  // U2RX To Pin RP6
     RPOR2bits.RP5R = 5;     // U2Tx To Pin RP5
+#elif MOTION_CONTROL
+    // Input capture
+    RPINR7bits.IC1R = 5; // Assign Input Capture 1 To Pin RP5
+    RPINR7bits.IC2R = 10; // Assign Input Capture 2 To Pin RP10
+    // QEI
+    RPINR14bits.QEA1R = 5; // Assign QEA1 To Pin RP5
+    RPINR14bits.QEB1R = 6; // Assign QEB1 To Pin RP6
+    RPINR16bits.QEA2R = 11; // Assign QEA2 To Pin RP11
+    RPINR16bits.QEB2R = 10; // Assign QEB2 To Pin RP10
+    //UART RX
+    RPINR18bits.U1RXR = 8; // Assign U1RX To Pin RP8
+    RPOR4bits.RP9R = 3; // Assign U1Tx To Pin RP9
+#else
+    #error Configuration error. Does not selected a board!
 #endif
     //*************************************************************
     // Lock Registers
@@ -149,8 +154,7 @@ void InitApp(void) {
     _TRISA1 = 1;    // CH2
     _TRISB0 = 1;    // CH3
     _TRISB1 = 1;    // CH4
-#endif
-#ifdef ROBOCONTROLLER_V3
+#elif ROBOCONTROLLER_V3
     // LED
     _TRISA8 = 0;    // LED1
     _TRISA9 = 0;    // LED2
@@ -177,6 +181,16 @@ void InitApp(void) {
     _TRISB4  = 0;   // RB4 = Out : Connettore IC2 pin 4
     _TRISC2  = 0;   // OUT Float
     _TRISC3  = 0;   // DIR RS485 UART1
+#elif MOTION_CONTROL
+    _TRISA4 = 0; //Led
+    _TRISB2 = 0; //Enable - Motor 1
+    _TRISB3 = 0; //Enable - Motor 2
+    _TRISB5 = 1;
+    _TRISB6 = 1;
+    _TRISB10 = 1;
+    _TRISB11 = 1;
+#else
+    #error Configuration error. Does not selected a board!
 #endif
     /* Initialize peripherals */
 #ifdef UNAV_V1
@@ -184,10 +198,13 @@ void InitApp(void) {
     LED2 = 0;       // LED2 Green
     LED3 = 0;       // LED3 Yellow
     LED4 = 0;       // LED4 Red
-#endif
-#ifdef ROBOCONTROLLER_V3
+#elif ROBOCONTROLLER_V3
     LED1 = 0;
     LED2 = 0;
+#elif MOTION_CONTROL
+    LED1 = 0;       // LED1 Blue
+#else
+    #error Configuration error. Does not selected a board!
 #endif
 
     /* Peripherical initalization */

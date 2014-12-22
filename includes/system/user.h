@@ -93,13 +93,17 @@ extern "C" {
 
     #define MOTOR_ENABLE1 _LATA7     // Enable Motore 1
     #define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
-#endif
-#ifdef ROBOCONTROLLER_V3
+#elif ROBOCONTROLLER_V3
     #define LED1 _LATA8              // Led 1 green
     #define LED2 _LATA9              // Led 2 green
 
     #define MOTOR_ENABLE1 _LATA1     // Enable Motore 1
     #define MOTOR_ENABLE2 _LATA4    // Enable Motore 2
+#elif MOTION_CONTROL
+    #define LED1 _LATA4              // Led Blu
+
+    #define MOTOR_ENABLE1 _LATB2    // Enable Motore 1
+    #define MOTOR_ENABLE2 _LATB3    // Enable Motore 2
 #endif
 
     /** Definition for user interrupt **/

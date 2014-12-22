@@ -118,10 +118,12 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
         LED1 = 0;
         __delay32(200000);
         // fatal error 1
-        LED2 = 1;
 #ifdef UNAV_V1
+        LED2 = 1;
         LED3 = 0;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -135,12 +137,13 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 2
-        LED2 = 0;
 #ifdef UNAV_V1
+        LED2 = 0;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -154,12 +157,13 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 3
-        LED2 = 1;
 #ifdef UNAV_V1
+        LED2 = 1;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
 #else
       #warning LED3 & LED4 available on uNAV only
 #endif
@@ -173,12 +177,13 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 4
-        LED2 = 0;
 #ifdef UNAV_V1
+        LED2 = 0;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -194,12 +199,13 @@ void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 5
-        LED2 = 1;
 #ifdef UNAV_V1
+        LED2 = 1;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -218,12 +224,13 @@ void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 1
-        LED2 = 1;
 #ifdef UNAV_V1
+        LED2 = 1;
         LED3 = 0;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -237,12 +244,13 @@ void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 2
-        LED2 = 0;
 #ifdef UNAV_V1
+        LED2 = 0;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -256,12 +264,13 @@ void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 3
-        LED2 = 1;
 #ifdef UNAV_V1
+        LED2 = 1;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -275,12 +284,13 @@ void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 4
-        LED2 = 0;
 #ifdef UNAV_V1
+        LED2 = 0;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -296,12 +306,13 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 5
-        LED2 = 1;
 #ifdef UNAV_V1
+        LED2 = 1;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
@@ -325,12 +336,13 @@ void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 6
-        LED2 = 0;
 #ifdef UNAV_V1
+        LED2 = 0;
         LED3 = 1;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
 #else
         #warning LED3 & LED4 available on uNAV only
 #endif
