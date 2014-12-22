@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -23,11 +23,11 @@
 #if defined(__XC16__)
 #include <xc.h>
 #elif defined(__C30__)
-    #if defined(__dsPIC33E__)
-        #include <p33Exxxx.h>
-    #elif defined(__dsPIC33F__)
-        #include <p33Fxxxx.h>
-    #endif
+#if defined(__dsPIC33E__)
+#include <p33Exxxx.h>
+#elif defined(__dsPIC33F__)
+#include <p33Fxxxx.h>
+#endif
 #endif
 
 #include <stdint.h>        /* Includes uint16_t definition */
@@ -42,42 +42,42 @@
 /* <Other function prototypes for debugging trap code may be inserted here>   */
 
 /* Use if INTCON2 ALTIVT=1 */
-void __attribute__((interrupt,no_auto_psv)) _OscillatorFail(void);
-void __attribute__((interrupt,no_auto_psv)) _AddressError(void);
-void __attribute__((interrupt,no_auto_psv)) _StackError(void);
-void __attribute__((interrupt,no_auto_psv)) _MathError(void);
+void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void);
+void __attribute__((interrupt, no_auto_psv)) _AddressError(void);
+void __attribute__((interrupt, no_auto_psv)) _StackError(void);
+void __attribute__((interrupt, no_auto_psv)) _MathError(void);
 
 #if defined(__HAS_DMA__)
 
-void __attribute__((interrupt,no_auto_psv)) _DMACError(void);
+void __attribute__((interrupt, no_auto_psv)) _DMACError(void);
 
 #endif
 
 #if defined(__dsPIC33F__)
 
 /* Use if INTCON2 ALTIVT=0 */
-void __attribute__((interrupt,no_auto_psv)) _AltOscillatorFail(void);
-void __attribute__((interrupt,no_auto_psv)) _AltAddressError(void);
-void __attribute__((interrupt,no_auto_psv)) _AltStackError(void);
-void __attribute__((interrupt,no_auto_psv)) _AltMathError(void);
+void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void);
+void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void);
+void __attribute__((interrupt, no_auto_psv)) _AltStackError(void);
+void __attribute__((interrupt, no_auto_psv)) _AltMathError(void);
 
-    #if defined(__HAS_DMA__)
+#if defined(__HAS_DMA__)
 
-    void __attribute__((interrupt,no_auto_psv)) _AltDMACError(void);
+void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void);
 
-    #endif
+#endif
 
 #endif
 
 /* Default interrupt handler */
-void __attribute__((interrupt,no_auto_psv)) _DefaultInterrupt(void);
+void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void);
 
 #if defined(__dsPIC33E__)
 
 /* These are additional traps in the 33E family.  Refer to the PIC33E
 migration guide.  There are no Alternate Vectors in the 33E family. */
-void __attribute__((interrupt,no_auto_psv)) _HardTrapError(void);
-void __attribute__((interrupt,no_auto_psv)) _SoftTrapError(void);
+void __attribute__((interrupt, no_auto_psv)) _HardTrapError(void);
+void __attribute__((interrupt, no_auto_psv)) _SoftTrapError(void);
 
 #endif
 
@@ -118,9 +118,15 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
         LED1 = 0;
         __delay32(200000);
         // fatal error 1
+#ifdef UNAV_V1
         LED2 = 1;
         LED3 = 0;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     }
 }
 
@@ -131,11 +137,16 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 2
+#ifdef UNAV_V1
         LED2 = 0;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -146,11 +157,16 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 3
+#ifdef UNAV_V1
         LED2 = 1;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
+#else
+      #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -161,11 +177,16 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 4
+#ifdef UNAV_V1
         LED2 = 0;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -178,11 +199,16 @@ void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 5
+#ifdef UNAV_V1
         LED2 = 1;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -198,11 +224,16 @@ void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 1
+#ifdef UNAV_V1
         LED2 = 1;
         LED3 = 0;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -213,11 +244,16 @@ void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 2
+#ifdef UNAV_V1
         LED2 = 0;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -228,11 +264,16 @@ void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 3
+#ifdef UNAV_V1
         LED2 = 1;
         LED3 = 1;
         LED4 = 0;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -243,11 +284,16 @@ void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 4
+#ifdef UNAV_V1
         LED2 = 0;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -260,11 +306,16 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 5
+#ifdef UNAV_V1
         LED2 = 1;
         LED3 = 0;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 1;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 
@@ -285,11 +336,16 @@ void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void) {
         __delay32(2000000);
         LED1 = 0;
         __delay32(2000000);
-
         // fatal error 6
+#ifdef UNAV_V1
         LED2 = 0;
         LED3 = 1;
         LED4 = 1;
+#elif ROBOCONTROLLER_V3
+        LED2 = 0;
+#else
+        #warning LED3 & LED4 available on uNAV only
+#endif
     };
 }
 

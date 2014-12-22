@@ -120,11 +120,11 @@ void init_parameter(void) {
     vel_mis.w = 0;
     motor_left.control_vel = 0;
     motor_left.measure_vel = 0;
-    motor_left.rifer_vel = 0;
+    motor_left.refer_vel = 0;
     motor_left.current = 0;
     motor_right.control_vel = 0;
     motor_right.measure_vel = 0;
-    motor_right.rifer_vel = 0;
+    motor_right.refer_vel = 0;
     motor_right.current = 0;
 
     constraint.max_left = 14000;
@@ -226,14 +226,14 @@ int Velocity(void) {
     rifer_con_right = (int) ((1 / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
     // Calculating constraint
     if (abs(rifer_con_left) > constraint.max_left) {
-        motor_left.rifer_vel = SGN(rifer_con_left) * constraint.max_left;
+        motor_left.refer_vel = SGN(rifer_con_left) * constraint.max_left;
     } else {
-        motor_left.rifer_vel = rifer_con_left;
+        motor_left.refer_vel = rifer_con_left;
     }
     if (abs(rifer_con_right) > constraint.max_right) {
-        motor_right.rifer_vel = SGN(rifer_con_right) * constraint.max_right;
+        motor_right.refer_vel = SGN(rifer_con_right) * constraint.max_right;
     } else {
-        motor_right.rifer_vel = rifer_con_right;
+        motor_right.refer_vel = rifer_con_right;
     }
     return TMR1 - t; // Time of esecution
 }
@@ -254,7 +254,7 @@ int MotorPIDL(void) {
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
     if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motors.k_vel_l / timePeriodLtmp);
-    PIDstruct1.controlReference = motor_left.rifer_vel; //Riferimento Ruota Sinistra
+    PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
     motor_left.control_vel = -(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
@@ -280,7 +280,7 @@ int MotorPIDR(void) {
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
     if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motors.k_vel_r / timePeriodRtmp);
-    PIDstruct2.controlReference = motor_right.rifer_vel; //Riferimento Ruota Destra
+    PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
     PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
     PID(&PIDstruct2); //Esecuzione funzione PID
     motor_right.control_vel = (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM

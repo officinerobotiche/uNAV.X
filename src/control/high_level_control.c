@@ -39,10 +39,10 @@
 #include "control/high_level_control.h"
 #include "control/motors_PID.h"
 #include "communication/serial.h"
-#include "communication/parsing_packet.h"
+#include "communication/parsing_messages.h"
 
 coordinate_t coordinate;
-delta_odometry_t delta_odometry;
+//delta_odometry_t delta_odometry;
 unsigned int counter_delta = 0;
 bool autosend_delta_odometry = false;
 
@@ -56,7 +56,6 @@ extern float wheel_m;
 
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
-
 /******************************************************************************/
 
 void init_coordinate(void) {
@@ -108,18 +107,20 @@ int deadReckoning(void) {
         cosTh_old = cosTh_new;
     }
 
+    /* TODO Verify
     if (autosend_delta_odometry) {
         // Add delta step in buffer
         delta_odometry.delta[counter_delta] = delta;
         counter_delta++;
         if (counter_delta == BUFFER_ODOMETRY) {
-            abstract_packet_t packet;
+            abstract_message_u packet;
             packet.delta_odometry = delta_odometry;
-            packet_t send = encoderSingle(createDataPacket(DELTA_ODOMETRY, HASHMAP_MOTION, &packet));
+            packet_t send = encoderSingle(createDataPacket(DELTA_ODOMETRY, HASHMAP_UNAV, &packet));
             pkg_send(HEADER_ASYNC, send);
             counter_delta = 0;
         }
     }
+    */
 
     // Calculate odometry
     odometry(delta);

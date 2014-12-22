@@ -13,3 +13,4 @@ nb-configuration.xml
 disassembly/
 nbproject/Package-*.bash
 nbproject/Makefile-*.mk
+/.project

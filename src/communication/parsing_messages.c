@@ -34,24 +34,25 @@
 #include <stdbool.h>       /* Includes true/false definition */
 #include <string.h>
 
-#include "communication/parsing_packet.h"
-#include "communication/decode_packet.h"
+#include "communication/parsing_messages.h"
+#include "communication/parsing_other_messages.h"
 #include "communication/serial.h"
 
 #include "system/user.h"
 #include "system/system.h"
 
-static unsigned int hashmap_default[10];
+//Table to convertion name (number) of message in a length
+//See packet/packet.h and packet/unav.h
+static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
 static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
-//From System
+/** GLOBAL VARIBLES */
+// From system/system.c
 extern parameter_system_t parameter_system;
-
-// From Interrupt
+// From system/interrupt.c
 extern volatile process_t time, priority, frequency;
 extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
-
-// From serial
+// From communication/serial.c
 extern error_pkg_t serial_error;
 extern packet_t receive_pkg;
 extern char receive_header;
@@ -65,67 +66,67 @@ void init_hashmap() {
     INITIALIZE_HASHMAP_MOTION
 }
 
-void saveData(information_packet_t* list_send, size_t len, information_packet_t info) {
-    abstract_packet_t send;
-    if (info.type == HASHMAP_DEFAULT) {
-        switch (info.command) {
+void saveData(information_packet_t* list_send, size_t len, information_packet_t* info) {
+    abstract_message_u send;
+    if (info->type == HASHMAP_DEFAULT) {
+        switch (info->command) {
             case SERVICES:
-                send.services = services(info.packet.services);
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                send.services = services(info->packet.services);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PRIORITY_PROCESS:
-                priority = info.packet.process;
-                list_send[len] = createPacket(info.command, ACK, info.type, NULL);
+                priority = info->packet.process;
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
             case FRQ_PROCESS:
-                frequency = info.packet.process;
-                list_send[len] = createPacket(info.command, ACK, info.type, NULL);
+                frequency = info->packet.process;
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case NAME_PROCESS:
-                send.process_name = decodeNameProcess(info.packet.process_name.name);
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                send.process_name = decodeNameProcess(info->packet.process_name.name);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case TIME_PROCESS:
             case PARAMETER_SYSTEM:
             case ERROR_SERIAL:
-                list_send[len] = createPacket(info.command, NACK, info.type, NULL);
+                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 return;
             default:
-                list_send[len] = createPacket(info.command, NACK, info.type, NULL);
+                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 break;
         }
     } else saveOtherData(list_send, len, info);
 }
 
-void sendData(information_packet_t* list_send, size_t len, information_packet_t info) {
-    abstract_packet_t send;
-    if (info.type == HASHMAP_DEFAULT) {
-        switch (info.command) {
+void sendData(information_packet_t* list_send, size_t len, information_packet_t* info) {
+    abstract_message_u send;
+    if (info->type == HASHMAP_DEFAULT) {
+        switch (info->command) {
             case SERVICES:
-                send.services = services(info.packet.services);
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                send.services = services(info->packet.services);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PRIORITY_PROCESS:
                 send.process = priority;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
             case FRQ_PROCESS:
                 send.process = frequency;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case TIME_PROCESS:
                 send.process = time;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PARAMETER_SYSTEM:
                 send.parameter_system = parameter_system;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case ERROR_SERIAL:
                 send.error_pkg = serial_error;
-                list_send[len] = createDataPacket(info.command, info.type, &send);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case NAME_PROCESS:
             default:
-                list_send[len] = createPacket(info.command, NACK, info.type, NULL);
+                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 break;
         }
     } else sendOtherData(list_send, len, info);
@@ -134,19 +135,16 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t 
 int parse_packet() {
     int i;
     unsigned int t = TMR1; // Timing function
-    information_packet_t list_data[10];
+    information_packet_t list_data[BUFFER_LIST_PARSING];
     unsigned int counter = 0;
     //Save single packet
-    for (i = 0; i < receive_pkg.length;) {
-        buffer_packet_u buffer_packet;
-        memcpy(&buffer_packet.buffer, &receive_pkg.buffer[i], receive_pkg.buffer[i]);
-        list_data[counter++] = buffer_packet.information_packet;
-        i += receive_pkg.buffer[i];
+    for (i = 0; i < receive_pkg.length; i += receive_pkg.buffer[i]) {
+        memcpy((unsigned char*) &list_data[counter++], &receive_pkg.buffer[i], receive_pkg.buffer[i]);
     }
     //Compute packet
     for (i = 0; i < counter; ++i) {
-        information_packet_t info = list_data[i];
-        switch (info.option) {
+        information_packet_t* info = &list_data[i];
+        switch (info->option) {
             case DATA:
                 saveData(&list_data[0], i, info);
                 break;
@@ -186,7 +184,7 @@ packet_t encoderSingle(information_packet_t send) {
     return packet_send;
 }
 
-information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_packet_t * packet) {
+information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet) {
     information_packet_t information;
     information.command = command;
     information.option = option;
@@ -207,11 +205,11 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
         information.length = LNG_HEAD_INFORMATION_PACKET;
     }
     if (packet != NULL) {
-        memcpy(&information.packet, packet, sizeof (abstract_packet_t));
+        memcpy(&information.packet, packet, sizeof (abstract_message_u));
     }
     return information;
 }
 
-information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet) {
+information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet) {
     return createPacket(command, DATA, type, packet);
 }
