@@ -46,8 +46,19 @@
 unsigned int reset_count = 0;
 unsigned char version_date_[] = __DATE__;
 unsigned char version_time_[] = __TIME__;
-unsigned char author_code[] = "Raffaello Bonghi";
+#ifdef UNAV_V1
 unsigned char name_board[] = "uNAV";
+#elif ROBOCONTROLLER_V3
+unsigned char name_board[] = "RoboController";
+#elif MOTION_CONTROL
+unsigned char name_board[] = "Motion Control";
+#endif
+#ifdef MOTION_CONTROL
+unsigned char author_code[] = "Raffaello Bonghi";
+#else
+unsigned char author_code[] = "Officine Robotiche";
+#endif
+
 unsigned char version_code[] = "v0.4";
 unsigned char type_board[] = "Motor Control";
 parameter_system_t parameter_system;
