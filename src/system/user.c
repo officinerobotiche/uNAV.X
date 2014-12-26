@@ -252,6 +252,7 @@ int maxValue(float myArray[], size_t size) {
 void blinkflush() {
     LED1 = 1;
     __delay32(8000000); // delay 200 ms;
+#ifdef UNAV_V1
     LED2 = 1;
     __delay32(8000000); // delay 200 ms;
     LED3 = 1;
@@ -263,6 +264,11 @@ void blinkflush() {
     LED3 = 0;
     __delay32(8000000); // delay 200 ms;
     LED2 = 0;
+#elif ROBOCONTROLLER_V3
+    LED2 = 1;
+    __delay32(8000000); // delay 200 ms;
+    LED2 = 0;
+#endif
     __delay32(8000000); // delay 200 ms;
     LED1 = 0;
 }
