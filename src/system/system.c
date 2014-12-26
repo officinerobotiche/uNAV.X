@@ -285,7 +285,7 @@ void InitQEI1(void) {
 
 
 #ifdef ROBOCONTROLLER_V3
-    QEI1CONbits.SWPAB = 0; // Phase A and Phase B inputs swapped
+    QEI1CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
 #else
     QEI1CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
 #endif
@@ -308,7 +308,7 @@ void InitQEI2(void) {
     QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
 
 #ifdef ROBOCONTROLLER_V3
-    QEI2CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = 0; // Phase A and Phase B inputs swapped
 #else
     QEI2CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
 #endif
