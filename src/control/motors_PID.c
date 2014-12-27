@@ -222,8 +222,8 @@ int Velocity(void) {
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
 
-    rifer_con_left = (int) ((1 / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
-    rifer_con_right = (int) ((1 / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+    rifer_con_left = (int) ((1.0f / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+    rifer_con_right = (int) ((1.0f / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
     // Calculating constraint
     if (abs(rifer_con_left) > constraint.max_left) {
         motor_left.refer_vel = SGN(rifer_con_left) * constraint.max_left;
