@@ -122,7 +122,8 @@ void InitApp(void) {
     /* Setup port direction */
     // weak pullups enable
     CNPU1 = 0xffff;
-    //CNPU2 = 0xffff;
+    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
+   
 #ifdef UNAV_V1
     // LED
     _TRISC6 = 0;    // LED 1 Green

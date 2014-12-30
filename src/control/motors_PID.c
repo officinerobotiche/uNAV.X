@@ -213,28 +213,51 @@ bool Emergency(void) {
 }
 
 int Velocity(void) {
+
+    // TODO divide this function into two pieces:
+    //      - first: velocity calculation to be sent to user for "navigation" purposes
+    //      - second: references calculation to be used in PID function
+
     unsigned int t = TMR1; // Timing function
-    int rifer_con_left, rifer_con_right;
+
+    // >>>>> First part: speed calculation
+    long int rifer_con_left, rifer_con_right; // long int needed to avoid overflow
     MOTOR_ENABLE1 = enable_motors;
     MOTOR_ENABLE2 = enable_motors;
     long vel_v = (parameter_int.radius_r * motor_right.measure_vel + parameter_int.radius_l * motor_left.measure_vel) / 2;
     long vel_w = (parameter_int.radius_r * motor_right.measure_vel - parameter_int.radius_l * motor_left.measure_vel) / (2 * parameter_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
+    // <<<<< First part: speed calculation
 
-    rifer_con_left = (int) ((1.0f / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
-    rifer_con_right = (int) ((1.0f / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+
+    // >>>>> Second part: references calculation
+    rifer_con_left = (long int) ((1.0f / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+    rifer_con_right = (long int) ((1.0f / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+
+    // TODO to avoid the following saturation we can normalize ref value! by Walt
+
+    // >>>>> Saturation on 16 bit values
+    rifer_con_left = rifer_con_left>32767?32767:rifer_con_left;
+    rifer_con_left = rifer_con_left<-32768?-32768:rifer_con_left;
+    
+    rifer_con_right = rifer_con_right>32767?32767:rifer_con_right;
+    rifer_con_right = rifer_con_right<-32768?-32768:rifer_con_right;
+    // <<<<< Saturation on 16 bit values
+    
     // Calculating constraint
     if (abs(rifer_con_left) > constraint.max_left) {
-        motor_left.refer_vel = SGN(rifer_con_left) * constraint.max_left;
+        motor_left.refer_vel = SGN((int)rifer_con_left) * constraint.max_left;
     } else {
-        motor_left.refer_vel = rifer_con_left;
+        motor_left.refer_vel = (int)rifer_con_left;
     }
     if (abs(rifer_con_right) > constraint.max_right) {
-        motor_right.refer_vel = SGN(rifer_con_right) * constraint.max_right;
+        motor_right.refer_vel = SGN((int)rifer_con_right) * constraint.max_right;
     } else {
-        motor_right.refer_vel = rifer_con_right;
+        motor_right.refer_vel = (int)rifer_con_right;
     }
+    // <<<<< Second part: references calculation
+
     return TMR1 - t; // Time of esecution
 }
 
