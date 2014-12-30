@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -99,7 +99,7 @@ void init_process(void) {
     strcpy(name_process_velocity.buffer, VELOCITY_STRING);
     name_process_odometry.name = PROCESS_ODOMETRY;
     strcpy(name_process_odometry.buffer, ODOMETRY_STRING);
-    
+
     parameter_system.step_timer = (int) (TMR1_VALUE);
     parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
 
@@ -233,25 +233,6 @@ void ConfigureOscillator(void) {
     while (OSCCONbits.LOCK != 1) {
     }; // Wait for PLL to lock
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// The following works well on Myzhar's RoboController but not on Raffaello's
-// uNav
-//void ConfigureOscillator(void) {
-//    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
-//    CLKDIVbits.PLLPOST = 0; // N1=2
-//    CLKDIVbits.PLLPRE = 0; // N2=2
-//    // Disable Watch Dog Timer
-//    RCONbits.SWDTEN = 0;
-//    // Clock switching to incorporate PLL
-//    // Initiate Clock Switch to Primary
-//    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
-//    __builtin_write_OSCCONL(0x01); // Start clock switching
-//    while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
-//    while (OSCCONbits.LOCK != 1) {
-//    }; // Wait for PLL to lock
-//}
-///////////////////////////////////////////////////////////////////////////////
 
 void InitPWM(void) {
     // Holds the value to be loaded into dutycycle register
