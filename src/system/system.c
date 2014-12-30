@@ -220,23 +220,38 @@ void InitInterrupts(void) {
 }
 
 void ConfigureOscillator(void) {
-
-    _ROI = 0x00; // Recover on Interrupt bit
-    _DOZE = 0x03; // Processor Clock Reduction Select bits
-    _DOZEN = 0x00; // DOZE Mode Enable bit
-    _FRCDIV = 0x00; // Internal Fast RC Oscillator Postscaler bits
-    _PLLDIV = 0x1E; // PLL divider (M=32)
-    //PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
-    // PLL VCO Output Divider Select bits (N2)
+    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
     CLKDIVbits.PLLPOST = 0; // N1=2
-    // PLL Phase Detector Input Divider bits (N1)
     CLKDIVbits.PLLPRE = 0; // N2=2
     // Disable Watch Dog Timer
     RCONbits.SWDTEN = 0;
-
+    // Clock switching to incorporate PLL
+    // Initiate Clock Switch to Primary
+    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
+    __builtin_write_OSCCONL(0x01); // Start clock switching
     while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
-    while (OSCCONbits.LOCK != 1); // Wait for PLL to lock
+    while (OSCCONbits.LOCK != 1) {
+    }; // Wait for PLL to lock
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// The following works well on Myzhar's RoboController but not on Raffaello's
+// uNav
+//void ConfigureOscillator(void) {
+//    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
+//    CLKDIVbits.PLLPOST = 0; // N1=2
+//    CLKDIVbits.PLLPRE = 0; // N2=2
+//    // Disable Watch Dog Timer
+//    RCONbits.SWDTEN = 0;
+//    // Clock switching to incorporate PLL
+//    // Initiate Clock Switch to Primary
+//    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
+//    __builtin_write_OSCCONL(0x01); // Start clock switching
+//    while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
+//    while (OSCCONbits.LOCK != 1) {
+//    }; // Wait for PLL to lock
+//}
+///////////////////////////////////////////////////////////////////////////////
 
 void InitPWM(void) {
     // Holds the value to be loaded into dutycycle register
