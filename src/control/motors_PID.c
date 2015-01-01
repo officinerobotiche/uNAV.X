@@ -288,9 +288,10 @@ int MotorPIDL(void) {
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
-    motor_left.control_vel = -(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = -(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
-    SetDCMCPWM1(1, motor_left.control_vel, 0);
+    SetDCMCPWM1(1, pid_control, 0);
+    motor_left.control_vel = PIDstruct1.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
@@ -314,9 +315,10 @@ int MotorPIDR(void) {
     PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
     PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
     PID(&PIDstruct2); //Esecuzione funzione PID
-    motor_right.control_vel = (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
-    SetDCMCPWM1(2, motor_right.control_vel, 0);
+    SetDCMCPWM1(2, pid_control, 0);
+    motor_right.control_vel = PIDstruct2.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
