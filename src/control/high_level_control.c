@@ -49,7 +49,7 @@ bool autosend_delta_odometry = false;
 float sinTh_old = 0, cosTh_old = 1;
 
 // From motors PID
-extern volatile parameter_motors_t parameter_motors;
+extern volatile parameter_unicycle_t parameter_unicycle;
 extern volatile int PulsEncL, PulsEncR;
 extern k_odo_t k_odo;
 extern float wheel_m;
@@ -80,13 +80,13 @@ int deadReckoning(void) {
     PulsEncL = 0; // Flush variabile
     PulsEncR = 0; // Flush variabile
 
-    if (fabs(DifSp) <= parameter_motors.sp_min) {
+    if (fabs(DifSp) <= parameter_unicycle.sp_min) {
         delta.theta = 0;
         delta.space = WheelSpR;
         delta.x = delta.space * cosTh_old;
         delta.y = delta.space * sinTh_old;
-    } else if (fabs(SumSp) <= parameter_motors.sp_min) {
-        delta.theta = DifSp / parameter_motors.wheelbase;
+    } else if (fabs(SumSp) <= parameter_unicycle.sp_min) {
+        delta.theta = DifSp / parameter_unicycle.wheelbase;
         coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
         sinTh_old = sinf(coordinate.theta);
         cosTh_old = cosf(coordinate.theta);
@@ -94,7 +94,7 @@ int deadReckoning(void) {
         delta.y = 0;
         delta.space = 0;
     } else {
-        delta.theta = DifSp / parameter_motors.wheelbase;
+        delta.theta = DifSp / parameter_unicycle.wheelbase;
         coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
         float cosTh_new = cosf(coordinate.theta);
         float sinTh_new = sinf(coordinate.theta);

@@ -47,7 +47,8 @@
 extern unsigned int counter_stop;
 
 // From motors PID
-extern parameter_motors_t parameter_motors;
+extern parameter_motor_t parameter_motor_left, parameter_motor_right;
+extern parameter_unicycle_t parameter_unicycle;
 extern constraint_t constraint;
 extern velocity_t vel_rif, vel_mis;
 extern pid_control_t pid_left, pid_right;
@@ -82,8 +83,18 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 update_coord();
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case PARAMETER_MOTORS:
-                parameter_motors = info->packet.parameter_motors;
+            case PARAMETER_UNICYCLE:
+                parameter_unicycle = info->packet.parameter_unicycle;
+                update_parameter();
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+                break;
+            case PARAMETER_MOTOR_L:
+                parameter_motor_left = info->packet.parameter_motor;
+                update_parameter();
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+                break;
+            case PARAMETER_MOTOR_R:
+                parameter_motor_right = info->packet.parameter_motor;
                 update_parameter();
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
@@ -136,8 +147,16 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
             //    send.delta_odometry = delta_odometry;
             //    list_send[len] = createDataPacket(info->command, info->type, &send);
             //    break;
-            case PARAMETER_MOTORS:
-                send.parameter_motors = parameter_motors;
+            case PARAMETER_UNICYCLE:
+                send.parameter_unicycle = parameter_unicycle;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case PARAMETER_MOTOR_L:
+                send.parameter_motor = parameter_motor_left;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case PARAMETER_MOTOR_R:
+                send.parameter_motor = parameter_motor_right;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case CONSTRAINT:

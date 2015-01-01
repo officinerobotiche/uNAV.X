@@ -26,8 +26,8 @@
 
 /**
  * Message for emergency configuration
- * * time to stop
- * * timeout to start emergency stop motors
+ * - time to stop
+ * - timeout to start emergency stop motors
  */
 typedef struct emergency {
     float time;
@@ -38,8 +38,8 @@ typedef struct emergency {
 /**
  * Message for definiton contraint for velocity controller
  * Max velocity for:
- * * left motor
- * * right motor
+ * - left motor
+ * - right motor
  */
 typedef struct constraint {
     float max_left;
@@ -49,10 +49,10 @@ typedef struct constraint {
 
 /**
  * Message for state motor controller, information about:
- * * reference
- * * control
- * * measure
- * * motor current consumption
+ * - reference
+ * - control
+ * - measure
+ * - motor current consumption
  */
 typedef struct motor {
     int16_t refer_vel;
@@ -64,9 +64,9 @@ typedef struct motor {
 
 /**
  * Message for definition gain for PID controller
- * * K_p
- * * K_i
- * * K_d
+ * - K_p
+ * - K_i
+ * - K_d
  */
 typedef struct pid {
     float kp;
@@ -77,8 +77,8 @@ typedef struct pid {
 
 /**
  * Definition for coordinate robot:
- * * position [x, y, theta]
- * * space
+ * - position [x, y, theta]
+ * - space
  */
 typedef struct coordinate {
     float x;
@@ -100,29 +100,37 @@ typedef struct coordinate {
 
 /**
  * Parameters definition for unicycle robot:
- * * radius (left and right)
- * * wheelbase
- * * k_vel (left and right)
- * * k_ang (left and right)
- * * minimal space
+ * - radius (left and right)
+ * - wheelbase
+ * - minimal space for odometry
  */
-typedef struct parameter_motors {
+typedef struct parameter_unicycle {
     float radius_r;
     float radius_l;
     float wheelbase;
-    float k_vel_r;
-    float k_vel_l;
-    float k_ang_r;
-    float k_ang_l;
     float sp_min;
-    int16_t pwm_step;
-} parameter_motors_t;
-#define LNG_PARAMETER_MOTORS sizeof(parameter_motors_t)
+} parameter_unicycle_t;
+#define LNG_PARAMETER_UNICYCLE sizeof(parameter_unicycle_t)
+
+/**
+ * Parameter definiton for motor:
+ * - k_vel - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_vel</a>
+ * - k_ang - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_ang</a>
+ * - boolean encoder swap
+ * - boolean set enable
+ */
+typedef struct parameter_motor {
+    float k_vel;
+    float k_ang;
+    uint8_t encoder_swap;
+    uint8_t enable_set;
+} parameter_motor_t;
+#define LNG_PARAMETER_MOTOR sizeof(parameter_motor_t)
 
 /**
  * Message for read and write velocity in a unicycle robot:
- * * v = linear velocity
- * * w = angular velocity
+ * - v = linear velocity
+ * - w = angular velocity
  */
 typedef struct velocity {
     float v;
@@ -140,7 +148,8 @@ typedef uint8_t enable_motor_t;
 #define ABSTRACT_MESSAGE_MOTION                  \
         pid_control_t pid;                       \
         coordinate_t coordinate;                 \
-        parameter_motors_t parameter_motors;     \
+        parameter_unicycle_t parameter_unicycle; \
+        parameter_motor_t parameter_motor;       \
         velocity_t velocity;                     \
         enable_motor_t enable;                   \
         motor_t motor;                           \
@@ -154,13 +163,15 @@ typedef uint8_t enable_motor_t;
 #define MOTOR_L 2
 #define MOTOR_R 3
 #define COORDINATE 4
-#define PARAMETER_MOTORS 5
-#define CONSTRAINT 6
-#define VELOCITY 7
-#define VELOCITY_MIS 8
-#define ENABLE 9
-#define EMERGENCY 10
-#define DELTA_ODOMETRY 11
+#define PARAMETER_UNICYCLE 5
+#define PARAMETER_MOTOR_L 6
+#define PARAMETER_MOTOR_R 7
+#define CONSTRAINT 8
+#define VELOCITY 9
+#define VELOCITY_MIS 10
+#define ENABLE 11
+#define EMERGENCY 12
+#define DELTA_ODOMETRY 13
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 4
@@ -183,16 +194,18 @@ typedef uint8_t enable_motor_t;
 /**
  * Table with convertion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_MOTION   hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;          \
-                                    hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;          \
-                                    hashmap_motion[MOTOR_L] = LNG_MOTOR;                      \
-                                    hashmap_motion[MOTOR_R] = LNG_MOTOR;                      \
-                                    hashmap_motion[COORDINATE] = LNG_COORDINATE;              \
-                                    hashmap_motion[PARAMETER_MOTORS] = LNG_PARAMETER_MOTORS;  \
-                                    hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;              \
-                                    hashmap_motion[VELOCITY] = LNG_VELOCITY;                  \
-                                    hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;              \
-                                    hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                \
+#define INITIALIZE_HASHMAP_MOTION   hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;               \
+                                    hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;               \
+                                    hashmap_motion[MOTOR_L] = LNG_MOTOR;                           \
+                                    hashmap_motion[MOTOR_R] = LNG_MOTOR;                           \
+                                    hashmap_motion[COORDINATE] = LNG_COORDINATE;                   \
+                                    hashmap_motion[PARAMETER_UNICYCLE] = LNG_PARAMETER_UNICYCLE;   \
+                                    hashmap_motion[PARAMETER_MOTOR_L] = LNG_PARAMETER_MOTOR;       \
+                                    hashmap_motion[PARAMETER_MOTOR_R] = LNG_PARAMETER_MOTOR;       \
+                                    hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;                   \
+                                    hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
+                                    hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;                   \
+                                    hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
                                     hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
                                     //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
 

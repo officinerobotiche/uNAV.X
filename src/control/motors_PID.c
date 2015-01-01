@@ -62,7 +62,8 @@ extern parameter_system_t parameter_system;
 volatile int PulsEncL = 0; //Buffer for deadReckoning
 volatile int PulsEncR = 0; //Buffer for deadReckoning
 
-parameter_motors_t parameter_motors;
+parameter_motor_t parameter_motor_left, parameter_motor_right;
+parameter_unicycle_t parameter_unicycle;
 constraint_t constraint;
 velocity_t vel_rif, vel_mis;
 pid_control_t pid_left, pid_right;
@@ -76,18 +77,18 @@ bool save_velocity = true;
 
 float const_vel[3];
 
-typedef struct parameter_int {
+//Definition value for parameter unicycle
+typedef struct parameter_unicycle_int {
     long radius_l;
     long radius_r;
     long wheelbase;
-    long k_vel_l;
-    long k_vel_r;
-} parameter_int_t;
+} parameter_unicycle_int_t;
 
 k_odo_t k_odo;
 float wheel_m;
 
-parameter_int_t parameter_int;
+parameter_unicycle_int_t parameter_unicycle_int;
+long k_vel_left, k_vel_right;
 
 /**/
 
@@ -102,15 +103,22 @@ extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
 /******************************************************************************/
 
 void init_parameter(void) {
-    parameter_motors.radius_l = 0.04; //Raggio ruota sinistra
-    parameter_motors.radius_r = 0.04; //Raggio ruota destra
-    parameter_motors.wheelbase = 0.20; //Interasse
-    parameter_motors.k_vel_l = K_VEL; //Costante velocità
-    parameter_motors.k_vel_r = K_VEL;
-    parameter_motors.k_ang_l = K_ANG; //Constante angolare
-    parameter_motors.k_ang_r = K_ANG;
-    parameter_motors.sp_min = 0.0001; // FLT_MIN
-    parameter_motors.pwm_step = 4096;
+    parameter_unicycle.radius_l = 0.04; //Radius left wheel
+    parameter_unicycle.radius_r = 0.04; //Radius right wheel
+    parameter_unicycle.wheelbase = 0.20; //Wheelbase
+    parameter_unicycle.sp_min = 0.0001; // FLT_MIN
+    //Left motor parameters
+    parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
+    parameter_motor_left.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
+    parameter_motor_left.encoder_swap = false;
+    parameter_motor_left.enable_set = false;
+    //Right motor parameters
+    parameter_motor_right.k_vel = K_VEL;
+    parameter_motor_right.k_ang = K_ANG;
+    parameter_motor_right.encoder_swap = false;
+    parameter_motor_right.enable_set = false;
+
+    //parameter_motors.pwm_step = 4096;
 
     update_parameter();
 
@@ -136,14 +144,14 @@ void init_parameter(void) {
 }
 
 void update_parameter(void) {
-    parameter_int.radius_l = ((int) (parameter_motors.radius_l * 1000.0));
-    parameter_int.radius_r = ((int) (parameter_motors.radius_r * 1000.0));
-    parameter_int.wheelbase = ((int) (parameter_motors.wheelbase * 1000.0));
-    parameter_int.k_vel_r = parameter_motors.k_vel_r;
-    parameter_int.k_vel_l = parameter_motors.k_vel_l;
-    k_odo.k_left = parameter_motors.radius_l * parameter_motors.k_ang_l;
-    k_odo.k_right = parameter_motors.radius_r * parameter_motors.k_ang_r;
-    wheel_m = parameter_motors.wheelbase / 2;
+    parameter_unicycle_int.radius_l = ((int) (parameter_unicycle.radius_l * 1000.0));
+    parameter_unicycle_int.radius_r = ((int) (parameter_unicycle.radius_r * 1000.0));
+    parameter_unicycle_int.wheelbase = ((int) (parameter_unicycle.wheelbase * 1000.0));
+    k_vel_left = parameter_motor_left.k_vel;
+    k_vel_right = parameter_motor_right.k_vel;
+    k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
+    k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
+    wheel_m = parameter_unicycle.wheelbase / 2;
     emergency.time = 1.0;
     emergency.timeout = 500;
 }
@@ -224,16 +232,16 @@ int Velocity(void) {
     long int rifer_con_left, rifer_con_right; // long int needed to avoid overflow
     MOTOR_ENABLE1 = enable_motors;
     MOTOR_ENABLE2 = enable_motors;
-    long vel_v = (parameter_int.radius_r * motor_right.measure_vel + parameter_int.radius_l * motor_left.measure_vel) / 2;
-    long vel_w = (parameter_int.radius_r * motor_right.measure_vel - parameter_int.radius_l * motor_left.measure_vel) / (2 * parameter_int.wheelbase);
+    long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
     // <<<<< First part: speed calculation
 
 
     // >>>>> Second part: references calculation
-    rifer_con_left = (long int) ((1.0f / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
-    rifer_con_right = (long int) ((1.0f / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
+    rifer_con_left = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    rifer_con_right = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // TODO to avoid the following saturation we can normalize ref value! by Walt
 
@@ -276,7 +284,7 @@ int MotorPIDL(void) {
     POS1CNT = 0; //Reset registro
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
-    if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motors.k_vel_l / timePeriodLtmp);
+    if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motor_left.k_vel / timePeriodLtmp);
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
@@ -302,7 +310,7 @@ int MotorPIDR(void) {
     POS2CNT = 0; //Reset registro
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
-    if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motors.k_vel_r / timePeriodRtmp);
+    if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / timePeriodRtmp);
     PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
     PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
     PID(&PIDstruct2); //Esecuzione funzione PID
