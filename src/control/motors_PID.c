@@ -230,8 +230,8 @@ int Velocity(void) {
 
     // >>>>> First part: speed calculation
     long int rifer_con_left, rifer_con_right; // long int needed to avoid overflow
-    MOTOR_ENABLE1 = enable_motors;
-    MOTOR_ENABLE2 = enable_motors;
+    MOTOR_ENABLE1 = enable_motors ^ parameter_motor_left.enable_set;
+    MOTOR_ENABLE2 = enable_motors ^ parameter_motor_right.enable_set;
     long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
     long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
@@ -288,7 +288,7 @@ int MotorPIDL(void) {
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
-    int pid_control = -(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = (PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
     SetDCMCPWM1(1, pid_control, 0);
     motor_left.control_vel = PIDstruct1.controlOutput;
