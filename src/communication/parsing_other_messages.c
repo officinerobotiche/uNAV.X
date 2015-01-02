@@ -85,17 +85,17 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case PARAMETER_UNICYCLE:
                 parameter_unicycle = info->packet.parameter_unicycle;
-                update_parameter();
+                update_parameter_unicycle();
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case PARAMETER_MOTOR_L:
                 parameter_motor_left = info->packet.parameter_motor;
-                update_parameter();
+                update_parameter_motors();
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case PARAMETER_MOTOR_R:
                 parameter_motor_right = info->packet.parameter_motor;
-                update_parameter();
+                update_parameter_motors();
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case CONSTRAINT:

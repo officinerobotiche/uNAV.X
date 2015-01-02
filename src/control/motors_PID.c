@@ -120,7 +120,7 @@ void init_parameter(void) {
 
     //parameter_motors.pwm_step = 4096;
 
-    update_parameter();
+    update_parameter_unicycle();
 
     vel_rif.v = 0;
     vel_rif.w = 0;
@@ -143,17 +143,26 @@ void init_parameter(void) {
     enable_motors = false;
 }
 
-void update_parameter(void) {
+void update_parameter_unicycle(void) {
     parameter_unicycle_int.radius_l = ((int) (parameter_unicycle.radius_l * 1000.0));
     parameter_unicycle_int.radius_r = ((int) (parameter_unicycle.radius_r * 1000.0));
     parameter_unicycle_int.wheelbase = ((int) (parameter_unicycle.wheelbase * 1000.0));
-    k_vel_left = parameter_motor_left.k_vel;
-    k_vel_right = parameter_motor_right.k_vel;
     k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
     k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
     wheel_m = parameter_unicycle.wheelbase / 2;
     emergency.time = 1.0;
     emergency.timeout = 500;
+}
+
+void update_parameter_motors(void) {
+    k_vel_left = parameter_motor_left.k_vel;
+    k_vel_right = parameter_motor_right.k_vel;
+    //Update encoder swap
+    QEI1CONbits.SWPAB = parameter_motor_left.encoder_swap; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = parameter_motor_right.encoder_swap; // Phase A and Phase B inputs swapped
+    //Odometry
+    k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
+    k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
 }
 
 void init_pid_control(void) {
