@@ -83,12 +83,16 @@ typedef struct parameter_unicycle_int {
     long radius_r;
     long wheelbase;
 } parameter_unicycle_int_t;
+typedef struct parameter_vel {
+    float k_vel;
+    int sign;
+} parameter_vel_t;
 
 k_odo_t k_odo;
 float wheel_m;
 
 parameter_unicycle_int_t parameter_unicycle_int;
-long k_vel_left, k_vel_right;
+parameter_vel_t motor_vel_left, motor_vel_right;
 
 /**/
 
@@ -155,11 +159,14 @@ void update_parameter_unicycle(void) {
 }
 
 void update_parameter_motors(void) {
-    k_vel_left = parameter_motor_left.k_vel;
-    k_vel_right = parameter_motor_right.k_vel;
+    motor_vel_left.k_vel = parameter_motor_left.k_vel;
+    motor_vel_right.k_vel = parameter_motor_right.k_vel;
     //Update encoder swap
-    QEI1CONbits.SWPAB = parameter_motor_left.encoder_swap; // Phase A and Phase B inputs swapped
-    QEI2CONbits.SWPAB = parameter_motor_right.encoder_swap; // Phase A and Phase B inputs swapped
+    motor_vel_left.sign = (parameter_motor_left.encoder_swap >= 1) ? 1 : -1;
+    motor_vel_right.sign = (parameter_motor_right.encoder_swap >= 1) ? 1 : -1;
+    QEI1CONbits.SWPAB = (parameter_motor_left.encoder_swap >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = (parameter_motor_right.encoder_swap >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+
     //Odometry
     k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
     k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
@@ -297,10 +304,10 @@ int MotorPIDL(void) {
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
-    int pid_control = (PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = motor_vel_left.sign*(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
     SetDCMCPWM1(1, pid_control, 0);
-    motor_left.control_vel = PIDstruct1.controlOutput;
+    motor_left.control_vel = motor_vel_left.sign*PIDstruct1.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
@@ -324,10 +331,10 @@ int MotorPIDR(void) {
     PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
     PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
     PID(&PIDstruct2); //Esecuzione funzione PID
-    int pid_control = (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = motor_vel_right.sign*(PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
     SetDCMCPWM1(2, pid_control, 0);
-    motor_right.control_vel = PIDstruct2.controlOutput;
+    motor_right.control_vel = motor_vel_right.sign*PIDstruct2.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
