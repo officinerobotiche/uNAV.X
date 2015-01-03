@@ -114,12 +114,12 @@ void init_parameter(void) {
     //Left motor parameters
     parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
     parameter_motor_left.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
-    parameter_motor_left.encoder_swap = false;
+    parameter_motor_left.versus = false;
     parameter_motor_left.enable_set = false;
     //Right motor parameters
     parameter_motor_right.k_vel = K_VEL;
     parameter_motor_right.k_ang = K_ANG;
-    parameter_motor_right.encoder_swap = false;
+    parameter_motor_right.versus = false;
     parameter_motor_right.enable_set = false;
 
     //parameter_motors.pwm_step = 4096;
@@ -162,10 +162,10 @@ void update_parameter_motors(void) {
     motor_vel_left.k_vel = parameter_motor_left.k_vel;
     motor_vel_right.k_vel = parameter_motor_right.k_vel;
     //Update encoder swap
-    motor_vel_left.sign = (parameter_motor_left.encoder_swap >= 1) ? 1 : -1;
-    motor_vel_right.sign = (parameter_motor_right.encoder_swap >= 1) ? 1 : -1;
-    QEI1CONbits.SWPAB = (parameter_motor_left.encoder_swap >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
-    QEI2CONbits.SWPAB = (parameter_motor_right.encoder_swap >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+    motor_vel_left.sign = (parameter_motor_left.versus >= 1) ? 1 : -1;
+    motor_vel_right.sign = (parameter_motor_right.versus >= 1) ? 1 : -1;
+    QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
 
     //Odometry
     k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;

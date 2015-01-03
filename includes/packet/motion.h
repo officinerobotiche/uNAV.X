@@ -116,13 +116,13 @@ typedef struct parameter_unicycle {
  * Parameter definiton for motor:
  * - k_vel - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_vel</a>
  * - k_ang - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_ang</a>
- * - boolean encoder swap
+ * - Set or
  * - boolean set enable
  */
 typedef struct parameter_motor {
     float k_vel;
     float k_ang;
-    uint8_t encoder_swap;
+    int8_t versus;
     uint8_t enable_set;
 } parameter_motor_t;
 #define LNG_PARAMETER_MOTOR sizeof(parameter_motor_t)
