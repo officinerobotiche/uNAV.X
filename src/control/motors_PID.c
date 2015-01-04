@@ -162,8 +162,8 @@ void update_parameter_motors(void) {
     motor_vel_left.k_vel = parameter_motor_left.k_vel;
     motor_vel_right.k_vel = parameter_motor_right.k_vel;
     //Update encoder swap
-    motor_vel_left.sign = (parameter_motor_left.versus >= 1) ? 1 : -1;
-    motor_vel_right.sign = (parameter_motor_right.versus >= 1) ? 1 : -1;
+    motor_vel_left.sign = parameter_motor_left.versus;
+    motor_vel_right.sign = parameter_motor_right.versus;
     QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
     QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
 
