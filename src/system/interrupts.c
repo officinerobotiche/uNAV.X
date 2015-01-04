@@ -45,7 +45,6 @@
 /******************************************************************************/
 
 unsigned int counter_stop = 0;
-unsigned int counter = 0;
 unsigned int counter_odo = 0;
 unsigned int counter_pid = 0;
 volatile unsigned int overTmrL = 0;
@@ -212,10 +211,10 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
-    if (counter >= BLINKSW) {
-        LED1 ^= 1;
-        counter = 0;
-    }
+    /**
+     * Blink controller for all leds
+     */
+    BlinkController();
     if ((counter_stop + 1) >= emergency.timeout) {
         if (Emergency()) {
             counter_stop = 0;
@@ -224,7 +223,6 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         counter_stop++;
     }
     counter_pid++;
-    counter++;
     counter_odo++;
 }
 

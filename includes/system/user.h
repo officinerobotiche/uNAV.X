@@ -138,6 +138,11 @@ extern "C" {
      */
     int maxValue(float myArray[], size_t size);
 
+    /**
+     * Blink controller for all leds
+     */
+    void BlinkController();
+
     void blinkflush();
 
 #ifdef	__cplusplus

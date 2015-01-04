@@ -42,7 +42,8 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-
+unsigned int counter = 0;
+unsigned int number_blink = 1;
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -247,6 +248,14 @@ int maxValue(float myArray[], size_t size) {
         }
     }
     return maxValue;
+}
+
+void BlinkController() {
+    if (counter >= BLINKSW / number_blink) {
+        LED1 ^= 1;
+        counter = 0;
+    }
+    counter++;
 }
 
 void blinkflush() {
