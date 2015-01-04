@@ -49,7 +49,12 @@ extern "C" {
     /**
      * Function to update parameters relative a parameter message
      */
-    void update_parameter(void);
+    void update_parameter_unicycle(void);
+
+    /**
+     * Function to update motor parameters from message
+     */
+    void update_parameter_motors(void);
 
     /**
      * Initializatin standard value for PID controllers
