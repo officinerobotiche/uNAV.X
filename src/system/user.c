@@ -91,8 +91,10 @@ void InitApp(void) {
     RPINR18bits.U1RXR = 20; // U1RX To Pin RP20
     RPOR10bits.RP21R = 3;   // U1Tx To Pin RP21
 
-    RPINR19bits.U2RXR = 6;  // U2RX To Pin RP6
-    RPOR2bits.RP5R = 5;     // U2Tx To Pin RP5
+	//RPINR19bits.U2RXR = 6;  // U2RX To Pin RP6
+	RPINR19bits.U2RXR = 8;		// (UART2 Receive) su RoboController
+	//RPOR2bits.RP5R = 5;     // U2Tx To Pin RP5
+	RPOR4bits.RP8R = 5;
 #elif MOTION_CONTROL
     // Input capture
     RPINR7bits.IC1R = 5; // Assign Input Capture 1 To Pin RP5
@@ -122,7 +124,8 @@ void InitApp(void) {
     /* Setup port direction */
     // weak pullups enable
     CNPU1 = 0xffff;
-    CNPU2 = 0xffff;
+    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
+   
 #ifdef UNAV_V1
     // LED
     _TRISC6 = 0;    // LED 1 Green
