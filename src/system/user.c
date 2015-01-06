@@ -42,8 +42,8 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-unsigned int counter = 0;
-unsigned int number_blink = 1;
+
+led_control_t led_controller[LED_NUM];
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -213,6 +213,7 @@ void InitApp(void) {
 #endif
 
     /* Peripherical initalization */
+    InitLed();          //Init led
     InitPWM();          //Open PWM
     InitQEI1();         //Open QEI1
     InitQEI2();         //Open QEI2
@@ -253,12 +254,12 @@ int maxValue(float myArray[], size_t size) {
     return maxValue;
 }
 
-void BlinkController() {
-    if (counter >= BLINKSW / number_blink) {
-        LED1 ^= 1;
-        counter = 0;
+void BlinkController(led_control_t led) {
+    if (led.counter >= BLINKSW / led.number_blink) {
+        led.port ^= 1;
+        led.counter = 0;
     }
-    counter++;
+    led.counter++;
 }
 
 void blinkflush() {

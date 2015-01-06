@@ -59,6 +59,9 @@ process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, 
 //From Motors_PID
 extern emergency_t emergency;
 
+//From user
+extern led_control_t led_controller[LED_NUM];
+
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
 /******************************************************************************/
@@ -202,6 +205,7 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
+    int led_counter = 0;
 
     if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
         PID_FLAG = 1; //Start OC1Interrupt for PID control
@@ -214,7 +218,9 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     /**
      * Blink controller for all leds
      */
-    BlinkController();
+    for(led_counter = 0; led_counter < LED_NUM; led_counter++) {
+        BlinkController(led_controller[led_counter]);
+    }
     if ((counter_stop + 1) >= emergency.timeout) {
         if (Emergency()) {
             counter_stop = 0;

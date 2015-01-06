@@ -118,15 +118,20 @@ go here. */
      */
     void ConfigureOscillator(void);
 
-    /** Initalization PWM for drive engine left & right
+    /**
+     * Initialization led blink
+     */
+    void InitLed(void);
+
+    /** Initialization PWM for drive engine left & right
      */
     void InitPWM(void);
 
-    /** Initalization QEI - Motor left
+    /** Initialization QEI - Motor left
      */
     void InitQEI1(void);
 
-    /** Initalization QEI - Motor right
+    /** Initialization QEI - Motor right
      */
     void InitQEI2(void);
 
