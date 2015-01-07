@@ -87,12 +87,12 @@ void InitApp(void) {
     RPINR16bits.QEB2R = 25; // QEB2 To Pin RP25
     // UART
     RPINR18bits.U1RXR = 20; // U1RX To Pin RP20
-    RPOR10bits.RP21R = 3;   // U1Tx To Pin RP21
+    RPOR10bits.RP21R = 3;   // U1TX To Pin RP21
 
-	//RPINR19bits.U2RXR = 6;  // U2RX To Pin RP6
-	RPINR19bits.U2RXR = 8;		// (UART2 Receive) su RoboController
-	//RPOR2bits.RP5R = 5;     // U2Tx To Pin RP5
-	RPOR4bits.RP8R = 5;
+    //RPINR19bits.U2RXR = 6;  // U2RX To Pin RP6
+    RPINR19bits.U2RXR = 8;    // U2RX To Pin RP8
+    //RPOR2bits.RP5R = 5;     // U2TX To Pin RP5
+    RPOR4bits.RP8R = 5;       // U2TX To Pin RP5
 #elif MOTION_CONTROL
     // Input capture
     RPINR7bits.IC1R = 5; // Assign Input Capture 1 To Pin RP5

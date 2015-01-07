@@ -340,17 +340,14 @@ int MotorPIDR(void) {
 }
 
 void adc_motors_current(void) {
-    int SIG_VELLtmp, SIG_VELRtmp; //Segno velocità
-    int AdcCount = 0; //Contatore
-    long ADCValueTmp[ADC_CHANNELS] = {0, 0}; //Valore temporaneo letture
+    int AdcCount = 0; //Counter
+    long ADCValueTmp[ADC_CHANNELS] = {0, 0}; //Array to filter ADC data
 
-    for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Calcolo media di tutti i campioni
+    for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Evaluate mean value
     {
-        ADCValueTmp[0] += AdcBuffer[0][AdcCount]; //Sommatoria per AN0
-        ADCValueTmp[1] += AdcBuffer[1][AdcCount]; //Sommatoria per AN1
+        ADCValueTmp[0] += AdcBuffer[0][AdcCount]; //Sum for AN0
+        ADCValueTmp[1] += AdcBuffer[1][AdcCount]; //Sum for AN1
     }
-    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocità
-    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocità
-    motor_left.current = SIG_VELRtmp * ADCValueTmp[0] >> 6; //Divisione o shifth
-    motor_right.current = SIG_VELRtmp * ADCValueTmp[1] >> 6; //Divisione o shifth
+    motor_left.current = ADCValueTmp[0] >> 6; //Shift
+    motor_right.current = ADCValueTmp[1] >> 6; //Shift
 }
