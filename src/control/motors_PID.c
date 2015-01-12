@@ -42,7 +42,10 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-
+/**
+ * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
+ * on zip file: asm/pid.s
+ */
 tPID PIDstruct1; // PID motore Sinistra
 fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
@@ -288,21 +291,21 @@ int Velocity(void) {
 int MotorPIDL(void) {
     unsigned int t = TMR1; //Timing funzione
     unsigned long timePeriodLtmp; //Variabili temporanee Periodo
-    int SIG_VELLtmp; //Segno velocità
+    int SIG_VELLtmp; //Segno velocitÃ 
 
     timePeriodLtmp = timePeriodL; //Salvataggio TimerPeriod
     timePeriodL = 0; //Pulizia variabile
-    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocità
+    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocitÃ 
     SIG_VELL = 0; //Pulizia variabile
-    motor_left.measure_vel = 0; //Flush variaibile velocità R
+    motor_left.measure_vel = 0; //Flush variaibile velocitÃ  R
 
     PulsEncL += (int) POS1CNT; //Salvataggio spazio percorso
     POS1CNT = 0; //Reset registro
-    //calcolo della velocità
-    //Verifica SIG_VELLtmp!=0 & calcolo velocità
+    //calcolo della velocitÃ 
+    //Verifica SIG_VELLtmp!=0 & calcolo velocitÃ 
     if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motor_left.k_vel / timePeriodLtmp);
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
-    PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
+    PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocitÃ 
     PID(&PIDstruct1); //Esecuzione funzione PID
     int pid_control = motor_vel_left.sign*(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
@@ -315,21 +318,21 @@ int MotorPIDL(void) {
 int MotorPIDR(void) {
     unsigned int t = TMR1; //Timing funzione
     unsigned long timePeriodRtmp; //Variabili temporanee Periodo
-    int SIG_VELRtmp; //Segno velocità
+    int SIG_VELRtmp; //Segno velocitÃ 
 
     timePeriodRtmp = timePeriodR; //Salvataggio TimerPeriod
     timePeriodR = 0; //Pulizia variabile
-    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocità
+    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocitÃ 
     SIG_VELR = 0; //Pulizia variabile
-    motor_right.measure_vel = 0; //Flush variabile velocità R
+    motor_right.measure_vel = 0; //Flush variabile velocitÃ  R
 
     PulsEncR += (int) POS2CNT; //Salvataggio spazio percorso
     POS2CNT = 0; //Reset registro
-    //calcolo della velocità
-    //Verifica SIG_VELLtmp!=0 & calcolo velocità
+    //calcolo della velocitÃ 
+    //Verifica SIG_VELLtmp!=0 & calcolo velocitÃ 
     if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / timePeriodRtmp);
     PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
-    PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
+    PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocitÃ 
     PID(&PIDstruct2); //Esecuzione funzione PID
     int pid_control = motor_vel_right.sign*(PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
