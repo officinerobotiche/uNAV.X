@@ -36,6 +36,7 @@ extern "C" {
     typedef struct led_control {
         unsigned port;
         unsigned int counter;
+        unsigned int wait;
         short number_blink;
     } led_control_t;
 
