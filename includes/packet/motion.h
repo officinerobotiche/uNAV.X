@@ -138,6 +138,16 @@ typedef struct velocity {
 } velocity_t;
 #define LNG_VELOCITY sizeof(velocity_t)
 
+#ifndef NUM_MOTORS
+#define NUM_MOTORS 2
+#endif
+/**
+ * Message to control single motor
+ * - dimension number motors
+ */
+typedef int16_t motor_control_t[NUM_MOTORS];
+#define LNG_MOTOR_CONTROL sizeof(motor_control_t)
+
 /**
  * Message for read and write state of H-bridge (able or disable)
  */
@@ -151,6 +161,7 @@ typedef uint8_t enable_motor_t;
         parameter_unicycle_t parameter_unicycle; \
         parameter_motor_t parameter_motor;       \
         velocity_t velocity;                     \
+        motor_control_t motor_control_t;         \
         enable_motor_t enable;                   \
         motor_t motor;                           \
         constraint_t constraint;                 \
@@ -169,9 +180,11 @@ typedef uint8_t enable_motor_t;
 #define CONSTRAINT 8
 #define VELOCITY 9
 #define VELOCITY_MIS 10
-#define ENABLE 11
-#define EMERGENCY 12
-#define DELTA_ODOMETRY 13
+#define VEL_MOTOR 11
+#define VEL_MOTOR_MIS 12
+#define ENABLE 13
+#define EMERGENCY 14
+#define DELTA_ODOMETRY 15
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 4
@@ -186,7 +199,7 @@ typedef uint8_t enable_motor_t;
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTION 'M'
-#define HASHMAP_MOTION_NUMBER 15
+#define HASHMAP_MOTION_NUMBER 20
 
 // Definition on communication/parsing_packet.c
 //static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
@@ -205,6 +218,8 @@ typedef uint8_t enable_motor_t;
                                     hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;                   \
                                     hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
                                     hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;                   \
+                                    hashmap_motion[VEL_MOTOR] = LNG_MOTOR_CONTROL;                 \
+                                    hashmap_motion[VEL_MOTOR_MIS] = LNG_MOTOR_CONTROL;             \
                                     hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
                                     hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
                                     //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
