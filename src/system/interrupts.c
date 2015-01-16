@@ -219,7 +219,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
      * Blink controller for all leds
      */
     for(led_counter = 0; led_counter < LED_NUM; led_counter++) {
-        BlinkController(led_controller[led_counter]);
+        BlinkController(&led_controller[led_counter]);
     }
     if ((counter_stop + 1) >= emergency.timeout) {
         if (Emergency()) {

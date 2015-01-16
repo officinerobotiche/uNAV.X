@@ -102,7 +102,7 @@ int16_t main(void) {
     InitApp();
 
     /* Start LED blink show */
-    blinkflush();
+    //blinkflush();
 
     while (1) {
 

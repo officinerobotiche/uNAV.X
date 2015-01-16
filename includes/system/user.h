@@ -34,7 +34,8 @@ extern "C" {
      *      -# n number of blink
      */
     typedef struct led_control {
-        unsigned port;
+        volatile unsigned int * CS_PORT;
+        unsigned short CS_pin;
         unsigned int counter;
         unsigned int wait;
         short number_blink;
@@ -46,22 +47,36 @@ extern "C" {
 #ifdef UNAV_V1
     #define LED_NUM 4
     #define LED1 _LATC6              // Led 1 green
+    #define LED1_PORT LATC           // Led 1 green
+    #define LED1_NUM  6              // Led 1 green
     #define LED2 _LATC7              // Led 2 green
+    #define LED2_PORT LATC           // Led 2 green
+    #define LED2_NUM  7              // Led 2 green
     #define LED3 _LATC8              // Led 3 yellow
+    #define LED3_PORT LATC           // Led 3 yellow
+    #define LED3_NUM  8              // Led 3 yellow
     #define LED4 _LATC9              // Led 4 red
+    #define LED4_PORT LATC           // Led 4 red
+    #define LED4_NUM  9              // Led 1 green
 
     #define MOTOR_ENABLE1 _LATA7     // Enable Motore 1
     #define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
 #elif ROBOCONTROLLER_V3
     #define LED_NUM 2
     #define LED1 _LATA8              // Led 1 green
+    #define LED1_PORT LATA           // Led 1 green
+    #define LED1_NUM  8              // Led 1 green
     #define LED2 _LATA9              // Led 2 green
+    #define LED2_PORT LATA           // Led 1 green
+    #define LED2_NUM  9              // Led 1 green
 
     #define MOTOR_ENABLE1 _LATA1     // Enable Motore 1
     #define MOTOR_ENABLE2 _LATA4    // Enable Motore 2
 #elif MOTION_CONTROL
     #define LED_NUM 1
     #define LED1 _LATA4              // Led Blu
+    #define LED1_PORT LATA           // Led Blu
+    #define LED1_NUM  4              // Led Blu
 
     #define MOTOR_ENABLE1 _LATB2    // Enable Motore 1
     #define MOTOR_ENABLE2 _LATB3    // Enable Motore 2
@@ -103,7 +118,7 @@ extern "C" {
      * Blink control led
      * @param led to control
      */
-    void BlinkController(led_control_t led);
+    void BlinkController(led_control_t *led);
 
     void blinkflush();
 

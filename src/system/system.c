@@ -208,21 +208,25 @@ services_t services(services_t service) {
 }
 
 void InitLed(void) {
-    led_controller[0].port = LED1;
+    led_controller[0].CS_PORT = &LED1_PORT;
+    led_controller[0].CS_pin = LED1_NUM;
     led_controller[0].number_blink = 1;
     led_controller[0].wait = 0;
 #if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-    led_controller[1].port = LED2;
+    led_controller[1].CS_PORT = &LED2_PORT;
+    led_controller[1].CS_pin = LED2_NUM;
     led_controller[1].number_blink = 0;
-    led_controller[0].wait = 0;
+    led_controller[1].wait = 0;
 #endif
 #if defined(UNAV_V1)
-    led_controller[2].port = LED3;
+    led_controller[2].CS_PORT = &LED3_PORT;
+    led_controller[2].CS_pin = LED3_NUM;
     led_controller[2].number_blink = 0;
-    led_controller[0].wait = 0;
-    led_controller[3].port = LED4;
+    led_controller[2].wait = 0;
+    led_controller[3].CS_PORT = &LED4_PORT;
+    led_controller[3].CS_pin = LED4_NUM;
     led_controller[3].number_blink = 0;
-    led_controller[0].wait = 0;
+    led_controller[3].wait = 0;
 #endif
 }
 

@@ -250,20 +250,21 @@ int maxValue(float myArray[], size_t size) {
     return maxValue;
 }
 
-void BlinkController(led_control_t led) {
-    if (led.counter >= led.wait && led.number_blink > 0) {
-        if (led.counter % BLINKSW / (2 * led.number_blink)) {
-            if (led.counter <= BLINKSW / (2 * led.number_blink + led.wait)) {
-                led.port ^= 1;
+void BlinkController(led_control_t *led) {
+    if (led->counter >= led->wait && led->number_blink > 0) {
+        if (led->counter % BLINKSW / (2 * led->number_blink)) {
+            if (led->counter <= BLINKSW / (2 * led->number_blink + led->wait)) {
+                *(led->CS_PORT) = *(led->CS_PORT) | ((1 << led->CS_pin));
+                //__builtin_btg((unsigned int *)led->CS_PORT, led->CS_pin);
             }
         }
-    } else if (led.number_blink == -1) {
-        led.port = 1;
-    } else if (led.counter >= BLINKSW) {
-        led.counter = 0;
-        led.port = 0;
+    } else if (led->number_blink == -1) {
+        //led.port = 1;
+    } else if (led->counter >= BLINKSW) {
+        led->counter = 0;
+        //led.port = 0;
     }
-    led.counter++;
+    led->counter++;
 }
 
 void blinkflush() {
