@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 #ifndef MOTORSPID_H
 #define	MOTORSPID_H
@@ -22,24 +22,25 @@
 extern "C" {
 #endif
 
-/******************************************************************************/
-/* System Level #define Macros                                                */
-/******************************************************************************/
+    /******************************************************************************/
+    /* System Level #define Macros                                                */
+    /******************************************************************************/
 
     //Start define with fixed K_vel convertion velocity
-    #define K_VEL 27925268.03190926
+#define K_VEL 27925268.03190926
     //Start define with fixed K_ang convertion angular
-    #define K_ANG 0.000174532925199
+#define K_ANG 0.000174532925199
 
     //Internal definition gain for odometry
+
     typedef struct k_odo {
         float k_left;
         float k_right;
     } k_odo_t;
 
-/******************************************************************************/
-/* System Function Prototypes                                                 */
-/******************************************************************************/
+    /******************************************************************************/
+    /* System Function Prototypes                                                 */
+    /******************************************************************************/
 
     /**
      * Initialization all parameters for motor controller.
@@ -94,7 +95,13 @@ extern "C" {
      * from rotor motors measure and save value for velocity.
      * @return time to compute parsing packet
      */
-    int Velocity(void);
+
+    /**
+     * Control type of law control in action and select, convert and check
+     * reference.
+     * @return Time to Compute task control reference
+     */
+    int MotorTaskController(void);
 
     /**
      * Esecution velocity PID for left motor

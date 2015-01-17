@@ -90,12 +90,17 @@ typedef struct parameter_vel {
     float k_vel;
     int sign;
 } parameter_vel_t;
+typedef struct motor_ref_int {
+    long int ref_con_left;
+    long int ref_con_right;
+} motor_ref_int_t;
 
 k_odo_t k_odo;
 float wheel_m;
 
 parameter_unicycle_int_t parameter_unicycle_int;
 parameter_vel_t motor_vel_left, motor_vel_right;
+
 
 /**/
 
@@ -239,51 +244,72 @@ bool Emergency(void) {
     return false;
 }
 
-int Velocity(void) {
-
-    // TODO divide this function into two pieces:
-    //      - first: velocity calculation to be sent to user for "navigation" purposes
-    //      - second: references calculation to be used in PID function
-
+int motorReference(motor_ref_int_t motor_ref_int) {
     unsigned int t = TMR1; // Timing function
 
-    // >>>>> First part: speed calculation
-    long int rifer_con_left, rifer_con_right; // long int needed to avoid overflow
     MOTOR_ENABLE1 = enable_motors ^ parameter_motor_left.enable_set;
     MOTOR_ENABLE2 = enable_motors ^ parameter_motor_right.enable_set;
-    long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
-    vel_mis.v = ((float) vel_v / 1000000);
-    vel_mis.w = ((float) vel_w / 1000);
-    // <<<<< First part: speed calculation
 
+    if (abs(motor_ref_int.ref_con_left) > constraint.max_left) {
+        motor_left.refer_vel = SGN((int)motor_ref_int.ref_con_left) * constraint.max_left;
+    } else {
+        motor_left.refer_vel = (int)motor_ref_int.ref_con_left;
+    }
+    if (abs(motor_ref_int.ref_con_right) > constraint.max_right) {
+        motor_right.refer_vel = SGN((int)motor_ref_int.ref_con_right) * constraint.max_right;
+    } else {
+        motor_right.refer_vel = (int)motor_ref_int.ref_con_right;
+    }
+
+    return TMR1 - t; // Time of esecution
+}
+
+motor_ref_int_t VelToMotorReference(void) {
+    motor_ref_int_t motor_ref_int;
 
     // >>>>> Second part: references calculation
-    rifer_con_left = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-    rifer_con_right = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref_int.ref_con_left = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref_int.ref_con_right = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // TODO to avoid the following saturation we can normalize ref value! by Walt
 
     // >>>>> Saturation on 16 bit values
-    rifer_con_left = rifer_con_left>32767?32767:rifer_con_left;
-    rifer_con_left = rifer_con_left<-32768?-32768:rifer_con_left;
-    
-    rifer_con_right = rifer_con_right>32767?32767:rifer_con_right;
-    rifer_con_right = rifer_con_right<-32768?-32768:rifer_con_right;
+    motor_ref_int.ref_con_left = motor_ref_int.ref_con_left>32767?32767:motor_ref_int.ref_con_left;
+    motor_ref_int.ref_con_left = motor_ref_int.ref_con_left<-32768?-32768:motor_ref_int.ref_con_left;
+
+    motor_ref_int.ref_con_right = motor_ref_int.ref_con_right>32767?32767:motor_ref_int.ref_con_right;
+    motor_ref_int.ref_con_right = motor_ref_int.ref_con_right<-32768?-32768:motor_ref_int.ref_con_right;
     // <<<<< Saturation on 16 bit values
-    
-    // Calculating constraint
-    if (abs(rifer_con_left) > constraint.max_left) {
-        motor_left.refer_vel = SGN((int)rifer_con_left) * constraint.max_left;
-    } else {
-        motor_left.refer_vel = (int)rifer_con_left;
-    }
-    if (abs(rifer_con_right) > constraint.max_right) {
-        motor_right.refer_vel = SGN((int)rifer_con_right) * constraint.max_right;
-    } else {
-        motor_right.refer_vel = (int)rifer_con_right;
-    }
-    // <<<<< Second part: references calculation
+
+    return motor_ref_int;
+}
+
+int VelocityMeasure(void) {
+    unsigned int t = TMR1; // Timing function
+
+    long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
+    vel_mis.v = ((float) vel_v / 1000000);
+    vel_mis.w = ((float) vel_w / 1000);
+
+    return TMR1 - t; // Time of esecution
+}
+
+int MotorTaskController(void) {
+    unsigned int t = TMR1; // Timing function
+
+    /**
+     * Measure linear and angular velocity for unicycle robot
+     */
+    VelocityMeasure();
+    /**
+     * Convertion linear velocity and angular velocity to motor left and motor right
+     */
+    motor_ref_int_t motor_ref_int = VelToMotorReference();
+    /**
+     * Enable motors and check constraint and save references
+     */
+    motorReference(motor_ref_int);
 
     return TMR1 - t; // Time of esecution
 }
