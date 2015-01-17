@@ -22,10 +22,14 @@
 extern "C" {
 #endif
 
-    /******************************************************************************/
-    /* System Level #define Macros                                                */
-    /******************************************************************************/
+    /**************************************************************************/
+    /* System Level #define Macros                                            */
+    /**************************************************************************/
 
+    /**
+     * Numbers of motors avaiable in this board
+     */
+#define NUM_MOTORS 2
     //Start define with fixed K_vel convertion velocity
 #define K_VEL 27925268.03190926
     //Start define with fixed K_ang convertion angular
@@ -92,14 +96,12 @@ extern "C" {
     void InitPid2(void);
 
     /**
-     * Evaluate linear and angular velocity from unicycle robot. Convertion data
-     * from rotor motors measure and save value for velocity.
-     * @return time to compute parsing packet
-     */
-
-    /**
-     * Control type of law control in action and select, convert and check
-     * reference.
+     * Convert and check reference for type of law control selected. We have
+     * four principal type of control motor:
+     *  - Direct control (write direct PWM)
+     *  - Position control (move to desired angle)
+     *  - Velocity control (move to desired angular velocity)
+     *  - Torque control (move to desired torque)
      * @return Time to Compute task control reference
      */
     int MotorTaskController(void);

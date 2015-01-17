@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -42,6 +42,10 @@
 #include "communication/parsing_messages.h"
 #include "system/user.h"
 
+//State controller
+unsigned int control_state = 0;
+
+
 coordinate_t coordinate;
 //delta_odometry_t delta_odometry;
 unsigned int counter_delta = 0;
@@ -50,6 +54,7 @@ bool autosend_delta_odometry = false;
 float sinTh_old = 0, cosTh_old = 1;
 
 //Definition value for parameter unicycle
+
 typedef struct parameter_unicycle_int {
     long radius_l;
     long radius_r;
@@ -66,6 +71,7 @@ velocity_t last_vel_rif;
 bool save_velocity = true;
 
 // From motors PID
+extern unsigned int control_motor_state[NUM_MOTORS];
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern motor_t motor_left, motor_right;
 extern volatile int PulsEncL, PulsEncR;
@@ -77,6 +83,7 @@ extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
+
 /******************************************************************************/
 
 void init_parameter_unicycle(void) {
@@ -117,6 +124,46 @@ void init_coordinate(void) {
 void update_coord(void) {
     sinTh_old = sinf(coordinate.theta);
     cosTh_old = cosf(coordinate.theta);
+}
+
+void UpdateStateControllers(void) {
+    switch (control_state) {
+        case DISABLE_HIGH_CONTROL_STATE:
+            break;
+        case VELOCITY_UNICYCLE_CONTROL_STATE:
+            control_motor_state[0] = VELOCITY_CONTROL_STATE;
+            control_motor_state[1] = VELOCITY_CONTROL_STATE;
+            break;
+        case CONFIGURATION_CONTROL_STATE:
+            break;
+        default:
+            break;
+    }
+}
+
+motor_control_t HighLevelTaskController(void) {
+    motor_control_t motor_ref_int;
+
+    switch (control_state) {
+        case VELOCITY_UNICYCLE_CONTROL_STATE:
+            /**
+             * Measure linear and angular velocity for unicycle robot
+             */
+            VelocityMeasure();
+            /**
+             * Convertion linear velocity and angular velocity to motor left and motor right
+             */
+            motor_ref_int = VelToMotorReference();
+            break;
+        case CONFIGURATION_CONTROL_STATE:
+            break;
+        default:
+            motor_ref_int.motor[0] = 0;
+            motor_ref_int.motor[1] = 0;
+            break;
+    }
+
+    return motor_ref_int;
 }
 
 int deadReckoning(void) {
@@ -169,7 +216,7 @@ int deadReckoning(void) {
             counter_delta = 0;
         }
     }
-    */
+     */
 
     // Calculate odometry
     odometry(delta);

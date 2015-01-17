@@ -80,13 +80,10 @@ float wheel_m;
 
 parameter_vel_t motor_vel_left, motor_vel_right;
 
-/***/
-// New control variable
-#define NUM_MOTORS 2
 unsigned int control_motor_state[NUM_MOTORS];
-unsigned int control_state = 0;
 
 /**/
+// From interrupt
 extern volatile unsigned long timePeriodL; //Periodo Ruota Sinistra
 extern volatile unsigned long timePeriodR; //Periodo Ruota Destra
 extern volatile unsigned SIG_VELL; //Verso rotazione ruota Sinistra
@@ -204,33 +201,15 @@ int motorReference(motor_control_t motor_ref_int) {
 int MotorTaskController(void) {
     unsigned int t = TMR1; // Timing function
     short i;
-    motor_control_t motor_ref_int;
-
-    switch (control_state) {
-        case DISABLE_HIGH_CONTROL_STATE:
-            break;
-        case VELOCITY_UNICYCLE_CONTROL_STATE:
-            /**
-             * Measure linear and angular velocity for unicycle robot
-             */
-            VelocityMeasure();
-            /**
-             * Convertion linear velocity and angular velocity to motor left and motor right
-             */
-            motor_ref_int = VelToMotorReference();
-            control_motor_state[0] = VELOCITY_CONTROL_STATE;
-            control_motor_state[1] = VELOCITY_CONTROL_STATE;
-            break;
-        case CONFIGURATION_CONTROL_STATE:
-            break;
-        default:
-            break;
-    }
+    /**
+     * If high level control selected, then set new reference for all motors.
+     */
+    motor_control_t motor_ref = HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         switch (control_motor_state[i]) {
             case DIRECT_CONTROL_STATE:
-                //TODO To be implemet (Read issue #14)
+                //TODO To be implement (Read issue #14)
                 break;
             case POSITION_CONTROL_STATE:
                 //TODO to be implement
@@ -239,7 +218,7 @@ int MotorTaskController(void) {
                 /**
                  * Enable motors and check velocity constraint and save references
                  */
-                motorReference(motor_ref_int);
+                motorReference(motor_ref);
                 break;
             case TORQUE_CONTROL_STATE:
                 //TODO to be implement

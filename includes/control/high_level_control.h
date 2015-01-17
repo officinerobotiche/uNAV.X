@@ -46,14 +46,14 @@ extern "C" {
 
     /**
      * Start deadReckoning operation
-     * @return
+     * @return time to compute this function
      */
     int deadReckoning(void);
 
     /**
      *
      * @param delta
-     * @return
+     * @return time to compute this function
      */
     int odometry(coordinate_t delta);
 
@@ -65,13 +65,19 @@ extern "C" {
 
     /**
      *
-     * @return
+     * @return time to compute this function
+     */
+    motor_control_t HighLevelTaskController(void);
+
+    /**
+     * Evaluate linear and angular velocity from unicycle robot.
+     * @return time to compute this function
      */
     motor_control_t VelToMotorReference(void);
 
     /**
-     * 
-     * @return
+     * Convertion data from rotor motors measure and save value for velocity.
+     * @return time to compute this function
      */
     int VelocityMeasure(void);
 
