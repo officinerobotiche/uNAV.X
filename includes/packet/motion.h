@@ -145,7 +145,9 @@ typedef struct velocity {
  * Message to control single motor
  * - dimension number motors
  */
-typedef int16_t motor_control_t[NUM_MOTORS];
+typedef struct motor_control{
+    int16_t motor[NUM_MOTORS];
+}motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
 
 /**

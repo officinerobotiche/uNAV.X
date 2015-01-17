@@ -40,6 +40,7 @@
 #include "control/motors_PID.h"
 #include "communication/serial.h"
 #include "communication/parsing_messages.h"
+#include "system/user.h"
 
 coordinate_t coordinate;
 //delta_odometry_t delta_odometry;
@@ -48,15 +49,63 @@ bool autosend_delta_odometry = false;
 
 float sinTh_old = 0, cosTh_old = 1;
 
+//Definition value for parameter unicycle
+typedef struct parameter_unicycle_int {
+    long radius_l;
+    long radius_r;
+    long wheelbase;
+} parameter_unicycle_int_t;
+parameter_unicycle_int_t parameter_unicycle_int;
+
+velocity_t vel_rif, vel_mis;
+
+//variables for emergency
+volatile parameter_unicycle_t parameter_unicycle;
+emergency_t emergency;
+velocity_t last_vel_rif;
+bool save_velocity = true;
+
 // From motors PID
-extern volatile parameter_unicycle_t parameter_unicycle;
+extern parameter_motor_t parameter_motor_left, parameter_motor_right;
+extern motor_t motor_left, motor_right;
 extern volatile int PulsEncL, PulsEncR;
 extern k_odo_t k_odo;
 extern float wheel_m;
 
+//From System
+extern parameter_system_t parameter_system;
+
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
 /******************************************************************************/
+
+void init_parameter_unicycle(void) {
+    parameter_unicycle.radius_l = 0.04; //Radius left wheel
+    parameter_unicycle.radius_r = 0.04; //Radius right wheel
+    parameter_unicycle.wheelbase = 0.20; //Wheelbase
+    parameter_unicycle.sp_min = 0.0001; // FLT_MIN
+    update_parameter_unicycle();
+
+    vel_rif.v = 0;
+    vel_rif.w = 0;
+    vel_mis.v = 0;
+    vel_mis.w = 0;
+}
+
+void update_parameter_unicycle(void) {
+    parameter_unicycle_int.radius_l = ((int) (parameter_unicycle.radius_l * 1000.0));
+    parameter_unicycle_int.radius_r = ((int) (parameter_unicycle.radius_r * 1000.0));
+    parameter_unicycle_int.wheelbase = ((int) (parameter_unicycle.wheelbase * 1000.0));
+    k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
+    k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
+    wheel_m = parameter_unicycle.wheelbase / 2;
+    emergency.time = 1.0;
+    emergency.timeout = 500;
+
+    //Odometry
+    k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
+    k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
+}
 
 void init_coordinate(void) {
     coordinate.x = 0;
@@ -134,6 +183,54 @@ int odometry(coordinate_t delta) {
     coordinate.space += delta.space;
     coordinate.x += delta.x;
     coordinate.y += delta.y;
+
+    return TMR1 - t; // Time of esecution
+}
+
+bool Emergency(void) {
+    if (save_velocity) {
+        last_vel_rif.v = vel_rif.v;
+        last_vel_rif.w = vel_rif.w;
+        save_velocity = false;
+    }
+    vel_rif.v -= last_vel_rif.v * (((float) parameter_system.int_tm_mill) / 1000) / emergency.time;
+    vel_rif.w -= last_vel_rif.w * (((float) parameter_system.int_tm_mill) / 1000) / emergency.time;
+    if (SGN(last_vel_rif.v) * vel_rif.v < 0) vel_rif.v = 0;
+    if (SGN(last_vel_rif.w) * vel_rif.w < 0) vel_rif.w = 0;
+    if ((vel_rif.v == 0) && (vel_rif.w == 0)) {
+        save_velocity = true;
+        return true;
+    }
+    return false;
+}
+
+motor_control_t VelToMotorReference(void) {
+    motor_control_t motor_ref_int;
+
+    // >>>>> Second part: references calculation
+    motor_ref_int.motor[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref_int.motor[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+
+    // TODO to avoid the following saturation we can normalize ref value! by Walt
+
+    // >>>>> Saturation on 16 bit values
+    motor_ref_int.motor[0] = motor_ref_int.motor[0] > 32767 ? 32767 : motor_ref_int.motor[0];
+    motor_ref_int.motor[0] = motor_ref_int.motor[0]<-32768 ? -32768 : motor_ref_int.motor[0];
+
+    motor_ref_int.motor[1] = motor_ref_int.motor[1] > 32767 ? 32767 : motor_ref_int.motor[1];
+    motor_ref_int.motor[1] = motor_ref_int.motor[1]<-32768 ? -32768 : motor_ref_int.motor[1];
+    // <<<<< Saturation on 16 bit values
+
+    return motor_ref_int;
+}
+
+int VelocityMeasure(void) {
+    unsigned int t = TMR1; // Timing function
+
+    long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
+    vel_mis.v = ((float) vel_v / 1000000);
+    vel_mis.w = ((float) vel_w / 1000);
 
     return TMR1 - t; // Time of esecution
 }

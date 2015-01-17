@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 #ifndef HIGHLEVELCONTROL_H
 #define	HIGHLEVELCONTROL_H
@@ -23,6 +23,16 @@ extern "C" {
 #endif
 
 #include "packet/packet.h"
+
+    /**
+     * Initialization all parameters for motor controller.
+     */
+    void init_parameter_unicycle(void);
+
+    /**
+     * Function to update parameters relative a parameter message
+     */
+    void update_parameter_unicycle(void);
 
     /**
      * Initalization coordinate for odometry
@@ -46,6 +56,24 @@ extern "C" {
      * @return
      */
     int odometry(coordinate_t delta);
+
+    /**
+     * If not recive anything velocity messages. Start controlled stop motors
+     * @return start emergency mode or not.
+     */
+    bool Emergency(void);
+
+    /**
+     *
+     * @return
+     */
+    motor_control_t VelToMotorReference(void);
+
+    /**
+     * 
+     * @return
+     */
+    int VelocityMeasure(void);
 
 #ifdef	__cplusplus
 }

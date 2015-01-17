@@ -38,6 +38,18 @@ extern "C" {
         float k_right;
     } k_odo_t;
 
+    /**
+     * Define to select current state of control
+     */
+#define DIRECT_CONTROL_STATE 0
+#define POSITION_CONTROL_STATE 1
+#define VELOCITY_CONTROL_STATE 2
+#define TORQUE_CONTROL_STATE 3
+
+#define DISABLE_HIGH_CONTROL_STATE 0
+#define VELOCITY_UNICYCLE_CONTROL_STATE 1
+#define CONFIGURATION_CONTROL_STATE 2
+
     /******************************************************************************/
     /* System Function Prototypes                                                 */
     /******************************************************************************/
@@ -46,11 +58,6 @@ extern "C" {
      * Initialization all parameters for motor controller.
      */
     void init_parameter(void);
-
-    /**
-     * Function to update parameters relative a parameter message
-     */
-    void update_parameter_unicycle(void);
 
     /**
      * Function to update motor parameters from message
@@ -83,12 +90,6 @@ extern "C" {
      * PID data structure: PIDstruct for PID 1 (Motor right)
      */
     void InitPid2(void);
-
-    /**
-     * If not recive anything velocity messages. Start controlled stop motors
-     * @return start emergency mode or not.
-     */
-    bool Emergency(void);
 
     /**
      * Evaluate linear and angular velocity from unicycle robot. Convertion data
