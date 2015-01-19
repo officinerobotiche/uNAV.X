@@ -68,6 +68,7 @@ parameter_motor_t parameter_motor_left, parameter_motor_right;
 constraint_t constraint;
 pid_control_t pid_left, pid_right;
 enable_motor_t enable_motors;
+motor_control_t motor_ref[NUM_MOTORS];
 motor_t motor_left, motor_right;
 
 typedef struct parameter_vel {
@@ -89,12 +90,16 @@ extern volatile unsigned long timePeriodR; //Periodo Ruota Destra
 extern volatile unsigned SIG_VELL; //Verso rotazione ruota Sinistra
 extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
 
+//From high_level_control
+extern volatile unsigned int control_state;
+
 /******************************************************************************/
 /* User Functions                                                             */
 
 /******************************************************************************/
 
 void init_parameter(void) {
+    int i;
     //Left motor parameters
     parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
     parameter_motor_left.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
@@ -118,6 +123,12 @@ void init_parameter(void) {
     constraint.max_left = 14000;
     constraint.max_right = 14000;
 
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        motor_ref[i].num = i;
+        motor_ref[i].motor = 0;
+    }
+
+    UpdateStateController(-1, DISABLE_CONTROL_STATE);
     enable_motors = false;
 }
 
@@ -178,24 +189,37 @@ void InitPid2(void) {
     PIDCoeffCalc(&kCoeffs2[0], &PIDstruct2);
 }
 
-int motorReference(motor_control_t motor_ref_int) {
+int MotorVelocityReference(short number) {
     unsigned int t = TMR1; // Timing function
 
-    MOTOR_ENABLE1 = enable_motors ^ parameter_motor_left.enable_set;
-    MOTOR_ENABLE2 = enable_motors ^ parameter_motor_right.enable_set;
-
-    if (abs(motor_ref_int.motor[0]) > constraint.max_left) {
-        motor_left.refer_vel = SGN((int) motor_ref_int.motor[0]) * constraint.max_left;
+    if (abs(motor_ref[number].motor) > constraint.max_left) {
+        motor_left.refer_vel = SGN((int) motor_ref[number].motor) * constraint.max_left;
     } else {
-        motor_left.refer_vel = (int) motor_ref_int.motor[0];
+        motor_left.refer_vel = (int) motor_ref[number].motor;
     }
-    if (abs(motor_ref_int.motor[1]) > constraint.max_right) {
-        motor_right.refer_vel = SGN((int) motor_ref_int.motor[1]) * constraint.max_right;
-    } else {
-        motor_right.refer_vel = (int) motor_ref_int.motor[1];
-    }
-
     return TMR1 - t; // Time of esecution
+}
+
+void UpdateStateController(short motor, int state) {
+    bool enable = (state > 0) ? true : false;
+    control_state = 0;
+    /**
+     * Set enable or disable motors
+     */
+    switch (motor) {
+        case 0:
+            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            break;
+        case 1:
+            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+            break;
+        default:
+            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+            break;
+    }
+
+
 }
 
 int MotorTaskController(void) {
@@ -204,7 +228,8 @@ int MotorTaskController(void) {
     /**
      * If high level control selected, then set new reference for all motors.
      */
-    motor_control_t motor_ref = HighLevelTaskController();
+    if (control_state > DISABLE_HIGH_CONTROL_STATE)
+        HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         switch (control_motor_state[i]) {
@@ -218,7 +243,7 @@ int MotorTaskController(void) {
                 /**
                  * Enable motors and check velocity constraint and save references
                  */
-                motorReference(motor_ref);
+                MotorVelocityReference(i);
                 break;
             case TORQUE_CONTROL_STATE:
                 //TODO to be implement

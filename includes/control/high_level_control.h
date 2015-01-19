@@ -24,6 +24,10 @@ extern "C" {
 
 #include "packet/packet.h"
 
+#define DISABLE_HIGH_CONTROL_STATE 0
+#define VELOCITY_UNICYCLE_CONTROL_STATE 1
+#define CONFIGURATION_CONTROL_STATE 2
+
     /**
      * Initialization all parameters for motor controller.
      */
@@ -64,16 +68,21 @@ extern "C" {
     bool Emergency(void);
 
     /**
+     * Update state controller for high level control
+     */
+    void UpdateHighStateController(int state);
+
+    /**
      *
      * @return time to compute this function
      */
-    motor_control_t HighLevelTaskController(void);
+    int HighLevelTaskController(void);
 
     /**
      * Evaluate linear and angular velocity from unicycle robot.
      * @return time to compute this function
      */
-    motor_control_t VelToMotorReference(void);
+    int VelToMotorReference(void);
 
     /**
      * Convertion data from rotor motors measure and save value for velocity.

@@ -48,16 +48,17 @@ extern unsigned int counter_stop;
 
 // From motors PID
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
-extern parameter_unicycle_t parameter_unicycle;
 extern constraint_t constraint;
-extern velocity_t vel_rif, vel_mis;
 extern pid_control_t pid_left, pid_right;
 extern enable_motor_t enable_motors;
+extern motor_control_t motor_ref;
 extern motor_t motor_left, motor_right;
 extern emergency_t emergency;
 
 // From high level control
+extern parameter_unicycle_t parameter_unicycle;
 extern coordinate_t coordinate;
+extern velocity_t vel_rif, vel_mis;
 //extern delta_odometry_t delta_odometry;
 extern bool coord_busy;
 
@@ -104,6 +105,11 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
+                counter_stop = 0;
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+                break;
+            case VEL_MOTOR:
+                motor_ref = info->packet.motor_control_t;
                 counter_stop = 0;
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;

@@ -43,8 +43,7 @@
 #include "system/user.h"
 
 //State controller
-unsigned int control_state = 0;
-
+volatile unsigned int control_state = 0;
 
 coordinate_t coordinate;
 //delta_odometry_t delta_odometry;
@@ -71,6 +70,7 @@ velocity_t last_vel_rif;
 bool save_velocity = true;
 
 // From motors PID
+extern motor_control_t motor_ref[NUM_MOTORS];
 extern unsigned int control_motor_state[NUM_MOTORS];
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern motor_t motor_left, motor_right;
@@ -126,23 +126,17 @@ void update_coord(void) {
     cosTh_old = cosf(coordinate.theta);
 }
 
-void UpdateStateControllers(void) {
-    switch (control_state) {
-        case DISABLE_HIGH_CONTROL_STATE:
-            break;
-        case VELOCITY_UNICYCLE_CONTROL_STATE:
-            control_motor_state[0] = VELOCITY_CONTROL_STATE;
-            control_motor_state[1] = VELOCITY_CONTROL_STATE;
-            break;
-        case CONFIGURATION_CONTROL_STATE:
-            break;
-        default:
-            break;
+void UpdateHighStateController(int state) {
+    int i;
+    control_state = state;
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        control_motor_state[i] = VELOCITY_CONTROL_STATE;
     }
 }
 
-motor_control_t HighLevelTaskController(void) {
-    motor_control_t motor_ref_int;
+int HighLevelTaskController(void) {
+    unsigned int t = TMR1; // Timing function
+    int i;
 
     switch (control_state) {
         case VELOCITY_UNICYCLE_CONTROL_STATE:
@@ -152,18 +146,17 @@ motor_control_t HighLevelTaskController(void) {
             VelocityMeasure();
             /**
              * Convertion linear velocity and angular velocity to motor left and motor right
-             */
-            motor_ref_int = VelToMotorReference();
+             */VelToMotorReference();
             break;
         case CONFIGURATION_CONTROL_STATE:
             break;
         default:
-            motor_ref_int.motor[0] = 0;
-            motor_ref_int.motor[1] = 0;
+            for(i=0;i<NUM_MOTORS;++i){
+                motor_ref[i].motor = 0;
+            }
             break;
     }
-
-    return motor_ref_int;
+    return TMR1 - t; // Time of esecution
 }
 
 int deadReckoning(void) {
@@ -251,24 +244,23 @@ bool Emergency(void) {
     return false;
 }
 
-motor_control_t VelToMotorReference(void) {
-    motor_control_t motor_ref_int;
-
+int VelToMotorReference(void) {
+    unsigned int t = TMR1; // Timing function
     // >>>>> Second part: references calculation
-    motor_ref_int.motor[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-    motor_ref_int.motor[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref[0].motor = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref[1].motor = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // TODO to avoid the following saturation we can normalize ref value! by Walt
 
     // >>>>> Saturation on 16 bit values
-    motor_ref_int.motor[0] = motor_ref_int.motor[0] > 32767 ? 32767 : motor_ref_int.motor[0];
-    motor_ref_int.motor[0] = motor_ref_int.motor[0]<-32768 ? -32768 : motor_ref_int.motor[0];
+    motor_ref[0].motor = motor_ref[0].motor > 32767 ? 32767 : motor_ref[0].motor;
+    motor_ref[0].motor = motor_ref[0].motor<-32768 ? -32768 : motor_ref[0].motor;
 
-    motor_ref_int.motor[1] = motor_ref_int.motor[1] > 32767 ? 32767 : motor_ref_int.motor[1];
-    motor_ref_int.motor[1] = motor_ref_int.motor[1]<-32768 ? -32768 : motor_ref_int.motor[1];
+    motor_ref[1].motor = motor_ref[1].motor > 32767 ? 32767 : motor_ref[1].motor;
+    motor_ref[1].motor = motor_ref[1].motor<-32768 ? -32768 : motor_ref[1].motor;
     // <<<<< Saturation on 16 bit values
 
-    return motor_ref_int;
+    return TMR1 - t; // Time of esecution
 }
 
 int VelocityMeasure(void) {

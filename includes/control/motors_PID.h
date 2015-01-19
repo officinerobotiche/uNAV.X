@@ -45,14 +45,11 @@ extern "C" {
     /**
      * Define to select current state of control
      */
-#define DIRECT_CONTROL_STATE 0
-#define POSITION_CONTROL_STATE 1
-#define VELOCITY_CONTROL_STATE 2
-#define TORQUE_CONTROL_STATE 3
-
-#define DISABLE_HIGH_CONTROL_STATE 0
-#define VELOCITY_UNICYCLE_CONTROL_STATE 1
-#define CONFIGURATION_CONTROL_STATE 2
+#define DISABLE_CONTROL_STATE 0
+#define DIRECT_CONTROL_STATE 1
+#define POSITION_CONTROL_STATE 2
+#define VELOCITY_CONTROL_STATE 3
+#define TORQUE_CONTROL_STATE 4
 
     /******************************************************************************/
     /* System Function Prototypes                                                 */
@@ -94,6 +91,21 @@ extern "C" {
      * PID data structure: PIDstruct for PID 1 (Motor right)
      */
     void InitPid2(void);
+
+    /**
+     * Write a correct value of motor reference and if necessary modify
+     * reference to control contraint.
+     * @param number Number motor
+     * @return Time to compute this function
+     */
+    int MotorVelocityReference(short motor);
+
+    /**
+     * Set state controller for all motors, if DISABLE, set enable motor to zero
+     * @param motor number motor to update state if -1 set all motor to state
+     * @param state state to change.
+     */
+    void UpdateStateController(short motor, int state);
 
     /**
      * Convert and check reference for type of law control selected. We have

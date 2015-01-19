@@ -138,20 +138,18 @@ typedef struct velocity {
 } velocity_t;
 #define LNG_VELOCITY sizeof(velocity_t)
 
-#ifndef NUM_MOTORS
-#define NUM_MOTORS 2
-#endif
 /**
  * Message to control single motor
  * - dimension number motors
  */
 typedef struct motor_control{
-    int16_t motor[NUM_MOTORS];
+    int8_t num;
+    int16_t motor;
 }motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
 
 /**
- * Message for read and write state of H-bridge (able or disable)
+ * Message for read and write state of H-bridge (enable or disable)
  */
 typedef uint8_t enable_motor_t;
 #define LNG_ENABLE_MOTOR sizeof(enable_motor_t)
