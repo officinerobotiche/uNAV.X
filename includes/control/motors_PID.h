@@ -58,7 +58,7 @@ extern "C" {
     /**
      * Initialization all parameters for motor controller.
      */
-    void init_parameter(void);
+    void init_parameter_motors(void);
 
     /**
      * Function to update motor parameters from message

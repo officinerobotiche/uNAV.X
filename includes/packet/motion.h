@@ -182,9 +182,10 @@ typedef uint8_t enable_motor_t;
 #define VELOCITY_MIS 10
 #define VEL_MOTOR 11
 #define VEL_MOTOR_MIS 12
-#define ENABLE 13
-#define EMERGENCY 14
-#define DELTA_ODOMETRY 15
+#define ENABLE_MOTOR 13
+#define ENABLE 14
+#define EMERGENCY 15
+#define DELTA_ODOMETRY 16
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 4
@@ -220,6 +221,7 @@ typedef uint8_t enable_motor_t;
                                     hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;                   \
                                     hashmap_motion[VEL_MOTOR] = LNG_MOTOR_CONTROL;                 \
                                     hashmap_motion[VEL_MOTOR_MIS] = LNG_MOTOR_CONTROL;             \
+                                    hashmap_motion[ENABLE_MOTOR] = LNG_MOTOR_CONTROL;              \
                                     hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
                                     hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
                                     //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;

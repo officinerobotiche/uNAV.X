@@ -127,11 +127,8 @@ void update_coord(void) {
 }
 
 void UpdateHighStateController(int state) {
-    int i;
     control_state = state;
-    for (i = 0; i < NUM_MOTORS; ++i) {
-        control_motor_state[i] = VELOCITY_CONTROL_STATE;
-    }
+    UpdateStateController(-1, VELOCITY_CONTROL_STATE);
 }
 
 int HighLevelTaskController(void) {

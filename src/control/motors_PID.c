@@ -93,12 +93,15 @@ extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
 //From high_level_control
 extern volatile unsigned int control_state;
 
+//From interrupt
+extern unsigned int counter_stop;
+
 /******************************************************************************/
 /* User Functions                                                             */
 
 /******************************************************************************/
 
-void init_parameter(void) {
+void init_parameter_motors(void) {
     int i;
     //Left motor parameters
     parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
@@ -218,8 +221,10 @@ void UpdateStateController(short motor, int state) {
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
             break;
     }
-
-
+    /**
+     * Reset time emergency
+     */
+    counter_stop = 0;
 }
 
 int MotorTaskController(void) {

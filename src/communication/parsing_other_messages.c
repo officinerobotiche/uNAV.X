@@ -43,9 +43,6 @@
 #include "system/user.h"
 #include "system/system.h"
 
-//From interrupt
-extern unsigned int counter_stop;
-
 // From motors PID
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern constraint_t constraint;
@@ -105,12 +102,18 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
-                counter_stop = 0;
+                UpdateHighStateController(VELOCITY_UNICYCLE_CONTROL_STATE);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR:
                 motor_ref = info->packet.motor_control_t;
-                counter_stop = 0;
+                UpdateStateController(motor_ref.num, VELOCITY_CONTROL_STATE);
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+                break;
+            case ENABLE_MOTOR:
+#warning CREATE VARIABLE FOR ENABLE VALUE
+                motor_ref = info->packet.motor_control_t;
+                UpdateStateController(motor_ref.num, motor_ref.motor);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE:
@@ -124,6 +127,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
             case DELTA_ODOMETRY:
             case MOTOR_L:
             case MOTOR_R:
+            case VEL_MOTOR_MIS:
             case VELOCITY_MIS:
                 list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 break;
@@ -171,6 +175,10 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 send.velocity = vel_rif;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case VEL_MOTOR:
+                send.motor_control_t = motor_ref;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case ENABLE:
