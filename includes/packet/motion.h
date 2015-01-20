@@ -174,7 +174,7 @@ typedef uint8_t state_controller_t;
         parameter_unicycle_t parameter_unicycle; \
         parameter_motor_t parameter_motor;       \
         velocity_t velocity;                     \
-        motor_control_t motor_control_t;         \
+        motor_control_t motor_control;           \
         state_controller_t enable;               \
         motor_t motor;                           \
         constraint_t constraint;                 \
@@ -239,9 +239,9 @@ typedef uint8_t state_controller_t;
                                     hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                     \
                                     hashmap_motion[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
                                     hashmap_motion[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
-                                    hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;             \
-                                    hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;             \
-                                    hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;              \
+                                    hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;            \
                                     hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;
                                     //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
 
