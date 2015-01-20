@@ -128,7 +128,7 @@ void init_parameter_motors(void) {
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         motor_state[i].num = i;
-        motor_state[i].motor = DISABLE_CONTROL_STATE;
+        motor_state[i].motor = STATE_DISABLE_CONTROL;
         motor_ref[i].num = i;
         motor_ref[i].motor = 0;
         UpdateStateController(motor_state[i]);
@@ -241,24 +241,24 @@ int MotorTaskController(void) {
     /**
      * If high level control selected, then set new reference for all motors.
      */
-    if (control_state > DISABLE_HIGH_CONTROL_STATE)
+    if (control_state > STATE_HIGH_CONTROL_DISABLE)
         HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         switch (control_motor_state[i]) {
-            case DIRECT_CONTROL_STATE:
+            case STATE_DIRECT_CONTROL:
                 //TODO To be implement (Read issue #14)
                 break;
-            case POSITION_CONTROL_STATE:
+            case STATE_POSITION_CONTROL:
                 //TODO to be implement
                 break;
-            case VELOCITY_CONTROL_STATE:
+            case STATE_VELOCITY_CONTROL:
                 /**
                  * Enable motors and check velocity constraint and save references
                  */
                 MotorVelocityReference(i);
                 break;
-            case TORQUE_CONTROL_STATE:
+            case STATE_TORQUE_CONTROL:
                 //TODO to be implement
                 break;
             default:

@@ -107,7 +107,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
-                UpdateHighStateController(VELOCITY_UNICYCLE_CONTROL_STATE);
+                UpdateHighStateController(STATE_HIGH_CONTROL_VELOCITY_UNICYCLE);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR:
@@ -115,7 +115,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                     case MOTOR_TYPE_REQ:
                         motor_ref[info->packet.motor_control_t.num] = info->packet.motor_control_t;
                         motor_temp.num = info->packet.motor_control_t.num;
-                        motor_temp.motor = VELOCITY_CONTROL_STATE;
+                        motor_temp.motor = STATE_VELOCITY_CONTROL;
                         UpdateStateController(motor_temp);
                         list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                         break;

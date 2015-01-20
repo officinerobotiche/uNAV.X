@@ -24,10 +24,6 @@ extern "C" {
 
 #include "packet/packet.h"
 
-#define DISABLE_HIGH_CONTROL_STATE 0
-#define VELOCITY_UNICYCLE_CONTROL_STATE 1
-#define CONFIGURATION_CONTROL_STATE 2
-
     /**
      * Initialization all parameters for motor controller.
      */

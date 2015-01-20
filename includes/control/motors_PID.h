@@ -42,15 +42,6 @@ extern "C" {
         float k_right;
     } k_odo_t;
 
-    /**
-     * Define to select current state of control
-     */
-#define DISABLE_CONTROL_STATE 0
-#define DIRECT_CONTROL_STATE 1
-#define POSITION_CONTROL_STATE 2
-#define VELOCITY_CONTROL_STATE 3
-#define TORQUE_CONTROL_STATE 4
-
     /******************************************************************************/
     /* System Function Prototypes                                                 */
     /******************************************************************************/
