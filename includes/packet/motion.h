@@ -27,18 +27,18 @@
 /**
  * Define to select state of control for single motor
  */
-#define STATE_DISABLE_CONTROL 0
-#define STATE_DIRECT_CONTROL 1
-#define STATE_POSITION_CONTROL 2
-#define STATE_VELOCITY_CONTROL 3
-#define STATE_TORQUE_CONTROL 4
+#define STATE_CONTROL_DISABLE 0
+#define STATE_CONTROL_DIRECT 1
+#define STATE_CONTROL_POSITION 2
+#define STATE_CONTROL_VELOCITY 3
+#define STATE_CONTROL_TORQUE 4
 
 /**
  * Define to select high state of control
  */
-#define STATE_HIGH_CONTROL_DISABLE 0
-#define STATE_HIGH_CONTROL_VELOCITY_UNICYCLE 1
-#define STATE_HIGH_CONTROL_CONFIGURATION 2
+#define STATE_CONTROL_HIGH_DISABLE 0
+#define STATE_CONTROL_HIGH_VELOCITY 1
+#define STATE_CONTROL_HIGH_CONFIGURATION 2
 
 /**
  * Message for emergency configuration

@@ -134,7 +134,7 @@ void UpdateHighStateController(int state) {
         control_state = state;
         motor_control_t motor_temp;
         motor_temp.num = -1;
-        motor_temp.motor = STATE_VELOCITY_CONTROL;
+        motor_temp.motor = STATE_CONTROL_VELOCITY;
         UpdateStateController(motor_temp);
     }
     /**
@@ -148,7 +148,7 @@ int HighLevelTaskController(void) {
     int i;
 
     switch (control_state) {
-        case STATE_HIGH_CONTROL_VELOCITY_UNICYCLE:
+        case STATE_CONTROL_HIGH_VELOCITY:
             /**
              * Measure linear and angular velocity for unicycle robot
              */
@@ -157,7 +157,7 @@ int HighLevelTaskController(void) {
              * Convertion linear velocity and angular velocity to motor left and motor right
              */VelToMotorReference();
             break;
-        case STATE_HIGH_CONTROL_CONFIGURATION:
+        case STATE_CONTROL_HIGH_CONFIGURATION:
             break;
         default:
             for (i = 0; i < NUM_MOTORS; ++i) {
