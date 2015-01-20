@@ -158,13 +158,7 @@ typedef struct velocity {
  * Message to control single motor
  * - dimension number motors
  */
-#define MOTOR_TYPE_REQ 0
-#define MOTOR_TYPE_SEND 1
-typedef struct motor_control{
-    int8_t num;
-    int8_t type;
-    int16_t motor;
-}motor_control_t;
+typedef int16_t motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
 
 /**
@@ -199,12 +193,15 @@ typedef uint8_t state_controller_t;
 #define CONSTRAINT 8
 #define VELOCITY 9
 #define VELOCITY_MIS 10
-#define VEL_MOTOR 11
-#define VEL_MOTOR_MIS 12
-#define ENABLE_MOTOR 13
-#define ENABLE 14
-#define EMERGENCY 15
-#define DELTA_ODOMETRY 16
+#define ENABLE 11
+#define EMERGENCY 12
+#define VEL_MOTOR_L 13
+#define VEL_MOTOR_R 14
+#define VEL_MOTOR_MIS_L 15
+#define VEL_MOTOR_MIS_R 16
+#define ENABLE_MOTOR_L 17
+#define ENABLE_MOTOR_R 18
+#define DELTA_ODOMETRY 19
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 4
@@ -238,11 +235,14 @@ typedef uint8_t state_controller_t;
                                     hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;                   \
                                     hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
                                     hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;                   \
-                                    hashmap_motion[VEL_MOTOR] = LNG_MOTOR_CONTROL;                 \
-                                    hashmap_motion[VEL_MOTOR_MIS] = LNG_MOTOR_CONTROL;             \
-                                    hashmap_motion[ENABLE_MOTOR] = LNG_MOTOR_CONTROL;              \
                                     hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
-                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
+                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                     \
+                                    hashmap_motion[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motion[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;             \
+                                    hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;             \
+                                    hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;              \
+                                    hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;
                                     //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
 
 #endif	/* MOTION_H */

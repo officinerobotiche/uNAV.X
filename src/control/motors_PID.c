@@ -127,11 +127,9 @@ void init_parameter_motors(void) {
     constraint.max_right = 14000;
 
     for (i = 0; i < NUM_MOTORS; ++i) {
-        motor_state[i].num = i;
-        motor_state[i].motor = STATE_CONTROL_DISABLE;
-        motor_ref[i].num = i;
-        motor_ref[i].motor = 0;
-        UpdateStateController(motor_state[i]);
+        motor_state[i] = STATE_CONTROL_DISABLE;
+        motor_ref[i] = 0;
+        UpdateStateController(i, motor_state[i]);
     }
 }
 
@@ -195,22 +193,22 @@ void InitPid2(void) {
 int MotorVelocityReference(short number) {
     unsigned int t = TMR1; // Timing function
 
-    if (abs(motor_ref[number].motor) > constraint.max_left) {
-        motor_left.refer_vel = SGN((int) motor_ref[number].motor) * constraint.max_left;
+    if (abs(motor_ref[number]) > constraint.max_left) {
+        motor_left.refer_vel = SGN((int) motor_ref[number]) * constraint.max_left;
     } else {
-        motor_left.refer_vel = (int) motor_ref[number].motor;
+        motor_left.refer_vel = (int) motor_ref[number];
     }
     return TMR1 - t; // Time of esecution
 }
 
-void UpdateStateController(motor_control_t motor) {
-    if (motor_state[motor.num].motor != motor.motor) {
-        bool enable = (motor.motor > 0) ? true : false;
+void UpdateStateController(short num, motor_control_t motor) {
+    if (motor_state[num] != motor) {
+        bool enable = (motor > 0) ? true : false;
         control_state = 0;
         /**
          * Set enable or disable motors
          */
-        switch (motor.num) {
+        switch (num) {
             case 0:
                 MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
                 break;
@@ -222,11 +220,11 @@ void UpdateStateController(motor_control_t motor) {
                 MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
                 break;
         }
-        if (motor.num != -1) {
-            motor_state[motor.num].motor = enable;
+        if (num != -1) {
+            motor_state[num] = enable;
         } else {
-            motor_state[0].motor = enable;
-            motor_state[1].motor = enable;
+            motor_state[0] = enable;
+            motor_state[1] = enable;
         }
     }
     /**

@@ -110,46 +110,23 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 UpdateHighStateController(STATE_CONTROL_HIGH_VELOCITY);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case VEL_MOTOR:
-                switch (info->packet.motor_control_t.type) {
-                    case MOTOR_TYPE_REQ:
-                        motor_ref[info->packet.motor_control_t.num] = info->packet.motor_control_t;
-                        motor_temp.num = info->packet.motor_control_t.num;
-                        motor_temp.motor = STATE_CONTROL_VELOCITY;
-                        UpdateStateController(motor_temp);
-                        list_send[len] = createPacket(info->command, ACK, info->type, NULL);
-                        break;
-                    case MOTOR_TYPE_SEND:
-                        send_temp.motor_control_t = motor_ref[info->packet.motor_control_t.num];
-                        send_temp.motor_control_t.type = MOTOR_TYPE_SEND;
-                        list_send[len] = createDataPacket(info->command, info->type, &send_temp);
-                        break;
-                }
+            case VEL_MOTOR_L:
+                motor_ref[0] = info->packet.motor_control_t;
+                UpdateStateController(0, STATE_CONTROL_VELOCITY);
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case ENABLE_MOTOR:
-                switch (info->packet.motor_control_t.type) {
-                    case MOTOR_TYPE_REQ:
-                        UpdateStateController(info->packet.motor_control_t);
-                        list_send[len] = createPacket(info->command, ACK, info->type, NULL);
-                        break;
-                    case MOTOR_TYPE_SEND:
-                        send_temp.motor_control_t = motor_state[info->packet.motor_control_t.num];
-                        send_temp.motor_control_t.type = MOTOR_TYPE_SEND;
-                        list_send[len] = createDataPacket(info->command, info->type, &send_temp);
-                        break;
-                }
+            case VEL_MOTOR_R:
+                motor_ref[1] = info->packet.motor_control_t;
+                UpdateStateController(1, STATE_CONTROL_VELOCITY);
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case VEL_MOTOR_MIS:
-                switch (info->packet.motor_control_t.type) {
-                    case MOTOR_TYPE_REQ:
-                        list_send[len] = createPacket(info->command, NACK, info->type, NULL);
-                        break;
-//                    case MOTOR_TYPE_SEND:
-//                        send_temp.motor_control_t = motor_vel[info->packet.motor_control_t.num];
-//                        send_temp.motor_control_t.type = MOTOR_TYPE_SEND;
-//                        list_send[len] = createDataPacket(info->command, info->type, &send_temp);
-//                        break;
-                }
+            case ENABLE_MOTOR_L:
+                UpdateStateController(0, info->packet.motor_control_t);
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+                break;
+            case ENABLE_MOTOR_R:
+                UpdateStateController(1, info->packet.motor_control_t);
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE:
                 control_state = info->packet.enable;
@@ -160,6 +137,8 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case DELTA_ODOMETRY:
+            case VEL_MOTOR_MIS_L:
+            case VEL_MOTOR_MIS_R:
             case MOTOR_L:
             case MOTOR_R:
             case VELOCITY_MIS:
@@ -211,23 +190,34 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 send.velocity = vel_rif;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-                //            case VEL_MOTOR:
-                //                send.motor_control_t = motor_ref;
-                //                list_send[len] = createDataPacket(info->command, info->type, &send);
-                //                break;
-                //            case VEL_MOTOR_MIS:
-                //TODO
-                //send.motor_control_t = motor
-                //list_send[len] = createDataPacket(info->command, info->type, &send);
-                //                break;
+           case VEL_MOTOR_L:
+                send.motor_control_t = motor_ref[0];
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+           case VEL_MOTOR_R:
+                send.motor_control_t = motor_ref[1];
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+           case VEL_MOTOR_MIS_L:
+                send.motor_control_t = motor_left.measure_vel;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+           case VEL_MOTOR_MIS_R:
+                send.motor_control_t = motor_right.measure_vel;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+           case ENABLE_MOTOR_L:
+                send.motor_control_t = motor_state[0];
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+           case ENABLE_MOTOR_R:
+                send.motor_control_t = motor_state[1];
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
             case ENABLE:
                 send.enable = control_state;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-                //            case ENABLE_MOTOR:
-                //                send.motor_control_t = motor_state;
-                //                list_send[len] = createDataPacket(info->command, info->type, &send);
-                //                break;
             case MOTOR_L:
                 send.motor = motor_left;
                 list_send[len] = createDataPacket(info->command, info->type, &send);

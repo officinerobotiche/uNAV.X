@@ -93,9 +93,10 @@ extern "C" {
 
     /**
      * Set state controller for all motors, if DISABLE, set enable motor to zero
-     * @param motor number motor to update state if -1 set all motor to state
+     * @param num number motor to update state if -1 set all motor to state
+     * @param motor state command
      */
-    void UpdateStateController(motor_control_t motor);
+    void UpdateStateController(short num, motor_control_t motor);
 
     /**
      * Convert and check reference for type of law control selected. We have

@@ -132,10 +132,7 @@ void update_coord(void) {
 void UpdateHighStateController(int state) {
     if (state != control_state) {
         control_state = state;
-        motor_control_t motor_temp;
-        motor_temp.num = -1;
-        motor_temp.motor = STATE_CONTROL_VELOCITY;
-        UpdateStateController(motor_temp);
+        UpdateStateController(-1, STATE_CONTROL_VELOCITY);
     }
     /**
      * Reset time emergency
@@ -161,7 +158,7 @@ int HighLevelTaskController(void) {
             break;
         default:
             for (i = 0; i < NUM_MOTORS; ++i) {
-                motor_ref[i].motor = 0;
+                motor_ref[i] = 0;
             }
             break;
     }
@@ -256,17 +253,17 @@ bool Emergency(void) {
 int VelToMotorReference(void) {
     unsigned int t = TMR1; // Timing function
     // >>>>> Second part: references calculation
-    motor_ref[0].motor = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-    motor_ref[1].motor = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    motor_ref[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // TODO to avoid the following saturation we can normalize ref value! by Walt
 
     // >>>>> Saturation on 16 bit values
-    motor_ref[0].motor = motor_ref[0].motor > 32767 ? 32767 : motor_ref[0].motor;
-    motor_ref[0].motor = motor_ref[0].motor<-32768 ? -32768 : motor_ref[0].motor;
+    motor_ref[0] = motor_ref[0] > 32767 ? 32767 : motor_ref[0];
+    motor_ref[0] = motor_ref[0] <-32768 ? -32768 : motor_ref[0];
 
-    motor_ref[1].motor = motor_ref[1].motor > 32767 ? 32767 : motor_ref[1].motor;
-    motor_ref[1].motor = motor_ref[1].motor<-32768 ? -32768 : motor_ref[1].motor;
+    motor_ref[1] = motor_ref[1] > 32767 ? 32767 : motor_ref[1];
+    motor_ref[1] = motor_ref[1] <-32768 ? -32768 : motor_ref[1];
     // <<<<< Saturation on 16 bit values
 
     return TMR1 - t; // Time of esecution
