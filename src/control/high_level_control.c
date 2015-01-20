@@ -43,7 +43,7 @@
 #include "system/user.h"
 
 //State controller
-volatile unsigned int control_state = 0;
+volatile state_controller_t control_state = 0;
 
 coordinate_t coordinate;
 //delta_odometry_t delta_odometry;
@@ -80,6 +80,9 @@ extern float wheel_m;
 
 //From System
 extern parameter_system_t parameter_system;
+
+//From interrupt
+extern unsigned int counter_stop;
 
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
@@ -127,8 +130,17 @@ void update_coord(void) {
 }
 
 void UpdateHighStateController(int state) {
-    control_state = state;
-    UpdateStateController(-1, VELOCITY_CONTROL_STATE);
+    if (state != control_state) {
+        control_state = state;
+        motor_control_t motor_temp;
+        motor_temp.num = -1;
+        motor_temp.motor = VELOCITY_CONTROL_STATE;
+        UpdateStateController(motor_temp);
+    }
+    /**
+     * Reset time emergency
+     */
+    counter_stop = 0;
 }
 
 int HighLevelTaskController(void) {
@@ -148,7 +160,7 @@ int HighLevelTaskController(void) {
         case CONFIGURATION_CONTROL_STATE:
             break;
         default:
-            for(i=0;i<NUM_MOTORS;++i){
+            for (i = 0; i < NUM_MOTORS; ++i) {
                 motor_ref[i].motor = 0;
             }
             break;

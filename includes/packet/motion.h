@@ -142,8 +142,11 @@ typedef struct velocity {
  * Message to control single motor
  * - dimension number motors
  */
+#define MOTOR_TYPE_REQ 0
+#define MOTOR_TYPE_SEND 1
 typedef struct motor_control{
     int8_t num;
+    int8_t type;
     int16_t motor;
 }motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
@@ -151,8 +154,8 @@ typedef struct motor_control{
 /**
  * Message for read and write state of H-bridge (enable or disable)
  */
-typedef uint8_t enable_motor_t;
-#define LNG_ENABLE_MOTOR sizeof(enable_motor_t)
+typedef uint8_t state_controller_t;
+#define LNG_ENABLE_MOTOR sizeof(state_controller_t)
 
 //List of all motion messages
 #define ABSTRACT_MESSAGE_MOTION                  \
@@ -162,7 +165,7 @@ typedef uint8_t enable_motor_t;
         parameter_motor_t parameter_motor;       \
         velocity_t velocity;                     \
         motor_control_t motor_control_t;         \
-        enable_motor_t enable;                   \
+        state_controller_t enable;               \
         motor_t motor;                           \
         constraint_t constraint;                 \
         emergency_t emergency;                  

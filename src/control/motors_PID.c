@@ -67,8 +67,8 @@ volatile int PulsEncR = 0; //Buffer for deadReckoning
 parameter_motor_t parameter_motor_left, parameter_motor_right;
 constraint_t constraint;
 pid_control_t pid_left, pid_right;
-enable_motor_t enable_motors;
 motor_control_t motor_ref[NUM_MOTORS];
+motor_control_t motor_state[NUM_MOTORS];
 motor_t motor_left, motor_right;
 
 typedef struct parameter_vel {
@@ -127,12 +127,12 @@ void init_parameter_motors(void) {
     constraint.max_right = 14000;
 
     for (i = 0; i < NUM_MOTORS; ++i) {
+        motor_state[i].num = i;
+        motor_state[i].motor = DISABLE_CONTROL_STATE;
         motor_ref[i].num = i;
         motor_ref[i].motor = 0;
+        UpdateStateController(motor_state[i]);
     }
-
-    UpdateStateController(-1, DISABLE_CONTROL_STATE);
-    enable_motors = false;
 }
 
 void update_parameter_motors(void) {
@@ -203,23 +203,31 @@ int MotorVelocityReference(short number) {
     return TMR1 - t; // Time of esecution
 }
 
-void UpdateStateController(short motor, int state) {
-    bool enable = (state > 0) ? true : false;
-    control_state = 0;
-    /**
-     * Set enable or disable motors
-     */
-    switch (motor) {
-        case 0:
-            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
-            break;
-        case 1:
-            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
-            break;
-        default:
-            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
-            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
-            break;
+void UpdateStateController(motor_control_t motor) {
+    if (motor_state[motor.num].motor != motor.motor) {
+        bool enable = (motor.motor > 0) ? true : false;
+        control_state = 0;
+        /**
+         * Set enable or disable motors
+         */
+        switch (motor.num) {
+            case 0:
+                MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+                break;
+            case 1:
+                MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+                break;
+            default:
+                MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+                MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+                break;
+        }
+        if (motor.num != -1) {
+            motor_state[motor.num].motor = enable;
+        } else {
+            motor_state[0].motor = enable;
+            motor_state[1].motor = enable;
+        }
     }
     /**
      * Reset time emergency
