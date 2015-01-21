@@ -200,19 +200,23 @@ int MotorVelocityReference(short number) {
 }
 
 void UpdateStateController(short num, motor_control_t motor) {
+    bool enable = (motor > 0) ? true : false;
     /**
      * Set enable or disable motors
      */
     switch (num) {
         case -1:
-            motor_state[0] = (motor > 0) ? true : false;
-            motor_state[1] = (motor > 0) ? true : false;
-            MOTOR_ENABLE1 = motor_state[0] ^ parameter_motor_left.enable_set;
-            MOTOR_ENABLE2 = motor_state[1] ^ parameter_motor_right.enable_set;
+            motor_state[0] = motor;
+            motor_state[1] = motor;
+            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
             break;
-        default:
-            motor_state[num] = (motor > 0) ? true : false;
-            MOTOR_ENABLE1 = motor_state[num] ^ parameter_motor_left.enable_set;
+        case 0:
+            motor_state[num] = motor;
+            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+        case 1:
+            motor_state[num] = motor;
+            MOTOR_ENABLE2 = enable ^ parameter_motor_left.enable_set;
             break;
     }
     /**
@@ -233,10 +237,10 @@ int MotorTaskController(void) {
     for (i = 0; i < NUM_MOTORS; ++i) {
         switch (motor_state[i]) {
             case STATE_CONTROL_DIRECT:
-                //TODO To be implement (Read issue #14)
+                //TODO To be implemented (Read issue #14)
                 break;
             case STATE_CONTROL_POSITION:
-                //TODO to be implement
+                //TODO to be implemented
                 break;
             case STATE_CONTROL_VELOCITY:
                 /**

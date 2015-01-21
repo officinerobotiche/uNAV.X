@@ -132,7 +132,14 @@ void update_coord(void) {
 void UpdateHighStateController(int state) {
     if (state != control_state) {
         control_state = state;
-        UpdateStateController(-1, STATE_CONTROL_VELOCITY);
+        switch (control_state) {
+            case STATE_CONTROL_HIGH_DISABLE:
+                UpdateStateController(-1, STATE_CONTROL_HIGH_DISABLE);
+                break;
+            default:
+                UpdateStateController(-1, control_state);
+                break;
+        }
     }
     /**
      * Reset time emergency
