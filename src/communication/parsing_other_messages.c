@@ -107,29 +107,32 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
-                UpdateHighStateController(STATE_CONTROL_HIGH_VELOCITY);
+                //UpdateHighStateController(STATE_CONTROL_HIGH_VELOCITY);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
                 motor_ref[0] = info->packet.motor_control;
-                UpdateStateController(0, STATE_CONTROL_VELOCITY);
+                //UpdateStateController(0, STATE_CONTROL_VELOCITY);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_R:
                 motor_ref[1] = info->packet.motor_control;
-                UpdateStateController(1, STATE_CONTROL_VELOCITY);
+                //UpdateStateController(1, STATE_CONTROL_VELOCITY);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_L:
                 UpdateStateController(0, info->packet.motor_control);
+                control_state = 0;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_R:
                 UpdateStateController(1, info->packet.motor_control);
+                control_state = 0;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE:
-                control_state = info->packet.enable;
+                //control_state = info->packet.enable;
+                UpdateHighStateController(info->packet.enable);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case EMERGENCY:

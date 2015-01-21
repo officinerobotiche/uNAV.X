@@ -155,7 +155,7 @@ void init_pid_control(void) {
 void update_pid_l(void) {
     kCoeffs1[0] = Q15(pid_left.kp); //0.5
     kCoeffs1[1] = Q15(pid_left.ki); //0.6
-    kCoeffs1[2] = Q15(pid_left.kp); //0.0
+    kCoeffs1[2] = Q15(pid_left.kd); //0.0
     InitPid1(); //Init PIDL
 }
 
@@ -202,31 +202,21 @@ int MotorVelocityReference(short number) {
 }
 
 void UpdateStateController(short num, motor_control_t motor) {
-    //if (motor_state[num] != motor) {
-        bool enable = (motor > 0) ? true : false;
-        control_state = 0;
-        /**
-         * Set enable or disable motors
-         */
-        switch (num) {
-            case 0:
-                MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
-                break;
-            case 1:
-                MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
-                break;
-            default:
-                MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
-                MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
-                break;
-        }
-        if (num != -1) {
-            motor_state[num] = enable;
-        } else {
-            motor_state[0] = enable;
-            motor_state[1] = enable;
-        }
-    //}
+    /**
+     * Set enable or disable motors
+     */
+    switch (num) {
+        case -1:
+            motor_state[0] = (motor > 0) ? true : false;
+            motor_state[1] = (motor > 0) ? true : false;
+            MOTOR_ENABLE1 = motor_state[0] ^ parameter_motor_left.enable_set;
+            MOTOR_ENABLE2 = motor_state[1] ^ parameter_motor_right.enable_set;
+            break;
+        default:
+            motor_state[num] = (motor > 0) ? true : false;
+            MOTOR_ENABLE1 = motor_state[num] ^ parameter_motor_left.enable_set;
+            break;
+    }
     /**
      * Reset time emergency
      */
