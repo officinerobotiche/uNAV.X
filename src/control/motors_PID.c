@@ -202,7 +202,7 @@ int MotorVelocityReference(short number) {
 }
 
 void UpdateStateController(short num, motor_control_t motor) {
-    if (motor_state[num] != motor) {
+    //if (motor_state[num] != motor) {
         bool enable = (motor > 0) ? true : false;
         control_state = 0;
         /**
@@ -226,7 +226,7 @@ void UpdateStateController(short num, motor_control_t motor) {
             motor_state[0] = enable;
             motor_state[1] = enable;
         }
-    }
+    //}
     /**
      * Reset time emergency
      */
