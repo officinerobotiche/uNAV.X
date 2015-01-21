@@ -1,7 +1,7 @@
 # ![Officine Robotiche][Logo] - µNAV
 This is a project in development by [Officine Robotiche] to control motors.
 
-## **The [uNAV board](https://github.com/officinerobotiche/uNAVPCB) is HERE!**
+### **The [uNAV board](https://github.com/officinerobotiche/uNAVPCB) is HERE!**
 
 # Release
 - [**Download last stable release**](https://github.com/officinerobotiche/uNAV.X/releases)
@@ -9,7 +9,10 @@ This is a project in development by [Officine Robotiche] to control motors.
 
 # Firmware features
 - High speed DC motor control **1KHz**
-- High speed serial communcation **115200bps**
+- High speed serial communication **115200bps**
+- Interrupt based
+- Control EEPROM onboard
+- Dynamic configure all parameters on boards
 
 ## DC Motor control
 - Velocity PID control
