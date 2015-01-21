@@ -81,8 +81,6 @@ float wheel_m;
 
 parameter_vel_t motor_vel_left, motor_vel_right;
 
-unsigned int control_motor_state[NUM_MOTORS];
-
 /**/
 // From interrupt
 extern volatile unsigned long timePeriodL; //Periodo Ruota Sinistra
@@ -233,7 +231,7 @@ int MotorTaskController(void) {
         HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
-        switch (control_motor_state[i]) {
+        switch (motor_state[i]) {
             case STATE_CONTROL_DIRECT:
                 //TODO To be implement (Read issue #14)
                 break;

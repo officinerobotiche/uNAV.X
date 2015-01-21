@@ -152,7 +152,8 @@ int HighLevelTaskController(void) {
             VelocityMeasure();
             /**
              * Convertion linear velocity and angular velocity to motor left and motor right
-             */VelToMotorReference();
+             */
+            VelToMotorReference();
             break;
         case STATE_CONTROL_HIGH_CONFIGURATION:
             break;
