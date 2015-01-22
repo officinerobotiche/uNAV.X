@@ -213,9 +213,10 @@ void UpdateStateController(short num, motor_control_t state) {
         case 0:
             motor_state[num] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            break;
         case 1:
             motor_state[num] = state;
-            MOTOR_ENABLE2 = enable ^ parameter_motor_left.enable_set;
+            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
             break;
     }
 }
