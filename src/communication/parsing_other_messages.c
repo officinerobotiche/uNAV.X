@@ -63,6 +63,9 @@ extern velocity_t vel_rif, vel_mis;
 //extern delta_odometry_t delta_odometry;
 extern bool coord_busy;
 
+//From interrupt
+extern unsigned int counter_stop;
+
 /******************************************************************************/
 /* Computation functions                                                      */
 
@@ -107,31 +110,30 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
-                //UpdateHighStateController(STATE_CONTROL_HIGH_VELOCITY);
+                counter_stop = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
                 motor_ref[0] = info->packet.motor_control;
-                //UpdateStateController(0, STATE_CONTROL_VELOCITY);
+                counter_stop = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_R:
                 motor_ref[1] = info->packet.motor_control;
-                //UpdateStateController(1, STATE_CONTROL_VELOCITY);
+                counter_stop = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_L:
                 UpdateStateController(0, info->packet.motor_control);
-                control_state = 0;  //TODO CORRECT
+                control_state = STATE_CONTROL_HIGH_DISABLE;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_R:
                 UpdateStateController(1, info->packet.motor_control);
-                control_state = 0;  //TODO CORRECT
+                control_state = STATE_CONTROL_HIGH_DISABLE;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE:
-                //control_state = info->packet.enable;
                 UpdateHighStateController(info->packet.enable);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;

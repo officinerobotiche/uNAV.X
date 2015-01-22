@@ -71,15 +71,8 @@ motor_control_t motor_ref[NUM_MOTORS];
 motor_control_t motor_state[NUM_MOTORS];
 motor_t motor_left, motor_right;
 
-typedef struct parameter_vel {
-    float k_vel;
-    int sign;
-} parameter_vel_t;
-
 k_odo_t k_odo;
 float wheel_m;
-
-parameter_vel_t motor_vel_left, motor_vel_right;
 
 /**/
 // From interrupt
@@ -91,9 +84,6 @@ extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
 //From high_level_control
 extern volatile unsigned int control_state;
 
-//From interrupt
-extern unsigned int counter_stop;
-
 /******************************************************************************/
 /* User Functions                                                             */
 
@@ -104,12 +94,12 @@ void init_parameter_motors(void) {
     //Left motor parameters
     parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
     parameter_motor_left.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
-    parameter_motor_left.versus = false;
+    parameter_motor_left.versus = 1;
     parameter_motor_left.enable_set = false;
     //Right motor parameters
     parameter_motor_right.k_vel = K_VEL;
     parameter_motor_right.k_ang = K_ANG;
-    parameter_motor_right.versus = false;
+    parameter_motor_right.versus = 1;
     parameter_motor_right.enable_set = false;
 
     motor_left.control_vel = 0;
@@ -129,14 +119,12 @@ void init_parameter_motors(void) {
         motor_ref[i] = 0;
         UpdateStateController(i, motor_state[i]);
     }
+
+    update_parameter_motors();
 }
 
 void update_parameter_motors(void) {
-    motor_vel_left.k_vel = parameter_motor_left.k_vel;
-    motor_vel_right.k_vel = parameter_motor_right.k_vel;
     //Update encoder swap
-    motor_vel_left.sign = parameter_motor_left.versus;
-    motor_vel_right.sign = parameter_motor_right.versus;
     QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
     QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
 }
@@ -210,30 +198,26 @@ int MotorVelocityReference(short number) {
     return TMR1 - t; // Time of esecution
 }
 
-void UpdateStateController(short num, motor_control_t motor) {
-    bool enable = (motor > 0) ? true : false;
+void UpdateStateController(short num, motor_control_t state) {
+    bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
     /**
      * Set enable or disable motors
      */
     switch (num) {
         case -1:
-            motor_state[0] = motor;
-            motor_state[1] = motor;
+            motor_state[0] = state;
+            motor_state[1] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
             break;
         case 0:
-            motor_state[num] = motor;
+            motor_state[num] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
         case 1:
-            motor_state[num] = motor;
+            motor_state[num] = state;
             MOTOR_ENABLE2 = enable ^ parameter_motor_left.enable_set;
             break;
     }
-    /**
-     * Reset time emergency
-     */
-    counter_stop = 0;
 }
 
 int MotorTaskController(void) {
@@ -242,7 +226,7 @@ int MotorTaskController(void) {
     /**
      * If high level control selected, then set new reference for all motors.
      */
-    if (control_state > STATE_CONTROL_HIGH_DISABLE)
+    if (control_state != STATE_CONTROL_HIGH_DISABLE)
         HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
@@ -260,7 +244,7 @@ int MotorTaskController(void) {
                 MotorVelocityReference(i);
                 break;
             case STATE_CONTROL_TORQUE:
-                //TODO to be implement
+                //TODO to be implemented
                 break;
             default:
                 break;
@@ -289,10 +273,10 @@ int MotorPIDL(void) {
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
-    int pid_control = motor_vel_left.sign * (PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = parameter_motor_left.versus * (PIDstruct1.controlOutput >> 4) + 2048; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
     SetDCMCPWM1(1, pid_control, 0);
-    motor_left.control_vel = motor_vel_left.sign * PIDstruct1.controlOutput;
+    motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
@@ -316,10 +300,10 @@ int MotorPIDR(void) {
     PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
     PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
     PID(&PIDstruct2); //Esecuzione funzione PID
-    int pid_control = motor_vel_right.sign * (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = parameter_motor_right.versus * (PIDstruct2.controlOutput >> 4) + 2048; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
     SetDCMCPWM1(2, pid_control, 0);
-    motor_right.control_vel = motor_vel_right.sign * PIDstruct2.controlOutput;
+    motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }

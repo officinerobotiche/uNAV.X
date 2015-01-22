@@ -81,9 +81,6 @@ extern float wheel_m;
 //From System
 extern parameter_system_t parameter_system;
 
-//From interrupt
-extern unsigned int counter_stop;
-
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
 
@@ -141,10 +138,6 @@ void UpdateHighStateController(int state) {
                 break;
         }
     }
-    /**
-     * Reset time emergency
-     */
-    counter_stop = 0;
 }
 
 int HighLevelTaskController(void) {
