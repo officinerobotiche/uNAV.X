@@ -83,9 +83,12 @@ int16_t main(void) {
 
     /* Initialize hashmap packet */
     init_hashmap();
-    /* Initialize variables for robots */
+    /* Initialize buffer serial error */
     init_buff_serial_error();
-    init_parameter();
+    /* Initialize variables for motors */
+    init_parameter_motors();
+    /* Initialize variables for unicycle */
+    init_parameter_unicycle();
     init_process();
     init_pid_control();
 

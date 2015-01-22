@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 #ifndef MOTORSPID_H
 #define	MOTORSPID_H
@@ -22,34 +22,38 @@
 extern "C" {
 #endif
 
-/******************************************************************************/
-/* System Level #define Macros                                                */
-/******************************************************************************/
+    /**************************************************************************/
+    /* System Level #define Macros                                            */
+    /**************************************************************************/
 
+    /**
+     * Numbers of motors avaiable in this board
+     */
+#define NUM_MOTORS 2
     //Start define with fixed K_vel convertion velocity
-    #define K_VEL 27925268.03190926
+#define K_VEL 27925268.03190926
     //Start define with fixed K_ang convertion angular
-    #define K_ANG 0.000174532925199
+#define K_ANG 0.000174532925199
+
+#define DEFAULT_KP 0.5
+#define DEFAULT_KI 0.6
+#define DEFAULT_KD 0.0
 
     //Internal definition gain for odometry
+
     typedef struct k_odo {
         float k_left;
         float k_right;
     } k_odo_t;
 
-/******************************************************************************/
-/* System Function Prototypes                                                 */
-/******************************************************************************/
+    /******************************************************************************/
+    /* System Function Prototypes                                                 */
+    /******************************************************************************/
 
     /**
      * Initialization all parameters for motor controller.
      */
-    void init_parameter(void);
-
-    /**
-     * Function to update parameters relative a parameter message
-     */
-    void update_parameter_unicycle(void);
+    void init_parameter_motors(void);
 
     /**
      * Function to update motor parameters from message
@@ -84,17 +88,30 @@ extern "C" {
     void InitPid2(void);
 
     /**
-     * If not recive anything velocity messages. Start controlled stop motors
-     * @return start emergency mode or not.
+     * Write a correct value of motor reference and if necessary modify
+     * reference to control contraint.
+     * @param number Number motor
+     * @return Time to compute this function
      */
-    bool Emergency(void);
+    int MotorVelocityReference(short motor);
 
     /**
-     * Evaluate linear and angular velocity from unicycle robot. Convertion data
-     * from rotor motors measure and save value for velocity.
-     * @return time to compute parsing packet
+     * Set state controller for all motors, if DISABLE, set enable motor to zero
+     * @param num number motor to update state if -1 set all motor to state
+     * @param motor state command
      */
-    int Velocity(void);
+    void UpdateStateController(short num, motor_control_t motor);
+
+    /**
+     * Convert and check reference for type of law control selected. We have
+     * four principal type of control motor:
+     *  - Direct control (write direct PWM)
+     *  - Position control (move to desired angle)
+     *  - Velocity control (move to desired angular velocity)
+     *  - Torque control (move to desired torque)
+     * @return Time to Compute task control reference
+     */
+    int MotorTaskController(void);
 
     /**
      * Esecution velocity PID for left motor

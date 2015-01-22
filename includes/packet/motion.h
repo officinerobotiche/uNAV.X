@@ -25,6 +25,22 @@
 #define BUFFER_ODOMETRY 100
 
 /**
+ * Define to select state of control for single motor
+ */
+#define STATE_CONTROL_DISABLE 0
+#define STATE_CONTROL_DIRECT 1
+#define STATE_CONTROL_POSITION 2
+#define STATE_CONTROL_VELOCITY 3
+#define STATE_CONTROL_TORQUE 4
+
+/**
+ * Define to select high state of control
+ */
+#define STATE_CONTROL_HIGH_DISABLE 0
+#define STATE_CONTROL_HIGH_VELOCITY 1
+#define STATE_CONTROL_HIGH_CONFIGURATION 2
+
+/**
  * Message for emergency configuration
  * - time to stop
  * - timeout to start emergency stop motors
@@ -139,10 +155,17 @@ typedef struct velocity {
 #define LNG_VELOCITY sizeof(velocity_t)
 
 /**
- * Message for read and write state of H-bridge (able or disable)
+ * Message to control single motor
+ * - dimension number motors
  */
-typedef uint8_t enable_motor_t;
-#define LNG_ENABLE_MOTOR sizeof(enable_motor_t)
+typedef int16_t motor_control_t;
+#define LNG_MOTOR_CONTROL sizeof(motor_control_t)
+
+/**
+ * Message for read and write state of H-bridge (enable or disable)
+ */
+typedef uint8_t state_controller_t;
+#define LNG_ENABLE_MOTOR sizeof(state_controller_t)
 
 //List of all motion messages
 #define ABSTRACT_MESSAGE_MOTION                  \
@@ -151,7 +174,8 @@ typedef uint8_t enable_motor_t;
         parameter_unicycle_t parameter_unicycle; \
         parameter_motor_t parameter_motor;       \
         velocity_t velocity;                     \
-        enable_motor_t enable;                   \
+        motor_control_t motor_control;           \
+        state_controller_t enable;               \
         motor_t motor;                           \
         constraint_t constraint;                 \
         emergency_t emergency;                  
@@ -171,7 +195,13 @@ typedef uint8_t enable_motor_t;
 #define VELOCITY_MIS 10
 #define ENABLE 11
 #define EMERGENCY 12
-#define DELTA_ODOMETRY 13
+#define VEL_MOTOR_L 13
+#define VEL_MOTOR_R 14
+#define VEL_MOTOR_MIS_L 15
+#define VEL_MOTOR_MIS_R 16
+#define ENABLE_MOTOR_L 17
+#define ENABLE_MOTOR_R 18
+#define DELTA_ODOMETRY 19
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 4
@@ -186,7 +216,7 @@ typedef uint8_t enable_motor_t;
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTION 'M'
-#define HASHMAP_MOTION_NUMBER 15
+#define HASHMAP_MOTION_NUMBER 20
 
 // Definition on communication/parsing_packet.c
 //static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
@@ -206,7 +236,13 @@ typedef uint8_t enable_motor_t;
                                     hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
                                     hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;                   \
                                     hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
-                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
+                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                     \
+                                    hashmap_motion[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motion[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
+                                    hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;            \
+                                    hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;
                                     //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
 
 #endif	/* MOTION_H */
