@@ -139,9 +139,9 @@ void init_pid_control(void) {
 }
 
 void update_pid_l(void) {
-    kCoeffs1[0] = Q15(pid_left.kp); //0.5
-    kCoeffs1[1] = Q15(pid_left.ki); //0.6
-    kCoeffs1[2] = Q15(pid_left.kd); //0.0
+    kCoeffs1[0] = Q15(pid_left.kp);
+    kCoeffs1[1] = Q15(pid_left.ki);
+    kCoeffs1[2] = Q15(pid_left.kd);
     InitPid1(); //Init PIDL
 }
 
@@ -199,7 +199,7 @@ int MotorVelocityReference(short number) {
 }
 
 void UpdateStateController(short num, motor_control_t state) {
-    bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
+    volatile bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
     /**
      * Set enable or disable motors
      */
