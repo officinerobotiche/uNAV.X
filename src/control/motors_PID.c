@@ -191,10 +191,21 @@ void InitPid2(void) {
 int MotorVelocityReference(short number) {
     unsigned int t = TMR1; // Timing function
 
-    if (abs(motor_ref[number]) > constraint.max_left) {
-        motor_left.refer_vel = SGN((int) motor_ref[number]) * constraint.max_left;
-    } else {
-        motor_left.refer_vel = (int) motor_ref[number];
+    switch (number) {
+        case 0:
+            if (abs(motor_ref[number]) > constraint.max_left) {
+                motor_left.refer_vel = SGN((int) motor_ref[number]) * constraint.max_left;
+            } else {
+                motor_left.refer_vel = (int) motor_ref[number];
+            }
+            break;
+        case 1:
+            if (abs(motor_ref[number]) > constraint.max_right) {
+                motor_right.refer_vel = SGN((int) motor_ref[number]) * constraint.max_right;
+            } else {
+                motor_right.refer_vel = (int) motor_ref[number];
+            }
+            break;
     }
     return TMR1 - t; // Time of esecution
 }

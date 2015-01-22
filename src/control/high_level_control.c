@@ -134,10 +134,10 @@ void UpdateHighStateController(int state) {
         control_state = state;
         switch (control_state) {
             case STATE_CONTROL_HIGH_DISABLE:
-                UpdateStateController(-1, STATE_CONTROL_HIGH_DISABLE);
+                UpdateStateController(-1, STATE_CONTROL_DISABLE);
                 break;
             default:
-                UpdateStateController(-1, control_state);
+                UpdateStateController(-1, STATE_CONTROL_VELOCITY);
                 break;
         }
     }
