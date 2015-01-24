@@ -30,7 +30,6 @@
 #endif
 #endif
 
-
 #include <stdint.h>        /* Includes uint16_t definition                    */
 #include <stdbool.h>       /* Includes true/false definition                  */
 
@@ -44,8 +43,6 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-
-/* i.e. uint16_t <variable_name>; */
 
 /** Main Program
  * The uNav board is designed with one dsPIC33FJ64MC804 to both control the

@@ -55,11 +55,16 @@ extern "C" {
     #define SYS_FREQ        80000000
     #define FCY             SYS_FREQ/2
 
-    #define TCTMR1 0.001            // Timer1 - Value in seconds [s]
-    #define TMR1_VALUE TCTMR1*FCY   // Timer1 - Value in CLK
+    #define FRTMR1 1000             // Timer1 - Value in herz [Hz]
+    #define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
+    #define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
     #define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
 
     //Blink LED
+    /**
+     * BL = 0.5 = 1/2
+     * BLINKSW = BL/0.001 = (1/2)/10^-3 = 10^3/2 = 1000/2 = 500
+     */
     #define BLINK_LED 0.5 //Value in seconds [s]
     #define BLINKSW (int)(BLINK_LED/TCTMR1)
 

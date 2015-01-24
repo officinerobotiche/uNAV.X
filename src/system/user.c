@@ -250,22 +250,46 @@ int maxValue(float myArray[], size_t size) {
     return maxValue;
 }
 
+/**
+ * Tc -> counter = 1sec = 1000 interrupts
+ * !       Tc/2        !   Tc/2       !
+ * !     !_____   _____!              !
+ * !     !|   |   |   |!              !
+ * !-----!|   |---|   |! . . . -------!
+ * !     !             !              !
+ * ! WAIT   Tc/2-WAIT  !   Tc/2       !
+ *
+ * WAIT_time = WAIT/TCTMR1
+ * toggle =
+ *
+ * @param led
+ */
+
+void UpdateBlink(led_control_t *led) {
+    switch (led->number_blink) {
+        case 0:
+            //Clear bit - Set to 0
+            *(led->CS_PORT) &= ~(1 << led->CS_pin);
+            break;
+        case -1:
+            //Set bit - Set to 1
+            *(led->CS_PORT) |= (1 << led->CS_pin);
+            break;
+    }
+    led->counter = 0;
+}
+
 void BlinkController(led_control_t *led) {
-    if (led->counter >= led->wait && led->number_blink > 0) {
-        if (led->counter % BLINKSW / (2 * led->number_blink)) {
-            if (led->counter <= BLINKSW / (2 * led->number_blink + led->wait)) {
-                *(led->CS_PORT) = *(led->CS_PORT) ^ ((1 << led->CS_pin));
-                //To verify
-                //*(led->CS_PORT) ^= ((1 << led->CS_pin));
-                //To control error
-                //__builtin_btg((unsigned int *)led->CS_PORT, led->CS_pin);
-            }
+    if (led->counter > led->wait && led->counter <= FRTMR1) {
+        if (led->counter % FRTMR1 / (2 * led->number_blink) == 0) {
+            //Toggle bit
+            *(led->CS_PORT) ^= (1 << led->CS_pin);
         }
-    } else if (led->number_blink == -1) {
-        //led.port = 1;
-    } else if (led->counter >= BLINKSW) {
+    } else if (led->counter >= 3 * FRTMR1 / 2) {
         led->counter = 0;
-        //led.port = 0;
+    } else {
+        //Clear bit - Set to 0
+        *(led->CS_PORT) &= ~(1 << led->CS_pin);
     }
     led->counter++;
 }

@@ -35,7 +35,7 @@ extern "C" {
      */
     typedef struct led_control {
         volatile unsigned int * CS_PORT;
-        unsigned short CS_pin;
+        unsigned int CS_pin;
         unsigned int counter;
         unsigned int wait;
         short number_blink;
