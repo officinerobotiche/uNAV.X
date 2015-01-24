@@ -39,7 +39,6 @@
 #include "communication/parsing_messages.h"
 #include "control/motors_PID.h"
 #include "control/high_level_control.h"
-#include <libpic30.h>        /* Includes for delay definition */
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -99,10 +98,6 @@ int16_t main(void) {
 
     /* Initialize IO ports and peripherals */
     InitApp();
-
-    __delay32(100000000); // delay 200 ms;
-    /* Start LED blink show */
-    blinkflush();
 
     while (1) {
 

@@ -306,8 +306,8 @@ void UpdateBlink(led_control_t *led, short blink) {
  * ! WAIT   Tc/2-WAIT  !   Tc/2       !
  */
 
-void BlinkController(led_control_t *led) {
-    if (led->counter > led->wait && led->counter <= FRTMR1) {
+inline void BlinkController(led_control_t *led) {
+    if (led->counter > led->wait && led->counter < FRTMR1) {
         if (led->counter % led->fr_blink == 0) {
             //Toggle bit
             *(led->pin->CS_PORT) ^= led->CS_mask;
@@ -334,14 +334,22 @@ void blinkflush() {
 
 void EffectStop() {
     int i;
-    if (first) {
-        first = false;
-    } else {
+    int value = 0;
+    if (led_effect) {
         for (i = 0; i < LED_NUM; ++i) {
-            UpdateBlink(&led_controller[i], load_blink[i]);
-            led_controller[i].wait = 0;
+            value += led_controller[i].counter;
         }
-        led_effect = false;
-        first = true;
+        if (value == 0) {
+            if (~first) {
+                for (i = 0; i < LED_NUM; ++i) {
+                    UpdateBlink(&led_controller[i], load_blink[i]);
+                    led_controller[i].wait = 0;
+                }
+                led_effect = false;
+                first = true;
+            } else {
+                first = false;
+            }
+        }
     }
 }
