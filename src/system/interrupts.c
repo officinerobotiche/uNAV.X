@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -45,7 +45,6 @@
 /******************************************************************************/
 
 unsigned int counter_stop = 0;
-unsigned int counter = 0;
 unsigned int counter_odo = 0;
 unsigned int counter_pid = 0;
 volatile unsigned int overTmrL = 0;
@@ -59,6 +58,10 @@ process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, 
 
 //From Motors_PID
 extern emergency_t emergency;
+
+//From user
+extern led_control_t led_controller[LED_NUM];
+extern bool led_effect;
 
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
@@ -203,6 +206,7 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
+    int led_counter = 0;
 
     if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
         PID_FLAG = 1; //Start OC1Interrupt for PID control
@@ -212,9 +216,12 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
-    if (counter >= BLINKSW) {
-        LED1 ^= 1;
-        counter = 0;
+    /**
+     * Blink controller for all leds
+     */
+    for (led_counter = 0; led_counter < LED_NUM; led_counter++) {
+        if (led_controller[led_counter].number_blink > LED_OFF)
+            BlinkController(&led_controller[led_counter]);
     }
     if ((counter_stop + 1) >= emergency.timeout) {
         if (Emergency()) {
@@ -224,7 +231,6 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         counter_stop++;
     }
     counter_pid++;
-    counter++;
     counter_odo++;
 }
 

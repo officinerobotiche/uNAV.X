@@ -1,17 +1,19 @@
 /*
- µNAV v 0.0.0 alpha 15/09/2014
-
- Processor : DSPIC33FJ128MC804 clock 40 MHz
-
- Authors:
- Guido Ottaviani
- Marco d'Ambrosio
- Raffaello Bonghi
- Roberto D'Amico
-
- License MIT
-
- */
+ * Copyright (C) 2014 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
+ * Permission is granted to copy, distribute, and/or modify this program
+ * under the terms of the GNU Lesser General Public License, version 2 or any
+ * later version published by the Free Software Foundation.
+ *
+ * A copy of the license can be found at
+ * https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details
+*/
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -28,7 +30,6 @@
 #endif
 #endif
 
-
 #include <stdint.h>        /* Includes uint16_t definition                    */
 #include <stdbool.h>       /* Includes true/false definition                  */
 
@@ -42,8 +43,6 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-
-/* i.e. uint16_t <variable_name>; */
 
 /** Main Program
  * The uNav board is designed with one dsPIC33FJ64MC804 to both control the
@@ -76,6 +75,7 @@
  * - RTC triggers the dead-reckoning procedures.
  * @return type of error
  */
+
 int16_t main(void) {
 
     /* Configure the oscillator for the device */
