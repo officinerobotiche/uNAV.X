@@ -39,6 +39,7 @@
 #include "communication/parsing_messages.h"
 #include "control/motors_PID.h"
 #include "control/high_level_control.h"
+#include <libpic30.h>        /* Includes for delay definition */
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -75,6 +76,7 @@
  * - RTC triggers the dead-reckoning procedures.
  * @return type of error
  */
+
 int16_t main(void) {
 
     /* Configure the oscillator for the device */
@@ -98,8 +100,9 @@ int16_t main(void) {
     /* Initialize IO ports and peripherals */
     InitApp();
 
+    __delay32(100000000); // delay 200 ms;
     /* Start LED blink show */
-    //blinkflush();
+    blinkflush();
 
     while (1) {
 

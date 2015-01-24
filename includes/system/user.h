@@ -23,20 +23,30 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+    
+#define LED_ALWAYS_HIGH -1
+#define LED_OFF 0
 
     /**
      * Struct to control blink led
      * - port name to bit register to mount led
      * - counter to control blink led
      * - number of blink in a period, if:
-     *      -# -1 fixed led
-     *      -# 0 led off
+     *      -# -1 fixed led - LED_ALWAYS_HIGH
+     *      -# 0 led off - LED_OFF
      *      -# n number of blink
      */
-    typedef struct led_control {
+
+    typedef struct pin {
         volatile unsigned int * CS_PORT;
-        unsigned int CS_pin;
+        const unsigned int CS_pin;
+    } pin_t;
+
+    typedef struct led_control {
+        pin_t * pin;
+        unsigned int CS_mask;
         unsigned int counter;
+        unsigned int fr_blink;
         unsigned int wait;
         short number_blink;
     } led_control_t;
@@ -46,6 +56,7 @@ extern "C" {
 /******************************************************************************/
 #ifdef UNAV_V1
     #define LED_NUM 4
+
     #define LED1 _LATC6              // Led 1 green
     #define LED1_PORT LATC           // Led 1 green
     #define LED1_NUM  6              // Led 1 green
@@ -57,7 +68,7 @@ extern "C" {
     #define LED3_NUM  8              // Led 3 yellow
     #define LED4 _LATC9              // Led 4 red
     #define LED4_PORT LATC           // Led 4 red
-    #define LED4_NUM  9              // Led 1 green
+    #define LED4_NUM  9              // Led 4 red
 
     #define MOTOR_ENABLE1 _LATA7     // Enable Motore 1
     #define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
@@ -115,12 +126,26 @@ extern "C" {
     int maxValue(float myArray[], size_t size);
 
     /**
+     * Initialization led blink
+     */
+    void InitLed(void);
+
+    /**
+     * Update frequency or type of blink
+     * @param led to control
+     * @param blink number of blinks
+     */
+    void UpdateBlink(led_control_t *led, short blink);
+
+    /**
      * Blink control led
      * @param led to control
      */
     void BlinkController(led_control_t *led);
 
     void blinkflush();
+    
+    void EffectStop();
 
 #ifdef	__cplusplus
 }

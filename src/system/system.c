@@ -77,9 +77,6 @@ extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_vel
 // From motors PID
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 
-// From user
-extern led_control_t led_controller[LED_NUM];
-
 /******************************************************************************/
 /* System Level Functions                                                     */
 /*                                                                            */
@@ -205,29 +202,6 @@ services_t services(services_t service) {
             break;
     }
     return service_send;
-}
-
-void InitLed(void) {
-    led_controller[0].CS_PORT = &LED1_PORT;
-    led_controller[0].CS_pin = LED1_NUM;
-    led_controller[0].number_blink = 1;
-    led_controller[0].wait = 0;
-#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-    led_controller[1].CS_PORT = &LED2_PORT;
-    led_controller[1].CS_pin = LED2_NUM;
-    led_controller[1].number_blink = 0;
-    led_controller[1].wait = 0;
-#endif
-#if defined(UNAV_V1)
-    led_controller[2].CS_PORT = &LED3_PORT;
-    led_controller[2].CS_pin = LED3_NUM;
-    led_controller[2].number_blink = 0;
-    led_controller[2].wait = 0;
-    led_controller[3].CS_PORT = &LED4_PORT;
-    led_controller[3].CS_pin = LED4_NUM;
-    led_controller[3].number_blink = 0;
-    led_controller[3].wait = 0;
-#endif
 }
 
 void InitInterrupts(void) {

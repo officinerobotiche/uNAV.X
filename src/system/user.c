@@ -33,7 +33,6 @@
 #include <stdint.h>          /* For uint16_t definition                       */
 #include <stdbool.h>         /* For true/false definition                     */
 #include <dsp.h>             /* For DSP functionality                         */
-#include <libpic30.h>        /* Includes for delay definition */
 #include <string.h>
 #include <assert.h>
 #include "system/user.h"     /* variables/params used by user.c               */
@@ -44,6 +43,17 @@
 /******************************************************************************/
 
 led_control_t led_controller[LED_NUM];
+bool led_effect = false;
+bool first = true;
+short load_blink[LED_NUM];
+pin_t led_1 = {&LED1_PORT, LED1_NUM};
+#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+pin_t led_2 = {&LED2_PORT, LED2_NUM};
+#endif
+#if defined(UNAV_V1)
+pin_t led_3 = {&LED3_PORT, LED3_NUM};
+pin_t led_4 = {&LED4_PORT, LED4_NUM};
+#endif
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -250,6 +260,42 @@ int maxValue(float myArray[], size_t size) {
     return maxValue;
 }
 
+void InitLed(void) {
+    int i;
+    led_controller[0].pin = &led_1;
+#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+    led_controller[1].pin = &led_2;
+#endif
+#if defined(UNAV_V1)
+    led_controller[2].pin = &led_3;
+    led_controller[3].pin = &led_4;
+#endif
+    for (i = 0; i < LED_NUM; ++i) {
+        led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
+        led_controller[i].wait = 0;
+        UpdateBlink(&led_controller[i], 0);
+    }
+    UpdateBlink(&led_controller[0], 1);
+}
+
+void UpdateBlink(led_control_t *led, short blink) {
+    led->number_blink = blink;
+    switch (led->number_blink) {
+        case LED_OFF:
+            //Clear bit - Set to 0
+            *(led->pin->CS_PORT) &= ~led->CS_mask;
+            break;
+        case LED_ALWAYS_HIGH:
+            //Set bit - Set to 1
+            *(led->pin->CS_PORT) |= led->CS_mask;
+            break;
+        default:
+            led->fr_blink = FRTMR1 / (2 * led->number_blink);
+            break;
+    }
+    led->counter = 0;
+}
+
 /**
  * Tc -> counter = 1sec = 1000 interrupts
  * !       Tc/2        !   Tc/2       !
@@ -258,62 +304,44 @@ int maxValue(float myArray[], size_t size) {
  * !-----!|   |---|   |! . . . -------!
  * !     !             !              !
  * ! WAIT   Tc/2-WAIT  !   Tc/2       !
- *
- * WAIT_time = WAIT/TCTMR1
- * toggle =
- *
- * @param led
  */
-
-void UpdateBlink(led_control_t *led) {
-    switch (led->number_blink) {
-        case 0:
-            //Clear bit - Set to 0
-            *(led->CS_PORT) &= ~(1 << led->CS_pin);
-            break;
-        case -1:
-            //Set bit - Set to 1
-            *(led->CS_PORT) |= (1 << led->CS_pin);
-            break;
-    }
-    led->counter = 0;
-}
 
 void BlinkController(led_control_t *led) {
     if (led->counter > led->wait && led->counter <= FRTMR1) {
-        if (led->counter % FRTMR1 / (2 * led->number_blink) == 0) {
+        if (led->counter % led->fr_blink == 0) {
             //Toggle bit
-            *(led->CS_PORT) ^= (1 << led->CS_pin);
+            *(led->pin->CS_PORT) ^= led->CS_mask;
         }
+        led->counter++;
     } else if (led->counter >= 3 * FRTMR1 / 2) {
         led->counter = 0;
     } else {
         //Clear bit - Set to 0
-        *(led->CS_PORT) &= ~(1 << led->CS_pin);
+        *(led->pin->CS_PORT) &= ~led->CS_mask;
+        led->counter++;
     }
-    led->counter++;
 }
 
 void blinkflush() {
-    LED1 = 1;
-    __delay32(8000000); // delay 200 ms;
-#ifdef UNAV_V1
-    LED2 = 1;
-    __delay32(8000000); // delay 200 ms;
-    LED3 = 1;
-    __delay32(8000000); // delay 200 ms;
-    LED4 = 1;
-    __delay32(8000000); // delay 200 ms;
-    LED4 = 0;
-    __delay32(8000000); // delay 200 ms;
-    LED3 = 0;
-    __delay32(8000000); // delay 200 ms;
-    LED2 = 0;
-#elif ROBOCONTROLLER_V3
-    LED2 = 1;
-    __delay32(8000000); // delay 200 ms;
-    LED2 = 0;
-#endif
-    __delay32(8000000); // delay 200 ms;
-    LED1 = 0;
+    int i;
+    for (i = 0; i < LED_NUM; ++i) {
+        led_controller[i].wait = i * ((float) FRTMR1 / LED_NUM);
+        load_blink[i] = led_controller[i].number_blink;
+        UpdateBlink(&led_controller[i], 1);
+    }
+    led_effect = true;
+}
+
+void EffectStop() {
+    int i;
+    if (first) {
+        first = false;
+    } else {
+        for (i = 0; i < LED_NUM; ++i) {
+            UpdateBlink(&led_controller[i], load_blink[i]);
+            led_controller[i].wait = 0;
+        }
+        led_effect = false;
+        first = true;
+    }
 }

@@ -123,11 +123,6 @@ go here. */
      */
     void ConfigureOscillator(void);
 
-    /**
-     * Initialization led blink
-     */
-    void InitLed(void);
-
     /** Initialization PWM for drive engine left & right
      */
     void InitPWM(void);
