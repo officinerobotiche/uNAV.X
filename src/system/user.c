@@ -275,6 +275,7 @@ void InitLed(void) {
         led_controller[i].wait = 0;
         UpdateBlink(&led_controller[i], 0);
     }
+    //TODO to remove
     UpdateBlink(&led_controller[0], 1);
 }
 
