@@ -66,9 +66,9 @@ unsigned char EEpromWriteIndex[] = {0x00} ;   // Address of the first register t
  */
 void I2C_WriteEEprom(void)
 {
-    I2CEEpromWriteBuff.I.EeepromA = 1;   //$$$$$$$$$$ example
-    I2CEEpromWriteBuff.I.EeepromB = 1;   //$$$$$$$$$$ example
-    I2CEEpromWriteBuff.I.EeepromC = 1;   //$$$$$$$$$$ example
+    I2CEEpromWriteBuff.I.EeepromA = 0xFF;   //$$$$$$$$$$ example
+    I2CEEpromWriteBuff.I.EeepromB = 0xFFFF; //$$$$$$$$$$ example
+    I2CEEpromWriteBuff.I.EeepromC = 1234,56789;   //$$$$$$$$$$ example
     I2C_Write(EEPROM_COMMAND, EEpromWriteIndex, 1, I2CEEpromWriteBuff.C, I2C_EEPROM_BUFF_SIZE_WRITE, &I2C_doneWriteEEpromData);
 }
 

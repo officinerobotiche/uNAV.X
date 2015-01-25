@@ -27,7 +27,7 @@ extern "C" {
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
-
+    
     /* Name interrupt */
     #define VEL_PID_PRIORITY IPC0bits.OC1IP
     #define RX_PARSER_PRIORITY IPC1bits.OC2IP
@@ -55,11 +55,16 @@ extern "C" {
     #define SYS_FREQ        80000000
     #define FCY             SYS_FREQ/2
 
-    #define TCTMR1 0.001            // Timer1 - Value in seconds [s]
-    #define TMR1_VALUE TCTMR1*FCY   // Timer1 - Value in CLK
+    #define FRTMR1 1000             // Timer1 - Value in herz [Hz]
+    #define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
+    #define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
     #define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
 
     //Blink LED
+    /**
+     * BL = 0.5 = 1/2
+     * BLINKSW = BL/0.001 = (1/2)/10^-3 = 10^3/2 = 1000/2 = 500
+     */
     #define BLINK_LED 0.5 //Value in seconds [s]
     #define BLINKSW (int)(BLINK_LED/TCTMR1)
 
@@ -82,33 +87,35 @@ functions, and other non-peripheral microcontroller initialization functions
 go here. */
 
     /**
-     *
+     * Initialization name process and set standard priority for all procesees
      */
     void init_process(void);
 
     /**
-     *
-     * @param number
-     * @return
+     * From name recived, return a process required.
+     * @param number name process
+     * @return save in process_buffer name associated for process
      */
     process_buffer_t decodeNameProcess(int number);
 
     /**
-     *
-     * @return
+     * Update priority for process, restart function Init Interrupt for restart
+     * process with correct value
+     * @return ACK value for correct update priority
      */
     unsigned char update_priority(void);
 
     /**
-     *
-     * @return
+     * Upgdate frequency for working processes. If value is equal to zero,
+     * the process are disabled.
+     * @return ACK value for correct update priority
      */
     unsigned char update_frequency(void);
 
     /**
-     *
-     * @param service
-     * @return
+     * Managment services messages. Return a service message for correct parsing
+     * @param service to parsing
+     * @return a new service message
      */
     services_t services(services_t service);
 
@@ -116,15 +123,15 @@ go here. */
      */
     void ConfigureOscillator(void);
 
-    /** Initalization PWM for drive engine left & right
+    /** Initialization PWM for drive engine left & right
      */
     void InitPWM(void);
 
-    /** Initalization QEI - Motor left
+    /** Initialization QEI - Motor left
      */
     void InitQEI1(void);
 
-    /** Initalization QEI - Motor right
+    /** Initialization QEI - Motor right
      */
     void InitQEI2(void);
 

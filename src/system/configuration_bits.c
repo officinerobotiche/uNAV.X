@@ -48,11 +48,11 @@
 /******************************************************************************/
 
 /** Oscillator selection configuration
- * * FNOSC_PRIPLL -> Primary (XT, HS, EC) Oscillator
- * * IESO_ON -> Start-up device with FRC, then automatically switch to 
+ * * FNOSC_PRI -> Primary (XT, HS, EC) Oscillator
+ * * IESO_ON -> Start-up device with FRC, then automatically switch to
  * user-selected oscillator source when ready
  */
-_FOSCSEL(FNOSC_PRIPLL & IESO_ON);
+_FOSCSEL(FNOSC_PRI & IESO_ON);
 
 /** Oscillator configuration
  * * FCKSM_CSECME -> Both Clock Switching and Fail-Safe Clock Monitor are enabled

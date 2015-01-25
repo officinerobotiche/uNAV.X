@@ -1,64 +1,58 @@
-µNAV
-=========
-µNAV is a project in development by [Officine Robotiche], to control motors.
-Code functionalities are:
+# ![Officine Robotiche][Logo] - µNAV
+This is a project in development by [Officine Robotiche] to control motors.
 
-  - PID control
-  - Encoders management 
-  - Motors current measurement
+### **The [uNAV board](https://github.com/officinerobotiche/uNAVPCB) is HERE!**
 
-####ATTENTION####
+# Release
+- [**Download last stable release**](https://github.com/officinerobotiche/uNAV.X/releases)
+- [wiki] with all detailed information about firmware
 
-> All the code is released under "....." license and is dedicated to µNAV board released under "....." license
+# Firmware features
+- High speed DC motor control **1KHz**
+- High speed serial communication **115200bps**
+- Interrupt based
+- Control EEPROM onboard
+- Dynamic configure all parameters on boards
 
-[--it's possible to collaborate to this project development using system tools --]
+## DC Motor control
+- Velocity PID control
+- Encoders management (A and B channels) 
+- Motors current measurement
+- Enable H-Bridge
 
-Version
-----
-0.0.1
+## Communications
+- *OR-B* Library communication for **serial communication**
+  - You can send different type of messages to control or set board
+- **I2C** Communication (To be implemented)
 
-![Alt][Logo]
+## Boards compliant
+- [uNAV](https://github.com/officinerobotiche/uNAVPCB)
+- [RoboController](http://tuttoelettronica.net/archives/455)
+- [Motion Control](http://raffaello.officinerobotiche.it/schede-elettroniche/motion-control/)
 
-Tech
------------
-Developers guide lines:
+#Tech
+- Show the current state: [Network](https://github.com/officinerobotiche/uNAV.X/network)
+- Open an [issue](https://github.com/officinerobotiche/uNAV.X/issues) about firmware
+- [Milestone](https://github.com/officinerobotiche/uNAV.X/milestones)  for a version of code
 
-* [Code] - code writing "guide lines"
-* [Status] - work progress
-* [RoadMap] - project progress
-* [BUG] - BUG in analisys
+## Repository policy
+This repository follow **[Git flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow)** policy:
+![Gitflow](https://raw.githubusercontent.com/quickhack/translations/master/git-workflows-and-tutorials/images/git-workflows-gitflow.png)
 
-Installation
---------------
+- **[GREEN] Master** branch stores the official release history
+- **[ORANGE] Develop** branch serves as an integration branch for features
+- **[BLUE] Feature** branches use *develop* as their parent branch
+- **[YELLOW] Release-*** No new features can be added after this point—only bug fixes
+- **[GREY] Hotfix** branches are used to quickly patch production releases
 
-```sh
-git clone [git-repo-url] dillinger
-cd dillinger
-npm i -d
-mkdir -p public/files/{md,html,pdf}
-```
+## Communication libraries
+- [C++](https://github.com/officinerobotiche/orblibcpp)
+- [Java](https://github.com/officinerobotiche/orblibjar)
+- [ROS (Robotic Operative System)](https://github.com/officinerobotiche/serial_bridge)
+ 
+## Software
+- [PID tuning](https://github.com/officinerobotiche/uNav_PID_Tuner)
 
-##### Configure Plugins. Instructions in following README.md files
-
-* plugins/dropbox/README.md
-* plugins/github/README.md
-* plugins/googledrive/README.md
-
-```sh
-node app
-```
-
-
-License
-----
-**DA DAFINIRE
-
-
-**Free Software, Hell Yeah!**
-
+[wiki]:http://wiki.officinerobotiche.it/
 [Officine Robotiche]:http://www.officinerobotiche.it/
-[Code]:http://www.officinerobotiche.it/
-[Status]:http://www.officinerobotiche.it/
-[RoadMap]:http://www.officinerobotiche.it/
-[BUG]:http://www.officinerobotiche.it/
 [Logo]:http://2014.officinerobotiche.it/wp-content/uploads/sites/4/2014/09/ORlogoSimpleSmall.png
