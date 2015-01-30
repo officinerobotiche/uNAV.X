@@ -74,7 +74,7 @@
 /**
  * Define messages about parameter system:
      * * Clock of System timer
- * * Colck in milliseconds
+     * * Clock in milliseconds
  */
 typedef struct parameter_system {
     int16_t step_timer;

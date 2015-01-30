@@ -78,10 +78,10 @@ float wheel_m;
 
 /**/
 // From interrupt
-extern volatile unsigned long timePeriodL; //Periodo Ruota Sinistra
-extern volatile unsigned long timePeriodR; //Periodo Ruota Destra
-extern volatile unsigned SIG_VELL; //Verso rotazione ruota Sinistra
-extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
+extern volatile unsigned long timePeriodL; // Left wheel period
+extern volatile unsigned long timePeriodR; // Right wheel period
+extern volatile unsigned SIG_VELL; // Left wheel rotation versus
+extern volatile unsigned SIG_VELR; // Right wheel rotation versus
 
 //From high_level_control
 extern volatile unsigned int control_state;
@@ -360,7 +360,7 @@ void SelectIcPrescaler(int motIdx) {
                 }
                 break;
 
-            default:.
+            default:
                 k_mul = 1;
                 SwitchIcPrescaler(IC_MODE0, motIdx);
                 break;
@@ -381,11 +381,16 @@ int MotorPIDL(void) {
     motor_left.measure_vel = 0;
 
     PulsEncL += (int) POS1CNT; // Odometry
+    int dAng = (int) POS1CNT * k_mul * parameter_motor_left.k_vel; // Odometry to angular
     POS1CNT = 0;
 
     // Speed calculation 
     if (SIG_VELLtmp)
-        motor_left.measure_vel = SIG_VELLtmp * k_mul * (parameter_motor_left.k_vel / timePeriodLtmp);
+    {
+        int16_t ic_contrib = SIG_VELLtmp * k_mul * (parameter_motor_left.k_vel / timePeriodLtmp);
+        int16_t odo_contrib = 0; // dAng/ TODO add time!!!
+        motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
+    }
 
     PIDstruct1.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
     PIDstruct1.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure

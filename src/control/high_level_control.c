@@ -258,7 +258,7 @@ int VelToMotorReference(void) {
     motor_ref[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
     motor_ref[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
-    // TODO to avoid the following saturation we can normalize ref value! by Walt
+    // TODO to avoid the following saturation we could normalize ref value! by Walt
 
     // >>>>> Saturation on 16 bit values
     motor_ref[0] = motor_ref[0] >  32767 ?  32767 : motor_ref[0];
