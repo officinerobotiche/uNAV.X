@@ -39,6 +39,15 @@ extern "C" {
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
 
+    // >>>>> Speed zones in millirad/sec
+#define MIN1 1600  // about 15 RPM
+#define MAX1 2600  // about 25 RPM
+#define MIN2 5500  // about 50 RPM
+#define MAX2 6500  // about 60 RPM
+#define MIN3 20000 // about 190 RPM
+#define MAX3 22000 // about 210 RPM
+    // <<<<< Speed zones in millirad/sec
+
     //Internal definition gain for odometry
 
     typedef struct k_odo {
@@ -148,6 +157,11 @@ extern "C" {
      * @return time to compute parsing packet
      */
     int MotorPIDR(void);
+
+    /**
+     * Select the correct Input Capture prescaler
+     */
+    void SelectIcPrescaler(int motIdx);
 
     /**
      * Mean valure for current measure motors

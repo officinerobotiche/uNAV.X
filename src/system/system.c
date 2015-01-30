@@ -315,10 +315,10 @@ void InitQEI2(void) {
 
 void InitIC1(void) {
     // Initialize Capture Module
-    IC1CONbits.ICM = 0b00; // Disable Input Capture 1 module
+    IC1CONbits.ICM = IC_DISABLE; // Disable Input Capture 1 module
     IC1CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
     IC1CONbits.ICI = 0b01; // Interrupt on every second capture event
-    IC1CONbits.ICM = 0b001; // Generate capture event on every Rising edge
+    IC1CONbits.ICM = IC_MODE0; // Generate capture event on every Rising edge
 
     // Enable Capture Interrupt And Timer2
     IPC0bits.IC1IP = INPUT_CAPTURE_LEVEL; // Setup IC1 interrupt priority level
@@ -328,15 +328,32 @@ void InitIC1(void) {
 
 void InitIC2(void) {
     // Initialize Capture Module
-    IC2CONbits.ICM = 0b00; // Disable Input Capture 2 module
+    IC2CONbits.ICM = IC_DISABLE; // Disable Input Capture 2 module
     IC2CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
     IC2CONbits.ICI = 0b01; // Interrupt on every second capture event
-    IC2CONbits.ICM = 0b001; // Generate capture event on every Rising edge
+    IC2CONbits.ICM = IC_MODE0; // Generate capture event on every Rising edge
 
     // Enable Capture Interrupt And Timer2
     IPC1bits.IC2IP = INPUT_CAPTURE_LEVEL; // Setup IC2 interrupt priority level
     IFS0bits.IC2IF = 0; // Clear IC2 Interrupt Status Flag
     IEC0bits.IC2IE = 1; // Enable IC2 interrupt
+}
+
+void SwitchIcPrescaler(int mode, int motIdx) {
+     __builtin_disi(0x3FFF); //disable interrupts up to priority 6 for n cycles
+
+    // here is the assignment of the ICx module to the correct wheel
+    if (motIdx == 0) {
+        IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
+        IC1CONbits.ICM = mode;
+        _IC1IF = 0; // interrupt flag reset
+    } else {
+        IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
+        IC2CONbits.ICM = mode;
+        _IC2IF = 0; // interrupt flag reset
+    }
+
+    DISICNT = 0; //re-enable interrupts
 }
 
 void InitTimer1(void) {
