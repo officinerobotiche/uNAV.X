@@ -35,9 +35,9 @@ extern "C" {
     //Start define with fixed K_ang convertion angular
 #define K_ANG 0.000174532925199
 
-#define DEFAULT_KP 0.5
-#define DEFAULT_KI 0.6
-#define DEFAULT_KD 0.0
+#define DEFAULT_KP 0.6
+#define DEFAULT_KI 0.15
+#define DEFAULT_KD 0.2
 
     //Internal definition gain for odometry
 

@@ -173,10 +173,10 @@ extern bool led_effect;
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     unsigned int t1, t2;
-    t2 = IC1BUF;
+    t2 = IC1BUF;    // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
     IFS0bits.IC1IF = 0;
-    timePeriodL = overTmrL * PR2 + t2 - t1;
+    timePeriodL = overTmrL * PR2 + t2 - t1; // PR2 is 0xFFFF
     overTmrL = 0;
     //	if(QEI1CONbits.UPDN) SIG_VELL++;		//Save sign Vel L
     //	else SIG_VELL--;
@@ -189,10 +189,10 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
     unsigned int t1, t2;
-    t2 = IC2BUF;
+    t2 = IC2BUF;    // IC1BUF is a FIFO, each reading is a POP
     t1 = IC2BUF;
     IFS0bits.IC2IF = 0;
-    timePeriodR = overTmrR * PR2 + t2 - t1;
+    timePeriodR = overTmrR * PR2 + t2 - t1; // PR2 is 0xFFFF
     overTmrR = 0;
     //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
     //	else SIG_VELR--;
@@ -236,8 +236,10 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    if (timePeriodL) overTmrL++; // overflow timer for Left engines
-    if (timePeriodR) overTmrR++; // overflow timer for Right engines
+    //if (timePeriodL)
+    overTmrL++; // timer overflow counter for Left engines
+    //if (timePeriodR)
+    overTmrR++; // timer overflow counter for Right engines
 }
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {

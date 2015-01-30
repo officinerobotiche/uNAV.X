@@ -114,12 +114,12 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
-                motor_ref[0] = info->packet.motor_control;
+                motor_ref[0] = info->packet.motor_control; // millirad
                 counter_stop = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_R:
-                motor_ref[1] = info->packet.motor_control;
+                motor_ref[1] = info->packet.motor_control; // millirad
                 counter_stop = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;

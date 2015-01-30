@@ -111,8 +111,8 @@ void init_parameter_motors(void) {
     motor_right.refer_vel = 0;
     motor_right.current = 0;
 
-    constraint.max_left = 14000;
-    constraint.max_right = 14000;
+    constraint.max_left = 25000;
+    constraint.max_right = 25000;
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         motor_state[i] = STATE_CONTROL_DISABLE;
@@ -256,57 +256,66 @@ int MotorTaskController(void) {
 }
 
 int MotorPIDL(void) {
-    unsigned int t = TMR1; //Timing funzione
-    unsigned long timePeriodLtmp; //Variabili temporanee Periodo
-    int SIG_VELLtmp; //Segno velocità
+    unsigned int t = TMR1; // Timing
 
-    timePeriodLtmp = timePeriodL; //Salvataggio TimerPeriod
-    timePeriodL = 0; //Pulizia variabile
-    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocità
-    SIG_VELL = 0; //Pulizia variabile
-    motor_left.measure_vel = 0; //Flush variaibile velocità R
+    unsigned long timePeriodLtmp;
+    int SIG_VELLtmp;
 
-    PulsEncL += (int) POS1CNT; //Salvataggio spazio percorso
-    POS1CNT = 0; //Reset registro
-    //calcolo della velocità
-    //Verifica SIG_VELLtmp!=0 & calcolo velocità
+    timePeriodLtmp = timePeriodL;
+    timePeriodL = 0; 
+    SIG_VELLtmp = SIG_VELL; 
+    SIG_VELL = 0; 
+    motor_left.measure_vel = 0;
+
+    PulsEncL += (int) POS1CNT;// Odometry
+    POS1CNT = 0;
+
+    // Speed calculation�
     if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motor_left.k_vel / timePeriodLtmp);
-    PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
-    PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
-    PID(&PIDstruct1); //Esecuzione funzione PID
-    int pid_control = parameter_motor_left.versus * (PIDstruct1.controlOutput >> 4) + 2048; //Conversione valore per PWM
-    //Invio dell'azione di controllo al motore per mezzo del PWM
+    PIDstruct1.controlReference = Q15(((float)motor_left.refer_vel)/constraint.max_left); // Setpoint
+    PIDstruct1.measuredOutput = Q15(((float)motor_left.measure_vel)/constraint.max_left); // Measure
+    
+    PID(&PIDstruct1);// PID execution
+    
+    int pid_control = parameter_motor_left.versus * ( PIDstruct1.controlOutput >> 4 ) + 2048; // PWM value
+    // PWM output
     SetDCMCPWM1(1, pid_control, 0);
+
+    // Control value calculation
     motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
-    return TMR1 - t; //Misura tempo di esecuzione
+    return TMR1 - t; // Execution time
 }
 
 int MotorPIDR(void) {
-    unsigned int t = TMR1; //Timing funzione
-    unsigned long timePeriodRtmp; //Variabili temporanee Periodo
-    int SIG_VELRtmp; //Segno velocità
+    unsigned int t = TMR1; // Timing
+    unsigned long timePeriodRtmp;
+    int SIG_VELRtmp;
 
-    timePeriodRtmp = timePeriodR; //Salvataggio TimerPeriod
-    timePeriodR = 0; //Pulizia variabile
-    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocità
-    SIG_VELR = 0; //Pulizia variabile
-    motor_right.measure_vel = 0; //Flush variabile velocità R
+    timePeriodRtmp = timePeriodR;
+    timePeriodR = 0;
+    SIG_VELRtmp = SIG_VELR;
+    SIG_VELR = 0;
+    motor_right.measure_vel = 0;
 
-    PulsEncR += (int) POS2CNT; //Salvataggio spazio percorso
-    POS2CNT = 0; //Reset registro
-    //calcolo della velocità
-    //Verifica SIG_VELLtmp!=0 & calcolo velocità
+    PulsEncR += (int) POS2CNT; // Odometry
+    POS2CNT = 0;
+
+    // Speed calculation
     if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / timePeriodRtmp);
-    PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
-    PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
-    PID(&PIDstruct2); //Esecuzione funzione PID
-    int pid_control = parameter_motor_right.versus * (PIDstruct2.controlOutput >> 4) + 2048; //Conversione valore per PWM
-    //Invio dell'azione di controllo al motore per mezzo del PWM
+    PIDstruct2.controlReference = Q15(((float)motor_right.refer_vel)/constraint.max_right); // Setpoint
+    PIDstruct2.measuredOutput = Q15(((float)motor_right.measure_vel)/constraint.max_right); // Measure
+    
+    PID(&PIDstruct2); // PID execution
+    
+    int pid_control = parameter_motor_right.versus * (PIDstruct2.controlOutput >> 4) + 2048; // PWM value
+    // PWM output
     SetDCMCPWM1(2, pid_control, 0);
+
+    // Control value calculation
     motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
 
-    return TMR1 - t; //Misura tempo di esecuzione
+    return TMR1 - t; // Execution time
 }
 
 void adc_motors_current(void) {
