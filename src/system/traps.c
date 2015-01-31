@@ -113,19 +113,17 @@ void __attribute__((interrupt, no_auto_psv)) _SoftTrapError(void);
 void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
     INTCON1bits.OSCFAIL = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(200000); // delay of 8 MHz RC oscillator
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(200000);
         // fatal error 1
 #ifdef UNAV_V1
-        LED2 = 1;
-        LED3 = 0;
-        LED4 = 0;
+        LED2_BIT = 1;
+        LED3_BIT = 0;
+        LED4_BIT = 0;
 #elif ROBOCONTROLLER_V3
-        LED2 = 1;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 1;
 #endif
     }
 }
@@ -133,19 +131,17 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
 void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
     INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 2
 #ifdef UNAV_V1
-        LED2 = 0;
-        LED3 = 1;
-        LED4 = 0;
+        LED2_BIT = 0;
+        LED3_BIT = 1;
+        LED4_BIT = 0;
 #elif ROBOCONTROLLER_V3
-        LED2 = 0;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 0;
 #endif
     };
 }
@@ -153,19 +149,17 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
 void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
     INTCON1bits.STKERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 3
 #ifdef UNAV_V1
-        LED2 = 1;
-        LED3 = 1;
-        LED4 = 0;
+        LED2_BIT = 1;
+        LED3_BIT = 1;
+        LED4_BIT = 0;
 #elif ROBOCONTROLLER_V3
-        LED2 = 1;
-#else
-      #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 1;
 #endif
     };
 }
@@ -173,19 +167,17 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
 void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
     INTCON1bits.MATHERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 4
 #ifdef UNAV_V1
-        LED2 = 0;
-        LED3 = 0;
-        LED4 = 1;
+        LED2_BIT = 0;
+        LED3_BIT = 0;
+        LED4_BIT = 1;
 #elif ROBOCONTROLLER_V3
-        LED2 = 0;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 0;
 #endif
     };
 }
@@ -195,19 +187,17 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
 void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
     INTCON1bits.DMACERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 5
 #ifdef UNAV_V1
-        LED2 = 1;
-        LED3 = 0;
-        LED4 = 1;
+        LED2_BIT = 1;
+        LED3_BIT = 0;
+        LED4_BIT = 1;
 #elif ROBOCONTROLLER_V3
-        LED2 = 1;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 1;
 #endif
     };
 }
@@ -220,19 +210,17 @@ void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
 void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
     INTCON1bits.OSCFAIL = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 1
 #ifdef UNAV_V1
-        LED2 = 1;
-        LED3 = 0;
-        LED4 = 0;
+        LED2_BIT = 1;
+        LED3_BIT = 0;
+        LED4_BIT = 0;
 #elif ROBOCONTROLLER_V3
-        LED2 = 1;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 1;
 #endif
     };
 }
@@ -240,19 +228,17 @@ void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
 void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
     INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 2
 #ifdef UNAV_V1
-        LED2 = 0;
-        LED3 = 1;
-        LED4 = 0;
+        LED2_BIT = 0;
+        LED3_BIT = 1;
+        LED4_BIT = 0;
 #elif ROBOCONTROLLER_V3
-        LED2 = 0;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 0;
 #endif
     };
 }
@@ -260,19 +246,17 @@ void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
 void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
     INTCON1bits.STKERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 3
 #ifdef UNAV_V1
-        LED2 = 1;
-        LED3 = 1;
-        LED4 = 0;
+        LED2_BIT = 1;
+        LED3_BIT = 1;
+        LED4_BIT = 0;
 #elif ROBOCONTROLLER_V3
-        LED2 = 1;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 1;
 #endif
     };
 }
@@ -280,19 +264,17 @@ void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
 void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
     INTCON1bits.MATHERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 4
 #ifdef UNAV_V1
-        LED2 = 0;
-        LED3 = 0;
-        LED4 = 1;
+        LED2_BIT = 0;
+        LED3_BIT = 0;
+        LED4_BIT = 1;
 #elif ROBOCONTROLLER_V3
-        LED2 = 0;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 0;
 #endif
     };
 }
@@ -302,19 +284,17 @@ void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
 void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
     INTCON1bits.DMACERR = 0; /* Clear the trap flag */
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 5
 #ifdef UNAV_V1
-        LED2 = 1;
-        LED3 = 0;
-        LED4 = 1;
+        LED2_BIT = 1;
+        LED3_BIT = 0;
+        LED4_BIT = 1;
 #elif ROBOCONTROLLER_V3
-        LED2 = 1;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 1;
 #endif
     };
 }
@@ -332,19 +312,17 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
 /******************************************************************************/
 void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void) {
     while (1) {
-        LED1 = 1;
+        LED1_BIT = 1;
         __delay32(2000000);
-        LED1 = 0;
+        LED1_BIT = 0;
         __delay32(2000000);
         // fatal error 6
 #ifdef UNAV_V1
-        LED2 = 0;
-        LED3 = 1;
-        LED4 = 1;
+        LED2_BIT = 0;
+        LED3_BIT = 1;
+        LED4_BIT = 1;
 #elif ROBOCONTROLLER_V3
-        LED2 = 0;
-#else
-        #warning LED3 & LED4 available on uNAV only
+        LED2_BIT = 0;
 #endif
     };
 }

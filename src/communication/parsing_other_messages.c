@@ -47,6 +47,7 @@ motor_control_t motor_temp;
 abstract_message_u send_temp;
 
 // From motors PID
+extern unsigned int counter_alive[NUM_MOTORS];
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern constraint_t constraint;
 extern pid_control_t pid_left, pid_right;
@@ -63,8 +64,6 @@ extern velocity_t vel_rif, vel_mis;
 //extern delta_odometry_t delta_odometry;
 extern bool coord_busy;
 
-//From interrupt
-extern unsigned int counter_stop;
 
 /******************************************************************************/
 /* Computation functions                                                      */
@@ -110,17 +109,18 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
-                counter_stop = 0; //Reset time emergency
+                counter_alive[0] = 0; //Reset time emergency
+                counter_alive[1] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
                 motor_ref[0] = info->packet.motor_control;
-                counter_stop = 0; //Reset time emergency
+                counter_alive[0] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_R:
                 motor_ref[1] = info->packet.motor_control;
-                counter_stop = 0; //Reset time emergency
+                counter_alive[1] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_L:
@@ -138,7 +138,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case EMERGENCY:
-                emergency = info->packet.emergency;
+                update_parameter_emergency(info->packet.emergency);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case DELTA_ODOMETRY:

@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -77,7 +77,7 @@
  */
 
 int16_t main(void) {
-
+    int i;
     /* Configure the oscillator for the device */
     ConfigureOscillator();
 
@@ -101,6 +101,10 @@ int16_t main(void) {
 
     /* Initialize IO ports and peripherals */
     InitApp();
+
+    for(i=0; i<NUM_MOTORS ; ++i) {
+        UpdateStateController(i, STATE_CONTROL_DISABLE);
+    }
 
     while (1) {
 

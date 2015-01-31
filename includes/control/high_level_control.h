@@ -58,12 +58,6 @@ extern "C" {
     int odometry(coordinate_t delta);
 
     /**
-     * If not recive anything velocity messages. Start controlled stop motors
-     * @return start emergency mode or not.
-     */
-    bool Emergency(void);
-
-    /**
      * Update state controller for high level control
      */
     void UpdateHighStateController(int state);
