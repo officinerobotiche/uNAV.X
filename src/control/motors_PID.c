@@ -262,14 +262,14 @@ int MotorTaskController(void) {
 void SelectIcPrescaler(int motIdx) {
 
     if (motIdx == 0) {
-        int16_t vel0 = motor_left.measure_vel;
+        int16_t vel0 = abs(motor_left.measure_vel);
 
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
                 if (vel0 >= MAX1) 
                 {
                     k_mul = 2;
-                    SwitchIcPrescaler(IC_MODE1, motIdx);
+                    SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
@@ -277,12 +277,12 @@ void SelectIcPrescaler(int motIdx) {
                 if (vel0 < MIN1)
                 {
                     k_mul = 1;
-                    SwitchIcPrescaler(IC_MODE0, motIdx);
+                    SwitchIcPrescaler(0, motIdx);
                 } 
                 else if (vel0 >= MAX2)
                 {
                     k_mul = 8;
-                    SwitchIcPrescaler(IC_MODE2, motIdx);
+                    SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
@@ -290,12 +290,12 @@ void SelectIcPrescaler(int motIdx) {
                 if (vel0 < MIN2)
                 {
                     k_mul = 2;
-                    SwitchIcPrescaler(IC_MODE1, motIdx);
+                    SwitchIcPrescaler(1, motIdx);
                 } 
                 else if (vel0 >= MAX3)
                 {
                     k_mul = 32;
-                    SwitchIcPrescaler(IC_MODE3, motIdx);
+                    SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
@@ -303,26 +303,26 @@ void SelectIcPrescaler(int motIdx) {
                 if (vel0 < MIN3)
                 {
                     k_mul = 8;
-                    SwitchIcPrescaler(IC_MODE2, motIdx);
+                    SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             default:
                 k_mul = 1;
-                SwitchIcPrescaler(IC_MODE0, motIdx);
+                SwitchIcPrescaler(0, motIdx);
                 break;
         }
     }
     else
     {
-        int16_t vel1 = motor_right.measure_vel;
+        int16_t vel1 = abs(motor_right.measure_vel);
         switch (IC2CONbits.ICM)
         {
             case IC_MODE0:
                 if (vel1 >= MAX1)
                 {
                     k_mul = 2;
-                    SwitchIcPrescaler(IC_MODE1, motIdx);
+                    SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
@@ -330,12 +330,12 @@ void SelectIcPrescaler(int motIdx) {
                 if (vel1 < MIN1)
                 {
                     k_mul = 1;
-                    SwitchIcPrescaler(IC_MODE0, motIdx);
+                    SwitchIcPrescaler(0, motIdx);
                 } 
                 else if (vel1 >= MAX2)
                 {
                     k_mul = 8;
-                    SwitchIcPrescaler(IC_MODE2, motIdx);
+                    SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
@@ -343,12 +343,12 @@ void SelectIcPrescaler(int motIdx) {
                 if (vel1 < MIN2)
                 {
                     k_mul = 2;
-                    SwitchIcPrescaler(IC_MODE1, motIdx);
+                    SwitchIcPrescaler(1, motIdx);
                 } 
                 else if (vel1 >= MAX3)
                 {
                     k_mul = 32;
-                    SwitchIcPrescaler(IC_MODE3, motIdx);
+                    SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
@@ -356,17 +356,19 @@ void SelectIcPrescaler(int motIdx) {
                 if (vel1 < MIN3)
                 {
                     k_mul = 8;
-                    SwitchIcPrescaler(IC_MODE2, motIdx);
+                    SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             default:
                 k_mul = 1;
-                SwitchIcPrescaler(IC_MODE0, motIdx);
+                SwitchIcPrescaler(0, motIdx);
                 break;
         }
     }
 }
+
+#define INV_PID_TIME 1000 // TODO replace with real dT = 1/f_pid
 
 int MotorPIDL(void) {
     unsigned int t = TMR1; // Timing
@@ -374,22 +376,28 @@ int MotorPIDL(void) {
     unsigned long timePeriodLtmp;
     int SIG_VELLtmp;
 
-    timePeriodLtmp = timePeriodL;
+    timePeriodLtmp = timePeriodL; 
     timePeriodL = 0;
     SIG_VELLtmp = SIG_VELL;
     SIG_VELL = 0;
     motor_left.measure_vel = 0;
 
     PulsEncL += (int) POS1CNT; // Odometry
-    int dAng = (int) POS1CNT * k_mul * parameter_motor_left.k_vel; // Odometry to angular
+    int dAng = (int) POS1CNT * parameter_motor_left.k_vel * k_mul; // Odometry to angular
     POS1CNT = 0;
 
     // Speed calculation 
     if (SIG_VELLtmp)
     {
-        int16_t ic_contrib = SIG_VELLtmp * k_mul * (parameter_motor_left.k_vel / timePeriodLtmp);
-        int16_t odo_contrib = 0; // dAng/ TODO add time!!!
-        motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
+        int16_t ic_contrib = SIG_VELLtmp * ( (parameter_motor_left.k_vel*k_mul) / timePeriodLtmp );
+        int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
+        // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
+
+        motor_left.measure_vel = ic_contrib;
+
+        int a=0;
+        if( abs(motor_left.measure_vel) > 10000 )
+            a++;
     }
 
     PIDstruct1.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
@@ -404,7 +412,7 @@ int MotorPIDL(void) {
     // Control value calculation
     motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
-    SelectIcPrescaler(0);
+    //SelectIcPrescaler(0);
 
     return TMR1 - t; // Execution time
 }
@@ -425,7 +433,7 @@ int MotorPIDR(void) {
 
     // Speed calculation
     if (SIG_VELRtmp) 
-        motor_right.measure_vel = SIG_VELRtmp * k_mul * (parameter_motor_right.k_vel / timePeriodRtmp);
+        motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / (timePeriodRtmp*k_mul) );
 
     PIDstruct2.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
     PIDstruct2.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
@@ -439,7 +447,7 @@ int MotorPIDR(void) {
     // Control value calculation
     motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
 
-    SelectIcPrescaler(1);
+    //SelectIcPrescaler(1);
 
     return TMR1 - t; // Execution time
 }

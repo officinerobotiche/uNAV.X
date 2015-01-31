@@ -77,6 +77,8 @@ extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_vel
 // From motors PID
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 
+const int IcMode[4] = {0b001, 0b011, 0b100, 0b101};
+
 /******************************************************************************/
 /* System Level Functions                                                     */
 /*                                                                            */
@@ -318,7 +320,7 @@ void InitIC1(void) {
     IC1CONbits.ICM = IC_DISABLE; // Disable Input Capture 1 module
     IC1CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
     IC1CONbits.ICI = 0b01; // Interrupt on every second capture event
-    IC1CONbits.ICM = IC_MODE0; // Generate capture event on every Rising edge
+    IC1CONbits.ICM = IcMode[0]; // Generate capture event on every Rising edge
 
     // Enable Capture Interrupt And Timer2
     IPC0bits.IC1IP = INPUT_CAPTURE_LEVEL; // Setup IC1 interrupt priority level
@@ -331,7 +333,7 @@ void InitIC2(void) {
     IC2CONbits.ICM = IC_DISABLE; // Disable Input Capture 2 module
     IC2CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
     IC2CONbits.ICI = 0b01; // Interrupt on every second capture event
-    IC2CONbits.ICM = IC_MODE0; // Generate capture event on every Rising edge
+    IC2CONbits.ICM = IcMode[0]; // Generate capture event on every Rising edge
 
     // Enable Capture Interrupt And Timer2
     IPC1bits.IC2IP = INPUT_CAPTURE_LEVEL; // Setup IC2 interrupt priority level
@@ -345,11 +347,11 @@ void SwitchIcPrescaler(int mode, int motIdx) {
     // here is the assignment of the ICx module to the correct wheel
     if (motIdx == 0) {
         IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC1CONbits.ICM = mode;
+        IC1CONbits.ICM = IcMode[mode];
         _IC1IF = 0; // interrupt flag reset
     } else {
         IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC2CONbits.ICM = mode;
+        IC2CONbits.ICM = IcMode[mode];
         _IC2IF = 0; // interrupt flag reset
     }
 

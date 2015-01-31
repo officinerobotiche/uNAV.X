@@ -51,8 +51,8 @@ volatile unsigned int overTmrL = 0;
 volatile unsigned int overTmrR = 0;
 volatile unsigned long timePeriodL = 0; //Periodo Ruota Sinistra
 volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
-volatile unsigned SIG_VELL = 0; //Verso rotazione ruota sinistra
-volatile unsigned SIG_VELR = 0; //Verso rotazione ruota destra
+volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
+volatile int SIG_VELR = 0; //Verso rotazione ruota destra
 volatile process_t time, priority, frequency;
 process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
 
@@ -176,15 +176,30 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     t2 = IC1BUF;    // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
     IFS0bits.IC1IF = 0;
-    timePeriodL = overTmrL * PR2 + t2 - t1; // PR2 is 0xFFFF
-    overTmrL = 0;
+    //timePeriodL = overTmrL * PR2 + t2 - t1; // PR2 is 0xFFFF
+    //overTmrL = 0;
+
     //	if(QEI1CONbits.UPDN) SIG_VELL++;		//Save sign Vel L
     //	else SIG_VELL--;
     //	if(t2>t1)
     //		timePeriodL = t2 - t1;
     //	else
     //		timePeriodL = (PR2 - t1) + t2;
-    SIG_VELL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+
+    //SIG_VELL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+    (QEI1CONbits.UPDN ? SIG_VELL++ : SIG_VELL--); //Save sign Vel L
+
+    if (overTmrL == 0) // TMR2 overflowed?
+    {// see Microchip AN545
+        timePeriodL += (t2 - t1);
+    }
+    else
+    {// [7a]
+        timePeriodL += (t2 + (PR2 - t1)
+          +(PR2 * (overTmrL - 1)));
+
+        overTmrL = 0;
+    }
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
@@ -236,9 +251,9 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    //if (timePeriodL)
+    if (timePeriodL)
     overTmrL++; // timer overflow counter for Left engines
-    //if (timePeriodR)
+    if (timePeriodR)
     overTmrR++; // timer overflow counter for Right engines
 }
 
