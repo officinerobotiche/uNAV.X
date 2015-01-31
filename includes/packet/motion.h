@@ -44,6 +44,7 @@
 /**
  * Message for emergency configuration
  * - time to stop
+ * - time to disable bridge
  * - timeout to start emergency stop motors
  */
 typedef struct emergency {
