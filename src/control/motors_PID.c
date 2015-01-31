@@ -240,22 +240,22 @@ void UpdateStateController(short num, motor_control_t state) {
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
 #ifndef MOTION_CONTROL
-            UpdateBlink(&led_controller[0], led_state);
-            UpdateBlink(&led_controller[1], led_state);
+            UpdateBlink(0, led_state);
+            UpdateBlink(1, led_state);
 #endif
             break;
         case 0:
             motor_state[num] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
 #ifndef MOTION_CONTROL
-            UpdateBlink(&led_controller[num], led_state);
+            UpdateBlink(num, led_state);
 #endif
             break;
         case 1:
             motor_state[num] = state;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
 #ifndef MOTION_CONTROL
-            UpdateBlink(&led_controller[num], led_state);
+            UpdateBlink(num, led_state);
 #endif
             break;
     }
