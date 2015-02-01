@@ -85,26 +85,26 @@ int16_t main(void) {
     init_hashmap();
     /* Initialize buffer serial error */
     init_buff_serial_error();
-    /* Initialize variables for motors */
-    init_parameter_motors();
-    /* Initialize variables for unicycle */
-    init_parameter_unicycle();
+    /* Initialize processes controller */
     init_process();
-    init_pid_control();
-
-    /* Initialize pid controllers */
-    update_pid_l();
-    update_pid_r();
-
-    /* Initialize dead reckoning */
-    init_coordinate();
-
     /* Initialize IO ports and peripherals */
     InitApp();
 
-    for(i=0; i<NUM_MOTORS ; ++i) {
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        /* Initialize variables for motors */
+        update_parameter_motors(i, init_parameter_motors(i));
+        /* Initialize pid controllers */
+        update_pid(i, init_pid_control(i));
+        /* Initialize emergency procedure to stop */
+        update_parameter_emergency(i, init_parameter_emergency(i));
+        /* Init state controller */
         UpdateStateController(i, STATE_CONTROL_DISABLE);
     }
+
+    /* Initialize variables for unicycle */
+    init_parameter_unicycle();
+    /* Initialize dead reckoning */
+    init_coordinate();
 
     while (1) {
 

@@ -100,127 +100,124 @@ extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* User Functions                                                             */
-
 /******************************************************************************/
 
-void init_parameter_motors(void) {
-    int i;
-    //Left motor parameters
-    parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
-    parameter_motor_left.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
-    parameter_motor_left.versus = 1;
-    parameter_motor_left.enable_set = false;
-    //Right motor parameters
-    parameter_motor_right.k_vel = K_VEL;
-    parameter_motor_right.k_ang = K_ANG;
-    parameter_motor_right.versus = 1;
-    parameter_motor_right.enable_set = false;
+parameter_motor_t init_parameter_motors(short num) {
+    parameter_motor_t parameter;
+    parameter.k_vel = K_VEL; //Gain to convert input capture value to velocity
+    parameter.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
+    parameter.versus = 1;
+    parameter.enable_set = false;
+    switch (num) {
+        case REF_MOTOR_LEFT:
+            motor_left.control_vel = 0;
+            motor_left.measure_vel = 0;
+            motor_left.refer_vel = 0;
+            motor_left.current = 0;
 
-    k_mul = 1;
+            constraint.max_left = 25000;
+            break;
+        case REF_MOTOR_RIGHT:
+            motor_right.control_vel = 0;
+            motor_right.measure_vel = 0;
+            motor_right.refer_vel = 0;
+            motor_right.current = 0;
 
-    motor_left.control_vel = 0;
-    motor_left.measure_vel = 0;
-    motor_left.refer_vel = 0;
-    motor_left.current = 0;
-    motor_right.control_vel = 0;
-    motor_right.measure_vel = 0;
-    motor_right.refer_vel = 0;
-    motor_right.current = 0;
-
-    constraint.max_left = 25000;
-    constraint.max_right = 25000;
-
-    for (i = 0; i < NUM_MOTORS; ++i) {
-        motor_state[i] = STATE_CONTROL_DISABLE;
-        motor_ref[i] = 0;
-        UpdateStateController(i, motor_state[i]);
+            constraint.max_right = 25000;
+            break;
     }
-
-    update_parameter_motors();
-
-
-    //TODO To move in a new init function
-    counter_alive[0] = 0;
-    counter_alive[1] = 0;
-    counter_stop[0] = 0;
-    counter_stop[1] = 0;
-    emergency.time = 1.0;
-    emergency.timeout = 500;
-    emergency.stop = 2.0;
-    update_parameter_emergency(emergency);
+    k_mul = 1;
+    motor_ref[num] = 0;
+    return parameter;
 }
 
-void update_parameter_emergency(emergency_t emergency_data) {
+void update_parameter_motors(short num, parameter_motor_t parameter) {
+    //Update encoder swap
+    switch (num) {
+        case REF_MOTOR_LEFT:
+            parameter_motor_left = parameter;
+            QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            break;
+        case REF_MOTOR_RIGHT:
+            parameter_motor_right = parameter;
+            QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            break;
+    }
+}
+
+pid_control_t init_pid_control(short num) {
+    pid_control_t pid;
+    pid.kp = DEFAULT_KP;
+    pid.ki = DEFAULT_KI;
+    pid.kd = DEFAULT_KD;
+    return pid;
+}
+
+void update_pid(short num, pid_control_t pid) {
+    switch (num) {
+        case REF_MOTOR_LEFT:
+            pid_left = pid;
+            kCoeffs1[0] = Q15(pid_left.kp);
+            kCoeffs1[1] = Q15(pid_left.ki);
+            kCoeffs1[2] = Q15(pid_left.kd);
+
+            //Initialize the PID data structure: PIDstruct
+            //Set up pointer to derived coefficients
+            PIDstruct1.abcCoefficients = &abcCoefficient1[0];
+            //Set up pointer to controller history samples
+            PIDstruct1.controlHistory = &controlHistory1[0];
+            // Clear the controler history and the controller output
+            PIDInit(&PIDstruct1);
+            //Derive the a,b, & c coefficients from the Kp, Ki & Kd
+            PIDCoeffCalc(&kCoeffs1[0], &PIDstruct1);
+            break;
+        case REF_MOTOR_RIGHT:
+            pid_right = pid;
+            kCoeffs2[0] = Q15(pid_right.kp);
+            kCoeffs2[1] = Q15(pid_right.ki);
+            kCoeffs2[2] = Q15(pid_right.kd);
+
+            //Initialize the PID data structure: PIDstruct
+            //Set up pointer to derived coefficients
+            PIDstruct2.abcCoefficients = &abcCoefficient2[0];
+            //Set up pointer to controller history samples
+            PIDstruct2.controlHistory = &controlHistory2[0];
+            // Clear the controler history and the controller output
+            PIDInit(&PIDstruct2);
+            //Derive the a,b, & c coefficients from the Kp, Ki & Kd
+            PIDCoeffCalc(&kCoeffs2[0], &PIDstruct2);
+            break;
+    }
+}
+
+emergency_t init_parameter_emergency(short num) {
+    emergency_t emer;
+    counter_alive[num] = 0;
+    counter_stop[num] = 0;
+    emer.time = 1.0;
+    emer.timeout = 500;
+    emer.stop = 2.0;
+    return emer;
+}
+
+void update_parameter_emergency(short num, emergency_t emergency_data) {
     emergency = emergency_data;
     emergency_step = emergency.time / FRTMR1;
     emergency_stop = emergency.stop * FRTMR1;
-}
-
-void update_parameter_motors(void) {
-    //Update encoder swap
-    QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
-    QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
-}
-
-void init_pid_control(void) {
-    pid_left.kp = DEFAULT_KP;
-    pid_left.ki = DEFAULT_KI;
-    pid_left.kd = DEFAULT_KD;
-    pid_right.kp = DEFAULT_KP;
-    pid_right.ki = DEFAULT_KI;
-    pid_right.kd = DEFAULT_KD;
-}
-
-void update_pid_l(void) {
-    kCoeffs1[0] = Q15(pid_left.kp);
-    kCoeffs1[1] = Q15(pid_left.ki);
-    kCoeffs1[2] = Q15(pid_left.kd);
-    InitPid1(); //Init PIDL
-}
-
-void update_pid_r(void) {
-    kCoeffs2[0] = Q15(pid_right.kp);
-    kCoeffs2[1] = Q15(pid_right.ki);
-    kCoeffs2[2] = Q15(pid_right.kd);
-    InitPid2(); //Init PIDR
-}
-
-void InitPid1(void) {
-    //Initialize the PID data structure: PIDstruct
-    //Set up pointer to derived coefficients
-    PIDstruct1.abcCoefficients = &abcCoefficient1[0];
-    //Set up pointer to controller history samples
-    PIDstruct1.controlHistory = &controlHistory1[0];
-    // Clear the controler history and the controller output
-    PIDInit(&PIDstruct1);
-    //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-    PIDCoeffCalc(&kCoeffs1[0], &PIDstruct1);
-}
-
-void InitPid2(void) {
-    //Initialize the PID data structure: PIDstruct
-    //Set up pointer to derived coefficients
-    PIDstruct2.abcCoefficients = &abcCoefficient2[0];
-    //Set up pointer to controller history samples
-    PIDstruct2.controlHistory = &controlHistory2[0];
-    // Clear the controler history and the controller output
-    PIDInit(&PIDstruct2);
-    //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-    PIDCoeffCalc(&kCoeffs2[0], &PIDstruct2);
 }
 
 int MotorVelocityReference(short number) {
     unsigned int t = TMR1; // Timing function
 
     switch (number) {
-        case 0:
+        case REF_MOTOR_LEFT:
             if (abs(motor_ref[number]) > constraint.max_left) {
                 motor_left.refer_vel = SGN((int) motor_ref[number]) * constraint.max_left;
             } else {
                 motor_left.refer_vel = (int) motor_ref[number];
             }
             break;
-        case 1:
+        case REF_MOTOR_RIGHT:
             if (abs(motor_ref[number]) > constraint.max_right) {
                 motor_right.refer_vel = SGN((int) motor_ref[number]) * constraint.max_right;
             } else {
@@ -248,14 +245,14 @@ void UpdateStateController(short num, motor_control_t state) {
             UpdateBlink(1, led_state);
 #endif
             break;
-        case 0:
+        case REF_MOTOR_LEFT:
             motor_state[num] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
 #endif
             break;
-        case 1:
+        case REF_MOTOR_RIGHT:
             motor_state[num] = state;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
 #ifndef MOTION_CONTROL
@@ -338,42 +335,34 @@ void SelectIcPrescaler(int motIdx) {
 
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
-                if (vel0 >= MAX1) 
-                {
+                if (vel0 >= MAX1) {
                     k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
-                if (vel0 < MIN1)
-                {
+                if (vel0 < MIN1) {
                     k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
-                } 
-                else if (vel0 >= MAX2)
-                {
+                } else if (vel0 >= MAX2) {
                     k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
-                if (vel0 < MIN2)
-                {
+                if (vel0 < MIN2) {
                     k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
-                } 
-                else if (vel0 >= MAX3)
-                {
+                } else if (vel0 >= MAX3) {
                     k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
-                if (vel0 < MIN3)
-                {
+                if (vel0 < MIN3) {
                     k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
@@ -384,49 +373,38 @@ void SelectIcPrescaler(int motIdx) {
                 SwitchIcPrescaler(0, motIdx);
                 break;
         }
-    }
-    else
-    {
+    } else {
         int16_t vel1 = abs(motor_right.measure_vel);
-        switch (IC2CONbits.ICM)
-        {
+        switch (IC2CONbits.ICM) {
             case IC_MODE0:
-                if (vel1 >= MAX1)
-                {
+                if (vel1 >= MAX1) {
                     k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
-                if (vel1 < MIN1)
-                {
+                if (vel1 < MIN1) {
                     k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
-                } 
-                else if (vel1 >= MAX2)
-                {
+                } else if (vel1 >= MAX2) {
                     k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
-                if (vel1 < MIN2)
-                {
+                if (vel1 < MIN2) {
                     k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
-                } 
-                else if (vel1 >= MAX3)
-                {
+                } else if (vel1 >= MAX3) {
                     k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
-                if (vel1 < MIN3)
-                {
+                if (vel1 < MIN3) {
                     k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
@@ -448,7 +426,7 @@ int MotorPIDL(void) {
     unsigned long timePeriodLtmp;
     int SIG_VELLtmp;
 
-    timePeriodLtmp = timePeriodL; 
+    timePeriodLtmp = timePeriodL;
     timePeriodL = 0;
     SIG_VELLtmp = SIG_VELL;
     SIG_VELL = 0;
@@ -459,16 +437,15 @@ int MotorPIDL(void) {
     POS1CNT = 0;
 
     // Speed calculation 
-    if (SIG_VELLtmp)
-    {
-        int16_t ic_contrib = SIG_VELLtmp * ( (parameter_motor_left.k_vel*k_mul) / timePeriodLtmp );
+    if (SIG_VELLtmp) {
+        int16_t ic_contrib = SIG_VELLtmp * ((parameter_motor_left.k_vel * k_mul) / timePeriodLtmp);
         int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
         // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
 
         motor_left.measure_vel = ic_contrib;
 
-        int a=0;
-        if( abs(motor_left.measure_vel) > 10000 )
+        int a = 0;
+        if (abs(motor_left.measure_vel) > 10000)
             a++;
     }
 
@@ -484,7 +461,7 @@ int MotorPIDL(void) {
     // Control value calculation
     motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
-    //SelectIcPrescaler(0);
+    //SelectIcPrescaler(0,motor_left.measure_vel);
 
     return TMR1 - t; // Execution time
 }
@@ -504,8 +481,8 @@ int MotorPIDR(void) {
     POS2CNT = 0;
 
     // Speed calculation
-    if (SIG_VELRtmp) 
-        motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / (timePeriodRtmp*k_mul) );
+    if (SIG_VELRtmp)
+        motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / (timePeriodRtmp * k_mul));
 
     PIDstruct2.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
     PIDstruct2.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
@@ -519,14 +496,14 @@ int MotorPIDR(void) {
     // Control value calculation
     motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
 
-    //SelectIcPrescaler(1);
+    //SelectIcPrescaler(1,motor_right.measure_vel);
 
     return TMR1 - t; // Execution time
 }
 
 bool Emergency(short num) {
     switch (num) {
-        case 0:
+        case REF_MOTOR_LEFT:
             motor_left.refer_vel -= emergency_step * last_motor_left.refer_vel;
             //motor_ref[num] = motor_left.refer_vel;
             if (SGN(last_motor_left.refer_vel) * motor_left.refer_vel < 0)
@@ -539,7 +516,7 @@ bool Emergency(short num) {
                     counter_stop[num]++;
             }
             break;
-        case 1:
+        case REF_MOTOR_RIGHT:
             motor_right.refer_vel -= emergency_step * last_motor_right.refer_vel;
             //motor_ref[num] = motor_right.refer_vel;
             if (SGN(last_motor_right.refer_vel) * motor_right.refer_vel < 0)

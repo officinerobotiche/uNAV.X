@@ -342,8 +342,6 @@ void InitIC2(void) {
 }
 
 void SwitchIcPrescaler(int mode, int motIdx) {
-     __builtin_disi(0x3FFF); //disable interrupts up to priority 6 for n cycles
-
     // here is the assignment of the ICx module to the correct wheel
     if (motIdx == 0) {
         IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
@@ -354,8 +352,6 @@ void SwitchIcPrescaler(int mode, int motIdx) {
         IC2CONbits.ICM = IcMode[mode];
         _IC2IF = 0; // interrupt flag reset
     }
-
-    DISICNT = 0; //re-enable interrupts
 }
 
 void InitTimer1(void) {

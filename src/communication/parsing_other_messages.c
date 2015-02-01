@@ -74,13 +74,11 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
     if (info->type == HASHMAP_MOTION)
         switch (info->command) {
             case PID_CONTROL_L:
-                pid_left = info->packet.pid;
-                update_pid_l();
+                update_pid(REF_MOTOR_LEFT, info->packet.pid);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case PID_CONTROL_R:
-                pid_right = info->packet.pid;
-                update_pid_r();
+                update_pid(REF_MOTOR_RIGHT, info->packet.pid);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case COORDINATE:
@@ -94,13 +92,11 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case PARAMETER_MOTOR_L:
-                parameter_motor_left = info->packet.parameter_motor;
-                update_parameter_motors();
+                update_parameter_motors(REF_MOTOR_LEFT, info->packet.parameter_motor);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case PARAMETER_MOTOR_R:
-                parameter_motor_right = info->packet.parameter_motor;
-                update_parameter_motors();
+                update_parameter_motors(REF_MOTOR_RIGHT, info->packet.parameter_motor);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case CONSTRAINT:
@@ -124,12 +120,12 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_L:
-                UpdateStateController(0, info->packet.motor_control);
+                UpdateStateController(REF_MOTOR_LEFT, info->packet.motor_control);
                 control_state = STATE_CONTROL_HIGH_DISABLE;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_R:
-                UpdateStateController(1, info->packet.motor_control);
+                UpdateStateController(REF_MOTOR_RIGHT, info->packet.motor_control);
                 control_state = STATE_CONTROL_HIGH_DISABLE;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
@@ -138,7 +134,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case EMERGENCY:
-                update_parameter_emergency(info->packet.emergency);
+                update_parameter_emergency(REF_MOTOR_LEFT, info->packet.emergency);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case DELTA_ODOMETRY:

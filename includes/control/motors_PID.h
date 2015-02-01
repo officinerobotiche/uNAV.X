@@ -30,6 +30,8 @@ extern "C" {
      * Numbers of motors avaiable in this board
      */
 #define NUM_MOTORS 2
+#define REF_MOTOR_LEFT 0
+#define REF_MOTOR_RIGHT 1
     //Start define with fixed K_vel convertion velocity
 #define K_VEL 27925268.03190926
     //Start define with fixed K_ang convertion angular
@@ -61,62 +63,60 @@ extern "C" {
 
     /**
      * Initialization all parameters for motor controller.
+     * @param num Number motor
+     * @return Default configuration
      */
-    void init_parameter_motors(void);
-
-    /**
-     * Update counter and step value for emergency controller.
-     * @param emergency configuration to save
-     */
-    void update_parameter_emergency(emergency_t emergency_data);
-
+    parameter_motor_t init_parameter_motors(short num);
     /**
      * Function to update motor parameters from message
+     * @param num Number motor
      */
-    void update_parameter_motors(void);
-
+    void update_parameter_motors(short num, parameter_motor_t parameter);
     /**
-     * Initializatin standard value for PID controllers
+     * Initialization standard value for PID controllers
+     * @param number Number motor
+     * @return Default configuration
      */
-    void init_pid_control(void);
-
-    /**
-     * Transform float value recived from gain for PID left in Q15 value
-     * for dsp controller.
-     */
-    void update_pid_l(void);
-
+    pid_control_t init_pid_control(short num);
     /**
      * Transform float value recived from gain for PID right in Q15 value
      * for dsp controller.
-     */
-    void update_pid_r(void);
-
-    /**
      * PID data structure: PIDstruct for PID 1 (Motor left)
-     */
-    void InitPid1(void);
-
-    /**
      * PID data structure: PIDstruct for PID 1 (Motor right)
+     * @param num Number motor
      */
-    void InitPid2(void);
-
+    void update_pid(short num, pid_control_t pid);
+    /**
+     * Initialization standard value for emergency configuration motor
+     * @param number Number motor
+     * @return default configuration for emergency stop
+     */
+    emergency_t init_parameter_emergency(short num);
+    /**
+     * Update counter and step value for emergency controller.
+     * @param number Number motor
+     * @param emergency configuration to save
+     */
+    void update_parameter_emergency(short num, emergency_t emergency_data);
     /**
      * Write a correct value of motor reference and if necessary modify
      * reference to control contraint.
-     * @param number Number motor
+     * @param motor Number motor
      * @return Time to compute this function
      */
     int MotorVelocityReference(short motor);
-
     /**
      * Set state controller for all motors, if DISABLE, set enable motor to zero
      * @param num number motor to update state if -1 set all motor to state
      * @param motor state command
      */
     void UpdateStateController(short num, motor_control_t motor);
-
+    /**
+     * If not recive anything velocity messages. Start controlled stop motors
+     * @param number Number motor
+     * @return start emergency mode or not.
+     */
+    bool Emergency(short num);
     /**
      * Convert and check reference for type of law control selected. We have
      * four principal type of control motor:
@@ -127,7 +127,6 @@ extern "C" {
      * @return Time to Compute task control reference
      */
     int MotorTaskController(void);
-
     /**
      * Esecution velocity PID for left motor
      *           _____          _______
@@ -145,7 +144,6 @@ extern "C" {
      * @return time to compute parsing packet
      */
     int MotorPIDL(void);
-
     /**
      * Esecution velocity PID for right motor
      *           _____          _______
@@ -163,18 +161,10 @@ extern "C" {
      * @return time to compute parsing packet
      */
     int MotorPIDR(void);
-
     /**
      * Select the correct Input Capture prescaler
      */
     void SelectIcPrescaler(int motIdx);
-
-    /**
-     * If not recive anything velocity messages. Start controlled stop motors
-     * @param number Number motor
-     * @return start emergency mode or not.
-     */
-    bool Emergency(short num);
 
     /**
      * Mean valure for current measure motors
