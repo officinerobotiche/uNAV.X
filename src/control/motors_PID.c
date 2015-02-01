@@ -385,7 +385,7 @@ bool Emergency(short num) {
     switch (num) {
         case 0:
             motor_left.refer_vel -= emergency_step * last_motor_left.refer_vel;
-            //motor_ref[num] = motor_left.refer_vel;
+            motor_ref[num] = motor_left.refer_vel;
             if (SGN(last_motor_left.refer_vel) * motor_left.refer_vel < 0)
                 motor_left.refer_vel = 0;
             if (motor_left.refer_vel == 0) {
@@ -398,7 +398,7 @@ bool Emergency(short num) {
             break;
         case 1:
             motor_right.refer_vel -= emergency_step * last_motor_right.refer_vel;
-            //motor_ref[num] = motor_right.refer_vel;
+            motor_ref[num] = motor_right.refer_vel;
             if (SGN(last_motor_right.refer_vel) * motor_right.refer_vel < 0)
                 motor_right.refer_vel = 0;
             if (motor_right.refer_vel == 0) {
