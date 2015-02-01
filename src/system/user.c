@@ -208,15 +208,6 @@ void InitApp(void) {
 #else
 #error Configuration error. Does not selected a board!
 #endif
-    /* Initialize peripherals */
-    LED1 = 0; // LED1 Green
-#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-    LED2 = 0; // LED2 Green
-#endif
-#if defined(UNAV_V1)
-    LED3 = 0; // LED3 Yellow
-    LED4 = 0; // LED4 Red
-#endif
 
     /* Peripherical initalization */
     InitLed(); //Init led
@@ -246,7 +237,21 @@ void inline protectedMemcpy(unsigned reg, void *destination, const void *source,
     }
 }
 
-int maxValue(float myArray[], size_t size) {
+int maxValue(int* myArray, size_t size) {
+    /* enforce the contract */
+    //    assert(myArray && size);
+    size_t i;
+    int maxValue = myArray[0];
+
+    for (i = 1; i < size; ++i) {
+        if (myArray[i] > maxValue) {
+            maxValue = myArray[i];
+        }
+    }
+    return maxValue;
+}
+
+float maxValueFloat(float* myArray, size_t size) {
     /* enforce the contract */
     //    assert(myArray && size);
     size_t i;
@@ -273,28 +278,26 @@ void InitLed(void) {
     for (i = 0; i < LED_NUM; ++i) {
         led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
         led_controller[i].wait = 0;
-        UpdateBlink(&led_controller[i], 0);
+        UpdateBlink(i, 0);
     }
-    //TODO to remove
-    UpdateBlink(&led_controller[0], 1);
 }
 
-void UpdateBlink(led_control_t *led, short blink) {
-    led->number_blink = blink;
-    switch (led->number_blink) {
+void UpdateBlink(short num, short blink) {
+    led_controller[num].number_blink = blink;
+    switch (led_controller[num].number_blink) {
         case LED_OFF:
             //Clear bit - Set to 0
-            *(led->pin->CS_PORT) &= ~led->CS_mask;
+            *(led_controller[num].pin->CS_PORT) &= ~led_controller[num].CS_mask;
             break;
         case LED_ALWAYS_HIGH:
             //Set bit - Set to 1
-            *(led->pin->CS_PORT) |= led->CS_mask;
+            *(led_controller[num].pin->CS_PORT) |= led_controller[num].CS_mask;
             break;
         default:
-            led->fr_blink = FRTMR1 / (2 * led->number_blink);
+            led_controller[num].fr_blink = FRTMR1 / (2 * led_controller[num].number_blink);
             break;
     }
-    led->counter = 0;
+    led_controller[num].counter = 0;
 }
 
 /**
@@ -328,7 +331,7 @@ void blinkflush() {
     for (i = 0; i < LED_NUM; ++i) {
         led_controller[i].wait = i * ((float) FRTMR1 / LED_NUM);
         load_blink[i] = led_controller[i].number_blink;
-        UpdateBlink(&led_controller[i], 1);
+        UpdateBlink(i, 1);
     }
     led_effect = true;
 }
@@ -343,7 +346,7 @@ void EffectStop() {
         if (value == 0) {
             if (~first) {
                 for (i = 0; i < LED_NUM; ++i) {
-                    UpdateBlink(&led_controller[i], load_blink[i]);
+                    UpdateBlink(i, load_blink[i]);
                     led_controller[i].wait = 0;
                 }
                 led_effect = false;

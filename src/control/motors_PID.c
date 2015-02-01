@@ -76,6 +76,15 @@ uint8_t k_mul; // k_vel multiplier according to IC scale
 k_odo_t k_odo;
 float wheel_m;
 
+//variables for emergency
+unsigned int counter_alive[NUM_MOTORS];
+unsigned int counter_stop[NUM_MOTORS];
+emergency_t emergency;
+float emergency_step = 0;
+float emergency_stop = 0;
+bool save_velocity = true;
+motor_t last_motor_left, last_motor_right;
+
 /**/
 // From interrupt
 extern volatile unsigned long timePeriodL; // Left wheel period
@@ -85,6 +94,9 @@ extern volatile unsigned SIG_VELR; // Right wheel rotation versus
 
 //From high_level_control
 extern volatile unsigned int control_state;
+
+//From System
+extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -125,6 +137,23 @@ void init_parameter_motors(void) {
     }
 
     update_parameter_motors();
+
+
+    //TODO To move in a new init function
+    counter_alive[0] = 0;
+    counter_alive[1] = 0;
+    counter_stop[0] = 0;
+    counter_stop[1] = 0;
+    emergency.time = 1.0;
+    emergency.timeout = 500;
+    emergency.stop = 2.0;
+    update_parameter_emergency(emergency);
+}
+
+void update_parameter_emergency(emergency_t emergency_data) {
+    emergency = emergency_data;
+    emergency_step = emergency.time / FRTMR1;
+    emergency_stop = emergency.stop * FRTMR1;
 }
 
 void update_parameter_motors(void) {
@@ -204,6 +233,7 @@ int MotorVelocityReference(short number) {
 
 void UpdateStateController(short num, motor_control_t state) {
     volatile bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
+    int led_state = (state != STATE_CONTROL_EMERGENCY) ? state + 1 : state;
     /**
      * Set enable or disable motors
      */
@@ -213,16 +243,29 @@ void UpdateStateController(short num, motor_control_t state) {
             motor_state[1] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+#ifndef MOTION_CONTROL
+            UpdateBlink(0, led_state);
+            UpdateBlink(1, led_state);
+#endif
             break;
         case 0:
             motor_state[num] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+#ifndef MOTION_CONTROL
+            UpdateBlink(num, led_state);
+#endif
             break;
         case 1:
             motor_state[num] = state;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+#ifndef MOTION_CONTROL
+            UpdateBlink(num, led_state);
+#endif
             break;
     }
+#ifdef MOTION_CONTROL
+    UpdateBlink(LED1, led_state);
+#endif
 }
 
 int MotorTaskController(void) {
@@ -236,6 +279,12 @@ int MotorTaskController(void) {
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         switch (motor_state[i]) {
+            case STATE_CONTROL_EMERGENCY:
+                /**
+                 * Set motor in emergency mode
+                 */
+                Emergency(i);
+                break;
             case STATE_CONTROL_DIRECT:
                 //TODO To be implemented (Read issue #14)
                 break;
@@ -253,6 +302,29 @@ int MotorTaskController(void) {
                 break;
             default:
                 break;
+        }
+        // Emergency controller
+        if (motor_state[i] > STATE_CONTROL_DISABLE) {
+            if ((counter_alive[i] + 1) >= emergency.timeout) {
+                /**
+                 * Set Motor in emergency mode
+                 */
+                UpdateStateController(i, STATE_CONTROL_EMERGENCY);
+                /**
+                 * Save state motor
+                 */
+                switch (i) {
+                    case 0:
+                        last_motor_left.refer_vel = motor_left.refer_vel;
+                        break;
+                    case 1:
+                        last_motor_right.refer_vel = motor_right.refer_vel;
+                        break;
+                }
+                counter_stop[i] = 0;
+                counter_alive[i] = 0;
+            } else
+                counter_alive[i]++;
         }
     }
 
@@ -450,6 +522,38 @@ int MotorPIDR(void) {
     //SelectIcPrescaler(1);
 
     return TMR1 - t; // Execution time
+}
+
+bool Emergency(short num) {
+    switch (num) {
+        case 0:
+            motor_left.refer_vel -= emergency_step * last_motor_left.refer_vel;
+            //motor_ref[num] = motor_left.refer_vel;
+            if (SGN(last_motor_left.refer_vel) * motor_left.refer_vel < 0)
+                motor_left.refer_vel = 0;
+            if (motor_left.refer_vel == 0) {
+                if ((counter_stop[num] + 1) >= emergency_stop) {
+                    UpdateStateController(num, STATE_CONTROL_DISABLE);
+                    counter_stop[num] = 0;
+                } else
+                    counter_stop[num]++;
+            }
+            break;
+        case 1:
+            motor_right.refer_vel -= emergency_step * last_motor_right.refer_vel;
+            //motor_ref[num] = motor_right.refer_vel;
+            if (SGN(last_motor_right.refer_vel) * motor_right.refer_vel < 0)
+                motor_right.refer_vel = 0;
+            if (motor_right.refer_vel == 0) {
+                if ((counter_stop[num] + 1) >= emergency_stop) {
+                    UpdateStateController(num, STATE_CONTROL_DISABLE);
+                    counter_stop[num] = 0;
+                } else
+                    counter_stop[num]++;
+            }
+            break;
+    }
+    return true;
 }
 
 void adc_motors_current(void) {

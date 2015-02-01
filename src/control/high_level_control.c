@@ -63,11 +63,7 @@ parameter_unicycle_int_t parameter_unicycle_int;
 
 velocity_t vel_rif, vel_mis;
 
-//variables for emergency
 volatile parameter_unicycle_t parameter_unicycle;
-emergency_t emergency;
-velocity_t last_vel_rif;
-bool save_velocity = true;
 
 // From motors PID
 extern motor_control_t motor_ref[NUM_MOTORS];
@@ -77,9 +73,6 @@ extern motor_t motor_left, motor_right;
 extern volatile int PulsEncL, PulsEncR;
 extern k_odo_t k_odo;
 extern float wheel_m;
-
-//From System
-extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
@@ -106,8 +99,6 @@ void update_parameter_unicycle(void) {
     k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
     k_odo.k_right = parameter_unicycle.radius_r * parameter_motor_right.k_ang;
     wheel_m = parameter_unicycle.wheelbase / 2;
-    emergency.time = 1.0;
-    emergency.timeout = 500;
 
     //Odometry
     k_odo.k_left = parameter_unicycle.radius_l * parameter_motor_left.k_ang;
@@ -232,23 +223,6 @@ int odometry(coordinate_t delta) {
     coordinate.y += delta.y;
 
     return TMR1 - t; // Time of esecution
-}
-
-bool Emergency(void) {
-    if (save_velocity) {
-        last_vel_rif.v = vel_rif.v;
-        last_vel_rif.w = vel_rif.w;
-        save_velocity = false;
-    }
-    vel_rif.v -= last_vel_rif.v * (((float) parameter_system.int_tm_mill) / 1000) / emergency.time;
-    vel_rif.w -= last_vel_rif.w * (((float) parameter_system.int_tm_mill) / 1000) / emergency.time;
-    if (SGN(last_vel_rif.v) * vel_rif.v < 0) vel_rif.v = 0;
-    if (SGN(last_vel_rif.w) * vel_rif.w < 0) vel_rif.w = 0;
-    if ((vel_rif.v == 0) && (vel_rif.w == 0)) {
-        save_velocity = true;
-        return true;
-    }
-    return false;
 }
 
 int VelToMotorReference(void) {

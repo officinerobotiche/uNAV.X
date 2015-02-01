@@ -44,7 +44,6 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-unsigned int counter_stop = 0;
 unsigned int counter_odo = 0;
 unsigned int counter_pid = 0;
 volatile unsigned int overTmrL = 0;
@@ -55,9 +54,6 @@ volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
 volatile int SIG_VELR = 0; //Verso rotazione ruota destra
 volatile process_t time, priority, frequency;
 process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
-
-//From Motors_PID
-extern emergency_t emergency;
 
 //From user
 extern led_control_t led_controller[LED_NUM];
@@ -237,13 +233,6 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     for (led_counter = 0; led_counter < LED_NUM; led_counter++) {
         if (led_controller[led_counter].number_blink > LED_OFF)
             BlinkController(&led_controller[led_counter]);
-    }
-    if ((counter_stop + 1) >= emergency.timeout) {
-        if (Emergency()) {
-            counter_stop = 0;
-        }
-    } else {
-        counter_stop++;
     }
     counter_pid++;
     counter_odo++;

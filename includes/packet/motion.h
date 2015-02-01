@@ -27,6 +27,7 @@
 /**
  * Define to select state of control for single motor
  */
+#define STATE_CONTROL_EMERGENCY -1
 #define STATE_CONTROL_DISABLE 0
 #define STATE_CONTROL_DIRECT 1
 #define STATE_CONTROL_POSITION 2
@@ -43,10 +44,12 @@
 /**
  * Message for emergency configuration
  * - time to stop
+ * - time to disable bridge
  * - timeout to start emergency stop motors
  */
 typedef struct emergency {
     float time;
+    float stop;
     int16_t timeout;
 } emergency_t;
 #define LNG_EMERGENCY sizeof(emergency_t)

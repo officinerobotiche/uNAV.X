@@ -65,6 +65,12 @@ extern "C" {
     void init_parameter_motors(void);
 
     /**
+     * Update counter and step value for emergency controller.
+     * @param emergency configuration to save
+     */
+    void update_parameter_emergency(emergency_t emergency_data);
+
+    /**
      * Function to update motor parameters from message
      */
     void update_parameter_motors(void);
@@ -162,6 +168,13 @@ extern "C" {
      * Select the correct Input Capture prescaler
      */
     void SelectIcPrescaler(int motIdx);
+
+    /**
+     * If not recive anything velocity messages. Start controlled stop motors
+     * @param number Number motor
+     * @return start emergency mode or not.
+     */
+    bool Emergency(short num);
 
     /**
      * Mean valure for current measure motors
