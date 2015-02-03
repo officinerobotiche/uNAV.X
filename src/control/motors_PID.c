@@ -420,83 +420,81 @@ void SelectIcPrescaler(int motIdx) {
 
 #define INV_PID_TIME 1000 // TODO replace with real dT = 1/f_pid
 
+void measureVelocity(short num) {
+    unsigned long timePeriodtmp;
+    int SIG_VELtmp;
+
+    switch (num) {
+        case REF_MOTOR_LEFT:
+            timePeriodtmp = timePeriodL;
+            timePeriodL = 0;
+            SIG_VELtmp = SIG_VELL;
+            SIG_VELL = 0;
+            motor_left.measure_vel = 0;
+
+            PulsEncL += (int) POS1CNT; // Odometry
+            //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * k_mul; // Odometry to angular
+            POS1CNT = 0;
+            // Speed calculation 
+            if (SIG_VELtmp) {
+                int16_t ic_contrib = SIG_VELtmp * ((parameter_motor_left.k_vel * k_mul) / timePeriodtmp);
+                //int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
+                // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
+                motor_left.measure_vel = ic_contrib;
+                int a = 0;
+                if (abs(motor_left.measure_vel) > 10000)
+                    a++;
+            }
+            //SelectIcPrescaler(0,motor_left.measure_vel);
+            break;
+        case REF_MOTOR_RIGHT:
+            timePeriodtmp = timePeriodR;
+            timePeriodR = 0;
+            SIG_VELtmp = SIG_VELR;
+            SIG_VELR = 0;
+            motor_right.measure_vel = 0;
+
+            PulsEncR += (int) POS2CNT; // Odometry
+            POS2CNT = 0;
+
+            // Speed calculation
+            if (SIG_VELtmp)
+                motor_right.measure_vel = SIG_VELtmp * (parameter_motor_right.k_vel / (timePeriodtmp * k_mul));
+            //SelectIcPrescaler(1,motor_right.measure_vel);
+            break;
+    }
+}
+
 int MotorPIDL(void) {
     unsigned int t = TMR1; // Timing
-
-    unsigned long timePeriodLtmp;
-    int SIG_VELLtmp;
-
-    timePeriodLtmp = timePeriodL;
-    timePeriodL = 0;
-    SIG_VELLtmp = SIG_VELL;
-    SIG_VELL = 0;
-    motor_left.measure_vel = 0;
-
-    PulsEncL += (int) POS1CNT; // Odometry
-    int dAng = (int) POS1CNT * parameter_motor_left.k_vel * k_mul; // Odometry to angular
-    POS1CNT = 0;
-
-    // Speed calculation 
-    if (SIG_VELLtmp) {
-        int16_t ic_contrib = SIG_VELLtmp * ((parameter_motor_left.k_vel * k_mul) / timePeriodLtmp);
-        int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
-        // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
-
-        motor_left.measure_vel = ic_contrib;
-
-        int a = 0;
-        if (abs(motor_left.measure_vel) > 10000)
-            a++;
-    }
 
     PIDstruct1.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
     PIDstruct1.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure
 
     PID(&PIDstruct1); // PID execution
-
-    int pid_control = parameter_motor_left.versus * (PIDstruct1.controlOutput >> 4) + 2048; // PWM value
-    // PWM output
-    SetDCMCPWM1(1, pid_control, 0);
-
     // Control value calculation
     motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
-    //SelectIcPrescaler(0,motor_left.measure_vel);
+    int pid_control = (motor_left.control_vel >> 4) + 2048; // PWM value
+    // PWM output
+    SetDCMCPWM1(1, pid_control, 0);
 
     return TMR1 - t; // Execution time
 }
 
 int MotorPIDR(void) {
     unsigned int t = TMR1; // Timing
-    unsigned long timePeriodRtmp;
-    int SIG_VELRtmp;
-
-    timePeriodRtmp = timePeriodR;
-    timePeriodR = 0;
-    SIG_VELRtmp = SIG_VELR;
-    SIG_VELR = 0;
-    motor_right.measure_vel = 0;
-
-    PulsEncR += (int) POS2CNT; // Odometry
-    POS2CNT = 0;
-
-    // Speed calculation
-    if (SIG_VELRtmp)
-        motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / (timePeriodRtmp * k_mul));
 
     PIDstruct2.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
     PIDstruct2.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
 
     PID(&PIDstruct2); // PID execution
-
-    int pid_control = parameter_motor_right.versus * (PIDstruct2.controlOutput >> 4) + 2048; // PWM value
-    // PWM output
-    SetDCMCPWM1(2, pid_control, 0);
-
     // Control value calculation
     motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
 
-    //SelectIcPrescaler(1,motor_right.measure_vel);
+    int pid_control = (motor_right.control_vel >> 4) + 2048; // PWM value
+    // PWM output
+    SetDCMCPWM1(2, pid_control, 0);
 
     return TMR1 - t; // Execution time
 }

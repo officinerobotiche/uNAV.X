@@ -117,6 +117,7 @@ extern "C" {
      * @return start emergency mode or not.
      */
     bool Emergency(short num);
+    
     /**
      * Convert and check reference for type of law control selected. We have
      * four principal type of control motor:
@@ -127,6 +128,13 @@ extern "C" {
      * @return Time to Compute task control reference
      */
     int MotorTaskController(void);
+
+    /**
+     * Measure velocity from Input Capture and QEI
+     * @param num number of motor to start measure velocity
+     */
+    void measureVelocity(short num);
+
     /**
      * Esecution velocity PID for left motor
      *           _____          _______
