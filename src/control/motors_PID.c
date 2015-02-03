@@ -465,36 +465,36 @@ void measureVelocity(short num) {
     }
 }
 
-int MotorPIDL(void) {
+int MotorPID(short num) {
     unsigned int t = TMR1; // Timing
+    int pid_control;
 
-    PIDstruct1.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
-    PIDstruct1.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure
+    switch (num) {
+        case REF_MOTOR_LEFT:
+            PIDstruct1.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
+            PIDstruct1.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure
 
-    PID(&PIDstruct1); // PID execution
-    // Control value calculation
-    motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
+            PID(&PIDstruct1); // PID execution
+            // Control value calculation
+            motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
-    int pid_control = (motor_left.control_vel >> 4) + 2048; // PWM value
+            pid_control = (motor_left.control_vel >> 4) + 2048; // PWM value
+            break;
+        case REF_MOTOR_RIGHT:
+            PIDstruct2.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
+            PIDstruct2.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
+
+            PID(&PIDstruct2); // PID execution
+            // Control value calculation
+            motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
+
+            pid_control = (motor_right.control_vel >> 4) + 2048; // PWM value
+
+            break;
+    }
+
     // PWM output
-    SetDCMCPWM1(1, pid_control, 0);
-
-    return TMR1 - t; // Execution time
-}
-
-int MotorPIDR(void) {
-    unsigned int t = TMR1; // Timing
-
-    PIDstruct2.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
-    PIDstruct2.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
-
-    PID(&PIDstruct2); // PID execution
-    // Control value calculation
-    motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
-
-    int pid_control = (motor_right.control_vel >> 4) + 2048; // PWM value
-    // PWM output
-    SetDCMCPWM1(2, pid_control, 0);
+    SetDCMCPWM1(num+1, pid_control, 0);
 
     return TMR1 - t; // Execution time
 }

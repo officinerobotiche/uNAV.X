@@ -131,7 +131,7 @@ extern "C" {
 
     /**
      * Measure velocity from Input Capture and QEI
-     * @param num number of motor to start measure velocity
+     * @param number Number motor
      */
     void measureVelocity(short num);
 
@@ -149,26 +149,11 @@ extern "C" {
      * information is important for odometry)
      * 2. Load data (reference, measure) and esecution PID control and get value
      * 3. Convertion PID value for PWM controller
+     * @param number Number motor
      * @return time to compute parsing packet
      */
-    int MotorPIDL(void);
-    /**
-     * Esecution velocity PID for right motor
-     *           _____          _______
-     * ref +    |     |  cont  |       |
-     * --->o--->| PID |------->| Motor | -|-> measure
-     *   -/|\   |_____|        |_______|  |
-     *     |______________________________|
-     * We have three step for esecution PID controller on motor:
-     * 1. Evalute measure of velocity rotor (dtheta) are combined information
-     * from Input Capture elaboration from relative encoder and QEI module
-     * direction of rotation. In same time is saved pulse from QEI module. (This
-     * information is important for odometry)
-     * 2. Load data (reference, measure) and esecution PID control and get value
-     * 3. Convertion PID value for PWM controller
-     * @return time to compute parsing packet
-     */
-    int MotorPIDR(void);
+    int MotorPID(short num);
+
     /**
      * Select the correct Input Capture prescaler
      */

@@ -249,8 +249,8 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
     PID_FLAG = 0; // interrupt flag reset
     time.process[PROCESS_VELOCITY] = MotorTaskController();
-    time.process[PROCESS_PID_LEFT] = MotorPIDL();
-    time.process[PROCESS_PID_RIGHT] = MotorPIDR();
+    time.process[PROCESS_PID_LEFT] = MotorPID(REF_MOTOR_LEFT);
+    time.process[PROCESS_PID_RIGHT] = MotorPID(REF_MOTOR_RIGHT);
 }
 
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
