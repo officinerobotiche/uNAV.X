@@ -123,8 +123,8 @@ void init_parameter_motors(void) {
     motor_right.refer_vel = 0;
     motor_right.current = 0;
 
-    constraint.max_left = 14000;
-    constraint.max_right = 14000;
+    constraint.max_left = 24000;
+    constraint.max_right = 24000;
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         motor_state[i] = STATE_CONTROL_DISABLE;
@@ -343,6 +343,7 @@ int MotorPIDL(void) {
     //calcolo della velocità
     //Verifica SIG_VELLtmp!=0 & calcolo velocità
     if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motor_left.k_vel / timePeriodLtmp);
+
     PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
     PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
     PID(&PIDstruct1); //Esecuzione funzione PID
