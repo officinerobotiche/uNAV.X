@@ -51,7 +51,7 @@ extern unsigned int counter_alive[NUM_MOTORS];
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern constraint_t constraint;
 extern pid_control_t pid_left, pid_right;
-extern motor_control_t motor_ref[NUM_MOTORS];
+//extern motor_control_t motor_ref[NUM_MOTORS];
 extern motor_control_t motor_state[NUM_MOTORS];
 extern motor_t motor_left, motor_right;
 extern emergency_t emergency;
@@ -110,27 +110,27 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
-                motor_ref[0] = info->packet.motor_control;
+                motor_left.refer_vel = info->packet.motor_control;
                 counter_alive[0] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_R:
-                motor_ref[1] = info->packet.motor_control;
+                motor_right.refer_vel = info->packet.motor_control;
                 counter_alive[1] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_L:
-                UpdateStateController(REF_MOTOR_LEFT, info->packet.motor_control);
+                UpdateStateController(REF_MOTOR_LEFT, info->packet.motor_state);
                 control_state = STATE_CONTROL_HIGH_DISABLE;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_R:
-                UpdateStateController(REF_MOTOR_RIGHT, info->packet.motor_control);
+                UpdateStateController(REF_MOTOR_RIGHT, info->packet.motor_state);
                 control_state = STATE_CONTROL_HIGH_DISABLE;  //TODO CORRECT
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE:
-                UpdateHighStateController(info->packet.enable);
+                UpdateHighStateController(info->packet.motor_state);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case EMERGENCY:
@@ -192,11 +192,11 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_L:
-                send.motor_control = motor_ref[0];
+                send.motor_control = motor_left.refer_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_R:
-                send.motor_control = motor_ref[1];
+                send.motor_control = motor_right.refer_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_L:
@@ -208,15 +208,15 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case ENABLE_MOTOR_L:
-                send.motor_control = motor_state[0];
+                send.motor_state = motor_state[0];
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case ENABLE_MOTOR_R:
-                send.motor_control = motor_state[1];
+                send.motor_state = motor_state[1];
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case ENABLE:
-                send.enable = control_state;
+                send.motor_state = control_state;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_L:

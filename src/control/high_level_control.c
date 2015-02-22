@@ -66,8 +66,8 @@ velocity_t vel_rif, vel_mis;
 volatile parameter_unicycle_t parameter_unicycle;
 
 // From motors PID
-extern motor_control_t motor_ref[NUM_MOTORS];
-extern unsigned int control_motor_state[NUM_MOTORS];
+//extern motor_control_t motor_ref[NUM_MOTORS];
+//extern unsigned int control_motor_state[NUM_MOTORS];
 extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern motor_t motor_left, motor_right;
 extern volatile int PulsEncL, PulsEncR;
@@ -133,7 +133,6 @@ void UpdateHighStateController(int state) {
 
 int HighLevelTaskController(void) {
     unsigned int t = TMR1; // Timing function
-    int i;
 
     switch (control_state) {
         case STATE_CONTROL_HIGH_VELOCITY:
@@ -149,9 +148,8 @@ int HighLevelTaskController(void) {
         case STATE_CONTROL_HIGH_CONFIGURATION:
             break;
         default:
-            for (i = 0; i < NUM_MOTORS; ++i) {
-                motor_ref[i] = 0;
-            }
+            motor_left.refer_vel = 0;
+            motor_right.refer_vel = 0;
             break;
     }
     return TMR1 - t; // Time of esecution
@@ -228,18 +226,25 @@ int odometry(coordinate_t delta) {
 int VelToMotorReference(void) {
     unsigned int t = TMR1; // Timing function
 
-    // motor_ref are in decimillirad
-    motor_ref[0] = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-    motor_ref[1] = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-
-    // TODO to avoid the following saturation we could normalize ref value! by Walt
+    // >>>>> References calculation
+    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // >>>>> Saturation on 16 bit values
-    motor_ref[0] = motor_ref[0] >  32767 ?  32767 : motor_ref[0];
-    motor_ref[0] = motor_ref[0] < -32768 ? -32768 : motor_ref[0];
-
-    motor_ref[1] = motor_ref[1] >  32767 ?  32767 : motor_ref[1];
-    motor_ref[1] = motor_ref[1] < -32768 ? -32768 : motor_ref[1];
+    if(motor_left_refer > 32767) {
+        motor_left.refer_vel = 32767;
+    } else if (motor_left_refer < -32768) {
+        motor_left.refer_vel = -32768;
+    } else {
+        motor_left.refer_vel = (int16_t) motor_left_refer;
+    }
+    if(motor_right_refer > 32767) {
+        motor_right.refer_vel = 32767;
+    } else if (motor_right_refer < -32768) {
+        motor_right.refer_vel = -32768;
+    } else {
+        motor_right.refer_vel = (int16_t) motor_right_refer;
+    }
     // <<<<< Saturation on 16 bit values
 
     return TMR1 - t; // Time of esecution

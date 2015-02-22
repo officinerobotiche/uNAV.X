@@ -67,8 +67,8 @@ volatile int PulsEncR = 0; //Buffer for deadReckoning
 parameter_motor_t parameter_motor_left, parameter_motor_right;
 constraint_t constraint;
 pid_control_t pid_left, pid_right;
-motor_control_t motor_ref[NUM_MOTORS];
-motor_control_t motor_state[NUM_MOTORS];
+//motor_control_t motor_ref[NUM_MOTORS];
+state_controller_t motor_state[NUM_MOTORS];
 motor_t motor_left, motor_right;
 
 uint8_t k_mul; // k_vel multiplier according to IC scale
@@ -83,7 +83,7 @@ emergency_t emergency;
 float emergency_step = 0;
 float emergency_stop = 0;
 bool save_velocity = true;
-motor_t last_motor_left, last_motor_right;
+float last_motor_left, last_motor_right;
 
 /**/
 // From interrupt
@@ -127,7 +127,6 @@ parameter_motor_t init_parameter_motors(short num) {
             break;
     }
     k_mul = 1;
-    motor_ref[num] = 0;
     return parameter;
 }
 
@@ -194,16 +193,16 @@ emergency_t init_parameter_emergency(short num) {
     emergency_t emer;
     counter_alive[num] = 0;
     counter_stop[num] = 0;
-    emer.time = 1.0;
-    emer.timeout = 500;
-    emer.stop = 2.0;
+    emergency.slope_time = 1.0;
+    emergency.timeout = 500;
+    emergency.bridge_off = 2.0;
     return emer;
 }
 
 void update_parameter_emergency(short num, emergency_t emergency_data) {
     emergency = emergency_data;
-    emergency_step = emergency.time / FRTMR1;
-    emergency_stop = emergency.stop * FRTMR1;
+    emergency_step = emergency.slope_time * FRTMR1;
+    emergency_stop = emergency.bridge_off * FRTMR1;
 }
 
 int MotorVelocityReference(short number) {
@@ -211,17 +210,13 @@ int MotorVelocityReference(short number) {
 
     switch (number) {
         case REF_MOTOR_LEFT:
-            if (abs(motor_ref[number]) > constraint.max_left) {
-                motor_left.refer_vel = SGN((int) motor_ref[number]) * constraint.max_left;
-            } else {
-                motor_left.refer_vel = (int) motor_ref[number];
+            if (abs(motor_left.refer_vel) > constraint.max_left) {
+                motor_left.refer_vel = SGN(motor_left.refer_vel) * constraint.max_left;
             }
             break;
         case REF_MOTOR_RIGHT:
-            if (abs(motor_ref[number]) > constraint.max_right) {
-                motor_right.refer_vel = SGN((int) motor_ref[number]) * constraint.max_right;
-            } else {
-                motor_right.refer_vel = (int) motor_ref[number];
+            if (abs(motor_right.refer_vel) > constraint.max_right) {
+                motor_right.refer_vel = SGN(motor_right.refer_vel) * constraint.max_right;
             }
             break;
     }
@@ -248,6 +243,9 @@ void UpdateStateController(short num, motor_control_t state) {
         case REF_MOTOR_LEFT:
             motor_state[num] = state;
             MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            if(state == STATE_CONTROL_EMERGENCY) {
+                last_motor_left = motor_left.refer_vel;
+            }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
 #endif
@@ -255,6 +253,9 @@ void UpdateStateController(short num, motor_control_t state) {
         case REF_MOTOR_RIGHT:
             motor_state[num] = state;
             MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+            if(state == STATE_CONTROL_EMERGENCY) {
+                last_motor_right = motor_right.refer_vel;
+            }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
 #endif
@@ -267,7 +268,7 @@ void UpdateStateController(short num, motor_control_t state) {
 
 int MotorTaskController(void) {
     unsigned int t = TMR1; // Timing function
-    short i;
+    volatile short i;
     /**
      * If high level control selected, then set new reference for all motors.
      */
@@ -298,6 +299,14 @@ int MotorTaskController(void) {
                 //TODO to be implemented
                 break;
             default:
+                switch(i) {
+                    case 0:
+                        motor_left.refer_vel = 0;
+                        break;
+                    case 1:
+                        motor_right.refer_vel = 0;
+                        break;
+                }
                 break;
         }
         // Emergency controller
@@ -307,17 +316,6 @@ int MotorTaskController(void) {
                  * Set Motor in emergency mode
                  */
                 UpdateStateController(i, STATE_CONTROL_EMERGENCY);
-                /**
-                 * Save state motor
-                 */
-                switch (i) {
-                    case 0:
-                        last_motor_left.refer_vel = motor_left.refer_vel;
-                        break;
-                    case 1:
-                        last_motor_right.refer_vel = motor_right.refer_vel;
-                        break;
-                }
                 counter_stop[i] = 0;
                 counter_alive[i] = 0;
             } else
@@ -502,9 +500,8 @@ int MotorPID(short num) {
 bool Emergency(short num) {
     switch (num) {
         case REF_MOTOR_LEFT:
-            motor_left.refer_vel -= emergency_step * last_motor_left.refer_vel;
-            //motor_ref[num] = motor_left.refer_vel;
-            if (SGN(last_motor_left.refer_vel) * motor_left.refer_vel < 0)
+            motor_left.refer_vel -= (int16_t) (last_motor_left / emergency_step + 0.5f);
+            if (SGN(motor_left.refer_vel) * last_motor_left < 0)
                 motor_left.refer_vel = 0;
             if (motor_left.refer_vel == 0) {
                 if ((counter_stop[num] + 1) >= emergency_stop) {
@@ -515,9 +512,8 @@ bool Emergency(short num) {
             }
             break;
         case REF_MOTOR_RIGHT:
-            motor_right.refer_vel -= emergency_step * last_motor_right.refer_vel;
-            //motor_ref[num] = motor_right.refer_vel;
-            if (SGN(last_motor_right.refer_vel) * motor_right.refer_vel < 0)
+            motor_right.refer_vel -= (int16_t) (last_motor_right / emergency_step + 0.5f);
+            if (SGN(motor_right.refer_vel) * last_motor_right < 0)
                 motor_right.refer_vel = 0;
             if (motor_right.refer_vel == 0) {
                 if ((counter_stop[num] + 1) >= emergency_stop) {

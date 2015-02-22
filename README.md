@@ -44,6 +44,13 @@ This repository follow **[Git flow](https://www.atlassian.com/git/tutorials/comp
 - **[BLUE] Feature** branches use *develop* as their parent branch
 - **[YELLOW] Release-*** No new features can be added after this point—only bug fixes
 - **[GREY] Hotfix** branches are used to quickly patch production releases
+ 
+## Develop working
+To start with uNAV.X you should go on your terminal and write
+```
+git clone https://github.com/officinerobotiche/uNAV.X/
+git checkout develop
+```
 
 ## Communication libraries
 - [C++](https://github.com/officinerobotiche/orblibcpp)
