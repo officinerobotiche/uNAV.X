@@ -226,8 +226,8 @@ int odometry(coordinate_t delta) {
 int VelToMotorReference(void) {
     unsigned int t = TMR1; // Timing function
     // >>>>> Second part: references calculation
-    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (0.5f*parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
+    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (0.5f*parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // TODO to avoid the following saturation we can normalize ref value! by Walt
 
@@ -255,7 +255,7 @@ int VelocityMeasure(void) {
     unsigned int t = TMR1; // Timing function
 
     long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
+    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (parameter_unicycle_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
 
