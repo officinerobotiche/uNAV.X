@@ -235,6 +235,13 @@ void UpdateStateController(short num, motor_control_t state) {
     /**
      * Set enable or disable motors
      */
+    if (enable) {
+        PTCONbits.PTEN = 1;
+    } else {
+        if ((motor_state[0] == STATE_CONTROL_DISABLE) && (motor_state[1] == STATE_CONTROL_DISABLE)) {
+            PTCONbits.PTEN = 0;
+        }
+    }
     switch (num) {
         case -1:
             motor_state[0] = state;
