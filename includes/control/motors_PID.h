@@ -87,6 +87,12 @@ extern "C" {
      */
     void update_pid(short num, pid_control_t pid);
     /**
+     * Return value of PID controller
+     * @param motIdx number of motor
+     * @return value PID
+     */
+    inline pid_control_t get_pid_value(short motIdx);
+    /**
      * Initialization standard value for emergency configuration motor
      * @param number Number motor
      * @return default configuration for emergency stop
@@ -140,6 +146,13 @@ extern "C" {
      * @return Time to Compute task control reference
      */
     int MotorTaskController(void);
+
+    /**
+     * Return state of motor
+     * @param motIdx number of motor selected
+     * @return state of motor
+     */
+    inline state_controller_t get_motor_state(short motIdx);
 
     /**
      * Measure velocity from Input Capture and QEI

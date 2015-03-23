@@ -47,11 +47,11 @@
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
  */
-tPID PIDstruct1; // PID motore Sinistra
+//tPID PIDstruct1; // PID motore Sinistra
 fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
 fractional kCoeffs1[3]; //Coefficienti KP, KI, KD Per PID1 Sinistra
-tPID PIDstruct2; //PID motore Destra
+//tPID PIDstruct2; //PID motore Destra
 fractional abcCoefficient2[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 fractional kCoeffs2[3]; //Coefficienti KP, KI, KD Per PID2 Destra
@@ -77,9 +77,9 @@ new_motor_t motors[NUM_MOTORS];
 int16_t velocity[NUM_VALUES];
 
 constraint_t constraint;
-pid_control_t pid_left, pid_right;
+//pid_control_t pid_left, pid_right;
 //motor_control_t motor_ref[NUM_MOTORS];
-state_controller_t motor_state[NUM_MOTORS];
+//state_controller_t motor_state[NUM_MOTORS];
 motor_t motor_left, motor_right;
 
 
@@ -168,40 +168,44 @@ pid_control_t init_pid_control(short num) {
 }
 
 void update_pid(short num, pid_control_t pid) {
+    // Update value of pid
+    motors[num].pid = pid;
     switch (num) {
         case REF_MOTOR_LEFT:
-            pid_left = pid;
-            kCoeffs1[0] = Q15(pid_left.kp);
-            kCoeffs1[1] = Q15(pid_left.ki);
-            kCoeffs1[2] = Q15(pid_left.kd);
+            kCoeffs1[0] = Q15(motors[num].pid.kp);
+            kCoeffs1[1] = Q15(motors[num].pid.ki);
+            kCoeffs1[2] = Q15(motors[num].pid.kd);
 
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
-            PIDstruct1.abcCoefficients = &abcCoefficient1[0];
+            motors[num].PIDstruct.abcCoefficients = &abcCoefficient1[0];
             //Set up pointer to controller history samples
-            PIDstruct1.controlHistory = &controlHistory1[0];
+            motors[num].PIDstruct.controlHistory = &controlHistory1[0];
             // Clear the controler history and the controller output
-            PIDInit(&PIDstruct1);
+            PIDInit(&motors[num].PIDstruct);
             //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-            PIDCoeffCalc(&kCoeffs1[0], &PIDstruct1);
+            PIDCoeffCalc(&kCoeffs1[0], &motors[num].PIDstruct);
             break;
         case REF_MOTOR_RIGHT:
-            pid_right = pid;
-            kCoeffs2[0] = Q15(pid_right.kp);
-            kCoeffs2[1] = Q15(pid_right.ki);
-            kCoeffs2[2] = Q15(pid_right.kd);
+            kCoeffs2[0] = Q15(motors[num].pid.kp);
+            kCoeffs2[1] = Q15(motors[num].pid.ki);
+            kCoeffs2[2] = Q15(motors[num].pid.kd);
 
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
-            PIDstruct2.abcCoefficients = &abcCoefficient2[0];
+            motors[num].PIDstruct.abcCoefficients = &abcCoefficient2[0];
             //Set up pointer to controller history samples
-            PIDstruct2.controlHistory = &controlHistory2[0];
+            motors[num].PIDstruct.controlHistory = &controlHistory2[0];
             // Clear the controler history and the controller output
-            PIDInit(&PIDstruct2);
+            PIDInit(&motors[num].PIDstruct);
             //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-            PIDCoeffCalc(&kCoeffs2[0], &PIDstruct2);
+            PIDCoeffCalc(&kCoeffs2[0], &motors[num].PIDstruct);
             break;
     }
+}
+
+/* inline */ pid_control_t get_pid_value(short motIdx) {
+    return motors[motIdx].pid;
 }
 
 emergency_t init_parameter_emergency(short num) {
@@ -251,8 +255,8 @@ void UpdateStateController(short num, motor_control_t state) {
 
     switch (num) {
         case -1:
-            motor_state[0] = state;
-            motor_state[1] = state;
+            motors[0].state = state;
+            motors[1].state = state;
             MOTOR_ENABLE1 = enable ^ motors[0].parameter_motor.enable_set;
             MOTOR_ENABLE2 = enable ^ motors[1].parameter_motor.enable_set;
 #ifndef MOTION_CONTROL
@@ -261,7 +265,7 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
             break;
         case REF_MOTOR_LEFT:
-            motor_state[num] = state;
+            motors[num].state = state;
             MOTOR_ENABLE1 = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
                 last_motor_left = motor_left.refer_vel;
@@ -271,7 +275,7 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
             break;
         case REF_MOTOR_RIGHT:
-            motor_state[num] = state;
+            motors[num].state = state;
             MOTOR_ENABLE2 = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
                 last_motor_right = motor_right.refer_vel;
@@ -286,6 +290,10 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
 }
 
+/* inline */ state_controller_t get_motor_state(short motIdx) {
+    return motors[motIdx].state;
+}
+
 int MotorTaskController(void) {
     unsigned int t = TMR1; // Timing function
     volatile short i;
@@ -296,7 +304,7 @@ int MotorTaskController(void) {
         HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
-        switch (motor_state[i]) {
+        switch (motors[i].state) {
             case STATE_CONTROL_EMERGENCY:
                 /**
                  * Set motor in emergency mode
@@ -330,7 +338,7 @@ int MotorTaskController(void) {
                 break;
         }
         // Emergency controller
-        if (motor_state[i] > STATE_CONTROL_DISABLE) {
+        if (motors[i].state > STATE_CONTROL_DISABLE) {
             if ((counter_alive[i] + 1) >= emergency.timeout) {
                 /**
                  * Set Motor in emergency mode
@@ -487,22 +495,22 @@ int MotorPID(short num) {
 
     switch (num) {
         case REF_MOTOR_LEFT:
-            PIDstruct1.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
-            PIDstruct1.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure
+            motors[num].PIDstruct.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
+            motors[num].PIDstruct.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure
 
-            PID(&PIDstruct1); // PID execution
+            PID(&motors[num].PIDstruct); // PID execution
             // Control value calculation
-            motor_left.control_vel = motors[num].parameter_motor.versus * PIDstruct1.controlOutput;
+            motor_left.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
 
             pid_control = (motor_left.control_vel >> 4) + 2048; // PWM value
             break;
         case REF_MOTOR_RIGHT:
-            PIDstruct2.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
-            PIDstruct2.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
+            motors[num].PIDstruct.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
+            motors[num].PIDstruct.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
 
-            PID(&PIDstruct2); // PID execution
+            PID(&motors[num].PIDstruct); // PID execution
             // Control value calculation
-            motor_right.control_vel = motors[num].parameter_motor.versus * PIDstruct2.controlOutput;
+            motor_right.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
 
             pid_control = (motor_right.control_vel >> 4) + 2048; // PWM value
 

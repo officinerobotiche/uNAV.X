@@ -50,9 +50,9 @@ abstract_message_u send_temp;
 extern unsigned int counter_alive[NUM_MOTORS];
 //extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern constraint_t constraint;
-extern pid_control_t pid_left, pid_right;
+//extern pid_control_t pid_left, pid_right;
 //extern motor_control_t motor_ref[NUM_MOTORS];
-extern motor_control_t motor_state[NUM_MOTORS];
+//extern motor_control_t motor_state[NUM_MOTORS];
 extern motor_t motor_left, motor_right;
 extern emergency_t emergency;
 
@@ -156,11 +156,11 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
     if (info->type == HASHMAP_MOTION)
         switch (info->command) {
             case PID_CONTROL_L:
-                send.pid = pid_left;
+                send.pid = get_pid_value(REF_MOTOR_LEFT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PID_CONTROL_R:
-                send.pid = pid_right;
+                send.pid = get_pid_value(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case COORDINATE:
@@ -208,11 +208,11 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case ENABLE_MOTOR_L:
-                send.motor_state = motor_state[0];
+                send.motor_state = get_motor_state(REF_MOTOR_LEFT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case ENABLE_MOTOR_R:
-                send.motor_state = motor_state[1];
+                send.motor_state = get_motor_state(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case ENABLE:
