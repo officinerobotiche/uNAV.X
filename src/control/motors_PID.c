@@ -54,11 +54,14 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
+pin_t enable1 = {&MOTOR_ENABLE1_PORT, MOTOR_ENABLE1_NUM};
+pin_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 
 /** */
 
 typedef struct new_motor {
     //Use ONLY in firmware
+    pin_t * pin_enable;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     volatile int PulsEnc; //Buffer for deadReckoning
     float last_velocity;
@@ -103,25 +106,30 @@ extern parameter_system_t parameter_system;
 /* User Functions                                                             */
 /******************************************************************************/
 
-parameter_motor_t init_parameter_motors(short num) {
-    parameter_motor_t parameter;
-    parameter.k_vel = K_VEL; //Gain to convert input capture value to velocity
-    parameter.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
-    parameter.versus = 1;
-    parameter.enable_set = false;
+void init_motor(short num) {
     motors[num].motor.control_vel = 0;
     motors[num].motor.measure_vel = 0;
     motors[num].motor.refer_vel = 0;
     motors[num].motor.current = 0;
     switch (num) {
         case REF_MOTOR_LEFT:
+            motors[num].pin_enable = &enable1;
             constraint.max_left = 25000;
             break;
         case REF_MOTOR_RIGHT:
+            motors[num].pin_enable = &enable2;
             constraint.max_right = 25000;
             break;
     }
     motors[num].k_mul = 1;
+}
+
+parameter_motor_t init_parameter_motors(short num) {
+    parameter_motor_t parameter;
+    parameter.k_vel = K_VEL; //Gain to convert input capture value to velocity
+    parameter.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
+    parameter.versus = 1;
+    parameter.enable_set = false;
     return parameter;
 }
 
@@ -237,8 +245,8 @@ void UpdateStateController(short num, motor_control_t state) {
         case -1:
             motors[0].state = state;
             motors[1].state = state;
-            MOTOR_ENABLE1 = enable ^ motors[0].parameter_motor.enable_set;
-            MOTOR_ENABLE2 = enable ^ motors[1].parameter_motor.enable_set;
+            MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.enable_set;
+            MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.enable_set;
 #ifndef MOTION_CONTROL
             UpdateBlink(0, led_state);
             UpdateBlink(1, led_state);
@@ -246,7 +254,7 @@ void UpdateStateController(short num, motor_control_t state) {
             break;
         case REF_MOTOR_LEFT:
             motors[num].state = state;
-            MOTOR_ENABLE1 = enable ^ motors[num].parameter_motor.enable_set;
+            MOTOR_ENABLE1_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
                 motors[num].last_velocity = motors[num].motor.refer_vel;
             }
@@ -256,7 +264,7 @@ void UpdateStateController(short num, motor_control_t state) {
             break;
         case REF_MOTOR_RIGHT:
             motors[num].state = state;
-            MOTOR_ENABLE2 = enable ^ motors[num].parameter_motor.enable_set;
+            MOTOR_ENABLE2_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
                 motors[num].last_velocity = motors[num].motor.refer_vel;
             }
@@ -325,40 +333,41 @@ int MotorTaskController(void) {
 }
 
 void SelectIcPrescaler(int motIdx) {
+    int16_t vel = abs(motors[motIdx].motor.measure_vel);
 
     if (motIdx == 0) {
-        int16_t vel0 = abs(motors[motIdx].motor.measure_vel);
+        
 
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
-                if (vel0 >= MAX1) {
+                if (vel >= MAX1) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
-                if (vel0 < MIN1) {
+                if (vel < MIN1) {
                     motors[motIdx].k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
-                } else if (vel0 >= MAX2) {
+                } else if (vel >= MAX2) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
-                if (vel0 < MIN2) {
+                if (vel < MIN2) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
-                } else if (vel0 >= MAX3) {
+                } else if (vel >= MAX3) {
                     motors[motIdx].k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
-                if (vel0 < MIN3) {
+                if (vel < MIN3) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
@@ -370,37 +379,36 @@ void SelectIcPrescaler(int motIdx) {
                 break;
         }
     } else {
-        int16_t vel1 = abs(motors[motIdx].motor.measure_vel);
         switch (IC2CONbits.ICM) {
             case IC_MODE0:
-                if (vel1 >= MAX1) {
+                if (vel >= MAX1) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
-                if (vel1 < MIN1) {
+                if (vel < MIN1) {
                     motors[motIdx].k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
-                } else if (vel1 >= MAX2) {
+                } else if (vel >= MAX2) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
-                if (vel1 < MIN2) {
+                if (vel < MIN2) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
-                } else if (vel1 >= MAX3) {
+                } else if (vel >= MAX3) {
                     motors[motIdx].k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
-                if (vel1 < MIN3) {
+                if (vel < MIN3) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }

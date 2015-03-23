@@ -55,7 +55,12 @@ extern "C" {
     /******************************************************************************/
 
     /**
-     * Initialization all parameters for motor controller.
+     * Initialization all variables for motor controller.
+     * @param num Number motor
+     */
+    void init_motor(short num);
+    /**
+     * Initialization parameters for motor controller.
      * @param num Number motor
      * @return Default configuration
      */

@@ -92,6 +92,8 @@ int16_t main(void) {
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         /* Initialize variables for motors */
+        init_motor(i);
+        /* Initialize parameters for motors */
         update_parameter_motors(i, init_parameter_motors(i));
         /* Initialize pid controllers */
         update_pid(i, init_pid_control(i));
