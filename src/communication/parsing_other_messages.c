@@ -48,7 +48,7 @@ abstract_message_u send_temp;
 
 // From motors PID
 extern unsigned int counter_alive[NUM_MOTORS];
-extern parameter_motor_t parameter_motor_left, parameter_motor_right;
+//extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern constraint_t constraint;
 extern pid_control_t pid_left, pid_right;
 //extern motor_control_t motor_ref[NUM_MOTORS];
@@ -176,11 +176,11 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PARAMETER_MOTOR_L:
-                send.parameter_motor = parameter_motor_left;
+                send.parameter_motor = get_parameter_motor(REF_MOTOR_LEFT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PARAMETER_MOTOR_R:
-                send.parameter_motor = parameter_motor_right;
+                send.parameter_motor = get_parameter_motor(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case CONSTRAINT:

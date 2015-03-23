@@ -61,17 +61,28 @@ int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
 /** */
 
-volatile int PulsEncL = 0; //Buffer for deadReckoning
-volatile int PulsEncR = 0; //Buffer for deadReckoning
+typedef struct new_motor {
+    //Use ONLY in firmware
+    uint8_t k_mul; // k_vel multiplier according to IC scale
+    volatile int PulsEnc; //Buffer for deadReckoning
+    //Common
+    state_controller_t state;
+    parameter_motor_t parameter_motor;
+    pid_control_t pid;
+    tPID PIDstruct;
+} new_motor_t;
+new_motor_t motors[NUM_MOTORS];
 
-parameter_motor_t parameter_motor_left, parameter_motor_right;
+#define NUM_VALUES 10
+int16_t velocity[NUM_VALUES];
+
 constraint_t constraint;
 pid_control_t pid_left, pid_right;
 //motor_control_t motor_ref[NUM_MOTORS];
 state_controller_t motor_state[NUM_MOTORS];
 motor_t motor_left, motor_right;
 
-uint8_t k_mul; // k_vel multiplier according to IC scale
+
 
 k_odo_t k_odo;
 float wheel_m;
@@ -126,22 +137,26 @@ parameter_motor_t init_parameter_motors(short num) {
             constraint.max_right = 25000;
             break;
     }
-    k_mul = 1;
+    motors[num].k_mul = 1;
     return parameter;
 }
 
 void update_parameter_motors(short num, parameter_motor_t parameter) {
+    //Update parameter configuration
+    motors[num].parameter_motor = parameter;
     //Update encoder swap
     switch (num) {
         case REF_MOTOR_LEFT:
-            parameter_motor_left = parameter;
-            QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI1CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
         case REF_MOTOR_RIGHT:
-            parameter_motor_right = parameter;
-            QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI2CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
     }
+}
+
+/* inline */ parameter_motor_t get_parameter_motor(short motIdx) {
+    return motors[motIdx].parameter_motor;
 }
 
 pid_control_t init_pid_control(short num) {
@@ -223,18 +238,23 @@ int MotorVelocityReference(short number) {
     return TMR1 - t; // Time of esecution
 }
 
+/* inline */ int get_pulse_encoder(short motIdx) {
+    return motors[motIdx].PulsEnc;
+}
+
 void UpdateStateController(short num, motor_control_t state) {
     volatile bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
     int led_state = (state != STATE_CONTROL_EMERGENCY) ? state + 1 : state;
     /**
      * Set enable or disable motors
      */
+
     switch (num) {
         case -1:
             motor_state[0] = state;
             motor_state[1] = state;
-            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
-            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+            MOTOR_ENABLE1 = enable ^ motors[0].parameter_motor.enable_set;
+            MOTOR_ENABLE2 = enable ^ motors[1].parameter_motor.enable_set;
 #ifndef MOTION_CONTROL
             UpdateBlink(0, led_state);
             UpdateBlink(1, led_state);
@@ -242,7 +262,7 @@ void UpdateStateController(short num, motor_control_t state) {
             break;
         case REF_MOTOR_LEFT:
             motor_state[num] = state;
-            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            MOTOR_ENABLE1 = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
                 last_motor_left = motor_left.refer_vel;
             }
@@ -252,7 +272,7 @@ void UpdateStateController(short num, motor_control_t state) {
             break;
         case REF_MOTOR_RIGHT:
             motor_state[num] = state;
-            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+            MOTOR_ENABLE2 = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
                 last_motor_right = motor_right.refer_vel;
             }
@@ -334,40 +354,40 @@ void SelectIcPrescaler(int motIdx) {
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
                 if (vel0 >= MAX1) {
-                    k_mul = 2;
+                    motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
                 if (vel0 < MIN1) {
-                    k_mul = 1;
+                    motors[motIdx].k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
                 } else if (vel0 >= MAX2) {
-                    k_mul = 8;
+                    motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
                 if (vel0 < MIN2) {
-                    k_mul = 2;
+                    motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 } else if (vel0 >= MAX3) {
-                    k_mul = 32;
+                    motors[motIdx].k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
                 if (vel0 < MIN3) {
-                    k_mul = 8;
+                    motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             default:
-                k_mul = 1;
+                motors[motIdx].k_mul = 1;
                 SwitchIcPrescaler(0, motIdx);
                 break;
         }
@@ -376,40 +396,40 @@ void SelectIcPrescaler(int motIdx) {
         switch (IC2CONbits.ICM) {
             case IC_MODE0:
                 if (vel1 >= MAX1) {
-                    k_mul = 2;
+                    motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
                 if (vel1 < MIN1) {
-                    k_mul = 1;
+                    motors[motIdx].k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
                 } else if (vel1 >= MAX2) {
-                    k_mul = 8;
+                    motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
                 if (vel1 < MIN2) {
-                    k_mul = 2;
+                    motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 } else if (vel1 >= MAX3) {
-                    k_mul = 32;
+                    motors[motIdx].k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
                 if (vel1 < MIN3) {
-                    k_mul = 8;
+                    motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             default:
-                k_mul = 1;
+                motors[motIdx].k_mul = 1;
                 SwitchIcPrescaler(0, motIdx);
                 break;
         }
@@ -430,18 +450,15 @@ void measureVelocity(short num) {
             SIG_VELL = 0;
             motor_left.measure_vel = 0;
 
-            PulsEncL += (int) POS1CNT; // Odometry
+            motors[num].PulsEnc += (int) POS1CNT; // Odometry
             //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * k_mul; // Odometry to angular
             POS1CNT = 0;
             // Speed calculation 
             if (SIG_VELtmp) {
-                int16_t ic_contrib = SIG_VELtmp * ((parameter_motor_left.k_vel * k_mul) / timePeriodtmp);
+                int16_t ic_contrib = SIG_VELtmp * ((motors[num].parameter_motor.k_vel * motors[num].k_mul) / timePeriodtmp);
                 //int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
                 // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
                 motor_left.measure_vel = ic_contrib;
-                int a = 0;
-                if (abs(motor_left.measure_vel) > 10000)
-                    a++;
             }
             //SelectIcPrescaler(0,motor_left.measure_vel);
             break;
@@ -452,12 +469,13 @@ void measureVelocity(short num) {
             SIG_VELR = 0;
             motor_right.measure_vel = 0;
 
-            PulsEncR += (int) POS2CNT; // Odometry
+            motors[num].PulsEnc += (int) POS2CNT; // Odometry
             POS2CNT = 0;
 
             // Speed calculation
-            if (SIG_VELtmp)
-                motor_right.measure_vel = SIG_VELtmp * (parameter_motor_right.k_vel / (timePeriodtmp * k_mul));
+            if (SIG_VELtmp) {
+                motor_right.measure_vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / (timePeriodtmp * motors[num].k_mul));
+            }
             //SelectIcPrescaler(1,motor_right.measure_vel);
             break;
     }
@@ -474,7 +492,7 @@ int MotorPID(short num) {
 
             PID(&PIDstruct1); // PID execution
             // Control value calculation
-            motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
+            motor_left.control_vel = motors[num].parameter_motor.versus * PIDstruct1.controlOutput;
 
             pid_control = (motor_left.control_vel >> 4) + 2048; // PWM value
             break;
@@ -484,7 +502,7 @@ int MotorPID(short num) {
 
             PID(&PIDstruct2); // PID execution
             // Control value calculation
-            motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
+            motor_right.control_vel = motors[num].parameter_motor.versus * PIDstruct2.controlOutput;
 
             pid_control = (motor_right.control_vel >> 4) + 2048; // PWM value
 

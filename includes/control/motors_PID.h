@@ -106,11 +106,23 @@ extern "C" {
      */
     int MotorVelocityReference(short motor);
     /**
+     * Return number of pulse encoder
+     * @param motIdx number motor
+     * @return value of pulse encoder
+     */
+    inline int get_pulse_encoder(short motIdx);
+    /**
      * Set state controller for all motors, if DISABLE, set enable motor to zero
      * @param num number motor to update state if -1 set all motor to state
      * @param motor state command
      */
     void UpdateStateController(short num, motor_control_t motor);
+    /**
+     * Return parameters from motor
+     * @param motIdx number selected motor
+     * @return paramater motors
+     */
+    inline parameter_motor_t get_parameter_motor(short motIdx);
     /**
      * If not recive anything velocity messages. Start controlled stop motors
      * @param number Number motor

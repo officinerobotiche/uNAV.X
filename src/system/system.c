@@ -40,6 +40,7 @@
 #include "packet/packet.h"
 #include "packet/motion.h"
 #include "communication/serial.h"
+#include "control/motors_PID.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -75,7 +76,7 @@ extern volatile process_t time, priority, frequency;
 extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
 
 // From motors PID
-extern parameter_motor_t parameter_motor_left, parameter_motor_right;
+//extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 
 const int IcMode[4] = {0b001, 0b011, 0b100, 0b101};
 
@@ -285,7 +286,7 @@ void InitQEI1(void) {
     //QEI1CONbits.CNTERR= 0; // No position count error has occurred
     QEI1CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
     QEI1CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-    QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+    QEI1CONbits.SWPAB = (get_parameter_motor(REF_MOTOR_LEFT).versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
     QEI1CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
     //QEI1CONbits.TQGATE= 0  // Timer gated time accumulation disabled
     //QEI1CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -302,7 +303,7 @@ void InitQEI2(void) {
     //QEI2CONbits.CNTERR= 0; // No position count error has occurred
     QEI2CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
     QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-    QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = (get_parameter_motor(REF_MOTOR_RIGHT).versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
     QEI2CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
     //QEI2CONbits.TQGATE= 0  // Timer gated time accumulation disabled
     //QEI2CONbits.TQCKPS = 0b00	// 1:1 prescale value

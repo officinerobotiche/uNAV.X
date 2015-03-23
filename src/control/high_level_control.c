@@ -68,9 +68,9 @@ volatile parameter_unicycle_t parameter_unicycle;
 // From motors PID
 //extern motor_control_t motor_ref[NUM_MOTORS];
 //extern unsigned int control_motor_state[NUM_MOTORS];
-extern parameter_motor_t parameter_motor_left, parameter_motor_right;
+//extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern motor_t motor_left, motor_right;
-extern volatile int PulsEncL, PulsEncR;
+//extern volatile int PulsEncL, PulsEncR;
 extern k_odo_t k_odo;
 extern float wheel_m;
 
@@ -93,6 +93,8 @@ void init_parameter_unicycle(void) {
 }
 
 void update_parameter_unicycle(void) {
+    parameter_motor_t parameter_motor_left = get_parameter_motor(REF_MOTOR_LEFT);
+    parameter_motor_t parameter_motor_right = get_parameter_motor(REF_MOTOR_RIGHT);
     parameter_unicycle_int.radius_l = ((int) (parameter_unicycle.radius_l * 1000.0));
     parameter_unicycle_int.radius_r = ((int) (parameter_unicycle.radius_r * 1000.0));
     parameter_unicycle_int.wheelbase = ((int) (parameter_unicycle.wheelbase * 1000.0));
@@ -158,12 +160,12 @@ int HighLevelTaskController(void) {
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
     volatile coordinate_t delta;
-    float WheelSpL = k_odo.k_left * PulsEncL; // Spostamento Ruota sinistra
-    float WheelSpR = k_odo.k_right * PulsEncR; // Spostamento Ruota destra
+    float WheelSpL = k_odo.k_left * get_pulse_encoder(REF_MOTOR_LEFT); // Spostamento Ruota sinistra
+    float WheelSpR = k_odo.k_right * get_pulse_encoder(REF_MOTOR_RIGHT); // Spostamento Ruota destra
     float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote
     float DifSp = WheelSpR - WheelSpL; // Calcolo della differenza degli spostamenti delle ruote
-    PulsEncL = 0; // Flush variabile
-    PulsEncR = 0; // Flush variabile
+    //PulsEncL = 0; // Flush variabile
+    //PulsEncR = 0; // Flush variabile
 
     if (fabs(DifSp) <= parameter_unicycle.sp_min) {
         delta.theta = 0;
