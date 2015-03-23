@@ -47,13 +47,13 @@ motor_control_t motor_temp;
 abstract_message_u send_temp;
 
 // From motors PID
-extern unsigned int counter_alive[NUM_MOTORS];
+//extern unsigned int counter_alive[NUM_MOTORS];
 //extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 extern constraint_t constraint;
 //extern pid_control_t pid_left, pid_right;
 //extern motor_control_t motor_ref[NUM_MOTORS];
 //extern motor_control_t motor_state[NUM_MOTORS];
-extern motor_t motor_left, motor_right;
+//extern motor_t motor_left, motor_right;
 extern emergency_t emergency;
 
 // From high level control
@@ -105,18 +105,14 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VELOCITY:
                 vel_rif = info->packet.velocity;
-                counter_alive[0] = 0; //Reset time emergency
-                counter_alive[1] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
-                motor_left.refer_vel = info->packet.motor_control;
-                counter_alive[0] = 0; //Reset time emergency
+                set_motor_velocity(REF_MOTOR_LEFT, info->packet.motor_control);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_R:
-                motor_right.refer_vel = info->packet.motor_control;
-                counter_alive[1] = 0; //Reset time emergency
+                set_motor_velocity(REF_MOTOR_RIGHT, info->packet.motor_control);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case ENABLE_MOTOR_L:
@@ -192,19 +188,19 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_L:
-                send.motor_control = motor_left.refer_vel;
+                send.motor_control = get_motor_information(REF_MOTOR_LEFT).refer_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_R:
-                send.motor_control = motor_right.refer_vel;
+                send.motor_control = get_motor_information(REF_MOTOR_RIGHT).refer_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_L:
-                send.motor_control = motor_left.measure_vel;
+                send.motor_control = get_motor_information(REF_MOTOR_LEFT).measure_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_R:
-                send.motor_control = motor_right.measure_vel;
+                send.motor_control = get_motor_information(REF_MOTOR_RIGHT).measure_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case ENABLE_MOTOR_L:
@@ -220,11 +216,11 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_L:
-                send.motor = motor_left;
+                send.motor = get_motor_information(REF_MOTOR_LEFT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_R:
-                send.motor = motor_right;
+                send.motor = get_motor_information(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case VELOCITY_MIS:

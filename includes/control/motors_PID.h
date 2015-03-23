@@ -50,13 +50,6 @@ extern "C" {
 #define MAX3 22000 // about 210 RPM
     // <<<<< Speed zones in millirad/sec
 
-    //Internal definition gain for odometry
-
-    typedef struct k_odo {
-        float k_left;
-        float k_right;
-    } k_odo_t;
-
     /******************************************************************************/
     /* System Function Prototypes                                                 */
     /******************************************************************************/
@@ -108,9 +101,16 @@ extern "C" {
      * Write a correct value of motor reference and if necessary modify
      * reference to control contraint.
      * @param motor Number motor
+     * @param ref_velocity reference of velocity
      * @return Time to compute this function
      */
-    int MotorVelocityReference(short motor);
+    int set_motor_velocity(short motor, int16_t ref_velocity);
+    /**
+     * Return information about motor. Reference, velocity measured, control.
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_information(short motIdx);
     /**
      * Return number of pulse encoder
      * @param motIdx number motor

@@ -47,14 +47,10 @@
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
  */
-//tPID PIDstruct1; // PID motore Sinistra
 fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
-fractional kCoeffs1[3]; //Coefficienti KP, KI, KD Per PID1 Sinistra
-//tPID PIDstruct2; //PID motore Destra
 fractional abcCoefficient2[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
-fractional kCoeffs2[3]; //Coefficienti KP, KI, KD Per PID2 Destra
 
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
@@ -65,11 +61,17 @@ typedef struct new_motor {
     //Use ONLY in firmware
     uint8_t k_mul; // k_vel multiplier according to IC scale
     volatile int PulsEnc; //Buffer for deadReckoning
+    float last_velocity;
+    unsigned int counter_alive;
+    unsigned int counter_stop;
     //Common
     state_controller_t state;
     parameter_motor_t parameter_motor;
+    motor_t motor;
+    //PID
     pid_control_t pid;
     tPID PIDstruct;
+    fractional kCoeffs[3]; //Coefficients KP, KI, KD
 } new_motor_t;
 new_motor_t motors[NUM_MOTORS];
 
@@ -77,24 +79,12 @@ new_motor_t motors[NUM_MOTORS];
 int16_t velocity[NUM_VALUES];
 
 constraint_t constraint;
-//pid_control_t pid_left, pid_right;
-//motor_control_t motor_ref[NUM_MOTORS];
-//state_controller_t motor_state[NUM_MOTORS];
-motor_t motor_left, motor_right;
-
-
-
-k_odo_t k_odo;
-float wheel_m;
 
 //variables for emergency
-unsigned int counter_alive[NUM_MOTORS];
-unsigned int counter_stop[NUM_MOTORS];
 emergency_t emergency;
 float emergency_step = 0;
 float emergency_stop = 0;
 bool save_velocity = true;
-float last_motor_left, last_motor_right;
 
 /**/
 // From interrupt
@@ -119,21 +109,15 @@ parameter_motor_t init_parameter_motors(short num) {
     parameter.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
     parameter.versus = 1;
     parameter.enable_set = false;
+    motors[num].motor.control_vel = 0;
+    motors[num].motor.measure_vel = 0;
+    motors[num].motor.refer_vel = 0;
+    motors[num].motor.current = 0;
     switch (num) {
         case REF_MOTOR_LEFT:
-            motor_left.control_vel = 0;
-            motor_left.measure_vel = 0;
-            motor_left.refer_vel = 0;
-            motor_left.current = 0;
-
             constraint.max_left = 25000;
             break;
         case REF_MOTOR_RIGHT:
-            motor_right.control_vel = 0;
-            motor_right.measure_vel = 0;
-            motor_right.refer_vel = 0;
-            motor_right.current = 0;
-
             constraint.max_right = 25000;
             break;
     }
@@ -170,38 +154,29 @@ pid_control_t init_pid_control(short num) {
 void update_pid(short num, pid_control_t pid) {
     // Update value of pid
     motors[num].pid = pid;
+    motors[num].kCoeffs[0] = Q15(motors[num].pid.kp);
+    motors[num].kCoeffs[1] = Q15(motors[num].pid.ki);
+    motors[num].kCoeffs[2] = Q15(motors[num].pid.kd);
     switch (num) {
         case REF_MOTOR_LEFT:
-            kCoeffs1[0] = Q15(motors[num].pid.kp);
-            kCoeffs1[1] = Q15(motors[num].pid.ki);
-            kCoeffs1[2] = Q15(motors[num].pid.kd);
-
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
             motors[num].PIDstruct.abcCoefficients = &abcCoefficient1[0];
             //Set up pointer to controller history samples
             motors[num].PIDstruct.controlHistory = &controlHistory1[0];
-            // Clear the controler history and the controller output
-            PIDInit(&motors[num].PIDstruct);
-            //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-            PIDCoeffCalc(&kCoeffs1[0], &motors[num].PIDstruct);
             break;
         case REF_MOTOR_RIGHT:
-            kCoeffs2[0] = Q15(motors[num].pid.kp);
-            kCoeffs2[1] = Q15(motors[num].pid.ki);
-            kCoeffs2[2] = Q15(motors[num].pid.kd);
-
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
             motors[num].PIDstruct.abcCoefficients = &abcCoefficient2[0];
             //Set up pointer to controller history samples
             motors[num].PIDstruct.controlHistory = &controlHistory2[0];
-            // Clear the controler history and the controller output
-            PIDInit(&motors[num].PIDstruct);
-            //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-            PIDCoeffCalc(&kCoeffs2[0], &motors[num].PIDstruct);
             break;
     }
+    // Clear the controler history and the controller output
+    PIDInit(&motors[num].PIDstruct);
+    //Derive the a,b, & c coefficients from the Kp, Ki & Kd
+    PIDCoeffCalc(&motors[num].kCoeffs[0], &motors[num].PIDstruct);
 }
 
 /* inline */ pid_control_t get_pid_value(short motIdx) {
@@ -210,8 +185,8 @@ void update_pid(short num, pid_control_t pid) {
 
 emergency_t init_parameter_emergency(short num) {
     emergency_t emer;
-    counter_alive[num] = 0;
-    counter_stop[num] = 0;
+    motors[num].counter_alive = 0;
+    motors[num].counter_stop = 0;
     emergency.slope_time = 1.0;
     emergency.timeout = 500;
     emergency.bridge_off = 2.0;
@@ -224,22 +199,27 @@ void update_parameter_emergency(short num, emergency_t emergency_data) {
     emergency_stop = emergency.bridge_off * FRTMR1;
 }
 
-int MotorVelocityReference(short number) {
+int set_motor_velocity(short number, int16_t ref_velocity) {
     unsigned int t = TMR1; // Timing function
-
+    motors[number].counter_alive = 0; //Reset time emergency
+    motors[number].motor.refer_vel = ref_velocity;
     switch (number) {
         case REF_MOTOR_LEFT:
-            if (abs(motor_left.refer_vel) > constraint.max_left) {
-                motor_left.refer_vel = SGN(motor_left.refer_vel) * constraint.max_left;
+            if (abs(motors[number].motor.refer_vel) > constraint.max_left) {
+                motors[number].motor.refer_vel = SGN(motors[number].motor.refer_vel) * constraint.max_left;
             }
             break;
         case REF_MOTOR_RIGHT:
-            if (abs(motor_right.refer_vel) > constraint.max_right) {
-                motor_right.refer_vel = SGN(motor_right.refer_vel) * constraint.max_right;
+            if (abs(motors[number].motor.refer_vel) > constraint.max_right) {
+                motors[number].motor.refer_vel = SGN(motors[number].motor.refer_vel) * constraint.max_right;
             }
             break;
     }
     return TMR1 - t; // Time of esecution
+}
+
+/* inline */ motor_t get_motor_information(short motIdx) {
+    return motors[motIdx].motor;
 }
 
 /* inline */ int get_pulse_encoder(short motIdx) {
@@ -268,7 +248,7 @@ void UpdateStateController(short num, motor_control_t state) {
             motors[num].state = state;
             MOTOR_ENABLE1 = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
-                last_motor_left = motor_left.refer_vel;
+                motors[num].last_velocity = motors[num].motor.refer_vel;
             }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
@@ -278,7 +258,7 @@ void UpdateStateController(short num, motor_control_t state) {
             motors[num].state = state;
             MOTOR_ENABLE2 = enable ^ motors[num].parameter_motor.enable_set;
             if(state == STATE_CONTROL_EMERGENCY) {
-                last_motor_right = motor_right.refer_vel;
+                motors[num].last_velocity = motors[num].motor.refer_vel;
             }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
@@ -318,36 +298,26 @@ int MotorTaskController(void) {
                 //TODO to be implemented
                 break;
             case STATE_CONTROL_VELOCITY:
-                /**
-                 * Enable motors and check velocity constraint and save references
-                 */
-                MotorVelocityReference(i);
+                // No other operations
                 break;
             case STATE_CONTROL_TORQUE:
                 //TODO to be implemented
                 break;
             default:
-                switch(i) {
-                    case 0:
-                        motor_left.refer_vel = 0;
-                        break;
-                    case 1:
-                        motor_right.refer_vel = 0;
-                        break;
-                }
+                motors[i].motor.refer_vel = 0;
                 break;
         }
         // Emergency controller
         if (motors[i].state > STATE_CONTROL_DISABLE) {
-            if ((counter_alive[i] + 1) >= emergency.timeout) {
+            if ((motors[i].counter_alive + 1) >= emergency.timeout) {
                 /**
                  * Set Motor in emergency mode
                  */
                 UpdateStateController(i, STATE_CONTROL_EMERGENCY);
-                counter_stop[i] = 0;
-                counter_alive[i] = 0;
+                motors[i].counter_stop = 0;
+                motors[i].counter_alive = 0;
             } else
-                counter_alive[i]++;
+                motors[i].counter_alive++;
         }
     }
 
@@ -357,7 +327,7 @@ int MotorTaskController(void) {
 void SelectIcPrescaler(int motIdx) {
 
     if (motIdx == 0) {
-        int16_t vel0 = abs(motor_left.measure_vel);
+        int16_t vel0 = abs(motors[motIdx].motor.measure_vel);
 
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
@@ -400,7 +370,7 @@ void SelectIcPrescaler(int motIdx) {
                 break;
         }
     } else {
-        int16_t vel1 = abs(motor_right.measure_vel);
+        int16_t vel1 = abs(motors[motIdx].motor.measure_vel);
         switch (IC2CONbits.ICM) {
             case IC_MODE0:
                 if (vel1 >= MAX1) {
@@ -456,7 +426,7 @@ void measureVelocity(short num) {
             timePeriodL = 0;
             SIG_VELtmp = SIG_VELL;
             SIG_VELL = 0;
-            motor_left.measure_vel = 0;
+            motors[num].motor.measure_vel = 0;
 
             motors[num].PulsEnc += (int) POS1CNT; // Odometry
             //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * k_mul; // Odometry to angular
@@ -466,7 +436,7 @@ void measureVelocity(short num) {
                 int16_t ic_contrib = SIG_VELtmp * ((motors[num].parameter_motor.k_vel * motors[num].k_mul) / timePeriodtmp);
                 //int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
                 // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
-                motor_left.measure_vel = ic_contrib;
+                motors[num].motor.measure_vel = ic_contrib;
             }
             //SelectIcPrescaler(0,motor_left.measure_vel);
             break;
@@ -475,14 +445,14 @@ void measureVelocity(short num) {
             timePeriodR = 0;
             SIG_VELtmp = SIG_VELR;
             SIG_VELR = 0;
-            motor_right.measure_vel = 0;
+            motors[num].motor.measure_vel = 0;
 
             motors[num].PulsEnc += (int) POS2CNT; // Odometry
             POS2CNT = 0;
 
             // Speed calculation
             if (SIG_VELtmp) {
-                motor_right.measure_vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / (timePeriodtmp * motors[num].k_mul));
+                motors[num].motor.measure_vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / (timePeriodtmp * motors[num].k_mul));
             }
             //SelectIcPrescaler(1,motor_right.measure_vel);
             break;
@@ -495,27 +465,19 @@ int MotorPID(short num) {
 
     switch (num) {
         case REF_MOTOR_LEFT:
-            motors[num].PIDstruct.controlReference = Q15(((float) motor_left.refer_vel) / constraint.max_left); // Setpoint
-            motors[num].PIDstruct.measuredOutput = Q15(((float) motor_left.measure_vel) / constraint.max_left); // Measure
-
-            PID(&motors[num].PIDstruct); // PID execution
-            // Control value calculation
-            motor_left.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
-
-            pid_control = (motor_left.control_vel >> 4) + 2048; // PWM value
+            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].motor.refer_vel) / constraint.max_left); // Setpoint
+            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].motor.measure_vel) / constraint.max_left); // Measure
             break;
         case REF_MOTOR_RIGHT:
-            motors[num].PIDstruct.controlReference = Q15(((float) motor_right.refer_vel) / constraint.max_right); // Setpoint
-            motors[num].PIDstruct.measuredOutput = Q15(((float) motor_right.measure_vel) / constraint.max_right); // Measure
-
-            PID(&motors[num].PIDstruct); // PID execution
-            // Control value calculation
-            motor_right.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
-
-            pid_control = (motor_right.control_vel >> 4) + 2048; // PWM value
-
+            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].motor.refer_vel) / constraint.max_right); // Setpoint
+            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].motor.measure_vel) / constraint.max_right); // Measure
             break;
     }
+
+    PID(&motors[num].PIDstruct); // PID execution
+    // Control value calculation
+    motors[num].motor.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
+    pid_control = (motors[num].motor.control_vel >> 4) + 2048; // PWM value
 
     // PWM output
     SetDCMCPWM1(num+1, pid_control, 0);
@@ -524,31 +486,15 @@ int MotorPID(short num) {
 }
 
 bool Emergency(short num) {
-    switch (num) {
-        case REF_MOTOR_LEFT:
-            motor_left.refer_vel -= (int16_t) (last_motor_left / emergency_step + 0.5f);
-            if (SGN(motor_left.refer_vel) * last_motor_left < 0)
-                motor_left.refer_vel = 0;
-            if (motor_left.refer_vel == 0) {
-                if ((counter_stop[num] + 1) >= emergency_stop) {
-                    UpdateStateController(num, STATE_CONTROL_DISABLE);
-                    counter_stop[num] = 0;
-                } else
-                    counter_stop[num]++;
-            }
-            break;
-        case REF_MOTOR_RIGHT:
-            motor_right.refer_vel -= (int16_t) (last_motor_right / emergency_step + 0.5f);
-            if (SGN(motor_right.refer_vel) * last_motor_right < 0)
-                motor_right.refer_vel = 0;
-            if (motor_right.refer_vel == 0) {
-                if ((counter_stop[num] + 1) >= emergency_stop) {
-                    UpdateStateController(num, STATE_CONTROL_DISABLE);
-                    counter_stop[num] = 0;
-                } else
-                    counter_stop[num]++;
-            }
-            break;
+    motors[num].motor.refer_vel -= (int16_t) (motors[num].last_velocity / emergency_step + 0.5f);
+    if (SGN(motors[num].motor.refer_vel) * motors[num].last_velocity < 0)
+        motors[num].motor.refer_vel = 0;
+    if (motors[num].motor.refer_vel == 0) {
+        if ((motors[num].counter_stop + 1) >= emergency_stop) {
+            UpdateStateController(num, STATE_CONTROL_DISABLE);
+            motors[num].counter_stop = 0;
+        } else
+            motors[num].counter_stop++;
     }
     return true;
 }
@@ -562,6 +508,6 @@ void adc_motors_current(void) {
         ADCValueTmp[0] += AdcBuffer[0][AdcCount]; //Sum for AN0
         ADCValueTmp[1] += AdcBuffer[1][AdcCount]; //Sum for AN1
     }
-    motor_left.current = ADCValueTmp[0] >> 6; //Shift
-    motor_right.current = ADCValueTmp[1] >> 6; //Shift
+    motors[0].motor.current = ADCValueTmp[0] >> 6; //Shift
+    motors[1].motor.current = ADCValueTmp[1] >> 6; //Shift
 }

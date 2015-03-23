@@ -42,6 +42,12 @@
 #include "communication/parsing_messages.h"
 #include "system/user.h"
 
+//Internal definition gain for odometry
+typedef struct k_odo {
+    float k_left;
+    float k_right;
+} k_odo_t;
+
 //State controller
 volatile state_controller_t control_state = 0;
 
@@ -51,9 +57,10 @@ unsigned int counter_delta = 0;
 bool autosend_delta_odometry = false;
 
 float sinTh_old = 0, cosTh_old = 1;
+k_odo_t k_odo;
+float wheel_m;
 
 //Definition value for parameter unicycle
-
 typedef struct parameter_unicycle_int {
     long radius_l;
     long radius_r;
@@ -66,13 +73,7 @@ velocity_t vel_rif, vel_mis;
 volatile parameter_unicycle_t parameter_unicycle;
 
 // From motors PID
-//extern motor_control_t motor_ref[NUM_MOTORS];
-//extern unsigned int control_motor_state[NUM_MOTORS];
-//extern parameter_motor_t parameter_motor_left, parameter_motor_right;
-extern motor_t motor_left, motor_right;
-//extern volatile int PulsEncL, PulsEncR;
-extern k_odo_t k_odo;
-extern float wheel_m;
+//extern motor_t motor_left, motor_right;
 
 /******************************************************************************/
 /* Dead Reckoning functions                                                   */
@@ -86,8 +87,6 @@ void init_parameter_unicycle(void) {
     parameter_unicycle.sp_min = 0.0001; // FLT_MIN
     update_parameter_unicycle();
 
-    vel_rif.v = 0;
-    vel_rif.w = 0;
     vel_mis.v = 0;
     vel_mis.w = 0;
 }
@@ -142,16 +141,12 @@ int HighLevelTaskController(void) {
              * Measure linear and angular velocity for unicycle robot
              */
             VelocityMeasure();
-            /**
-             * Convertion linear velocity and angular velocity to motor left and motor right
-             */
-            VelToMotorReference();
             break;
         case STATE_CONTROL_HIGH_CONFIGURATION:
             break;
         default:
-            motor_left.refer_vel = 0;
-            motor_right.refer_vel = 0;
+            set_motor_velocity(REF_MOTOR_LEFT, 0);
+            set_motor_velocity(REF_MOTOR_RIGHT, 0);
             break;
     }
     return TMR1 - t; // Time of esecution
@@ -225,38 +220,42 @@ int odometry(coordinate_t delta) {
     return TMR1 - t; // Time of esecution
 }
 
-int VelToMotorReference(void) {
+int set_high_velocity(velocity_t velocity) {
     unsigned int t = TMR1; // Timing function
 
+    vel_rif = velocity;
     // >>>>> References calculation
     long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
     long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // >>>>> Saturation on 16 bit values
     if(motor_left_refer > 32767) {
-        motor_left.refer_vel = 32767;
+        set_motor_velocity(REF_MOTOR_LEFT, 32767);
     } else if (motor_left_refer < -32768) {
-        motor_left.refer_vel = -32768;
+        set_motor_velocity(REF_MOTOR_LEFT, -32768);
     } else {
-        motor_left.refer_vel = (int16_t) motor_left_refer;
+        set_motor_velocity(REF_MOTOR_LEFT, motor_left_refer);
     }
     if(motor_right_refer > 32767) {
-        motor_right.refer_vel = 32767;
+        set_motor_velocity(REF_MOTOR_RIGHT, 32767);
     } else if (motor_right_refer < -32768) {
-        motor_right.refer_vel = -32768;
+        set_motor_velocity(REF_MOTOR_RIGHT, -32768);
     } else {
-        motor_right.refer_vel = (int16_t) motor_right_refer;
+        set_motor_velocity(REF_MOTOR_RIGHT, motor_right_refer);
     }
     // <<<<< Saturation on 16 bit values
 
     return TMR1 - t; // Time of esecution
 }
 
+/* inline */ velocity_t get_high_velocity_ref(void) {
+    return vel_rif;
+}
+
 int VelocityMeasure(void) {
     unsigned int t = TMR1; // Timing function
-
-    long vel_v = (parameter_unicycle_int.radius_r * motor_right.measure_vel + parameter_unicycle_int.radius_l * motor_left.measure_vel) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * motor_right.measure_vel - parameter_unicycle_int.radius_l * motor_left.measure_vel) / (2 * parameter_unicycle_int.wheelbase);
+    long vel_v = (parameter_unicycle_int.radius_r * get_motor_information(REF_MOTOR_RIGHT).measure_vel + parameter_unicycle_int.radius_l * get_motor_information(REF_MOTOR_LEFT).measure_vel) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * get_motor_information(REF_MOTOR_RIGHT).measure_vel - parameter_unicycle_int.radius_l * get_motor_information(REF_MOTOR_LEFT).measure_vel) / (2 * parameter_unicycle_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
 

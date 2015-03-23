@@ -70,9 +70,16 @@ extern "C" {
 
     /**
      * Evaluate linear and angular velocity from unicycle robot.
+     * @param set velocity to control
      * @return time to compute this function
      */
-    int VelToMotorReference(void);
+    int set_high_velocity(velocity_t vel_rif);
+
+    /**
+     * Return velocity unicycle robot
+     * @return return velocity unicycle
+     */
+    inline velocity_t get_high_velocity_ref(void);
 
     /**
      * Convertion data from rotor motors measure and save value for velocity.
