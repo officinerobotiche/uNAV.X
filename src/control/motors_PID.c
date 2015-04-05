@@ -62,6 +62,7 @@ pin_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 typedef struct new_motor {
     //Use ONLY in firmware
     pin_t * pin_enable;
+    unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     volatile int PulsEnc; //Buffer for deadReckoning
     float last_velocity;
@@ -121,6 +122,7 @@ void init_motor(short num) {
             constraint.max_right = 25000;
             break;
     }
+    motors[num].CS_mask = 1 << motors[num].pin_enable->CS_pin;
     motors[num].k_mul = 1;
 }
 
@@ -332,42 +334,39 @@ int MotorTaskController(void) {
     return TMR1 - t; // Time of esecution
 }
 
-void SelectIcPrescaler(int motIdx) {
-    int16_t vel = abs(motors[motIdx].motor.measure_vel);
+void SelectIcPrescaler(int motIdx, int16_t abs_vel) {
 
     if (motIdx == 0) {
-        
-
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
-                if (vel >= MAX1) {
+                if (abs_vel >= MAX1) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
-                if (vel < MIN1) {
+                if (abs_vel < MIN1) {
                     motors[motIdx].k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
-                } else if (vel >= MAX2) {
+                } else if (abs_vel >= MAX2) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
-                if (vel < MIN2) {
+                if (abs_vel < MIN2) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
-                } else if (vel >= MAX3) {
+                } else if (abs_vel >= MAX3) {
                     motors[motIdx].k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
-                if (vel < MIN3) {
+                if (abs_vel < MIN3) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
@@ -381,34 +380,34 @@ void SelectIcPrescaler(int motIdx) {
     } else {
         switch (IC2CONbits.ICM) {
             case IC_MODE0:
-                if (vel >= MAX1) {
+                if (abs_vel >= MAX1) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
                 }
                 break;
 
             case IC_MODE1:
-                if (vel < MIN1) {
+                if (abs_vel < MIN1) {
                     motors[motIdx].k_mul = 1;
                     SwitchIcPrescaler(0, motIdx);
-                } else if (vel >= MAX2) {
+                } else if (abs_vel >= MAX2) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
                 break;
 
             case IC_MODE2:
-                if (vel < MIN2) {
+                if (abs_vel < MIN2) {
                     motors[motIdx].k_mul = 2;
                     SwitchIcPrescaler(1, motIdx);
-                } else if (vel >= MAX3) {
+                } else if (abs_vel >= MAX3) {
                     motors[motIdx].k_mul = 32;
                     SwitchIcPrescaler(3, motIdx);
                 }
                 break;
 
             case IC_MODE3:
-                if (vel < MIN3) {
+                if (abs_vel < MIN3) {
                     motors[motIdx].k_mul = 8;
                     SwitchIcPrescaler(2, motIdx);
                 }
@@ -446,7 +445,7 @@ void measureVelocity(short num) {
                 // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
                 motors[num].motor.measure_vel = ic_contrib;
             }
-            //SelectIcPrescaler(0,motor_left.measure_vel);
+            SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
             break;
         case REF_MOTOR_RIGHT:
             timePeriodtmp = timePeriodR;
@@ -462,7 +461,7 @@ void measureVelocity(short num) {
             if (SIG_VELtmp) {
                 motors[num].motor.measure_vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / (timePeriodtmp * motors[num].k_mul));
             }
-            //SelectIcPrescaler(1,motor_right.measure_vel);
+            SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
             break;
     }
 }

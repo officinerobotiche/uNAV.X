@@ -186,8 +186,10 @@ extern "C" {
 
     /**
      * Select the correct Input Capture prescaler
+     * @param motIdx number motor
+     * @param vel absolute velocity
      */
-    void SelectIcPrescaler(int motIdx);
+    void SelectIcPrescaler(int motIdx, int16_t abs_vel);
 
     /**
      * Mean valure for current measure motors

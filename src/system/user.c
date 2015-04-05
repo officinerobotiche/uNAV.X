@@ -278,7 +278,7 @@ void InitLed(void) {
     for (i = 0; i < LED_NUM; ++i) {
         led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
         led_controller[i].wait = 0;
-        UpdateBlink(i, 0);
+        UpdateBlink(i, LED_OFF);
     }
 }
 
