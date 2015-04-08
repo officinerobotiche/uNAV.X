@@ -118,6 +118,7 @@ void init_process(void) {
     priority.process[PROCESS_PID_RIGHT] = VEL_PID_LEVEL;
     priority.process[PROCESS_VELOCITY] = VEL_PID_LEVEL;
     priority.process[PROCESS_ODOMETRY] = DEAD_RECK_LEVEL;
+    priority.process[PROCESS_MEASURE_VEL] = MEASURE_LEVEL;
     frequency.length = PROCESS_MOTION_LENGTH;
     frequency.idle = 0;
     frequency.parse_packet = 0;
@@ -220,6 +221,12 @@ void InitInterrupts(void) {
     IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
     RX_PARSER_ENABLE = 1; // Enable Output Compare Channel 2 interrupt
 
+    //For measure position and velocity estimation
+    MEASURE_ENABLE = 0; // Disable Output Compare Channel 3 interrupt
+    MEASURE_PRIORITY = priority.process[PROCESS_MEASURE_VEL]; // Set Output Compare Channel 3 Priority Level
+    IFS1bits.OC3IF = 0; // Clear Output Compare Channel 3 Interrupt Flag
+    MEASURE_ENABLE = 1; // Enable Output Compare Channel 3 interrupt
+    
     // For dead reckoning
     DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
     DEAD_RECK_PRIORITY = priority.process[PROCESS_ODOMETRY]; // Set RTC Priority Level

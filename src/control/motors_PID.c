@@ -423,7 +423,8 @@ void SelectIcPrescaler(int motIdx, int16_t abs_vel) {
 
 #define INV_PID_TIME 1000 // TODO replace with real dT = 1/f_pid
 
-void measureVelocity(short num) {
+int measureVelocity(short num) {
+    unsigned int t = TMR1; // Timing function
     unsigned long timePeriodtmp;
     int SIG_VELtmp;
 
@@ -436,7 +437,7 @@ void measureVelocity(short num) {
             motors[num].motor.measure_vel = 0;
 
             motors[num].PulsEnc += (int) POS1CNT; // Odometry
-            //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * k_mul; // Odometry to angular
+            //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * motors[num].k_mul; // Odometry to angular
             POS1CNT = 0;
             // Speed calculation 
             if (SIG_VELtmp) {
@@ -464,6 +465,7 @@ void measureVelocity(short num) {
             SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
             break;
     }
+    return TMR1 - t; // Time of esecution
 }
 
 int MotorPID(short num) {

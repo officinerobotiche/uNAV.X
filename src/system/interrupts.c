@@ -69,82 +69,51 @@ extern bool led_effect;
 /*                                                                            */
 /* dsPIC33F Primary Interrupt Vector Names:                                   */
 /*                                                                            */
-/* _INT0Interrupt      _C1Interrupt                                           */
-/* _IC1Interrupt       _DMA3Interrupt                                         */
-/* _OC1Interrupt       _IC3Interrupt                                          */
-/* _T1Interrupt        _IC4Interrupt                                          */
-/* _DMA0Interrupt      _IC5Interrupt                                          */
-/* _IC2Interrupt       _IC6Interrupt                                          */
-/* _OC2Interrupt       _OC5Interrupt                                          */
-/* _T2Interrupt        _OC6Interrupt                                          */
-/* _T3Interrupt        _OC7Interrupt                                          */
-/* _SPI1ErrInterrupt   _OC8Interrupt                                          */
-/* _SPI1Interrupt      _DMA4Interrupt                                         */
-/* _U1RXInterrupt      _T6Interrupt                                           */
-/* _U1TXInterrupt      _T7Interrupt                                           */
-/* _ADC1Interrupt      _SI2C2Interrupt                                        */
-/* _DMA1Interrupt      _MI2C2Interrupt                                        */
-/* _SI2C1Interrupt     _T8Interrupt                                           */
-/* _MI2C1Interrupt     _T9Interrupt                                           */
-/* _CNInterrupt        _INT3Interrupt                                         */
-/* _INT1Interrupt      _INT4Interrupt                                         */
-/* _ADC2Interrupt      _C2RxRdyInterrupt                                      */
-/* _DMA2Interrupt      _C2Interrupt                                           */
-/* _OC3Interrupt       _DCIErrInterrupt                                       */
-/* _OC4Interrupt       _DCIInterrupt                                          */
-/* _T4Interrupt        _DMA5Interrupt                                         */
-/* _T5Interrupt        _U1ErrInterrupt                                        */
-/* _INT2Interrupt      _U2ErrInterrupt                                        */
-/* _U2RXInterrupt      _DMA6Interrupt                                         */
-/* _U2TXInterrupt      _DMA7Interrupt                                         */
-/* _SPI2ErrInterrupt   _C1TxReqInterrupt                                      */
-/* _SPI2Interrupt      _C2TxReqInterrupt                                      */
-/* _C1RxRdyInterrupt                                                          */
-/*                                                                            */
-/* dsPIC33E Primary Interrupt Vector Names:                                   */
-/*                                                                            */
-/* _INT0Interrupt     _IC4Interrupt      _U4TXInterrupt                       */
-/* _IC1Interrupt      _IC5Interrupt      _SPI3ErrInterrupt                    */
-/* _OC1Interrupt      _IC6Interrupt      _SPI3Interrupt                       */
-/* _T1Interrupt       _OC5Interrupt      _OC9Interrupt                        */
-/* _DMA0Interrupt     _OC6Interrupt      _IC9Interrupt                        */
-/* _IC2Interrupt      _OC7Interrupt      _PWM1Interrupt                       */
-/* _OC2Interrupt      _OC8Interrupt      _PWM2Interrupt                       */
-/* _T2Interrupt       _PMPInterrupt      _PWM3Interrupt                       */
-/* _T3Interrupt       _DMA4Interrupt     _PWM4Interrupt                       */
-/* _SPI1ErrInterrupt  _T6Interrupt       _PWM5Interrupt                       */
-/* _SPI1Interrupt     _T7Interrupt       _PWM6Interrupt                       */
-/* _U1RXInterrupt     _SI2C2Interrupt    _PWM7Interrupt                       */
-/* _U1TXInterrupt     _MI2C2Interrupt    _DMA8Interrupt                       */
-/* _AD1Interrupt      _T8Interrupt       _DMA9Interrupt                       */
-/* _DMA1Interrupt     _T9Interrupt       _DMA10Interrupt                      */
-/* _NVMInterrupt      _INT3Interrupt     _DMA11Interrupt                      */
-/* _SI2C1Interrupt    _INT4Interrupt     _SPI4ErrInterrupt                    */
-/* _MI2C1Interrupt    _C2RxRdyInterrupt  _SPI4Interrupt                       */
-/* _CM1Interrupt      _C2Interrupt       _OC10Interrupt                       */
-/* _CNInterrupt       _QEI1Interrupt     _IC10Interrupt                       */
-/* _INT1Interrupt     _DCIEInterrupt     _OC11Interrupt                       */
-/* _AD2Interrupt      _DCIInterrupt      _IC11Interrupt                       */
-/* _IC7Interrupt      _DMA5Interrupt     _OC12Interrupt                       */
-/* _IC8Interrupt      _RTCCInterrupt     _IC12Interrupt                       */
-/* _DMA2Interrupt     _U1ErrInterrupt    _DMA12Interrupt                      */
-/* _OC3Interrupt      _U2ErrInterrupt    _DMA13Interrupt                      */
-/* _OC4Interrupt      _CRCInterrupt      _DMA14Interrupt                      */
-/* _T4Interrupt       _DMA6Interrupt     _OC13Interrupt                       */
-/* _T5Interrupt       _DMA7Interrupt     _IC13Interrupt                       */
-/* _INT2Interrupt     _C1TxReqInterrupt  _OC14Interrupt                       */
-/* _U2RXInterrupt     _C2TxReqInterrupt  _IC14Interrupt                       */
-/* _U2TXInterrupt     _QEI2Interrupt     _OC15Interrupt                       */
-/* _SPI2ErrInterrupt  _U3ErrInterrupt    _IC15Interrupt                       */
-/* _SPI2Interrupt     _U3RXInterrupt     _OC16Interrupt                       */
-/* _C1RxRdyInterrupt  _U3TXInterrupt     _IC16Interrupt                       */
-/* _C1Interrupt       _USB1Interrupt     _ICDInterrupt                        */
-/* _DMA3Interrupt     _U4ErrInterrupt    _PWMSpEventMatchInterrupt            */
-/* _IC3Interrupt      _U4RXInterrupt     _PWMSecSpEventMatchInterrupt         */
+/* 08 |      _INT0Interrupt     | 47 | N.A. _IC5Interrupt                     */
+/* 09 | USED _IC1Interrupt      | 48 | N.A. _IC6Interrupt                     */
+/* 10 | USED _OC1Interrupt      | 49 | N.A. _OC5Interrupt                     */
+/* 11 | USED _T1Interrupt       | 50 | N.A. _OC6Interrupt                     */
+/* 12 | USED _DMA0Interrupt     | 51 | N.A. _OC7Interrupt                     */
+/* 13 | USED _IC2Interrupt      | 52 | N.A. _OC8Interrupt                     */
+/* 14 | USED _OC2Interrupt      | 53 |      _PMPInterrupt                     */
+/* 15 | USED _T2Interrupt       | 54 |      _DMA4Interrupt                    */
+/* 16 |      _T3Interrupt       | 55 | N.A. _T6Interrupt                      */
+/* 17 |      _SPI1ErrInterrupt  | 56 | N.A. _T7Interrupt                      */
+/* 18 |      _SPI1Interrupt     | 57 | N.A. _SI2C2Interrupt                   */
+/* 19 | USED _U1RXInterrupt     | 58 | N.A. _MI2C2Interrupt                   */
+/* 20 |  X   _U1TXInterrupt     | 59 | N.A. _T8Interrupt                      */
+/* 21 |  X   _ADC1Interrupt     | 60 | N.A. _T9Interrupt                      */
+/* 22 | USED _DMA1Interrupt     | 61 | N.A. _INT3Interrupt                    */
+/* 23 | N.A. _Interrupt         | 62 | N.A. _INT4Interrupt                    */
+/* 24 |      _SI2C1Interrupt    | 63 | N.A. _C2RxRdyInterrupt                 */
+/* 25 |      _MI2C1Interrupt    | 64 | N.A. _C2Interrupt                      */
+/* 26 |      _CM1Interrupt      | 65 |      _PWM1Interrupt                    */
+/* 27 |      _CNInterrupt       | 66 |      _QEI1Interrupt                    */
+/* 28 |      _INT1Interrupt     | 67 | N.A. _DCIErrInterrupt                  */
+/* 29 | N.A. _ADC2Interrupt     | 68 | N.A. _DCIInterrupt                     */
+/* 30 |      _IC7Interrupt      | 69 |      _DMA5Interrupt                    */
+/* 31 |      _IC8Interrupt      | 70 | USED _RTCCInterrupt                    */
+/* 32 |      _DMA2Interrupt     | 71 |      _PWM1FaultInterrupt               */
+/* 33 | USED _OC3Interrupt      | 72 | N.A. _Interrupt                        */
+/* 34 |      _OC4Interrupt      | 73 |      _U1ErrInterrupt                   */
+/* 35 |      _T4Interrupt       | 74 |      _U1ErrInterrupt                   */
+/* 36 |      _T5Interrupt       | 75 |      _CRCInterrupt                     */
+/* 37 |      _INT2Interrupt     | 76 |      _DMA6Interrupt                    */
+/* 38 |      _U2RXInterrupt     | 77 |      _DMA7Interrupt                    */
+/* 39 |      _U2TXInterrupt     | 78 |      _C1TxReqInterrupt                 */
+/* 40 |      _SPI2ErrInterrupt  | 79 | N.A. _C2TxReqInterrupt                 */
+/* 41 |      _SPI2Interrupt     | 80 | N.A. _Interrupt                        */
+/* 42 |      _C1RxRdyInterrupt  | 81 |      _PWM2Interrupt                    */
+/* 43 |      _C1Interrupt       | 82 |      _PWM2FaultInterrupt               */
+/* 44 |      _DMA3Interrupt     | 83 |      _QEI2Interrupt                    */
+/* 45 | N.A. _IC3Interrupt      | 84 | N.A. _Interrupt                        */
+/* 46 | N.A. _IC4Interrupt      | 85 | N.A. _Interrupt                        */
+/*                              | 86 |      _DAC1RInterrupt                   */
+/*                              | 87 |      _DAC1LInterrupt                   */
 /*                                                                            */
 /* For alternate interrupt vector naming, simply add 'Alt' between the prim.  */
 /* interrupt vector name '_' and the first character of the primary interrupt */
-/* vector name.  There is no Alternate Vector or 'AIVT' for the 33E family.   */
+/* vector name.                                                               */
 /*                                                                            */
 /* For example, the vector name _ADC2Interrupt becomes _AltADC2Interrupt in   */
 /* the alternate vector table.                                                */
@@ -220,6 +189,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     int led_counter = 0;
 
     if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
+        MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
         PID_FLAG = 1; //Start OC1Interrupt for PID control
         counter_pid = 0;
     }
@@ -256,6 +226,12 @@ void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
     PARSER_FLAG = 0; //interrupt flag reset
     time.parse_packet = parse_packet();
+}
+
+void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
+    time.process[PROCESS_MEASURE_VEL] = measureVelocity(REF_MOTOR_LEFT);
+    time.process[PROCESS_MEASURE_VEL] += measureVelocity(REF_MOTOR_RIGHT);
+    MEASURE_FLAG = 0;
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {

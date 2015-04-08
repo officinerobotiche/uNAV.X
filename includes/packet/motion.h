@@ -207,7 +207,7 @@ typedef int8_t state_controller_t;
 #define DELTA_ODOMETRY 19
 
 //Numbers and names associated at all processes
-#define PROCESS_MOTION_LENGTH 4
+#define PROCESS_MOTION_LENGTH 5
 #define PROCESS_PID_LEFT 0
 #define PID_LEFT_STRING "PID/Left"
 #define PROCESS_PID_RIGHT 1
@@ -216,6 +216,8 @@ typedef int8_t state_controller_t;
 #define VELOCITY_STRING "Velocity"
 #define PROCESS_ODOMETRY 3
 #define ODOMETRY_STRING "Odometry"
+#define PROCESS_MEASURE_VEL 4
+#define MEASURE_VEL_STRING "Measure vel"
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTION 'M'

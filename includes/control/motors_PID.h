@@ -162,8 +162,9 @@ extern "C" {
     /**
      * Measure velocity from Input Capture and QEI
      * @param number Number motor
+     * @return Time to Compute task control reference
      */
-    void measureVelocity(short num);
+    int measureVelocity(short num);
 
     /**
      * Esecution velocity PID for left motor
