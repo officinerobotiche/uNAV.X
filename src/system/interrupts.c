@@ -141,30 +141,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     t2 = IC1BUF;    // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
     IFS0bits.IC1IF = 0;
-    //timePeriodL = overTmrL * PR2 + t2 - t1; // PR2 is 0xFFFF
-    //overTmrL = 0;
-
-    //	if(QEI1CONbits.UPDN) SIG_VELL++;		//Save sign Vel L
-    //	else SIG_VELL--;
-    //	if(t2>t1)
-    //		timePeriodL = t2 - t1;
-    //	else
-    //		timePeriodL = (PR2 - t1) + t2;
+    timePeriodL = overTmrL * PR2 + t2 - t1; // PR2 is 0xFFFF
+    overTmrL = 0;
 
     //SIG_VELL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
     (QEI1CONbits.UPDN ? SIG_VELL++ : SIG_VELL--); //Save sign Vel L
-
-    if (overTmrL == 0) // TMR2 overflowed?
-    {// see Microchip AN545
-        timePeriodL += (t2 - t1);
-    }
-    else
-    {// [7a]
-        timePeriodL += (t2 + (PR2 - t1)
-          +(PR2 * (overTmrL - 1)));
-
-        overTmrL = 0;
-    }
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
@@ -176,11 +157,6 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
     overTmrR = 0;
     //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
     //	else SIG_VELR--;
-    //	if(t2>t1)
-    //		timePeriodR = t2 - t1;
-    //	else
-    //		timePeriodR = (PR2 - t1) + t2;
-    //Encoder speculare rispetto all'altro. Segni invertiti
     SIG_VELR = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
 }
 
@@ -210,9 +186,9 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    if (timePeriodL)
+    //if (timePeriodL)
     overTmrL++; // timer overflow counter for Left engines
-    if (timePeriodR)
+    //if (timePeriodR)
     overTmrR++; // timer overflow counter for Right engines
 }
 
