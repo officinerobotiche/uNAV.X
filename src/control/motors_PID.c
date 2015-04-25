@@ -35,6 +35,7 @@
 #include <dsp.h>
 #include <pwm12.h>
 #include "control/high_level_control.h"
+#include "control/linefollower.h"
 #include "control/motors_PID.h"       /* variables/params used by motorsPID.c         */
 #include "system/system.h"
 #include "system/user.h"

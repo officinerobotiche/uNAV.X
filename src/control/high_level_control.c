@@ -36,6 +36,7 @@
 #include <string.h>
 #include <float.h>
 
+#include "control/linefollower.h"
 #include "control/high_level_control.h"
 #include "control/motors_PID.h"
 #include "communication/serial.h"
@@ -146,6 +147,21 @@ int HighLevelTaskController(void) {
             VelToMotorReference();
             break;
         case STATE_CONTROL_HIGH_CONFIGURATION:
+            break;
+            
+        case STATE_CONTROL_LINEFOLLOWER:
+            /**
+             * Line following algoritm
+             */
+            linefollowing();
+            /**
+             * Measure linear and angular velocity for unicycle robot
+             */
+            VelocityMeasure();
+            /**
+             * Convertion linear velocity and angular velocity to motor left and motor right
+             */
+            VelToMotorReference();
             break;
         default:
             motor_left.refer_vel = 0;

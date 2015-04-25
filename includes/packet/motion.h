@@ -40,6 +40,7 @@
 #define STATE_CONTROL_HIGH_DISABLE 0
 #define STATE_CONTROL_HIGH_VELOCITY 1
 #define STATE_CONTROL_HIGH_CONFIGURATION 2
+#define STATE_CONTROL_LINEFOLLOWER 3
 
 /**
  * Message for emergency configuration
