@@ -108,6 +108,8 @@ int16_t main(void) {
         UpdateStateController(i, STATE_CONTROL_DISABLE);
     }
 
+    UpdateHighStateController(STATE_CONTROL_LINEFOLLOWER); // TODO: Test
+    
     while (1) {
 
     }

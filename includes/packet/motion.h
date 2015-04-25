@@ -33,6 +33,7 @@
 #define STATE_CONTROL_POSITION 2
 #define STATE_CONTROL_VELOCITY 3
 #define STATE_CONTROL_TORQUE 4
+#define STATE_CONTROL_LINEFOLLOWING 5
 
 /**
  * Define to select high state of control

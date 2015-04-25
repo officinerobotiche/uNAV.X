@@ -7,8 +7,11 @@
 
 #include "control/high_level_control.h"
 
+extern velocity_t vel_rif, vel_mis;
+
 void linefollowing()
 {
     // Our world!!!!
+    vel_rif.v = 0.2;
     
 }

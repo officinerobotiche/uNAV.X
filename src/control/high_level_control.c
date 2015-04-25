@@ -118,6 +118,7 @@ void update_coord(void) {
     cosTh_old = cosf(coordinate.theta);
 }
 
+
 void UpdateHighStateController(int state) {
     if (state != control_state) {
         control_state = state;
@@ -125,6 +126,12 @@ void UpdateHighStateController(int state) {
             case STATE_CONTROL_HIGH_DISABLE:
                 UpdateStateController(-1, STATE_CONTROL_DISABLE);
                 break;
+
+//              LINEFOLLOWER work in DEFAULT state : STATE_CONTROL_VELOCITY                
+//            case STATE_CONTROL_LINEFOLLOWER:
+//                UpdateStateController(-1, STATE_CONTROL_LINEFOLLOWING);
+//                break;
+                
             default:
                 UpdateStateController(-1, STATE_CONTROL_VELOCITY);
                 break;
@@ -146,6 +153,7 @@ int HighLevelTaskController(void) {
              */
             VelToMotorReference();
             break;
+            
         case STATE_CONTROL_HIGH_CONFIGURATION:
             break;
             
