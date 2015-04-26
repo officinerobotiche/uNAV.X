@@ -226,9 +226,9 @@ int odometry(coordinate_t delta) {
 int VelToMotorReference(void) {
     unsigned int t = TMR1; // Timing function
     // >>>>> Second part: references calculation
-    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (0.5f*parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (0.5f*parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
-
+    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (0.5f*parameter_unicycle.wheelbase * (vel_rif.w)))*1000);
+    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (0.5f*parameter_unicycle.wheelbase * (vel_rif.w)))*1000);
+    
     // TODO to avoid the following saturation we can normalize ref value! by Walt
 
     // >>>>> Saturation on 16 bit values
