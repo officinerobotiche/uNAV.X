@@ -78,7 +78,13 @@ extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_vel
 // From motors PID
 //extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 
-const int IcMode[4] = {0b001, 0b011, 0b100, 0b101};
+// Dynamic Interrupt Capture
+#define IC_MODE0    0b001 // 2X mode (default)
+#define IC_MODE1    0b011 // 1X mode
+#define IC_MODE2    0b100 // 1/4X mode
+#define IC_MODE3    0b101 // 1/16X mode
+#define IC_DISABLE  0b00
+const int IcMode[4] = {IC_MODE0, IC_MODE1, IC_MODE2, IC_MODE3};
 
 /******************************************************************************/
 /* System Level Functions                                                     */

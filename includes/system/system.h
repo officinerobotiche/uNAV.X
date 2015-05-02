@@ -81,15 +81,6 @@ extern "C" {
     #define ADC_BUFF 64
     #define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
 
-    // Dynamic Interrupt Capture
-    #define IC_MODE0    0b001 // 2X mode (default)
-    #define IC_MODE1    0b011 // 1X mode
-    #define IC_MODE2    0b100 // 1/4X mode
-    #define IC_MODE3    0b101 // 1/16X mode
-    #define IC_DISABLE  0b00
-
-    extern const int IcMode[4];
-
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
