@@ -135,6 +135,8 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 break;
             case VEL_MOTOR_MIS_L:
             case VEL_MOTOR_MIS_R:
+            case POS_MOTOR_MIS_L:
+            case POS_MOTOR_MIS_R:
             case MOTOR_L:
             case MOTOR_R:
             case VELOCITY_MIS:
@@ -162,10 +164,6 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 send.coordinate = coordinate;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-                //case DELTA_ODOMETRY:
-                //    send.delta_odometry = delta_odometry;
-                //    list_send[len] = createDataPacket(info->command, info->type, &send);
-                //    break;
             case PARAMETER_UNICYCLE:
                 send.parameter_unicycle = parameter_unicycle;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
@@ -221,6 +219,14 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
             case MOTOR_R:
                 send.motor = get_motor_information(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case POS_MOTOR_MIS_L:
+                //send.motor_control = get_motor_information(REF_MOTOR_LEFT).position;
+                //list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case POS_MOTOR_MIS_R:
+                //send.motor_control = get_motor_information(REF_MOTOR_RIGHT).position;
+                //list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case VELOCITY_MIS:
                 send.velocity = vel_mis;
