@@ -27,14 +27,21 @@ extern "C" {
     /**************************************************************************/
 
     /**
-     * Numbers of motors avaiable in this board
+     * Numbers of motors available in this board
      */
 #define NUM_MOTORS 2
 #define REF_MOTOR_LEFT 0
 #define REF_MOTOR_RIGHT 1
-    //Start define with fixed K_vel convertion velocity
+
+    // If CPR is before ratio
+    //    ThC = CPR * RATIO   
+    // else
+    //    ThC = RATIO
+    //Start define with fixed K_vel conversion velocity
+    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ]
 #define K_VEL 27925268.03190926
-    //Start define with fixed K_ang convertion angular
+    //Start define with fixed K_ang conversion angular
+    // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
 #define K_ANG 0.000174532925199
 
 #define DEFAULT_KP 0.6
@@ -74,7 +81,7 @@ extern "C" {
      */
     pid_control_t init_pid_control(short num);
     /**
-     * Transform float value recived from gain for PID right in Q15 value
+     * Transform float value received from gain for PID right in Q15 value
      * for dsp controller.
      * PID data structure: PIDstruct for PID 1 (Motor left)
      * PID data structure: PIDstruct for PID 1 (Motor right)
@@ -101,7 +108,7 @@ extern "C" {
     void update_parameter_emergency(short num, emergency_t emergency_data);
     /**
      * Write a correct value of motor reference and if necessary modify
-     * reference to control contraint.
+     * reference to control constraint.
      * @param motor Number motor
      * @param ref_velocity reference of velocity
      * @return Time to compute this function
@@ -128,11 +135,11 @@ extern "C" {
     /**
      * Return parameters from motor
      * @param motIdx number selected motor
-     * @return paramater motors
+     * @return parameter motors
      */
     inline parameter_motor_t get_parameter_motor(short motIdx);
     /**
-     * If not recive anything velocity messages. Start controlled stop motors
+     * If not receive anything velocity messages. Start controlled stop motors
      * @param number Number motor
      * @return start emergency mode or not.
      */
@@ -164,26 +171,26 @@ extern "C" {
     int measureVelocity(short num);
 
     /**
-     * Esecution velocity PID for left motor
+     * Execution velocity PID for left motor
      *           _____          _______
      * ref +    |     |  cont  |       |
      * --->o--->| PID |------->| Motor | -|-> measure
      *   -/|\   |_____|        |_______|  |
      *     |______________________________|
-     * We have three step for esecution PID controller on motor:
-     * 1. Evalute measure of velocity rotor (dtheta) are combined information
+     * We have three step for execution PID controller on motor:
+     * 1. Evaluate measure of velocity rotor (dtheta) are combined information
      * from Input Capture elaboration from relative encoder and QEI module
      * direction of rotation. In same time is saved pulse from QEI module. (This
      * information is important for odometry)
-     * 2. Load data (reference, measure) and esecution PID control and get value
-     * 3. Convertion PID value for PWM controller
+     * 2. Load data (reference, measure) and execution PID control and get value
+     * 3. Conversion PID value for PWM controller
      * @param number Number motor
      * @return time to compute parsing packet
      */
     int MotorPID(short num);
 
     /**
-     * Mean valure for current measure motors
+     * Mean value for current measure motors
      */
     void adc_motors_current(void);
 
