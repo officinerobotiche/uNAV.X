@@ -61,12 +61,6 @@ pin_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 
 #define BUFFER_SIZE 16
 
-typedef struct circular_buffer
-{
-  int16_t buffer[BUFFER_SIZE];
-  volatile unsigned int head;
-} ring_buffer;
-
 typedef struct new_motor {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
@@ -77,7 +71,6 @@ typedef struct new_motor {
     float last_velocity;
     unsigned int counter_alive;
     unsigned int counter_stop;
-    ring_buffer velocity;
     //Common
     state_controller_t state;
     parameter_motor_t parameter_motor;
@@ -112,14 +105,7 @@ extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* User Functions                                                             */
-
 /******************************************************************************/
-
-void store_in_buffer(ring_buffer* buff, int16_t data) {
-    unsigned int next = (unsigned int) (buff->head + 1) % BUFFER_SIZE;
-    buff->buffer[buff->head] = data;
-    buff->head = next;
-}
 
 void init_motor(short num) {
     motors[num].motor.control_vel = 0;
@@ -127,9 +113,9 @@ void init_motor(short num) {
     motors[num].motor.refer_vel = 0;
     motors[num].motor.current = 0;
     //Input capture information
-    //motors[num].ICinfo.SIG_VEL = 0;
-    //motors[num].ICinfo.overTmr = 0;
-    //motors[num].ICinfo.timePeriod = 0;
+    ICinfo[num].SIG_VEL = 0;
+    ICinfo[num].overTmr = 0;
+    ICinfo[num].timePeriod = 0;
     switch (num) {
         case REF_MOTOR_LEFT:
             motors[num].pin_enable = &enable1;
@@ -352,95 +338,6 @@ int MotorTaskController(void) {
     return TMR1 - t; // Time of esecution
 }
 
-void SelectIcPrescaler(int motIdx, int16_t abs_vel) {
-
-    if (motIdx == 0) {
-        switch (IC1CONbits.ICM) {
-            case IC_MODE0:
-                if (abs_vel >= MAX1) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                }
-                break;
-
-            case IC_MODE1:
-                if (abs_vel < MIN1) {
-                    motors[motIdx].k_mul = 1;
-                    SwitchIcPrescaler(0, motIdx);
-                } else if (abs_vel >= MAX2) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-
-            case IC_MODE2:
-                if (abs_vel < MIN2) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                } else if (abs_vel >= MAX3) {
-                    motors[motIdx].k_mul = 32;
-                    SwitchIcPrescaler(3, motIdx);
-                }
-                break;
-
-            case IC_MODE3:
-                if (abs_vel < MIN3) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-
-            default:
-                motors[motIdx].k_mul = 1;
-                SwitchIcPrescaler(0, motIdx);
-                break;
-        }
-    } else {
-        switch (IC2CONbits.ICM) {
-            case IC_MODE0:
-                if (abs_vel >= MAX1) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                }
-                break;
-
-            case IC_MODE1:
-                if (abs_vel < MIN1) {
-                    motors[motIdx].k_mul = 1;
-                    SwitchIcPrescaler(0, motIdx);
-                } else if (abs_vel >= MAX2) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-
-            case IC_MODE2:
-                if (abs_vel < MIN2) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                } else if (abs_vel >= MAX3) {
-                    motors[motIdx].k_mul = 32;
-                    SwitchIcPrescaler(3, motIdx);
-                }
-                break;
-
-            case IC_MODE3:
-                if (abs_vel < MIN3) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-
-            default:
-                motors[motIdx].k_mul = 1;
-                SwitchIcPrescaler(0, motIdx);
-                break;
-        }
-    }
-}
-
-#define INV_PID_TIME 1000 // TODO replace with real dT = 1/f_pid
-
 int measureVelocity(short num) {
     unsigned int t = TMR1; // Timing function
     unsigned long timePeriodtmp;
@@ -452,12 +349,9 @@ int measureVelocity(short num) {
     ICinfo[num].SIG_VEL = 0;
     // Evaluate velocity
     if (SIG_VELtmp) {
-        //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * motors[num].k_mul; // Odometry to angular
         int16_t vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / timePeriodtmp);
         motors[num].motor.measure_vel = vel;
-        //store_in_buffer(&motors[num].velocity, vel);
     }
-    //SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
     
     //Evaluate position
     switch (num) {
@@ -488,7 +382,6 @@ int MotorPID(short num) {
             motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].motor.measure_vel) / constraint.max_right); // Measure
             break;
     }
-    //motors[num].motor.measure_vel = 
     PID(&motors[num].PIDstruct); // PID execution
     // Control value calculation
     motors[num].motor.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
@@ -520,9 +413,9 @@ void adc_motors_current(void) {
 
     for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Evaluate mean value
     {
-        ADCValueTmp[0] += AdcBuffer[0][AdcCount]; //Sum for AN0
-        ADCValueTmp[1] += AdcBuffer[1][AdcCount]; //Sum for AN1
+        ADCValueTmp[REF_MOTOR_LEFT] += AdcBuffer[REF_MOTOR_LEFT][AdcCount]; //Sum for AN0
+        ADCValueTmp[REF_MOTOR_RIGHT] += AdcBuffer[REF_MOTOR_RIGHT][AdcCount]; //Sum for AN1
     }
-    motors[0].motor.current = ADCValueTmp[0] >> 6; //Shift
-    motors[1].motor.current = ADCValueTmp[1] >> 6; //Shift
+    motors[REF_MOTOR_LEFT].motor.current = ADCValueTmp[REF_MOTOR_LEFT] >> 6; //Shift
+    motors[REF_MOTOR_RIGHT].motor.current = ADCValueTmp[REF_MOTOR_RIGHT] >> 6; //Shift
 }

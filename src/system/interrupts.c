@@ -146,8 +146,8 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     ICinfo[REF_MOTOR_LEFT].timePeriod = ICinfo[REF_MOTOR_LEFT].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
     ICinfo[REF_MOTOR_LEFT].overTmr = 0;
 
-    //ICinfo[REF_MOTOR_LEFT].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
-    (QEI1CONbits.UPDN ? ICinfo[REF_MOTOR_LEFT].SIG_VEL++ : ICinfo[REF_MOTOR_LEFT].SIG_VEL--); //Save sign Vel L
+    //(QEI1CONbits.UPDN ? ICinfo[REF_MOTOR_LEFT].SIG_VEL++ : ICinfo[REF_MOTOR_LEFT].SIG_VEL--); //Save sign Vel L
+    ICinfo[REF_MOTOR_LEFT].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {

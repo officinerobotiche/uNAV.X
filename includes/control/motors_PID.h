@@ -40,15 +40,6 @@ extern "C" {
 #define DEFAULT_KP 0.6
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
-
-    // >>>>> Speed zones in millirad/sec
-#define MIN1 1600  // about 15 RPM
-#define MAX1 2600  // about 25 RPM
-#define MIN2 5500  // about 50 RPM
-#define MAX2 6500  // about 60 RPM
-#define MIN3 20000 // about 190 RPM
-#define MAX3 22000 // about 210 RPM
-    // <<<<< Speed zones in millirad/sec
     
     typedef struct _ICdata {
         volatile unsigned int overTmr; //Overflow timer
@@ -190,13 +181,6 @@ extern "C" {
      * @return time to compute parsing packet
      */
     int MotorPID(short num);
-
-    /**
-     * Select the correct Input Capture prescaler
-     * @param motIdx number motor
-     * @param vel absolute velocity
-     */
-    void SelectIcPrescaler(int motIdx, int16_t abs_vel);
 
     /**
      * Mean valure for current measure motors
