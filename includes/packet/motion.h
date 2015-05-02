@@ -20,10 +20,6 @@
 
 #include <stdint.h>
 
-/** Buffers dimension */
-//Dimension for relative odometries data
-#define BUFFER_ODOMETRY 100
-
 /**
  * Define to select state of control for single motor
  */
@@ -40,6 +36,61 @@
 #define STATE_CONTROL_HIGH_DISABLE 0
 #define STATE_CONTROL_HIGH_VELOCITY 1
 #define STATE_CONTROL_HIGH_CONFIGURATION 2
+
+//+++++++++ NAVIGATION CONTROL ++++++++++++//
+
+/**
+ * Definition for coordinate robot:
+ * - position [x, y, theta]
+ * - space
+ */
+typedef struct coordinate {
+    float x;
+    float y;
+    float theta;
+    float space;
+} coordinate_t;
+#define LNG_COORDINATE sizeof(coordinate_t)
+
+/**
+ * Parameters definition for unicycle robot:
+ * - radius (left and right)
+ * - wheelbase
+ * - minimal space for odometry
+ */
+typedef struct parameter_unicycle {
+    float radius_r;
+    float radius_l;
+    float wheelbase;
+    float sp_min;
+} parameter_unicycle_t;
+#define LNG_PARAMETER_UNICYCLE sizeof(parameter_unicycle_t)
+
+/**
+ * Message for read and write velocity in a unicycle robot:
+ * - v = linear velocity
+ * - w = angular velocity
+ */
+typedef struct velocity {
+    float v;
+    float w;
+} velocity_t;
+#define LNG_VELOCITY sizeof(velocity_t)
+
+/**
+ * Message for read and write state high level control
+ */
+typedef int8_t state_controller_t;
+#define LNG_ENABLE_MOTOR sizeof(state_controller_t)
+
+//List of all motion messages
+#define ABSTRACT_MESSAGE_MOTION                  \
+        coordinate_t coordinate;                 \
+        parameter_unicycle_t parameter_unicycle; \
+        velocity_t velocity;                     \
+        state_controller_t motor_state;
+
+//++++++++ MOTOR CONTROL +++++++++++++++++++++//
 
 /**
  * Message for emergency configuration
@@ -95,43 +146,6 @@ typedef struct pid {
 #define LNG_PID_CONTROL sizeof(pid_control_t)
 
 /**
- * Definition for coordinate robot:
- * - position [x, y, theta]
- * - space
- */
-typedef struct coordinate {
-    float x;
-    float y;
-    float theta;
-    float space;
-} coordinate_t;
-#define LNG_COORDINATE sizeof(coordinate_t)
-
-/**
- * Definiton for relative odometry. A buffer of BUFFER_ODOMETRY size
- * with more structs coordinate_t
- */
-//TODO correction this messages TOO LARGE
-//typedef struct delta_odometry {
-//    coordinate_t delta[BUFFER_ODOMETRY];
-//} delta_odometry_t;
-//#define LNG_DELTA_ODOMETRY sizeof(delta_odometry_t)
-
-/**
- * Parameters definition for unicycle robot:
- * - radius (left and right)
- * - wheelbase
- * - minimal space for odometry
- */
-typedef struct parameter_unicycle {
-    float radius_r;
-    float radius_l;
-    float wheelbase;
-    float sp_min;
-} parameter_unicycle_t;
-#define LNG_PARAMETER_UNICYCLE sizeof(parameter_unicycle_t)
-
-/**
  * Parameter definiton for motor:
  * - k_vel - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_vel</a>
  * - k_ang - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_ang</a>
@@ -147,56 +161,35 @@ typedef struct parameter_motor {
 #define LNG_PARAMETER_MOTOR sizeof(parameter_motor_t)
 
 /**
- * Message for read and write velocity in a unicycle robot:
- * - v = linear velocity
- * - w = angular velocity
- */
-typedef struct velocity {
-    float v;
-    float w;
-} velocity_t;
-#define LNG_VELOCITY sizeof(velocity_t)
-
-/**
  * Message to control single motor
  * - dimension number motors
  */
 typedef int16_t motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
 
-/**
- * Message for read and write state of H-bridge (enable or disable)
- */
-typedef int8_t state_controller_t;
-#define LNG_ENABLE_MOTOR sizeof(state_controller_t)
-
 //List of all motion messages
-#define ABSTRACT_MESSAGE_MOTION                  \
+#define ABSTRACT_MESSAGE_MOTOR                   \
         pid_control_t pid;                       \
-        coordinate_t coordinate;                 \
-        parameter_unicycle_t parameter_unicycle; \
         parameter_motor_t parameter_motor;       \
-        velocity_t velocity;                     \
         motor_control_t motor_control;           \
-        state_controller_t motor_state;          \
         motor_t motor;                           \
         constraint_t constraint;                 \
-        emergency_t emergency;                  
-        //delta_odometry_t delta_odometry;
+        emergency_t emergency;
 
 //Numbers associated for motion messages
+#define COORDINATE 4
+#define PARAMETER_UNICYCLE 5
+#define VELOCITY 9
+#define VELOCITY_MIS 10
+#define ENABLE 11
+
 #define PID_CONTROL_L 0
 #define PID_CONTROL_R 1
 #define MOTOR_L 2
 #define MOTOR_R 3
-#define COORDINATE 4
-#define PARAMETER_UNICYCLE 5
 #define PARAMETER_MOTOR_L 6
 #define PARAMETER_MOTOR_R 7
 #define CONSTRAINT 8
-#define VELOCITY 9
-#define VELOCITY_MIS 10
-#define ENABLE 11
 #define EMERGENCY 12
 #define VEL_MOTOR_L 13
 #define VEL_MOTOR_R 14
@@ -204,7 +197,8 @@ typedef int8_t state_controller_t;
 #define VEL_MOTOR_MIS_R 16
 #define ENABLE_MOTOR_L 17
 #define ENABLE_MOTOR_R 18
-#define DELTA_ODOMETRY 19
+#define POS_MOTOR_L 19
+#define POS_MOTOR_R 20
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 5
@@ -212,6 +206,7 @@ typedef int8_t state_controller_t;
 #define PID_LEFT_STRING "PID/Left"
 #define PROCESS_PID_RIGHT 1
 #define PID_RIGHT_STRING "PID/Right"
+
 #define PROCESS_VELOCITY 2
 #define VELOCITY_STRING "Velocity"
 #define PROCESS_ODOMETRY 3
@@ -221,7 +216,7 @@ typedef int8_t state_controller_t;
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTION 'M'
-#define HASHMAP_MOTION_NUMBER 20
+#define HASHMAP_MOTION_NUMBER 30
 
 // Definition on communication/parsing_packet.c
 //static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
@@ -229,26 +224,28 @@ typedef int8_t state_controller_t;
 /**
  * Table with convertion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_MOTION   hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;               \
+#define INITIALIZE_HASHMAP_MOTION   hashmap_motion[COORDINATE] = LNG_COORDINATE;                   \
+                                    hashmap_motion[PARAMETER_UNICYCLE] = LNG_PARAMETER_UNICYCLE;   \
+                                    hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
+                                    hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
+                                    hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;
+
+#define INITIALIZE_HASHMAP_MOTOR    hashmap_motion[PARAMETER_MOTOR_L] = LNG_PARAMETER_MOTOR;       \
+                                    hashmap_motion[PARAMETER_MOTOR_R] = LNG_PARAMETER_MOTOR;       \
+                                    hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;               \
                                     hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;               \
                                     hashmap_motion[MOTOR_L] = LNG_MOTOR;                           \
                                     hashmap_motion[MOTOR_R] = LNG_MOTOR;                           \
-                                    hashmap_motion[COORDINATE] = LNG_COORDINATE;                   \
-                                    hashmap_motion[PARAMETER_UNICYCLE] = LNG_PARAMETER_UNICYCLE;   \
-                                    hashmap_motion[PARAMETER_MOTOR_L] = LNG_PARAMETER_MOTOR;       \
-                                    hashmap_motion[PARAMETER_MOTOR_R] = LNG_PARAMETER_MOTOR;       \
-                                    hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;                   \
-                                    hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
-                                    hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;                   \
-                                    hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
-                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;                     \
                                     hashmap_motion[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
                                     hashmap_motion[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
                                     hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
                                     hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
                                     hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;            \
-                                    hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;
-                                    //hashmap_motion[DELTA_ODOMETRY] = LNG_DELTA_ODOMETRY;
-
+                                    hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;            \
+                                    hashmap_motion[POS_MOTOR_L] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motion[POS_MOTOR_R] = LNG_MOTOR_CONTROL;               \
+                                    hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;                   \
+                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
+                                    
 #endif	/* MOTION_H */
 

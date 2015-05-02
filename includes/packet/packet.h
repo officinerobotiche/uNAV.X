@@ -38,12 +38,18 @@
  */
 
 #define MOTION
+#define MOTOR
 
 /*******/
 
 #ifdef MOTION
 #include "packet/motion.h"
 #endif
+
+//TO BE SPLIT
+//#ifdef MOTOR
+//#include "packet/motor.h"
+//#endif
 
 /** Buffers dimension */
 // Dimension for UART transmit buffer
@@ -164,6 +170,9 @@ typedef union abstract_message {
     error_pkg_t error_pkg;
     parameter_system_t parameter_system;
     process_buffer_t process_name;
+#ifdef MOTOR
+    ABSTRACT_MESSAGE_MOTOR
+#endif
 #ifdef MOTION
     ABSTRACT_MESSAGE_MOTION
 #endif
@@ -229,12 +238,12 @@ typedef union buffer_packet {
 /**
  * Table with convertion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;    \
-                                   hashmap_default[TIME_PROCESS] = LNG_PROCESS; \
-                                   hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS; \
-                                   hashmap_default[FRQ_PROCESS] = LNG_PROCESS; \
+#define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;                 \
+                                   hashmap_default[TIME_PROCESS] = LNG_PROCESS;              \
+                                   hashmap_default[PRIORITY_PROCESS] = LNG_PROCESS;          \
+                                   hashmap_default[FRQ_PROCESS] = LNG_PROCESS;               \
                                    hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
-                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;       \
+                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;            \
                                    hashmap_default[NAME_PROCESS] = LNG_NAME_PROCESS;
 
 

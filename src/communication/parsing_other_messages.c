@@ -133,7 +133,6 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 update_parameter_emergency(REF_MOTOR_LEFT, info->packet.emergency);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case DELTA_ODOMETRY:
             case VEL_MOTOR_MIS_L:
             case VEL_MOTOR_MIS_R:
             case MOTOR_L:
