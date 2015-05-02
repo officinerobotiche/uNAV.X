@@ -49,7 +49,13 @@ extern "C" {
 #define MIN3 20000 // about 190 RPM
 #define MAX3 22000 // about 210 RPM
     // <<<<< Speed zones in millirad/sec
-
+    
+    typedef struct _ICdata {
+        volatile unsigned int overTmr; //Overflow timer
+        volatile unsigned long timePeriod; //Time period from Input Capture
+        volatile int SIG_VEL; //Sign of versus rotation motor
+    } ICdata;
+    
     /******************************************************************************/
     /* System Function Prototypes                                                 */
     /******************************************************************************/

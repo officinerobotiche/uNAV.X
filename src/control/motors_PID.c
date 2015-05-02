@@ -59,8 +59,17 @@ pin_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 
 /** */
 
+#define BUFFER_SIZE 16
+
+typedef struct circular_buffer
+{
+  int16_t buffer[BUFFER_SIZE];
+  volatile unsigned int head;
+} ring_buffer;
+
 typedef struct new_motor {
     //Use ONLY in firmware
+    //ICdata ICinfo; //Information for Input Capture
     pin_t * pin_enable;
     unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
@@ -68,6 +77,7 @@ typedef struct new_motor {
     float last_velocity;
     unsigned int counter_alive;
     unsigned int counter_stop;
+    ring_buffer velocity;
     //Common
     state_controller_t state;
     parameter_motor_t parameter_motor;
@@ -92,10 +102,7 @@ bool save_velocity = true;
 
 /**/
 // From interrupt
-extern volatile unsigned long timePeriodL; // Left wheel period
-extern volatile unsigned long timePeriodR; // Right wheel period
-extern volatile unsigned SIG_VELL; // Left wheel rotation versus
-extern volatile unsigned SIG_VELR; // Right wheel rotation versus
+extern ICdata ICinfo[NUM_MOTORS];
 
 //From high_level_control
 extern volatile unsigned int control_state;
@@ -105,13 +112,24 @@ extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* User Functions                                                             */
+
 /******************************************************************************/
+
+void store_in_buffer(ring_buffer* buff, int16_t data) {
+    unsigned int next = (unsigned int) (buff->head + 1) % BUFFER_SIZE;
+    buff->buffer[buff->head] = data;
+    buff->head = next;
+}
 
 void init_motor(short num) {
     motors[num].motor.control_vel = 0;
     motors[num].motor.measure_vel = 0;
     motors[num].motor.refer_vel = 0;
     motors[num].motor.current = 0;
+    //Input capture information
+    //motors[num].ICinfo.SIG_VEL = 0;
+    //motors[num].ICinfo.overTmr = 0;
+    //motors[num].ICinfo.timePeriod = 0;
     switch (num) {
         case REF_MOTOR_LEFT:
             motors[num].pin_enable = &enable1;
@@ -427,42 +445,29 @@ int measureVelocity(short num) {
     unsigned int t = TMR1; // Timing function
     unsigned long timePeriodtmp;
     int SIG_VELtmp;
-
+    motors[num].motor.measure_vel = 0;
+    timePeriodtmp = ICinfo[num].timePeriod;
+    ICinfo[num].timePeriod = 0;
+    SIG_VELtmp = ICinfo[num].SIG_VEL;
+    ICinfo[num].SIG_VEL = 0;
+    // Evaluate velocity
+    if (SIG_VELtmp) {
+        //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * motors[num].k_mul; // Odometry to angular
+        int16_t vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / timePeriodtmp);
+        motors[num].motor.measure_vel = vel;
+        //store_in_buffer(&motors[num].velocity, vel);
+    }
+    //SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
+    
+    //Evaluate position
     switch (num) {
         case REF_MOTOR_LEFT:
-            timePeriodtmp = timePeriodL;
-            timePeriodL = 0;
-            SIG_VELtmp = SIG_VELL;
-            SIG_VELL = 0;
-            motors[num].motor.measure_vel = 0;
-
             motors[num].PulsEnc += (int) POS1CNT; // Odometry
-            //int dAng = (int) POS1CNT * parameter_motor_left.k_vel * motors[num].k_mul; // Odometry to angular
             POS1CNT = 0;
-            // Speed calculation 
-            if (SIG_VELtmp) {
-                int16_t ic_contrib = SIG_VELtmp * ((motors[num].parameter_motor.k_vel * motors[num].k_mul) / timePeriodtmp);
-                //int16_t odo_contrib = dAng* INV_PID_TIME; // TODO replace with real dT = 1/f_pid
-                // motor_left.measure_vel = (ic_contrib + odo_contrib)/2;
-                motors[num].motor.measure_vel = ic_contrib;
-            }
-            SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
             break;
         case REF_MOTOR_RIGHT:
-            timePeriodtmp = timePeriodR;
-            timePeriodR = 0;
-            SIG_VELtmp = SIG_VELR;
-            SIG_VELR = 0;
-            motors[num].motor.measure_vel = 0;
-
             motors[num].PulsEnc += (int) POS2CNT; // Odometry
             POS2CNT = 0;
-
-            // Speed calculation
-            if (SIG_VELtmp) {
-                motors[num].motor.measure_vel = SIG_VELtmp * (motors[num].parameter_motor.k_vel / (timePeriodtmp * motors[num].k_mul));
-            }
-            SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
             break;
     }
     return TMR1 - t; // Time of esecution
@@ -471,7 +476,8 @@ int measureVelocity(short num) {
 int MotorPID(short num) {
     unsigned int t = TMR1; // Timing
     int pid_control;
-
+    //Measure velocity
+    measureVelocity(num);
     switch (num) {
         case REF_MOTOR_LEFT:
             motors[num].PIDstruct.controlReference = Q15(((float) motors[num].motor.refer_vel) / constraint.max_left); // Setpoint
@@ -482,7 +488,7 @@ int MotorPID(short num) {
             motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].motor.measure_vel) / constraint.max_right); // Measure
             break;
     }
-
+    //motors[num].motor.measure_vel = 
     PID(&motors[num].PIDstruct); // PID execution
     // Control value calculation
     motors[num].motor.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;

@@ -44,14 +44,16 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
+ICdata ICinfo[NUM_MOTORS];
+
 unsigned int counter_odo = 0;
 unsigned int counter_pid = 0;
-volatile unsigned int overTmrL = 0;
-volatile unsigned int overTmrR = 0;
-volatile unsigned long timePeriodL = 0; //Periodo Ruota Sinistra
-volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
-volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
-volatile int SIG_VELR = 0; //Verso rotazione ruota destra
+//volatile unsigned int overTmrL = 0;
+//volatile unsigned int overTmrR = 0;
+//volatile unsigned long timePeriodL = 0; //Periodo Ruota Sinistra
+//volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
+//volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
+//volatile int SIG_VELR = 0; //Verso rotazione ruota destra
 volatile process_t time, priority, frequency;
 process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
 
@@ -141,11 +143,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     t2 = IC1BUF;    // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
     IFS0bits.IC1IF = 0;
-    timePeriodL = overTmrL * PR2 + t2 - t1; // PR2 is 0xFFFF
-    overTmrL = 0;
+    ICinfo[REF_MOTOR_LEFT].timePeriod = ICinfo[REF_MOTOR_LEFT].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    ICinfo[REF_MOTOR_LEFT].overTmr = 0;
 
-    //SIG_VELL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
-    (QEI1CONbits.UPDN ? SIG_VELL++ : SIG_VELL--); //Save sign Vel L
+    //ICinfo[REF_MOTOR_LEFT].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+    (QEI1CONbits.UPDN ? ICinfo[REF_MOTOR_LEFT].SIG_VEL++ : ICinfo[REF_MOTOR_LEFT].SIG_VEL--); //Save sign Vel L
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
@@ -153,11 +155,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
     t2 = IC2BUF;    // IC1BUF is a FIFO, each reading is a POP
     t1 = IC2BUF;
     IFS0bits.IC2IF = 0;
-    timePeriodR = overTmrR * PR2 + t2 - t1; // PR2 is 0xFFFF
-    overTmrR = 0;
+    ICinfo[REF_MOTOR_RIGHT].timePeriod = ICinfo[REF_MOTOR_RIGHT].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    ICinfo[REF_MOTOR_RIGHT].overTmr = 0;
     //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
     //	else SIG_VELR--;
-    SIG_VELR = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    ICinfo[REF_MOTOR_RIGHT].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
 }
 
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
@@ -165,7 +167,8 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     int led_counter = 0;
 
     if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
-        MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
+        //Will be added in feature #39
+        //MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
         PID_FLAG = 1; //Start OC1Interrupt for PID control
         counter_pid = 0;
     }
@@ -186,10 +189,10 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    //if (timePeriodL)
-    overTmrL++; // timer overflow counter for Left engines
-    //if (timePeriodR)
-    overTmrR++; // timer overflow counter for Right engines
+    if (ICinfo[REF_MOTOR_LEFT].timePeriod)
+        ICinfo[REF_MOTOR_LEFT].overTmr++; // timer overflow counter for Left engines
+    if (ICinfo[REF_MOTOR_RIGHT].timePeriod)
+        ICinfo[REF_MOTOR_RIGHT].overTmr++; // timer overflow counter for Right engines
 }
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
@@ -205,8 +208,9 @@ void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
-    time.process[PROCESS_MEASURE_VEL] = measureVelocity(REF_MOTOR_LEFT);
-    time.process[PROCESS_MEASURE_VEL] += measureVelocity(REF_MOTOR_RIGHT);
+    //Will be added in feature #39
+    //time.process[PROCESS_MEASURE_VEL] = measureVelocity(REF_MOTOR_LEFT);
+    //time.process[PROCESS_MEASURE_VEL] += measureVelocity(REF_MOTOR_RIGHT);
     MEASURE_FLAG = 0;
 }
 
