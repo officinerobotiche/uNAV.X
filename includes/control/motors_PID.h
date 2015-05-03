@@ -80,6 +80,12 @@ extern "C" {
      */
     void update_parameter_motors(short num, parameter_motor_t parameter);
     /**
+     * Function to update motor constraints from message
+     * @param num Number motor
+     * @param constraint constraints set
+     */
+    void update_constraints_motor(short num, motor_t constraint);
+    /**
      * Initialization standard value for PID controllers
      * @param number Number motor
      * @return Default configuration
@@ -106,6 +112,12 @@ extern "C" {
      */
     emergency_t init_parameter_emergency(short num);
     /**
+     * Initialization standard value for constraints motor
+     * @param number Number motor
+     * @return default configuration for constraints
+     */
+    motor_t init_parameter_constraints(short num);
+    /**
      * Update counter and step value for emergency controller.
      * @param number Number motor
      * @param emergency configuration to save
@@ -131,6 +143,12 @@ extern "C" {
      * @return return information about motor
      */
     inline motor_t get_motor_reference(short motIdx);
+    /**
+     * Return information about motor constraints.
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_constraints(short motIdx);
     /**
      * Set state controller for all motors, if DISABLE, set enable motor to zero
      * @param num number motor to update state if -1 set all motor to state

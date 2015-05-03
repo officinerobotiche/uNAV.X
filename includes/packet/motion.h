@@ -113,18 +113,6 @@ typedef struct emergency {
 #define LNG_EMERGENCY sizeof(emergency_t)
 
 /**
- * Message for definition constraint for velocity controller
- * Max velocity for:
- * - left motor
- * - right motor
- */
-typedef struct constraint {
-    int16_t max_left;
-    int16_t max_right;
-} constraint_t;
-#define LNG_CONSTRAINT sizeof(constraint_t)
-
-/**
  * Message to control single motor
  * - dimension number motors
  */
@@ -184,7 +172,6 @@ typedef struct parameter_motor {
         parameter_motor_t parameter_motor;       \
         motor_control_t motor_control;           \
         motor_t motor;                           \
-        constraint_t constraint;                 \
         emergency_t emergency;
 
 //Numbers associated for motor messages
@@ -194,7 +181,6 @@ typedef struct parameter_motor {
 #define MOTOR_R 3
 #define PARAMETER_MOTOR_L 6
 #define PARAMETER_MOTOR_R 7
-#define CONSTRAINT 8
 #define EMERGENCY 12
 #define VEL_MOTOR_L 13
 #define VEL_MOTOR_R 14
@@ -204,6 +190,8 @@ typedef struct parameter_motor {
 #define ENABLE_MOTOR_R 18
 #define POS_MOTOR_MIS_L 19
 #define POS_MOTOR_MIS_R 20
+#define CONSTRAINT_L 21
+#define CONSTRAINT_R 22
 
 //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 5
@@ -249,7 +237,8 @@ typedef struct parameter_motor {
                                     hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;            \
                                     hashmap_motion[POS_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
                                     hashmap_motion[POS_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[CONSTRAINT] = LNG_CONSTRAINT;                   \
+                                    hashmap_motion[CONSTRAINT_L] = LNG_MOTOR;                      \
+                                    hashmap_motion[CONSTRAINT_R] = LNG_MOTOR;                      \
                                     hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
                                     
 #endif	/* MOTION_H */

@@ -99,6 +99,8 @@ int16_t main(void) {
         update_pid(i, init_pid_control(i));
         /* Initialize emergency procedure to stop */
         update_parameter_emergency(i, init_parameter_emergency(i));
+        /* Initialize constraints motor */
+        update_constraints_motor(i, init_parameter_constraints(i));
         /* Init state controller */
         UpdateStateController(i, STATE_CONTROL_DISABLE);
     }

@@ -75,6 +75,7 @@ typedef struct new_motor {
     float k_ang;
     //Common
     parameter_motor_t parameter_motor;
+    motor_t constraint;
     motor_t reference;
     motor_t measure;
     //PID
@@ -83,11 +84,6 @@ typedef struct new_motor {
     fractional kCoeffs[3]; //Coefficients KP, KI, KD
 } new_motor_t;
 new_motor_t motors[NUM_MOTORS];
-
-#define NUM_VALUES 10
-int16_t velocity[NUM_VALUES];
-
-constraint_t constraint;
 
 //variables for emergency
 emergency_t emergency;
@@ -115,6 +111,11 @@ void init_motor(short num) {
     motors[num].measure.torque = 0;
     motors[num].measure.volt = 0;
     motors[num].measure.state = STATE_CONTROL_DISABLE;
+    motors[num].reference.position = 0;
+    motors[num].reference.velocity = 0;
+    motors[num].reference.torque = 0;
+    motors[num].reference.volt = 0;
+    motors[num].reference.state = STATE_CONTROL_DISABLE;
     //Input capture information
     ICinfo[num].SIG_VEL = 0;
     ICinfo[num].overTmr = 0;
@@ -122,15 +123,23 @@ void init_motor(short num) {
     switch (num) {
         case REF_MOTOR_LEFT:
             motors[num].pin_enable = &enable1;
-            constraint.max_left = 25000;
             break;
         case REF_MOTOR_RIGHT:
             motors[num].pin_enable = &enable2;
-            constraint.max_right = 25000;
             break;
     }
     motors[num].CS_mask = 1 << motors[num].pin_enable->CS_pin;
     motors[num].k_mul = 1;
+}
+
+motor_t init_parameter_constraints(short num) {
+    motor_t constraint;
+    constraint.state = 0;
+    constraint.position = -1;
+    constraint.torque = -1;
+    constraint.volt = -1;
+    constraint.velocity = 25000;
+    return constraint;
 }
 
 parameter_motor_t init_parameter_motors(short num) {
@@ -172,6 +181,11 @@ void update_parameter_motors(short num, parameter_motor_t parameter) {
             QEI2CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
     }
+}
+
+void update_constraints_motor(short num, motor_t constraint) {
+    //Update parameter constraints
+    motors[num].constraint = constraint;
 }
 
 /* inline */ parameter_motor_t get_parameter_motor(short motIdx) {
@@ -239,23 +253,15 @@ int set_motor_velocity(short number, int16_t ref_velocity) {
     motors[number].counter_alive = 0; //Reset time emergency
     motors[number].reference.state = STATE_CONTROL_VELOCITY;
     motors[number].reference.velocity = ref_velocity;
-    switch (number) {
-        case REF_MOTOR_LEFT:
-            if (abs(motors[number].reference.velocity) > constraint.max_left) {
-                motors[number].reference.velocity = SGN(motors[number].reference.velocity) * constraint.max_left;
-            }
-            break;
-        case REF_MOTOR_RIGHT:
-            if (abs(motors[number].reference.velocity) > constraint.max_right) {
-                motors[number].reference.velocity = SGN(motors[number].reference.velocity) * constraint.max_right;
-            }
-            break;
+    if (abs(motors[number].reference.velocity) > motors[number].constraint.velocity) {
+        motors[number].reference.velocity = SGN(motors[number].reference.velocity) * motors[number].constraint.velocity;
     }
     return TMR1 - t; // Time of execution
 }
 
 /* inline */ motor_t get_motor_measure(short motIdx) {
     motors[motIdx].measure.position = motors[motIdx].PulsEnc * motors[motIdx].k_ang;
+    motors[motIdx].PulsEnc = 0;
     motors[motIdx].measure.volt = ((float) motors[motIdx].pid_control) / motors[motIdx].parameter_motor.volt_bridge;
     return motors[motIdx].measure;
 }
@@ -273,8 +279,8 @@ void UpdateStateController(short num, motor_control_t state) {
 
     switch (num) {
         case -1:
-            motors[0].measure.state = state;
-            motors[1].measure.state = state;
+            motors[REF_MOTOR_LEFT].reference.state = state;
+            motors[REF_MOTOR_RIGHT].reference.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.enable_set;
             MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.enable_set;
 #ifndef MOTION_CONTROL
@@ -283,7 +289,7 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
             break;
         case REF_MOTOR_LEFT:
-            motors[num].measure.state = state;
+            motors[num].reference.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
                 motors[num].last_velocity = motors[num].reference.velocity;
@@ -293,7 +299,7 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
             break;
         case REF_MOTOR_RIGHT:
-            motors[num].measure.state = state;
+            motors[num].reference.state = state;
             MOTOR_ENABLE2_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
                 motors[num].last_velocity = motors[num].reference.velocity;
@@ -311,6 +317,10 @@ void UpdateStateController(short num, motor_control_t state) {
 /* inline */ state_controller_t get_motor_state(short motIdx) {
     return motors[motIdx].measure.state;
 }
+             
+/* inline */ motor_t get_motor_constraints(short motIdx) {
+    return motors[motIdx].constraint;
+}
 
 int MotorTaskController(void) {
     unsigned int t = TMR1; // Timing function
@@ -322,7 +332,7 @@ int MotorTaskController(void) {
         HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
-        switch (motors[i].measure.state) {
+        switch (motors[i].reference.state) {
             case STATE_CONTROL_EMERGENCY:
                 /**
                  * Set motor in emergency mode
@@ -346,7 +356,7 @@ int MotorTaskController(void) {
                 break;
         }
         // Emergency controller
-        if (motors[i].measure.state > STATE_CONTROL_DISABLE) {
+        if (motors[i].reference.state > STATE_CONTROL_DISABLE) {
             if ((motors[i].counter_alive + 1) >= emergency.timeout) {
                 /**
                  * Set Motor in emergency mode
@@ -371,6 +381,8 @@ int measureVelocity(short num) {
     ICinfo[num].timePeriod = 0;
     SIG_VELtmp = ICinfo[num].SIG_VEL;
     ICinfo[num].SIG_VEL = 0;
+    // State control
+    motors[num].measure.state = motors[num].reference.state;
     // Evaluate velocity
     if (SIG_VELtmp) {
         int16_t vel = SIG_VELtmp * (motors[num].k_vel / timePeriodtmp);
@@ -395,20 +407,12 @@ int MotorPID(short num) {
     unsigned int t = TMR1; // Timing
     //Measure velocity
     measureVelocity(num);
-    switch (num) {
-        case REF_MOTOR_LEFT:
-            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].reference.velocity) / constraint.max_left); // Setpoint
-            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / constraint.max_left); // Measure
-            break;
-        case REF_MOTOR_RIGHT:
-            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].reference.velocity) / constraint.max_right); // Setpoint
-            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / constraint.max_right); // Measure
-            break;
-    }
+    //Update control reference and measure
+    motors[num].PIDstruct.controlReference = Q15(((float) motors[num].reference.velocity) / motors[num].constraint.velocity); // Setpoint
+    motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / motors[num].constraint.velocity); // Measure
     PID(&motors[num].PIDstruct); // PID execution
     // Control value calculation
     motors[num].pid_control = ((motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput) >> 4); // PWM value
-
     // PWM output
     SetDCMCPWM1(num + 1,  motors[num].pid_control + 2048, 0);
 

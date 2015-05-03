@@ -49,7 +49,6 @@ abstract_message_u send_temp;
 // From motors PID
 //extern unsigned int counter_alive[NUM_MOTORS];
 //extern parameter_motor_t parameter_motor_left, parameter_motor_right;
-extern constraint_t constraint;
 //extern pid_control_t pid_left, pid_right;
 //extern motor_control_t motor_ref[NUM_MOTORS];
 //extern motor_control_t motor_state[NUM_MOTORS];
@@ -99,8 +98,12 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 update_parameter_motors(REF_MOTOR_RIGHT, info->packet.parameter_motor);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case CONSTRAINT:
-                constraint = info->packet.constraint;
+            case CONSTRAINT_L:
+                update_constraints_motor(REF_MOTOR_LEFT, info->packet.motor);
+                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+                break;
+            case CONSTRAINT_R:
+                update_constraints_motor(REF_MOTOR_RIGHT, info->packet.motor);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VELOCITY:
@@ -228,8 +231,12 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 send.motor_control = get_motor_measure(REF_MOTOR_RIGHT).position;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case CONSTRAINT:
-                send.constraint = constraint;
+            case CONSTRAINT_L:
+                send.motor = get_motor_constraints(REF_MOTOR_LEFT);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case CONSTRAINT_R:
+                send.motor = get_motor_constraints(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case EMERGENCY:
