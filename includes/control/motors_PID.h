@@ -33,6 +33,11 @@ extern "C" {
 #define REF_MOTOR_LEFT 0
 #define REF_MOTOR_RIGHT 1
 
+#define ENC_BEFORE_GEAR 1
+#define ENC_AFTER_GEAR 0
+#define VOLT_BRIDGE 12
+#define CPR 300
+#define RATIO 30
     // If CPR is before ratio
     //    ThC = CPR * RATIO   
     // else
@@ -115,17 +120,17 @@ extern "C" {
      */
     int set_motor_velocity(short motor, int16_t ref_velocity);
     /**
-     * Return information about motor. Reference, velocity measured, control.
+     * Return information about state motor, torque velocity position.
      * @param motIdx number of motor
      * @return return information about motor
      */
-    inline motor_t get_motor_information(short motIdx);
+    inline motor_t get_motor_measure(short motIdx);
     /**
-     * Return number of pulse encoder
-     * @param motIdx number motor
-     * @return value of pulse encoder
+     * Return information about motor reference of control.
+     * @param motIdx number of motor
+     * @return return information about motor
      */
-    inline int get_pulse_encoder(short motIdx);
+    inline motor_t get_motor_reference(short motIdx);
     /**
      * Set state controller for all motors, if DISABLE, set enable motor to zero
      * @param num number motor to update state if -1 set all motor to state

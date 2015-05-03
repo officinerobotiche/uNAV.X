@@ -113,7 +113,7 @@ typedef struct emergency {
 #define LNG_EMERGENCY sizeof(emergency_t)
 
 /**
- * Message for definiton contraint for velocity controller
+ * Message for definition constraint for velocity controller
  * Max velocity for:
  * - left motor
  * - right motor
@@ -133,18 +133,18 @@ typedef int16_t motor_control_t;
 
 /**
  * Message for state motor controller, information about:
- * - reference
- * - control
- * - measure
- * - motor current consumption
+ * - state motor - type of control
+ * - mean voltage applied in the bridge - PWM
+ * - torque
+ * - velocity
+ * - position
  */
 typedef struct motor {
-    motor_control_t refer_vel;      //TODO REMOVE
-    //motor_control_t state;          //TODO state motor value
-    motor_control_t control_vel;    //TODO Convert in Voltage applied
-    motor_control_t current;        //TODO Convert in torque
-    motor_control_t measure_vel;    //TODO Rename in velocity
-    //motor_control_t position;       //TODO add angle position
+    state_controller_t state;
+    motor_control_t volt;
+    motor_control_t torque;
+    motor_control_t velocity;
+    motor_control_t position;
 } motor_t;
 #define LNG_MOTOR sizeof(motor_t)
 
@@ -162,15 +162,17 @@ typedef struct pid {
 #define LNG_PID_CONTROL sizeof(pid_control_t)
 
 /**
- * Parameter definiton for motor:
+ * Parameter definition for motor:
  * - k_vel - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_vel</a>
  * - k_ang - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_ang</a>
  * - Set or
  * - boolean set enable
  */
 typedef struct parameter_motor {
-    float k_vel;
-    float k_ang;
+    float cpr;
+    float ratio;
+    float volt_bridge;
+    int8_t encoder_pos;
     int8_t versus;
     uint8_t enable_set;
 } parameter_motor_t;

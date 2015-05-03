@@ -69,12 +69,13 @@ typedef struct new_motor {
     float last_velocity;
     unsigned int counter_alive;
     unsigned int counter_stop;
+    int16_t pid_control;
     //gain motor
     float k_vel;
     float k_ang;
     //Common
-    state_controller_t state;
     parameter_motor_t parameter_motor;
+    motor_t reference;
     motor_t measure;
     //PID
     pid_control_t pid;
@@ -109,10 +110,11 @@ extern parameter_system_t parameter_system;
 /*****************************************************************************/
 
 void init_motor(short num) {
-    motors[num].measure.control_vel = 0;
-    motors[num].measure.measure_vel = 0;
-    motors[num].measure.refer_vel = 0;
-    motors[num].measure.current = 0;
+    motors[num].measure.position = 0;
+    motors[num].measure.velocity = 0;
+    motors[num].measure.torque = 0;
+    motors[num].measure.volt = 0;
+    motors[num].measure.state = STATE_CONTROL_DISABLE;
     //Input capture information
     ICinfo[num].SIG_VEL = 0;
     ICinfo[num].overTmr = 0;
@@ -133,8 +135,10 @@ void init_motor(short num) {
 
 parameter_motor_t init_parameter_motors(short num) {
     parameter_motor_t parameter;
-    parameter.k_vel = K_VEL; //Gain to convert input capture value to velocity
-    parameter.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
+    parameter.cpr = CPR; //Gain to convert input capture value to velocity
+    parameter.ratio = RATIO; //Gain to convert QEI value to rotation movement
+    parameter.volt_bridge = VOLT_BRIDGE;
+    parameter.encoder_pos = ENC_BEFORE_GEAR;
     parameter.versus = 1;
     parameter.enable_set = false;
     return parameter;
@@ -143,24 +147,22 @@ parameter_motor_t init_parameter_motors(short num) {
 void update_parameter_motors(short num, parameter_motor_t parameter) {
     //Update parameter configuration
     motors[num].parameter_motor = parameter;
-//    // If CPR is before ratio
-//    //    ThC = CPR * RATIO   
-//    // else
-//    //    ThC = RATIO
-//    double angle_ratio;
-//    if(motors[num].parameter_motor.encoder_pos) {
-//        angle_ratio = motors[num].parameter_motor.cpr * motors[num].parameter_motor.ratio;
-//    } else {
-//        angle_ratio = motors[num].parameter_motor.cpr;
-//    }
-//    //Start define with fixed K_vel conversion velocity
-//    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ]
-//    motors[num].k_vel = (double) 2*PI / (angle_ratio * 2);
-//    //Start define with fixed K_ang conversion angular
-//    // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-//    motors[num].k_ang = (double) 2*PI / (angle_ratio * 4);
-    motors[num].k_vel = motors[num].parameter_motor.k_vel;
-    motors[num].k_ang = motors[num].parameter_motor.k_ang;
+    // If CPR is before ratio
+    //    ThC = CPR * RATIO   
+    // else
+    //    ThC = RATIO
+    double angle_ratio;
+    if(motors[num].parameter_motor.encoder_pos) {
+        angle_ratio = motors[num].parameter_motor.cpr * motors[num].parameter_motor.ratio;
+    } else {
+        angle_ratio = motors[num].parameter_motor.cpr;
+    }
+    //Start define with fixed K_vel conversion velocity
+    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ]
+    motors[num].k_vel = (double) 2*PI / (angle_ratio * 2);
+    //Start define with fixed K_ang conversion angular
+    // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
+    motors[num].k_ang = (double) 2*PI / (angle_ratio * 4);
     //Update encoder swap
     switch (num) {
         case REF_MOTOR_LEFT:
@@ -235,28 +237,31 @@ void update_parameter_emergency(short num, emergency_t emergency_data) {
 int set_motor_velocity(short number, int16_t ref_velocity) {
     unsigned int t = TMR1; // Timing function
     motors[number].counter_alive = 0; //Reset time emergency
-    motors[number].measure.refer_vel = ref_velocity;
+    motors[number].reference.state = STATE_CONTROL_VELOCITY;
+    motors[number].reference.velocity = ref_velocity;
     switch (number) {
         case REF_MOTOR_LEFT:
-            if (abs(motors[number].measure.refer_vel) > constraint.max_left) {
-                motors[number].measure.refer_vel = SGN(motors[number].measure.refer_vel) * constraint.max_left;
+            if (abs(motors[number].reference.velocity) > constraint.max_left) {
+                motors[number].reference.velocity = SGN(motors[number].reference.velocity) * constraint.max_left;
             }
             break;
         case REF_MOTOR_RIGHT:
-            if (abs(motors[number].measure.refer_vel) > constraint.max_right) {
-                motors[number].measure.refer_vel = SGN(motors[number].measure.refer_vel) * constraint.max_right;
+            if (abs(motors[number].reference.velocity) > constraint.max_right) {
+                motors[number].reference.velocity = SGN(motors[number].reference.velocity) * constraint.max_right;
             }
             break;
     }
     return TMR1 - t; // Time of execution
 }
 
-/* inline */ motor_t get_motor_information(short motIdx) {
+/* inline */ motor_t get_motor_measure(short motIdx) {
+    motors[motIdx].measure.position = motors[motIdx].PulsEnc * motors[motIdx].k_ang;
+    motors[motIdx].measure.volt = ((float) motors[motIdx].pid_control) / motors[motIdx].parameter_motor.volt_bridge;
     return motors[motIdx].measure;
 }
-
-/* inline */ int get_pulse_encoder(short motIdx) {
-    return motors[motIdx].PulsEnc;
+             
+/* inline */ motor_t get_motor_reference(short motIdx) {
+    return motors[motIdx].reference;
 }
 
 void UpdateStateController(short num, motor_control_t state) {
@@ -268,8 +273,8 @@ void UpdateStateController(short num, motor_control_t state) {
 
     switch (num) {
         case -1:
-            motors[0].state = state;
-            motors[1].state = state;
+            motors[0].measure.state = state;
+            motors[1].measure.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.enable_set;
             MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.enable_set;
 #ifndef MOTION_CONTROL
@@ -278,20 +283,20 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
             break;
         case REF_MOTOR_LEFT:
-            motors[num].state = state;
+            motors[num].measure.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
-                motors[num].last_velocity = motors[num].measure.refer_vel;
+                motors[num].last_velocity = motors[num].reference.velocity;
             }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
 #endif
             break;
         case REF_MOTOR_RIGHT:
-            motors[num].state = state;
+            motors[num].measure.state = state;
             MOTOR_ENABLE2_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
-                motors[num].last_velocity = motors[num].measure.refer_vel;
+                motors[num].last_velocity = motors[num].reference.velocity;
             }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
@@ -304,7 +309,7 @@ void UpdateStateController(short num, motor_control_t state) {
 }
 
 /* inline */ state_controller_t get_motor_state(short motIdx) {
-    return motors[motIdx].state;
+    return motors[motIdx].measure.state;
 }
 
 int MotorTaskController(void) {
@@ -317,7 +322,7 @@ int MotorTaskController(void) {
         HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
-        switch (motors[i].state) {
+        switch (motors[i].measure.state) {
             case STATE_CONTROL_EMERGENCY:
                 /**
                  * Set motor in emergency mode
@@ -337,11 +342,11 @@ int MotorTaskController(void) {
                 //TODO to be implemented
                 break;
             default:
-                motors[i].measure.refer_vel = 0;
+                motors[i].reference.velocity = 0;
                 break;
         }
         // Emergency controller
-        if (motors[i].state > STATE_CONTROL_DISABLE) {
+        if (motors[i].measure.state > STATE_CONTROL_DISABLE) {
             if ((motors[i].counter_alive + 1) >= emergency.timeout) {
                 /**
                  * Set Motor in emergency mode
@@ -354,14 +359,14 @@ int MotorTaskController(void) {
         }
     }
 
-    return TMR1 - t; // Time of esecution
+    return TMR1 - t; // Time of execution
 }
 
 int measureVelocity(short num) {
     unsigned int t = TMR1; // Timing function
     unsigned long timePeriodtmp;
     int SIG_VELtmp;
-    motors[num].measure.measure_vel = 0;
+    motors[num].measure.velocity = 0;
     timePeriodtmp = ICinfo[num].timePeriod;
     ICinfo[num].timePeriod = 0;
     SIG_VELtmp = ICinfo[num].SIG_VEL;
@@ -369,7 +374,7 @@ int measureVelocity(short num) {
     // Evaluate velocity
     if (SIG_VELtmp) {
         int16_t vel = SIG_VELtmp * (motors[num].k_vel / timePeriodtmp);
-        motors[num].measure.measure_vel = vel;
+        motors[num].measure.velocity = vel;
     }
 
     //Evaluate position
@@ -383,40 +388,38 @@ int measureVelocity(short num) {
             POS2CNT = 0;
             break;
     }
-    return TMR1 - t; // Time of esecution
+    return TMR1 - t; // Time of execution
 }
 
 int MotorPID(short num) {
     unsigned int t = TMR1; // Timing
-    int pid_control;
     //Measure velocity
     measureVelocity(num);
     switch (num) {
         case REF_MOTOR_LEFT:
-            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].measure.refer_vel) / constraint.max_left); // Setpoint
-            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.measure_vel) / constraint.max_left); // Measure
+            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].reference.velocity) / constraint.max_left); // Setpoint
+            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / constraint.max_left); // Measure
             break;
         case REF_MOTOR_RIGHT:
-            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].measure.refer_vel) / constraint.max_right); // Setpoint
-            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.measure_vel) / constraint.max_right); // Measure
+            motors[num].PIDstruct.controlReference = Q15(((float) motors[num].reference.velocity) / constraint.max_right); // Setpoint
+            motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / constraint.max_right); // Measure
             break;
     }
     PID(&motors[num].PIDstruct); // PID execution
     // Control value calculation
-    motors[num].measure.control_vel = motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput;
-    pid_control = (motors[num].measure.control_vel >> 4) + 2048; // PWM value
+    motors[num].pid_control = ((motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput) >> 4); // PWM value
 
     // PWM output
-    SetDCMCPWM1(num + 1, pid_control, 0);
+    SetDCMCPWM1(num + 1,  motors[num].pid_control + 2048, 0);
 
     return TMR1 - t; // Execution time
 }
 
 bool Emergency(short num) {
-    motors[num].measure.refer_vel -= (int16_t) (motors[num].last_velocity / emergency_step + 0.5f);
-    if (SGN(motors[num].measure.refer_vel) * motors[num].last_velocity < 0)
-        motors[num].measure.refer_vel = 0;
-    if (motors[num].measure.refer_vel == 0) {
+    motors[num].reference.velocity -= (int16_t) (motors[num].last_velocity / emergency_step + 0.5f);
+    if (SGN(motors[num].reference.velocity) * motors[num].last_velocity < 0)
+        motors[num].reference.velocity = 0;
+    if (motors[num].reference.velocity == 0) {
         if ((motors[num].counter_stop + 1) >= emergency_stop) {
             UpdateStateController(num, STATE_CONTROL_DISABLE);
             motors[num].counter_stop = 0;
@@ -435,6 +438,6 @@ void adc_motors_current(void) {
         ADCValueTmp[REF_MOTOR_LEFT] += AdcBuffer[REF_MOTOR_LEFT][AdcCount]; //Sum for AN0
         ADCValueTmp[REF_MOTOR_RIGHT] += AdcBuffer[REF_MOTOR_RIGHT][AdcCount]; //Sum for AN1
     }
-    motors[REF_MOTOR_LEFT].measure.current = ADCValueTmp[REF_MOTOR_LEFT] >> 6; //Shift
-    motors[REF_MOTOR_RIGHT].measure.current = ADCValueTmp[REF_MOTOR_RIGHT] >> 6; //Shift
+    motors[REF_MOTOR_LEFT].measure.torque = ADCValueTmp[REF_MOTOR_LEFT] >> 6; //Shift
+    motors[REF_MOTOR_RIGHT].measure.torque = ADCValueTmp[REF_MOTOR_RIGHT] >> 6; //Shift
 }
