@@ -66,7 +66,7 @@ typedef struct new_motor {
     unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     volatile int PulsEnc; //Buffer for deadReckoning
-    float last_velocity;
+    motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
     int16_t pid_control;
@@ -167,8 +167,8 @@ void update_parameter_motors(short num, parameter_motor_t parameter) {
         angle_ratio = motors[num].parameter_motor.cpr;
     }
     //Start define with fixed K_vel conversion velocity
-    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ]
-    motors[num].k_vel = (double) 2*PI / (angle_ratio * 2);
+    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
+    motors[num].k_vel = (double) 1000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
     motors[num].k_ang = (double) 2*PI / (angle_ratio * 4);
@@ -233,13 +233,13 @@ void update_pid(short num, pid_control_t pid) {
 }
 
 emergency_t init_parameter_emergency(short num) {
-    emergency_t emer;
+    emergency_t emergency;
     motors[num].counter_alive = 0;
     motors[num].counter_stop = 0;
     emergency.slope_time = 1.0;
     emergency.timeout = 500;
     emergency.bridge_off = 2.0;
-    return emer;
+    return emergency;
 }
 
 void update_parameter_emergency(short num, emergency_t emergency_data) {
@@ -292,7 +292,7 @@ void UpdateStateController(short num, motor_control_t state) {
             motors[num].reference.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
-                motors[num].last_velocity = motors[num].reference.velocity;
+                motors[num].last_reference.velocity = motors[num].reference.velocity;
             }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
@@ -302,7 +302,7 @@ void UpdateStateController(short num, motor_control_t state) {
             motors[num].reference.state = state;
             MOTOR_ENABLE2_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
-                motors[num].last_velocity = motors[num].reference.velocity;
+                motors[num].last_reference.velocity = motors[num].reference.velocity;
             }
 #ifndef MOTION_CONTROL
             UpdateBlink(num, led_state);
@@ -407,12 +407,14 @@ int MotorPID(short num) {
     unsigned int t = TMR1; // Timing
     //Measure velocity
     measureVelocity(num);
-    //Update control reference and measure
-    motors[num].PIDstruct.controlReference = Q15(((float) motors[num].reference.velocity) / motors[num].constraint.velocity); // Setpoint
-    motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / motors[num].constraint.velocity); // Measure
-    PID(&motors[num].PIDstruct); // PID execution
+    // Setpoint
+    motors[num].PIDstruct.controlReference =  Q15(((float) motors[num].reference.velocity) / motors[num].constraint.velocity);
+    // Measure
+    motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / motors[num].constraint.velocity);
+    // PID execution
+    PID(&motors[num].PIDstruct);
     // Control value calculation
-    motors[num].pid_control = ((motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput) >> 4); // PWM value
+    motors[num].pid_control = ((motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput) >> 4);
     // PWM output
     SetDCMCPWM1(num + 1,  motors[num].pid_control + 2048, 0);
 
@@ -420,8 +422,8 @@ int MotorPID(short num) {
 }
 
 bool Emergency(short num) {
-    motors[num].reference.velocity -= (int16_t) (motors[num].last_velocity / emergency_step + 0.5f);
-    if (SGN(motors[num].reference.velocity) * motors[num].last_velocity < 0)
+    motors[num].reference.velocity -= motors[num].last_reference.velocity / (int16_t) (emergency_step + 0.5f);
+    if (SGN(motors[num].reference.velocity) * motors[num].last_reference.velocity < 0)
         motors[num].reference.velocity = 0;
     if (motors[num].reference.velocity == 0) {
         if ((motors[num].counter_stop + 1) >= emergency_stop) {

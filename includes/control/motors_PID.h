@@ -43,7 +43,7 @@ extern "C" {
     // else
     //    ThC = RATIO
     //Start define with fixed K_vel conversion velocity
-    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ]
+    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
 #define K_VEL 27925268.03190926
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
