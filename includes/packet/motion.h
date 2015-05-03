@@ -132,7 +132,7 @@ typedef struct motor {
     motor_control_t volt;
     motor_control_t torque;
     motor_control_t velocity;
-    motor_control_t position;
+    float position;
 } motor_t;
 #define LNG_MOTOR sizeof(motor_t)
 

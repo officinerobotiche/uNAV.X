@@ -132,6 +132,12 @@ extern "C" {
      */
     int set_motor_velocity(short motor, int16_t ref_velocity);
     /**
+     * Set position motor.
+     * @param motIdx number of motor
+     * @param value new value position
+     */
+    inline void set_position_measure(short motIdx, float value);
+    /**
      * Return information about state motor, torque velocity position.
      * @param motIdx number of motor
      * @return return information about motor

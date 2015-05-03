@@ -216,7 +216,7 @@ void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
     DEAD_RECKONING_FLAG = 0; //interrupt flag reset
-    time.process[PROCESS_ODOMETRY] = deadReckoning();
+    //time.process[PROCESS_ODOMETRY] = deadReckoning();
 }
 
 unsigned int ReadUART1(void) {

@@ -160,7 +160,7 @@ void update_parameter_motors(short num, parameter_motor_t parameter) {
     //    ThC = CPR * RATIO   
     // else
     //    ThC = RATIO
-    double angle_ratio;
+    float angle_ratio;
     if(motors[num].parameter_motor.encoder_pos) {
         angle_ratio = motors[num].parameter_motor.cpr * motors[num].parameter_motor.ratio;
     } else {
@@ -168,10 +168,10 @@ void update_parameter_motors(short num, parameter_motor_t parameter) {
     }
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-    motors[num].k_vel = (double) 1000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
+    motors[num].k_vel = (float) 1000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-    motors[num].k_ang = (double) 2*PI / (angle_ratio * 4);
+    motors[num].k_ang = (float) 2*PI / (angle_ratio * 4);
     //Update encoder swap
     switch (num) {
         case REF_MOTOR_LEFT:
@@ -257,6 +257,10 @@ int set_motor_velocity(short number, int16_t ref_velocity) {
         motors[number].reference.velocity = SGN(motors[number].reference.velocity) * motors[number].constraint.velocity;
     }
     return TMR1 - t; // Time of execution
+}
+
+/* inline */ void set_position_measure(short motIdx, float value) {
+    motors[motIdx].measure.position = value;  
 }
 
 /* inline */ motor_t get_motor_measure(short motIdx) {
