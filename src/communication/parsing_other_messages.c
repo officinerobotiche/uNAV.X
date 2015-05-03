@@ -152,14 +152,6 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
     abstract_message_u send;
     if (info->type == HASHMAP_MOTION)
         switch (info->command) {
-            case PID_CONTROL_L:
-                send.pid = get_pid_value(REF_MOTOR_LEFT);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case PID_CONTROL_R:
-                send.pid = get_pid_value(REF_MOTOR_RIGHT);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
             case COORDINATE:
                 send.coordinate = coordinate;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
@@ -176,28 +168,40 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 send.parameter_motor = get_parameter_motor(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case CONSTRAINT:
-                send.constraint = constraint;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
             case VELOCITY:
                 send.velocity = vel_rif;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
+            case VELOCITY_MIS:
+                send.velocity = vel_mis;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case ENABLE:
+                send.motor_state = control_state;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case PID_CONTROL_L:
+                send.pid = get_pid_value(REF_MOTOR_LEFT);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case PID_CONTROL_R:
+                send.pid = get_pid_value(REF_MOTOR_RIGHT);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
            case VEL_MOTOR_L:
-                send.motor_control = get_motor_information(REF_MOTOR_LEFT).refer_vel;
+                send.motor_control = get_motor_reference(REF_MOTOR_LEFT).velocity;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_R:
-                send.motor_control = get_motor_information(REF_MOTOR_RIGHT).refer_vel;
+                send.motor_control = get_motor_reference(REF_MOTOR_RIGHT).velocity;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_L:
-                send.motor_control = get_motor_information(REF_MOTOR_LEFT).measure_vel;
+                send.motor_control = get_motor_measure(REF_MOTOR_LEFT).velocity;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_R:
-                send.motor_control = get_motor_information(REF_MOTOR_RIGHT).measure_vel;
+                send.motor_control = get_motor_measure(REF_MOTOR_RIGHT).velocity;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case ENABLE_MOTOR_L:
@@ -208,28 +212,24 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 send.motor_state = get_motor_state(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case ENABLE:
-                send.motor_state = control_state;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
             case MOTOR_L:
-                send.motor = get_motor_information(REF_MOTOR_LEFT);
+                send.motor = get_motor_measure(REF_MOTOR_LEFT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_R:
-                send.motor = get_motor_information(REF_MOTOR_RIGHT);
+                send.motor = get_motor_measure(REF_MOTOR_RIGHT);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case POS_MOTOR_MIS_L:
-                //send.motor_control = get_motor_information(REF_MOTOR_LEFT).position;
-                //list_send[len] = createDataPacket(info->command, info->type, &send);
+                send.motor_control = get_motor_measure(REF_MOTOR_LEFT).position;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case POS_MOTOR_MIS_R:
-                //send.motor_control = get_motor_information(REF_MOTOR_RIGHT).position;
-                //list_send[len] = createDataPacket(info->command, info->type, &send);
+                send.motor_control = get_motor_measure(REF_MOTOR_RIGHT).position;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case VELOCITY_MIS:
-                send.velocity = vel_mis;
+            case CONSTRAINT:
+                send.constraint = constraint;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case EMERGENCY:
