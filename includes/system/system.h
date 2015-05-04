@@ -82,6 +82,13 @@ extern "C" {
     #define ADC_BUFF 64
     #define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
 
+    typedef struct process {
+        char name[BUFF_NAME_PROCESS];
+        uint8_t time;
+        uint8_t priority;
+        uint8_t frequency;
+    } process_t;
+
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
@@ -95,12 +102,7 @@ go here. */
      */
     void init_process(void);
 
-    /**
-     * From name recived, return a process required.
-     * @param number name process
-     * @return save in process_buffer name associated for process
-     */
-    process_buffer_t decodeNameProcess(int number);
+
 
     /**
      * Update priority for process, restart function Init Interrupt for restart
@@ -115,6 +117,15 @@ go here. */
      * @return ACK value for correct update priority
      */
     unsigned char update_frequency(void);
+    
+    void set_process(uint8_t command, process_state_t process_state);
+    /**
+     * From name recived, return a process required.
+     * @param number name process
+     * @return save in process_buffer name associated for process
+     */
+    process_name_t get_process_name(process_name_t process_state);
+    process_state_t get_process(uint8_t command, process_state_t process_state);
 
     /**
      * Managment services messages. Return a service message for correct parsing

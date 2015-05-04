@@ -54,8 +54,13 @@ unsigned int counter_pid = 0;
 //volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
 //volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
 //volatile int SIG_VELR = 0; //Verso rotazione ruota destra
-volatile process_t time, priority, frequency;
-process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+//volatile process_t time, priority, frequency;
+//process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+
+//From system.c
+extern process_t default_process[2];
+extern process_t motor_process[PROCESS_MOTOR_LENGTH];
+extern process_t motion_process[PROCESS_MOTION_LENGTH];
 
 //From user
 extern led_control_t led_controller[LED_NUM];
@@ -166,13 +171,13 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
     int led_counter = 0;
 
-    if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
+    if (counter_pid >= motor_process[PROCESS_PID_LEFT].frequency) {
         //Will be added in feature #39
         //MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
         PID_FLAG = 1; //Start OC1Interrupt for PID control
         counter_pid = 0;
     }
-    if (counter_odo >= frequency.process[PROCESS_ODOMETRY]) {
+    if (counter_odo >= motion_process[PROCESS_ODOMETRY].frequency) {
         DEAD_RECKONING_FLAG = 1;
         counter_odo = 0;
     }
@@ -197,14 +202,14 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
     PID_FLAG = 0; // interrupt flag reset
-    time.process[PROCESS_VELOCITY] = MotorTaskController();
-    time.process[PROCESS_PID_LEFT] = MotorPID(MOTOR_ZERO);
-    time.process[PROCESS_PID_RIGHT] = MotorPID(MOTOR_ONE);
+    motor_process[PROCESS_VELOCITY].time = MotorTaskController();
+    motor_process[PROCESS_PID_LEFT].time = MotorPID(MOTOR_ZERO);
+   motor_process[PROCESS_PID_RIGHT].time = MotorPID(MOTOR_ONE);
 }
 
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
     PARSER_FLAG = 0; //interrupt flag reset
-    time.parse_packet = parse_packet();
+    default_process[PROCESS_PARSE].time = parse_packet();
 }
 
 void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {

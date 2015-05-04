@@ -71,9 +71,9 @@ extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
-// From Interrupt
-extern volatile process_t time, priority, frequency;
-extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+process_t default_process[2];
+process_t motor_process[PROCESS_MOTOR_LENGTH];
+process_t motion_process[PROCESS_MOTION_LENGTH];
 
 // From motors PID
 //extern parameter_motor_t parameter_motor_left, parameter_motor_right;
@@ -104,75 +104,150 @@ compiler installation directory /doc folder for documentation on the
 __builtin functions.*/
 
 void init_process(void) {
-    // Init name process
-    name_process_pid_l.name = PROCESS_PID_LEFT;
-    strcpy(name_process_pid_l.buffer, PID_LEFT_STRING);
-    name_process_pid_r.name = PROCESS_PID_RIGHT;
-    strcpy(name_process_pid_r.buffer, PID_RIGHT_STRING);
-    name_process_velocity.name = PROCESS_VELOCITY;
-    strcpy(name_process_velocity.buffer, VELOCITY_STRING);
-    name_process_odometry.name = PROCESS_ODOMETRY;
-    strcpy(name_process_odometry.buffer, ODOMETRY_STRING);
+    strcpy(default_process[PROCESS_IDLE].name, "idle");
+    default_process[PROCESS_IDLE].time = 0;
+    strcpy(default_process[PROCESS_PARSE].name, "parse");
+    default_process[PROCESS_PARSE].time = 0;
+    //Init left process pid
+    strcpy(motor_process[PROCESS_PID_LEFT].name, PID_LEFT_STRING);
+    motor_process[PROCESS_PID_LEFT].time = 0;
+    motor_process[PROCESS_PID_LEFT].priority = VEL_PID_LEVEL;
+    motor_process[PROCESS_PID_LEFT].frequency = 1;
+    //Init right process pid
+    strcpy(motor_process[PROCESS_PID_RIGHT].name, PID_RIGHT_STRING);
+    motor_process[PROCESS_PID_RIGHT].time = 0;
+    motor_process[PROCESS_PID_RIGHT].priority = VEL_PID_LEVEL;
+    motor_process[PROCESS_PID_RIGHT].frequency = 1;
+    //Init left process measure
+    strcpy(motor_process[PROCESS_MEASURE_VEL_LEFT].name, MEASURE_VEL_LEFT_STRING);
+    motor_process[PROCESS_MEASURE_VEL_LEFT].time = 0;
+    motor_process[PROCESS_MEASURE_VEL_LEFT].priority = MEASURE_LEVEL;
+    motor_process[PROCESS_MEASURE_VEL_LEFT].frequency = 1;
+    //Init right process measure
+    strcpy(motor_process[PROCESS_MEASURE_VEL_RIGHT].name, MEASURE_VEL_RIGHT_STRING);
+    motor_process[PROCESS_MEASURE_VEL_RIGHT].time = 0;
+    motor_process[PROCESS_MEASURE_VEL_RIGHT].priority = MEASURE_LEVEL;
+    motor_process[PROCESS_MEASURE_VEL_RIGHT].frequency = 1;
+    
+    //Init process odometry
+    strcpy(motion_process[PROCESS_ODOMETRY].name, ODOMETRY_STRING);
+    motion_process[PROCESS_ODOMETRY].time = 0;
+    motion_process[PROCESS_ODOMETRY].priority = DEAD_RECK_LEVEL;
+    motion_process[PROCESS_ODOMETRY].frequency = 10;
+    //Init process odometry
+    strcpy(motion_process[PROCESS_VELOCITY].name, VELOCITY_STRING);
+    motion_process[PROCESS_VELOCITY].time = 0;
+    motion_process[PROCESS_VELOCITY].priority = VEL_PID_LEVEL;
+    motion_process[PROCESS_VELOCITY].frequency = 10;
 
     parameter_system.step_timer = (int) (TMR1_VALUE);
     parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
-
-    priority.length = PROCESS_MOTION_LENGTH;
-    priority.idle = 0;
-    priority.parse_packet = RX_PARSER_LEVEL;
-    priority.process[PROCESS_PID_LEFT] = VEL_PID_LEVEL;
-    priority.process[PROCESS_PID_RIGHT] = VEL_PID_LEVEL;
-    priority.process[PROCESS_VELOCITY] = VEL_PID_LEVEL;
-    priority.process[PROCESS_ODOMETRY] = DEAD_RECK_LEVEL;
-    priority.process[PROCESS_MEASURE_VEL] = MEASURE_LEVEL;
-    frequency.length = PROCESS_MOTION_LENGTH;
-    frequency.idle = 0;
-    frequency.parse_packet = 0;
-    frequency.process[PROCESS_PID_LEFT] = 1;
-    frequency.process[PROCESS_PID_RIGHT] = 1;
-    frequency.process[PROCESS_VELOCITY] = 1;
-    frequency.process[PROCESS_ODOMETRY] = 10;
-    time.length = PROCESS_MOTION_LENGTH;
 }
 
-process_buffer_t decodeNameProcess(int number) {
-    process_buffer_t process;
-    // TODO To be fix
-//    switch (number) {
-//        case -1:
-//            process.name = PROCESS_MOTION_LENGTH;
-//            break;
-//        case PROCESS_PID_LEFT:
-//            process = name_process_pid_l;
-//            break;
-//        case PROCESS_PID_RIGHT:
-//            process = name_process_pid_r;
-//            break;
-//        case PROCESS_VELOCITY:
-//            process = name_process_velocity;
-//            break;
-//        case PROCESS_ODOMETRY:
-//            process = name_process_odometry;
-//            break;
-//    }
-    return process;
+void set_process(uint8_t command, process_state_t process_state) {
+    if (process_state.hashmap == HASHMAP_DEFAULT) {
+        switch (command) {
+            case PROCESS_TIME:
+                default_process[process_state.number].time = process_state.data;
+                break;
+            case PROCESS_PRIORITY:
+                default_process[process_state.number].priority = process_state.data;
+                break;
+            case PROCESS_FRQ:
+                default_process[process_state.number].frequency = process_state.data;
+                break;
+        }
+    } else if (process_state.hashmap == HASHMAP_MOTOR) {
+        switch (command) {
+            case PROCESS_TIME:
+                motor_process[process_state.number].time = process_state.data;
+                break;
+            case PROCESS_PRIORITY:
+                motor_process[process_state.number].priority = process_state.data;
+                break;
+            case PROCESS_FRQ:
+                motor_process[process_state.number].frequency = process_state.data;
+                break;
+        }
+    } else if (process_state.hashmap == HASHMAP_MOTION) {
+        switch (command) {
+            case PROCESS_TIME:
+                motion_process[process_state.number].time = process_state.data;
+                break;
+            case PROCESS_PRIORITY:
+                motion_process[process_state.number].priority = process_state.data;
+                break;
+            case PROCESS_FRQ:
+                motion_process[process_state.number].frequency = process_state.data;
+                break;
+        }
+    }
+}
+
+process_state_t get_process(uint8_t command, process_state_t process_state) {
+    if (process_state.hashmap == HASHMAP_DEFAULT) {
+        switch (command) {
+            case PROCESS_TIME:
+                process_state.data = default_process[process_state.number].time;
+                break;
+            case PROCESS_PRIORITY:
+                process_state.data = default_process[process_state.number].priority;
+                break;
+            case PROCESS_FRQ:
+                process_state.data = default_process[process_state.number].frequency;
+                break;
+        }
+    } else if (process_state.hashmap == HASHMAP_MOTOR) {
+        switch (command) {
+            case PROCESS_TIME:
+                process_state.data = motor_process[process_state.number].time;
+                break;
+            case PROCESS_PRIORITY:
+                process_state.data = motor_process[process_state.number].priority;
+                break;
+            case PROCESS_FRQ:
+                process_state.data = motor_process[process_state.number].frequency;
+                break;
+        }
+    } else if (process_state.hashmap == HASHMAP_MOTION) {
+        switch (command) {
+            case PROCESS_TIME:
+                process_state.data = motion_process[process_state.number].time;
+                break;
+            case PROCESS_PRIORITY:
+                process_state.data = motion_process[process_state.number].priority;
+                break;
+            case PROCESS_FRQ:
+                process_state.data = motion_process[process_state.number].frequency;
+                break;
+        }
+    }
+    return process_state;
+}
+
+process_name_t get_process_name(process_name_t process_name) {
+    if (process_name.hashmap == HASHMAP_DEFAULT) {
+        strcpy(process_name.data, default_process[process_name.number].name);
+    } else if (process_name.hashmap == HASHMAP_MOTOR) {
+        strcpy(process_name.data, motor_process[process_name.number].name);
+    } else if (process_name.hashmap == HASHMAP_MOTION) {
+        strcpy(process_name.data, motion_process[process_name.number].name);
+    }
+    return process_name;
 }
 
 unsigned char update_priority(void) {
-    priority.idle = 0;
+    default_process[PROCESS_IDLE].time = 0;
     InitInterrupts();
     return ACK;
 }
 
 unsigned char update_frequency(void) {
-    frequency.idle = 0;
-    frequency.parse_packet = 0;
-    if (frequency.process[PROCESS_PID_LEFT] == 0
-            || frequency.process[PROCESS_PID_RIGHT] == 0 || frequency.process[PROCESS_VELOCITY] == 0) {
+    if (motor_process[PROCESS_PID_LEFT].frequency == 0 || motor_process[PROCESS_PID_RIGHT].frequency == 0) {
         VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
     } else
         VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
-    if (frequency.process[PROCESS_ODOMETRY] == 0) {
+    if (motion_process[PROCESS_ODOMETRY].frequency == 0 || motion_process[PROCESS_VELOCITY].frequency == 0) {
         DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
     } else
         DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
@@ -218,25 +293,25 @@ services_t services(services_t service) {
 void InitInterrupts(void) {
     //For PID velocity control
     VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-    VEL_PID_PRIORITY = priority.process[PROCESS_PID_LEFT]; // Set Output Compare Channel 1 Priority Level
+    VEL_PID_PRIORITY = motor_process[PROCESS_PID_LEFT].priority; // Set Output Compare Channel 1 Priority Level
     IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
     VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
 
     //For Parsing UART message
     RX_PARSER_ENABLE = 0; // Disable Output Compare Channel 2 interrupt
-    RX_PARSER_PRIORITY = priority.parse_packet; // Set Output Compare Channel 2 Priority Level
+    RX_PARSER_PRIORITY = RX_PARSER_LEVEL; // Set Output Compare Channel 2 Priority Level
     IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
     RX_PARSER_ENABLE = 1; // Enable Output Compare Channel 2 interrupt
 
     //For measure position and velocity estimation
     MEASURE_ENABLE = 0; // Disable Output Compare Channel 3 interrupt
-    MEASURE_PRIORITY = priority.process[PROCESS_MEASURE_VEL]; // Set Output Compare Channel 3 Priority Level
+    MEASURE_PRIORITY = motor_process[PROCESS_MEASURE_VEL_LEFT].priority; // Set Output Compare Channel 3 Priority Level
     IFS1bits.OC3IF = 0; // Clear Output Compare Channel 3 Interrupt Flag
     MEASURE_ENABLE = 1; // Enable Output Compare Channel 3 interrupt
     
     // For dead reckoning
     DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
-    DEAD_RECK_PRIORITY = priority.process[PROCESS_ODOMETRY]; // Set RTC Priority Level
+    DEAD_RECK_PRIORITY = motion_process[PROCESS_ODOMETRY].priority; // Set RTC Priority Level
     IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
     DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
 }

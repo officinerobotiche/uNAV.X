@@ -50,9 +50,6 @@ static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 /** GLOBAL VARIBLES */
 // From system/system.c
 extern parameter_system_t parameter_system;
-// From system/interrupt.c
-extern volatile process_t time, priority, frequency;
-extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
 // From communication/serial.c
 extern error_pkg_t serial_error;
 extern packet_t receive_pkg;
@@ -76,18 +73,15 @@ void saveData(information_packet_t* list_send, size_t len, information_packet_t*
                 send.services = services(info->packet.services);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case PRIORITY_PROCESS:
-                priority = info->packet.process;
+            case PROCESS_PRIORITY:
+                set_process(info->command, info->packet.process_state);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
-            case FRQ_PROCESS:
-                frequency = info->packet.process;
+            case PROCESS_FRQ:
+                set_process(info->command, info->packet.process_state);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
-            case NAME_PROCESS:
-                send.process_name = decodeNameProcess(info->packet.process_name.name);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case TIME_PROCESS:
+            case PROCESS_NAME:
+            case PROCESS_TIME:
             case PARAMETER_SYSTEM:
             case ERROR_SERIAL:
                 list_send[len] = createPacket(info->command, NACK, info->type, NULL);
@@ -107,15 +101,19 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t*
                 send.services = services(info->packet.services);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case PRIORITY_PROCESS:
-                send.process = priority;
+            case PROCESS_PRIORITY:
+                send.process_state = get_process(info->command, info->packet.process_state);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
-            case FRQ_PROCESS:
-                send.process = frequency;
+            case PROCESS_FRQ:
+                send.process_state = get_process(info->command, info->packet.process_state);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case TIME_PROCESS:
-                send.process = time;
+            case PROCESS_TIME:
+                send.process_state = get_process(info->command, info->packet.process_state);
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
+            case PROCESS_NAME:
+                send.process_name = get_process_name(info->packet.process_name);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PARAMETER_SYSTEM:
@@ -126,7 +124,6 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t*
                 send.error_pkg = serial_error;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case NAME_PROCESS:
             default:
                 list_send[len] = createPacket(info->command, NACK, info->type, NULL);
                 break;
