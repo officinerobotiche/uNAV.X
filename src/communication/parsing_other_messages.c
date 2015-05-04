@@ -38,7 +38,7 @@
 #include "communication/serial.h"
 
 #include "control/high_level_control.h"
-#include "control/motors_PID.h"
+#include "control/motors.h"
 
 #include "system/user.h"
 #include "system/system.h"
