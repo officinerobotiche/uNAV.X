@@ -123,10 +123,10 @@ void init_motor(short num) {
     ICinfo[num].overTmr = 0;
     ICinfo[num].timePeriod = 0;
     switch (num) {
-        case REF_MOTOR_LEFT:
+        case MOTOR_ZERO:
             motors[num].pin_enable = &enable1;
             break;
-        case REF_MOTOR_RIGHT:
+        case MOTOR_ONE:
             motors[num].pin_enable = &enable2;
             break;
     }
@@ -176,10 +176,10 @@ void update_parameter_motors(short num, parameter_motor_t parameter) {
     motors[num].k_ang = (float) 2*PI / (angle_ratio * 4);
     //Update encoder swap
     switch (num) {
-        case REF_MOTOR_LEFT:
+        case MOTOR_ZERO:
             QEI1CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
-        case REF_MOTOR_RIGHT:
+        case MOTOR_ONE:
             QEI2CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
     }
@@ -213,14 +213,14 @@ void update_pid(short num, pid_control_t pid) {
     motors[num].kCoeffs[1] = Q15(motors[num].pid.ki);
     motors[num].kCoeffs[2] = Q15(motors[num].pid.kd);
     switch (num) {
-        case REF_MOTOR_LEFT:
+        case MOTOR_ZERO:
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
             motors[num].PIDstruct.abcCoefficients = &abcCoefficient1[0];
             //Set up pointer to controller history samples
             motors[num].PIDstruct.controlHistory = &controlHistory1[0];
             break;
-        case REF_MOTOR_RIGHT:
+        case MOTOR_ONE:
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
             motors[num].PIDstruct.abcCoefficients = &abcCoefficient2[0];
@@ -289,8 +289,8 @@ void UpdateStateController(short num, motor_control_t state) {
 
     switch (num) {
         case -1:
-            motors[REF_MOTOR_LEFT].reference.state = state;
-            motors[REF_MOTOR_RIGHT].reference.state = state;
+            motors[MOTOR_ZERO].reference.state = state;
+            motors[MOTOR_ONE].reference.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.enable_set;
             MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.enable_set;
 #ifndef MOTION_CONTROL
@@ -298,7 +298,7 @@ void UpdateStateController(short num, motor_control_t state) {
             UpdateBlink(1, led_state);
 #endif
             break;
-        case REF_MOTOR_LEFT:
+        case MOTOR_ZERO:
             motors[num].reference.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
@@ -308,7 +308,7 @@ void UpdateStateController(short num, motor_control_t state) {
             UpdateBlink(num, led_state);
 #endif
             break;
-        case REF_MOTOR_RIGHT:
+        case MOTOR_ONE:
             motors[num].reference.state = state;
             MOTOR_ENABLE2_BIT = enable ^ motors[num].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
@@ -401,11 +401,11 @@ int measureVelocity(short num) {
 
     //Evaluate position
     switch (num) {
-        case REF_MOTOR_LEFT:
+        case MOTOR_ZERO:
             motors[num].PulsEnc += (int) POS1CNT; // Odometry
             POS1CNT = 0;
             break;
-        case REF_MOTOR_RIGHT:
+        case MOTOR_ONE:
             motors[num].PulsEnc += (int) POS2CNT; // Odometry
             POS2CNT = 0;
             break;
@@ -451,9 +451,9 @@ void adc_motors_current(void) {
 
     for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Evaluate mean value
     {
-        ADCValueTmp[REF_MOTOR_LEFT] += AdcBuffer[REF_MOTOR_LEFT][AdcCount]; //Sum for AN0
-        ADCValueTmp[REF_MOTOR_RIGHT] += AdcBuffer[REF_MOTOR_RIGHT][AdcCount]; //Sum for AN1
+        ADCValueTmp[MOTOR_ZERO] += AdcBuffer[MOTOR_ZERO][AdcCount]; //Sum for AN0
+        ADCValueTmp[MOTOR_ONE] += AdcBuffer[MOTOR_ONE][AdcCount]; //Sum for AN1
     }
-    motors[REF_MOTOR_LEFT].measure.torque = ADCValueTmp[REF_MOTOR_LEFT] >> 6; //Shift
-    motors[REF_MOTOR_RIGHT].measure.torque = ADCValueTmp[REF_MOTOR_RIGHT] >> 6; //Shift
+    motors[MOTOR_ZERO].measure.torque = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
+    motors[MOTOR_ONE].measure.torque = ADCValueTmp[MOTOR_ONE] >> 6; //Shift
 }

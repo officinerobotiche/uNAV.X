@@ -148,7 +148,7 @@ typedef struct parameter_motor {
 #define HASHMAP_MOTOR_NUMBER 20
 
 // Definition on communication/parsing_packet.c
-//static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
+//static unsigned int hashmap_motor[HASHMAP_MOTOR_NUMBER];
 
 /**
  * Table with conversion number message in a length for data messages

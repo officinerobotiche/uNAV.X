@@ -125,8 +125,8 @@ int HighLevelTaskController(void) {
         case STATE_CONTROL_HIGH_CONFIGURATION:
             break;
         default:
-            set_motor_velocity(REF_MOTOR_LEFT, 0);
-            set_motor_velocity(REF_MOTOR_RIGHT, 0);
+            set_motor_velocity(MOTOR_ZERO, 0);
+            set_motor_velocity(MOTOR_ONE, 0);
             break;
     }
     return TMR1 - t; // Time of execution
@@ -135,8 +135,8 @@ int HighLevelTaskController(void) {
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
     volatile coordinate_t delta;
-    float WheelSpL = parameter_unicycle.radius_l * get_motor_measure(REF_MOTOR_LEFT).position;
-    float WheelSpR = parameter_unicycle.radius_r * get_motor_measure(REF_MOTOR_RIGHT).position;
+    float WheelSpL = parameter_unicycle.radius_l * get_motor_measure(MOTOR_ZERO).position;
+    float WheelSpR = parameter_unicycle.radius_r * get_motor_measure(MOTOR_ONE).position;
     float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote
     float DifSp = WheelSpR - WheelSpL; // Calcolo della differenza degli spostamenti delle ruote
     //PulsEncL = 0; // Flush variabile
@@ -195,18 +195,18 @@ int set_high_velocity(velocity_t velocity) {
 
     // >>>>> Saturation on 16 bit values
     if(motor_left_refer > 32767) {
-        set_motor_velocity(REF_MOTOR_LEFT, 32767);
+        set_motor_velocity(MOTOR_ZERO, 32767);
     } else if (motor_left_refer < -32768) {
-        set_motor_velocity(REF_MOTOR_LEFT, -32768);
+        set_motor_velocity(MOTOR_ZERO, -32768);
     } else {
-        set_motor_velocity(REF_MOTOR_LEFT, motor_left_refer);
+        set_motor_velocity(MOTOR_ZERO, motor_left_refer);
     }
     if(motor_right_refer > 32767) {
-        set_motor_velocity(REF_MOTOR_RIGHT, 32767);
+        set_motor_velocity(MOTOR_ONE, 32767);
     } else if (motor_right_refer < -32768) {
-        set_motor_velocity(REF_MOTOR_RIGHT, -32768);
+        set_motor_velocity(MOTOR_ONE, -32768);
     } else {
-        set_motor_velocity(REF_MOTOR_RIGHT, motor_right_refer);
+        set_motor_velocity(MOTOR_ONE, motor_right_refer);
     }
     // <<<<< Saturation on 16 bit values
 
@@ -219,8 +219,8 @@ int set_high_velocity(velocity_t velocity) {
 
 int VelocityMeasure(void) {
     unsigned int t = TMR1; // Timing function
-    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measure(REF_MOTOR_RIGHT).velocity + parameter_unicycle_int.radius_l * get_motor_measure(REF_MOTOR_LEFT).velocity) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measure(REF_MOTOR_RIGHT).velocity - parameter_unicycle_int.radius_l * get_motor_measure(REF_MOTOR_LEFT).velocity) / (2 * parameter_unicycle_int.wheelbase);
+    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measure(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measure(MOTOR_ZERO).velocity) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measure(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measure(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
 

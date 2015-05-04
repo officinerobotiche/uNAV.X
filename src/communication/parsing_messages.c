@@ -44,6 +44,7 @@
 //Table to convertion name (number) of message in a length
 //See packet/packet.h and packet/unav.h
 static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
+static unsigned int hashmap_motor[HASHMAP_MOTOR_NUMBER];
 static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
 /** GLOBAL VARIBLES */
@@ -197,6 +198,9 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
                 break;
             case HASHMAP_MOTION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
+                break;
+            case HASHMAP_MOTOR:
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command];
                 break;
             default:
                 //TODO throw

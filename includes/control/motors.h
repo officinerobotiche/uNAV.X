@@ -15,8 +15,8 @@
  * Public License for more details
  */
 
-#ifndef MOTORSPID_H
-#define	MOTORSPID_H
+#ifndef MOTORS_H
+#define	MOTORS_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -30,8 +30,8 @@ extern "C" {
      * Numbers of motors available in this board
      */
 #define NUM_MOTORS 2
-#define REF_MOTOR_LEFT 0
-#define REF_MOTOR_RIGHT 1
+#define MOTOR_ZERO 0
+#define MOTOR_ONE 1
 
 #define ENC_BEFORE_GEAR 1
 #define ENC_AFTER_GEAR 0
@@ -52,13 +52,13 @@ extern "C" {
 #define DEFAULT_KP 0.6
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
-    
+
     typedef struct _ICdata {
         volatile unsigned int overTmr; //Overflow timer
         volatile unsigned long timePeriod; //Time period from Input Capture
         volatile int SIG_VEL; //Sign of versus rotation motor
     } ICdata;
-    
+
     /******************************************************************************/
     /* System Function Prototypes                                                 */
     /******************************************************************************/
@@ -179,7 +179,7 @@ extern "C" {
      * @return start emergency mode or not.
      */
     bool Emergency(short num);
-    
+
     /**
      * Convert and check reference for type of law control selected. We have
      * four principal type of control motor:
@@ -233,4 +233,4 @@ extern "C" {
 }
 #endif
 
-#endif	/* MOTORSPID_H */
+#endif	/* MOTORS_H */
