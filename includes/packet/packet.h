@@ -45,11 +45,9 @@
 #ifdef MOTION
 #include "packet/motion.h"
 #endif
-
-//TO BE SPLIT
-//#ifdef MOTOR
-//#include "packet/motor.h"
-//#endif
+#ifdef MOTOR
+#include "packet/motor.h"
+#endif
 
 /** Buffers dimension */
 // Dimension for UART transmit buffer

@@ -70,10 +70,15 @@ typedef struct new_motor {
     unsigned int counter_alive;
     unsigned int counter_stop;
     int16_t pid_control;
+    //Emergency
+    float emergency_step;
+    float emergency_stop;
+    bool save_velocity;
     //gain motor
     float k_vel;
     float k_ang;
     //Common
+    emergency_t emergency;
     parameter_motor_t parameter_motor;
     motor_t constraint;
     motor_t reference;
@@ -86,10 +91,10 @@ typedef struct new_motor {
 new_motor_t motors[NUM_MOTORS];
 
 //variables for emergency
-emergency_t emergency;
-float emergency_step = 0;
-float emergency_stop = 0;
-bool save_velocity = true;
+
+//float emergency_step = 0;
+//float emergency_stop = 0;
+//bool save_velocity = true;
 
 /**/
 // From interrupt
@@ -97,9 +102,6 @@ extern ICdata ICinfo[NUM_MOTORS];
 
 //From high_level_control
 extern volatile unsigned int control_state;
-
-//From System
-extern parameter_system_t parameter_system;
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -191,6 +193,10 @@ void update_constraints_motor(short num, motor_t constraint) {
 /* inline */ parameter_motor_t get_parameter_motor(short motIdx) {
     return motors[motIdx].parameter_motor;
 }
+             
+/* inline */ emergency_t get_emergency_motor(short motIdx) {
+    return motors[motIdx].emergency;
+}
 
 pid_control_t init_pid_control(short num) {
     pid_control_t pid;
@@ -243,9 +249,9 @@ emergency_t init_parameter_emergency(short num) {
 }
 
 void update_parameter_emergency(short num, emergency_t emergency_data) {
-    emergency = emergency_data;
-    emergency_step = emergency.slope_time * FRTMR1;
-    emergency_stop = emergency.bridge_off * FRTMR1;
+    motors[num].emergency = emergency_data;
+    motors[num].emergency_step = motors[num].emergency.slope_time * FRTMR1;
+    motors[num].emergency_stop = motors[num].emergency.bridge_off * FRTMR1;
 }
 
 int set_motor_velocity(short number, int16_t ref_velocity) {
@@ -361,7 +367,7 @@ int MotorTaskController(void) {
         }
         // Emergency controller
         if (motors[i].reference.state > STATE_CONTROL_DISABLE) {
-            if ((motors[i].counter_alive + 1) >= emergency.timeout) {
+            if ((motors[i].counter_alive + 1) >= motors[i].emergency.timeout) {
                 /**
                  * Set Motor in emergency mode
                  */
@@ -426,11 +432,11 @@ int MotorPID(short num) {
 }
 
 bool Emergency(short num) {
-    motors[num].reference.velocity -= motors[num].last_reference.velocity / (int16_t) (emergency_step + 0.5f);
+    motors[num].reference.velocity -= motors[num].last_reference.velocity / (int16_t) (motors[num].emergency_step + 0.5f);
     if (SGN(motors[num].reference.velocity) * motors[num].last_reference.velocity < 0)
         motors[num].reference.velocity = 0;
     if (motors[num].reference.velocity == 0) {
-        if ((motors[num].counter_stop + 1) >= emergency_stop) {
+        if ((motors[num].counter_stop + 1) >= motors[num].emergency_stop) {
             UpdateStateController(num, STATE_CONTROL_DISABLE);
             motors[num].counter_stop = 0;
         } else

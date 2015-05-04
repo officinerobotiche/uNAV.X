@@ -74,11 +74,11 @@ typedef int8_t state_controller_t;
 #define LNG_ENABLE_MOTOR sizeof(state_controller_t)
 
 //Numbers associated for motion messages
-#define COORDINATE 4
-#define PARAMETER_UNICYCLE 5
-#define VELOCITY 9
-#define VELOCITY_MIS 10
-#define ENABLE 11
+#define COORDINATE 0
+#define PARAMETER_UNICYCLE 1
+#define VELOCITY 2
+#define VELOCITY_MIS 3
+#define ENABLE 4
 
 //List of all motion messages
 #define ABSTRACT_MESSAGE_MOTION                  \
@@ -87,159 +87,29 @@ typedef int8_t state_controller_t;
         velocity_t velocity;                     \
         state_controller_t motor_state;
 
-//++++++++ MOTOR CONTROL +++++++++++++++++++++//
-
-/**
- * Define to select state of control for single motor
- */
-#define STATE_CONTROL_EMERGENCY -1
-#define STATE_CONTROL_DISABLE 0
-#define STATE_CONTROL_DIRECT 1
-#define STATE_CONTROL_POSITION 2
-#define STATE_CONTROL_VELOCITY 3
-#define STATE_CONTROL_TORQUE 4
-
-/**
- * Message for emergency configuration
- * - time to stop
- * - time to disable bridge
- * - timeout to start emergency stop motors
- */
-typedef struct emergency {
-    float slope_time;
-    float bridge_off;
-    int16_t timeout;
-} emergency_t;
-#define LNG_EMERGENCY sizeof(emergency_t)
-
-/**
- * Message to control single motor
- * - dimension number motors
- */
-typedef int16_t motor_control_t;
-#define LNG_MOTOR_CONTROL sizeof(motor_control_t)
-
-/**
- * Message for state motor controller, information about:
- * - state motor - type of control
- * - mean voltage applied in the bridge - PWM
- * - torque
- * - velocity
- * - position
- */
-typedef struct motor {
-    state_controller_t state;
-    motor_control_t volt;
-    motor_control_t torque;
-    motor_control_t velocity;
-    float position;
-} motor_t;
-#define LNG_MOTOR sizeof(motor_t)
-
-/**
- * Message for definition gain for PID controller
- * - K_p
- * - K_i
- * - K_d
- */
-typedef struct pid {
-    float kp;
-    float ki;
-    float kd;
-} pid_control_t;
-#define LNG_PID_CONTROL sizeof(pid_control_t)
-
-/**
- * Parameter definition for motor:
- * - k_vel - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_vel</a>
- * - k_ang - See <a href="http://wiki.officinerobotiche.it/index.php?title=Robot_configuration_guide.html">Configure K_ang</a>
- * - Set or
- * - boolean set enable
- */
-typedef struct parameter_motor {
-    float cpr;
-    float ratio;
-    float volt_bridge;
-    int8_t encoder_pos;
-    int8_t versus;
-    uint8_t enable_set;
-} parameter_motor_t;
-#define LNG_PARAMETER_MOTOR sizeof(parameter_motor_t)
-
-//List of all motor messages
-#define ABSTRACT_MESSAGE_MOTOR                   \
-        pid_control_t pid;                       \
-        parameter_motor_t parameter_motor;       \
-        motor_control_t motor_control;           \
-        motor_t motor;                           \
-        emergency_t emergency;
-
-//Numbers associated for motor messages
-#define PID_CONTROL_L 0
-#define PID_CONTROL_R 1
-#define MOTOR_L 2
-#define MOTOR_R 3
-#define PARAMETER_MOTOR_L 6
-#define PARAMETER_MOTOR_R 7
-#define EMERGENCY 12
-#define VEL_MOTOR_L 13
-#define VEL_MOTOR_R 14
-#define VEL_MOTOR_MIS_L 15
-#define VEL_MOTOR_MIS_R 16
-#define ENABLE_MOTOR_L 17
-#define ENABLE_MOTOR_R 18
-#define POS_MOTOR_MIS_L 19
-#define POS_MOTOR_MIS_R 20
-#define CONSTRAINT_L 21
-#define CONSTRAINT_R 22
-
-//Numbers and names associated at all processes
-#define PROCESS_MOTION_LENGTH 5
-#define PROCESS_PID_LEFT 0
-#define PID_LEFT_STRING "PID/Left"
-#define PROCESS_PID_RIGHT 1
-#define PID_RIGHT_STRING "PID/Right"
-
-#define PROCESS_VELOCITY 2
+#define PROCESS_MOTION_LENGTH 3
+#define PROCESS_VELOCITY 0
 #define VELOCITY_STRING "Velocity"
-#define PROCESS_ODOMETRY 3
+#define PROCESS_ODOMETRY 1
 #define ODOMETRY_STRING "Odometry"
-#define PROCESS_MEASURE_VEL 4
+#define PROCESS_MEASURE_VEL 2
 #define MEASURE_VEL_STRING "Measure vel"
 
 //Name for HASHMAP with information about motion messages
-#define HASHMAP_MOTION 'M'
-#define HASHMAP_MOTION_NUMBER 30
+#define HASHMAP_MOTION 'N'
+#define HASHMAP_MOTION_NUMBER 10
 
 // Definition on communication/parsing_packet.c
 //static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
 /**
- * Table with convertion number message in a length for data messages
+ * Table with conversion number message in a length for data messages
  */
 #define INITIALIZE_HASHMAP_MOTION   hashmap_motion[COORDINATE] = LNG_COORDINATE;                   \
                                     hashmap_motion[PARAMETER_UNICYCLE] = LNG_PARAMETER_UNICYCLE;   \
                                     hashmap_motion[VELOCITY] = LNG_VELOCITY;                       \
                                     hashmap_motion[ENABLE] = LNG_ENABLE_MOTOR;                     \
                                     hashmap_motion[VELOCITY_MIS] = LNG_VELOCITY;
-
-#define INITIALIZE_HASHMAP_MOTOR    hashmap_motion[PARAMETER_MOTOR_L] = LNG_PARAMETER_MOTOR;       \
-                                    hashmap_motion[PARAMETER_MOTOR_R] = LNG_PARAMETER_MOTOR;       \
-                                    hashmap_motion[PID_CONTROL_L] = LNG_PID_CONTROL;               \
-                                    hashmap_motion[PID_CONTROL_R] = LNG_PID_CONTROL;               \
-                                    hashmap_motion[MOTOR_L] = LNG_MOTOR;                           \
-                                    hashmap_motion[MOTOR_R] = LNG_MOTOR;                           \
-                                    hashmap_motion[VEL_MOTOR_L] = LNG_MOTOR_CONTROL;               \
-                                    hashmap_motion[VEL_MOTOR_R] = LNG_MOTOR_CONTROL;               \
-                                    hashmap_motion[VEL_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[VEL_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[ENABLE_MOTOR_L] = LNG_MOTOR_CONTROL;            \
-                                    hashmap_motion[ENABLE_MOTOR_R] = LNG_MOTOR_CONTROL;            \
-                                    hashmap_motion[POS_MOTOR_MIS_L] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[POS_MOTOR_MIS_R] = LNG_MOTOR_CONTROL;           \
-                                    hashmap_motion[CONSTRAINT_L] = LNG_MOTOR;                      \
-                                    hashmap_motion[CONSTRAINT_R] = LNG_MOTOR;                      \
-                                    hashmap_motion[EMERGENCY] = LNG_EMERGENCY;
                                     
 #endif	/* MOTION_H */
 

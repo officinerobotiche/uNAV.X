@@ -137,23 +137,24 @@ void init_process(void) {
 
 process_buffer_t decodeNameProcess(int number) {
     process_buffer_t process;
-    switch (number) {
-        case -1:
-            process.name = PROCESS_MOTION_LENGTH;
-            break;
-        case PROCESS_PID_LEFT:
-            process = name_process_pid_l;
-            break;
-        case PROCESS_PID_RIGHT:
-            process = name_process_pid_r;
-            break;
-        case PROCESS_VELOCITY:
-            process = name_process_velocity;
-            break;
-        case PROCESS_ODOMETRY:
-            process = name_process_odometry;
-            break;
-    }
+    // TODO To be fix
+//    switch (number) {
+//        case -1:
+//            process.name = PROCESS_MOTION_LENGTH;
+//            break;
+//        case PROCESS_PID_LEFT:
+//            process = name_process_pid_l;
+//            break;
+//        case PROCESS_PID_RIGHT:
+//            process = name_process_pid_r;
+//            break;
+//        case PROCESS_VELOCITY:
+//            process = name_process_velocity;
+//            break;
+//        case PROCESS_ODOMETRY:
+//            process = name_process_odometry;
+//            break;
+//    }
     return process;
 }
 

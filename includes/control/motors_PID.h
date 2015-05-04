@@ -164,9 +164,15 @@ extern "C" {
     /**
      * Return parameters from motor
      * @param motIdx number selected motor
-     * @return parameter motors
+     * @return parameters motor
      */
     inline parameter_motor_t get_parameter_motor(short motIdx);
+    /**
+     * Return emergency parameters from motor
+     * @param motIdx number selected motor
+     * @return emergency parameters motor
+     */
+    inline emergency_t get_emergency_motor(short motIdx);
     /**
      * If not receive anything velocity messages. Start controlled stop motors
      * @param number Number motor
