@@ -214,8 +214,9 @@ typedef union buffer_packet {
 #define PROCESS_TIME 2
 #define PROCESS_PRIORITY 3
 #define PROCESS_FRQ 4
-#define PARAMETER_SYSTEM 5
-#define ERROR_SERIAL 6
+#define PROCESS_NUMBER 5
+#define PARAMETER_SYSTEM 6
+#define ERROR_SERIAL 7
 
 //Names for type service's messages
 #define RESET '*'
@@ -240,6 +241,7 @@ typedef union buffer_packet {
                                    hashmap_default[PROCESS_TIME] = LNG_PROCESS_STATE;        \
                                    hashmap_default[PROCESS_PRIORITY] = LNG_PROCESS_STATE;    \
                                    hashmap_default[PROCESS_FRQ] = LNG_PROCESS_STATE;         \
+                                   hashmap_default[PROCESS_NUMBER] = LNG_PROCESS_STATE;      \
                                    hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
                                    hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;
 

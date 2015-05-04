@@ -74,12 +74,11 @@ void saveData(information_packet_t* list_send, size_t len, information_packet_t*
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PROCESS_PRIORITY:
-                set_process(info->command, info->packet.process_state);
-                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
             case PROCESS_FRQ:
                 set_process(info->command, info->packet.process_state);
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
+            case PROCESS_NUMBER:
             case PROCESS_NAME:
             case PROCESS_TIME:
             case PARAMETER_SYSTEM:
@@ -102,13 +101,9 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t*
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case PROCESS_PRIORITY:
-                send.process_state = get_process(info->command, info->packet.process_state);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
             case PROCESS_FRQ:
-                send.process_state = get_process(info->command, info->packet.process_state);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
             case PROCESS_TIME:
+            case PROCESS_NUMBER:
                 send.process_state = get_process(info->command, info->packet.process_state);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;

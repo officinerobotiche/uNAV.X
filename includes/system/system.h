@@ -82,6 +82,7 @@ extern "C" {
     #define ADC_BUFF 64
     #define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
 
+#define NUM_PROCESS_DEFAULT 2
     #define PROCESS_IDLE 0
     #define PROCESS_PARSE 1
     typedef struct process {

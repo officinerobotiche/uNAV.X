@@ -72,7 +72,7 @@ extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
-process_t default_process[2];
+process_t default_process[NUM_PROCESS_DEFAULT];
 process_t motor_process[PROCESS_MOTOR_LENGTH];
 process_t motion_process[PROCESS_MOTION_LENGTH];
 
@@ -197,6 +197,9 @@ process_state_t get_process(uint8_t command, process_state_t process_state) {
             case PROCESS_FRQ:
                 process_state.data = default_process[process_state.number].frequency;
                 break;
+            case PROCESS_NUMBER:
+                process_state.data = NUM_PROCESS_DEFAULT;
+                break;
         }
     } else if (process_state.hashmap == HASHMAP_MOTOR) {
         switch (command) {
@@ -209,6 +212,9 @@ process_state_t get_process(uint8_t command, process_state_t process_state) {
             case PROCESS_FRQ:
                 process_state.data = motor_process[process_state.number].frequency;
                 break;
+            case PROCESS_NUMBER:
+                process_state.data = PROCESS_MOTOR_LENGTH;
+                break;
         }
     } else if (process_state.hashmap == HASHMAP_MOTION) {
         switch (command) {
@@ -220,6 +226,9 @@ process_state_t get_process(uint8_t command, process_state_t process_state) {
                 break;
             case PROCESS_FRQ:
                 process_state.data = motion_process[process_state.number].frequency;
+                break;
+            case PROCESS_NUMBER:
+                process_state.data = PROCESS_MOTION_LENGTH;
                 break;
         }
     }
