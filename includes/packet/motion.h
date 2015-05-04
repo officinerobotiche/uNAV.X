@@ -87,13 +87,6 @@ typedef int8_t state_controller_t;
         velocity_t velocity;                     \
         state_controller_t motor_state;
 
-//Numbers and names associated at all processes
-#define PROCESS_MOTION_LENGTH 2
-#define PROCESS_VELOCITY 0
-#define VELOCITY_STRING "Velocity"
-#define PROCESS_ODOMETRY 1
-#define ODOMETRY_STRING "Odometry"
-
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTION 'M'
 #define HASHMAP_MOTION_NUMBER 10

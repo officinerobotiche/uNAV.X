@@ -41,6 +41,7 @@
 #include "packet/motion.h"
 #include "communication/serial.h"
 #include "control/motors.h"
+#include "control/high_level_control.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -109,25 +110,25 @@ void init_process(void) {
     strcpy(default_process[PROCESS_PARSE].name, "parse");
     default_process[PROCESS_PARSE].time = 0;
     //Init left process pid
-    strcpy(motor_process[PROCESS_PID_LEFT].name, PID_LEFT_STRING);
-    motor_process[PROCESS_PID_LEFT].time = 0;
-    motor_process[PROCESS_PID_LEFT].priority = VEL_PID_LEVEL;
-    motor_process[PROCESS_PID_LEFT].frequency = 1;
+    strcpy(motor_process[LEFT_PROCESS_PID].name, LEFT_PROCESS_PID_STRING);
+    motor_process[LEFT_PROCESS_PID].time = 0;
+    motor_process[LEFT_PROCESS_PID].priority = VEL_PID_LEVEL;
+    motor_process[LEFT_PROCESS_PID].frequency = 1;
     //Init right process pid
-    strcpy(motor_process[PROCESS_PID_RIGHT].name, PID_RIGHT_STRING);
-    motor_process[PROCESS_PID_RIGHT].time = 0;
-    motor_process[PROCESS_PID_RIGHT].priority = VEL_PID_LEVEL;
-    motor_process[PROCESS_PID_RIGHT].frequency = 1;
+    strcpy(motor_process[RIGHT_PROCESS_PID].name, RIGHT_PROCESS_PID_STRING);
+    motor_process[RIGHT_PROCESS_PID].time = 0;
+    motor_process[RIGHT_PROCESS_PID].priority = VEL_PID_LEVEL;
+    motor_process[RIGHT_PROCESS_PID].frequency = 1;
     //Init left process measure
-    strcpy(motor_process[PROCESS_MEASURE_VEL_LEFT].name, MEASURE_VEL_LEFT_STRING);
-    motor_process[PROCESS_MEASURE_VEL_LEFT].time = 0;
-    motor_process[PROCESS_MEASURE_VEL_LEFT].priority = MEASURE_LEVEL;
-    motor_process[PROCESS_MEASURE_VEL_LEFT].frequency = 1;
+    strcpy(motor_process[LEFT_PROCESS_MEASURE].name, LEFT_PROCESS_MEASURE_STRING);
+    motor_process[LEFT_PROCESS_MEASURE].time = 0;
+    motor_process[LEFT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
+    motor_process[LEFT_PROCESS_MEASURE].frequency = 1;
     //Init right process measure
-    strcpy(motor_process[PROCESS_MEASURE_VEL_RIGHT].name, MEASURE_VEL_RIGHT_STRING);
-    motor_process[PROCESS_MEASURE_VEL_RIGHT].time = 0;
-    motor_process[PROCESS_MEASURE_VEL_RIGHT].priority = MEASURE_LEVEL;
-    motor_process[PROCESS_MEASURE_VEL_RIGHT].frequency = 1;
+    strcpy(motor_process[RIGHT_PROCESS_MEASURE].name, RIGHT_PROCESS_MEASURE_STRING);
+    motor_process[RIGHT_PROCESS_MEASURE].time = 0;
+    motor_process[RIGHT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
+    motor_process[RIGHT_PROCESS_MEASURE].frequency = 1;
     
     //Init process odometry
     strcpy(motion_process[PROCESS_ODOMETRY].name, ODOMETRY_STRING);
@@ -243,7 +244,7 @@ unsigned char update_priority(void) {
 }
 
 unsigned char update_frequency(void) {
-    if (motor_process[PROCESS_PID_LEFT].frequency == 0 || motor_process[PROCESS_PID_RIGHT].frequency == 0) {
+    if (motor_process[LEFT_PROCESS_PID].frequency == 0 || motor_process[RIGHT_PROCESS_PID].frequency == 0) {
         VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
     } else
         VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
@@ -293,7 +294,7 @@ services_t services(services_t service) {
 void InitInterrupts(void) {
     //For PID velocity control
     VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-    VEL_PID_PRIORITY = motor_process[PROCESS_PID_LEFT].priority; // Set Output Compare Channel 1 Priority Level
+    VEL_PID_PRIORITY = motor_process[LEFT_PROCESS_PID].priority; // Set Output Compare Channel 1 Priority Level
     IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
     VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
 
@@ -305,7 +306,7 @@ void InitInterrupts(void) {
 
     //For measure position and velocity estimation
     MEASURE_ENABLE = 0; // Disable Output Compare Channel 3 interrupt
-    MEASURE_PRIORITY = motor_process[PROCESS_MEASURE_VEL_LEFT].priority; // Set Output Compare Channel 3 Priority Level
+    MEASURE_PRIORITY = motor_process[LEFT_PROCESS_MEASURE].priority; // Set Output Compare Channel 3 Priority Level
     IFS1bits.OC3IF = 0; // Clear Output Compare Channel 3 Interrupt Flag
     MEASURE_ENABLE = 1; // Enable Output Compare Channel 3 interrupt
     

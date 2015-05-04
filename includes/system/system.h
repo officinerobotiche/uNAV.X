@@ -82,6 +82,8 @@ extern "C" {
     #define ADC_BUFF 64
     #define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
 
+    #define PROCESS_IDLE 0
+    #define PROCESS_PARSE 1
     typedef struct process {
         char name[BUFF_NAME_PROCESS];
         uint8_t time;

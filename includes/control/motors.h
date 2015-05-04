@@ -53,6 +53,17 @@ extern "C" {
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
 
+//Numbers and names associated at all processes
+#define PROCESS_MOTOR_LENGTH 4
+#define LEFT_PROCESS_PID 0
+#define LEFT_PROCESS_PID_STRING "Left/PID"
+#define RIGHT_PROCESS_PID 1
+#define RIGHT_PROCESS_PID_STRING "Right/PID"
+#define LEFT_PROCESS_MEASURE 3
+#define LEFT_PROCESS_MEASURE_STRING "Left/Meas"
+#define RIGHT_PROCESS_MEASURE 4
+#define RIGHT_PROCESS_MEASURE_STRING "Right/Meas"
+    
     typedef struct _ICdata {
         volatile unsigned int overTmr; //Overflow timer
         volatile unsigned long timePeriod; //Time period from Input Capture

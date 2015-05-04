@@ -109,8 +109,7 @@ typedef struct services {
 } services_t;
 #define LNG_SERVICES sizeof(services_t)
 
-#define PROCESS_IDLE 0
-#define PROCESS_PARSE 1
+
 typedef struct process_state {
     uint8_t hashmap;
     uint8_t number;

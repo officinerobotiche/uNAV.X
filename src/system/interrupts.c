@@ -171,7 +171,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
     int led_counter = 0;
 
-    if (counter_pid >= motor_process[PROCESS_PID_LEFT].frequency) {
+    if (counter_pid >= motor_process[LEFT_PROCESS_PID].frequency) {
         //Will be added in feature #39
         //MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
         PID_FLAG = 1; //Start OC1Interrupt for PID control
@@ -203,8 +203,8 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
     PID_FLAG = 0; // interrupt flag reset
     motor_process[PROCESS_VELOCITY].time = MotorTaskController();
-    motor_process[PROCESS_PID_LEFT].time = MotorPID(MOTOR_ZERO);
-   motor_process[PROCESS_PID_RIGHT].time = MotorPID(MOTOR_ONE);
+    motor_process[LEFT_PROCESS_PID].time = MotorPID(MOTOR_ZERO);
+   motor_process[RIGHT_PROCESS_PID].time = MotorPID(MOTOR_ONE);
 }
 
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {

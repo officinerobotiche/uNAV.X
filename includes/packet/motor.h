@@ -136,17 +136,6 @@ typedef struct parameter_motor {
 #define CONSTRAINT_R 16
 #define EMERGENCY_R 17
 
-//Numbers and names associated at all processes
-#define PROCESS_MOTOR_LENGTH 4
-#define PROCESS_PID_LEFT 0
-#define PID_LEFT_STRING "Left/PID"
-#define PROCESS_PID_RIGHT 1
-#define PID_RIGHT_STRING "Right/PID"
-#define PROCESS_MEASURE_VEL_LEFT 3
-#define MEASURE_VEL_LEFT_STRING "Left/Meas"
-#define PROCESS_MEASURE_VEL_RIGHT 4
-#define MEASURE_VEL_RIGHT_STRING "Right/Meas"
-
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTOR 'G'
 #define HASHMAP_MOTOR_NUMBER 30
