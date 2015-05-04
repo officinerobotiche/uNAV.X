@@ -96,7 +96,7 @@ typedef int8_t state_controller_t;
 #define MEASURE_VEL_STRING "Measure vel"
 
 //Name for HASHMAP with information about motion messages
-#define HASHMAP_MOTION 'N'
+#define HASHMAP_MOTION 'M'
 #define HASHMAP_MOTION_NUMBER 10
 
 // Definition on communication/parsing_packet.c

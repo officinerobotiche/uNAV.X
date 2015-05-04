@@ -15,6 +15,7 @@
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
         <itemPath>includes/packet/packet.h</itemPath>
+        <itemPath>includes/packet/motor.h</itemPath>
         <itemPath>includes/packet/motion.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
@@ -1100,6 +1101,7 @@
         <property key="save-temps" value="false"/>
       </C30Global>
       <Simulator>
+        <property key="W0204_ADC_TAD_TOO_SMALL" value="report"/>
         <property key="breakoptions.coreerrors" value="Ignore"/>
         <property key="breakoptions.corewarnings" value="Ignore"/>
         <property key="breakoptions.peripheralerrors" value="Ignore"/>

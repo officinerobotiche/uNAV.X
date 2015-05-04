@@ -144,7 +144,7 @@ typedef struct parameter_motor {
 #define PID_RIGHT_STRING "PID/Right"
 
 //Name for HASHMAP with information about motion messages
-#define HASHMAP_MOTOR 'M'
+#define HASHMAP_MOTOR 'G'
 #define HASHMAP_MOTOR_NUMBER 20
 
 // Definition on communication/parsing_packet.c
