@@ -38,10 +38,10 @@
 typedef union _motor_command_map {
 
     struct {
-        uint8_t motor : 4;
-        uint8_t command : 4;
+        unsigned char motor : 4;
+        unsigned char command : 4;
     } bitset;
-    uint8_t command_message;
+    unsigned char command_message;
 } motor_command_map_t;
 
 /**
@@ -125,10 +125,10 @@ typedef struct _motor_pid {
 //List of all motor messages
 #define ABSTRACT_MESSAGE_MOTOR                   \
         motor_t motor;                           \
-        motor_parameter_t parameter_motor;       \
-        motor_state_t state;                     \
-        motor_emergency_t emergency;             \
-        motor_pid_t pid;                         \
+        motor_parameter_t motor_parameter;       \
+        motor_state_t motor_state;               \
+        motor_emergency_t motor_emergency;       \
+        motor_pid_t motor_pid;                   \
         motor_control_t motor_control;
 
 //Numbers associated for motor messages

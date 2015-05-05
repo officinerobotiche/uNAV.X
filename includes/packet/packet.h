@@ -37,15 +37,15 @@
  * Other messages for this board are in packet/unav.h
  */
 
-#define MOTION
-#define MOTOR_PACKETS
+#define PACKETS_MOTION
+#define PACKETS_MOTOR
 
 /*******/
 
-#ifdef MOTION
+#ifdef PACKETS_MOTION
 #include "packet/motion.h"
 #endif
-#ifdef MOTOR_PACKETS
+#ifdef PACKETS_MOTOR
 #include "packet/motor.h"
 #endif
 
@@ -167,13 +167,13 @@ typedef union abstract_message {
     services_t services;
     error_pkg_t error_pkg;
     parameter_system_t parameter_system;
-#ifdef MOTOR
+#ifdef PACKETS_MOTION
     ABSTRACT_MESSAGE_MOTOR
 #endif
-#ifdef MOTOR_PACKETS
+#ifdef PACKETS_MOTOR
     ABSTRACT_MESSAGE_MOTION
 #endif
-#ifdef NAVIGATION_BOARD
+#ifdef PACKETS_NAVIGATION
     ABSTRACT_MESSAGE_NAVIGATION
 #endif
 } abstract_message_u;
@@ -236,7 +236,7 @@ typedef union buffer_packet {
 /**
  * Table with convertion number message in a length for data messages
  */
-#define INITIALIZE_HASHMAP_DEFAULT hashmap_default[SERVICES] = LNG_SERVICES;                 \
+#define HASHMAP_DEFAULT_INITIALIZE hashmap_default[SERVICES] = LNG_SERVICES;                 \
                                    hashmap_default[PROCESS_NAME] = LNG_PROCESS_NAME;         \
                                    hashmap_default[PROCESS_TIME] = LNG_PROCESS_STATE;        \
                                    hashmap_default[PROCESS_PRIORITY] = LNG_PROCESS_STATE;    \
@@ -244,7 +244,6 @@ typedef union buffer_packet {
                                    hashmap_default[PROCESS_NUMBER] = LNG_PROCESS_STATE;      \
                                    hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
                                    hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;
-
 
 #endif	/* PACKET_H */
 

@@ -81,11 +81,11 @@ typedef int8_t state_controller_t;
 #define ENABLE 4
 
 //List of all motion messages
-#define ABSTRACT_MESSAGE_MOTION                  \
-        coordinate_t coordinate;                 \
-        parameter_unicycle_t parameter_unicycle; \
-        velocity_t velocity;                     \
-        state_controller_t motor_state;
+#define ABSTRACT_MESSAGE_MOTION                         \
+        coordinate_t motion_coordinate;                 \
+        parameter_unicycle_t motion_parameter_unicycle; \
+        velocity_t motion_velocity;                     \
+        state_controller_t motion_state;
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTION 'M'

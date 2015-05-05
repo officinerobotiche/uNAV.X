@@ -60,7 +60,7 @@ extern char receive_header;
 /******************************************************************************/
 
 void init_hashmap() {
-    INITIALIZE_HASHMAP_DEFAULT
+    HASHMAP_DEFAULT_INITIALIZE
     HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
 }
@@ -183,6 +183,7 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
     information.command = command;
     information.option = option;
     information.type = type;
+    motor_command_map_t command_motor;
     if (option == DATA) {
         switch (type) {
             case HASHMAP_DEFAULT:
@@ -192,7 +193,8 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
                 break;
             case HASHMAP_MOTOR:
-                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command];
+                command_motor.command_message = command;
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command_motor.bitset.command];
                 break;
             default:
                 //TODO throw
