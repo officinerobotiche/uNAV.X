@@ -76,90 +76,32 @@ extern "C" {
 
     /**
      * Initialization all variables for motor controller.
-     * @param num Number motor
+     * @param motIdx Number motor
      */
-    void init_motor(short num);
+    void init_motor(short motIdx);
+    
     /**
      * Initialization parameters for motor controller.
-     * @param num Number motor
      * @return Default configuration
      */
-    parameter_motor_t init_parameter_motors(short num);
+    motor_parameter_t init_motor_parameters();
+    /**
+     * Return parameters from motor
+     * @param motIdx number selected motor
+     * @return parameters motor
+     */
+    inline motor_parameter_t get_motor_parameters(short motIdx);
     /**
      * Function to update motor parameters from message
-     * @param num Number motor
+     * @param motIdx Number motor
      */
-    void update_parameter_motors(short num, parameter_motor_t parameter);
-    /**
-     * Function to update motor constraints from message
-     * @param num Number motor
-     * @param constraint constraints set
-     */
-    void update_constraints_motor(short num, motor_t constraint);
-    /**
-     * Initialization standard value for PID controllers
-     * @param number Number motor
-     * @return Default configuration
-     */
-    pid_control_t init_pid_control(short num);
-    /**
-     * Transform float value received from gain for PID right in Q15 value
-     * for dsp controller.
-     * PID data structure: PIDstruct for PID 1 (Motor left)
-     * PID data structure: PIDstruct for PID 1 (Motor right)
-     * @param num Number motor
-     */
-    void update_pid(short num, pid_control_t pid);
-    /**
-     * Return value of PID controller
-     * @param motIdx number of motor
-     * @return value PID
-     */
-    inline pid_control_t get_pid_value(short motIdx);
-    /**
-     * Initialization standard value for emergency configuration motor
-     * @param number Number motor
-     * @return default configuration for emergency stop
-     */
-    emergency_t init_parameter_emergency(short num);
+    void update_motor_parameters(short motIdx, motor_parameter_t parameters);
+    
     /**
      * Initialization standard value for constraints motor
-     * @param number Number motor
      * @return default configuration for constraints
      */
-    motor_t init_parameter_constraints(short num);
-    /**
-     * Update counter and step value for emergency controller.
-     * @param number Number motor
-     * @param emergency configuration to save
-     */
-    void update_parameter_emergency(short num, emergency_t emergency_data);
-    /**
-     * Write a correct value of motor reference and if necessary modify
-     * reference to control constraint.
-     * @param motor Number motor
-     * @param ref_velocity reference of velocity
-     * @return Time to compute this function
-     */
-    int set_motor_velocity(short motor, int16_t ref_velocity);
-    /**
-     * Set position motor.
-     * @param motIdx number of motor
-     * @param value new value position
-     */
-    inline void set_position_measure(short motIdx, float value);
-    /**
-     * Return information about state motor, torque velocity position.
-     * @param motIdx number of motor
-     * @return return information about motor
-     */
-    inline motor_t get_motor_measure(short motIdx);
-    /**
-     * Return information about motor reference of control.
-     * @param motIdx number of motor
-     * @return return information about motor
-     */
-    inline motor_t get_motor_reference(short motIdx);
+    motor_t init_motor_constraints();
     /**
      * Return information about motor constraints.
      * @param motIdx number of motor
@@ -167,29 +109,90 @@ extern "C" {
      */
     inline motor_t get_motor_constraints(short motIdx);
     /**
-     * Set state controller for all motors, if DISABLE, set enable motor to zero
-     * @param num number motor to update state if -1 set all motor to state
-     * @param motor state command
+     * Function to update motor constraints from message
+     * @param motIdx Number motor
+     * @param constraint constraints set
      */
-    void UpdateStateController(short num, motor_control_t motor);
+    void update_motor_constraints(short motIdx, motor_t constraints);
+    
     /**
-     * Return parameters from motor
-     * @param motIdx number selected motor
-     * @return parameters motor
+     * Initialization standard value for PID controllers
+     * @return Default configuration
      */
-    inline parameter_motor_t get_parameter_motor(short motIdx);
+    motor_pid_t init_motor_pid();
+    /**
+     * Return value of PID controller
+     * @param motIdx number of motor
+     * @return value PID
+     */
+    inline motor_pid_t get_motor_pid(short motIdx);
+    /**
+     * Transform float value received from gain for PID right in Q15 value
+     * for dsp controller.
+     * @param motIdx Number motor
+     * @param pid update pid for:
+     *        PID data structure: PIDstruct for PID 1 (Motor left)
+     *        PID data structure: PIDstruct for PID 1 (Motor right)
+     */
+    void update_motor_pid(short motIdx, motor_pid_t pid);
+
+    /**
+     * Initialization standard value for emergency configuration motor
+     * @return default configuration for emergency stop
+     */
+    motor_emergency_t init_motor_emergency();
     /**
      * Return emergency parameters from motor
      * @param motIdx number selected motor
      * @return emergency parameters motor
      */
-    inline emergency_t get_emergency_motor(short motIdx);
+    inline motor_emergency_t get_motor_emergency(short motIdx);
     /**
-     * If not receive anything velocity messages. Start controlled stop motors
-     * @param number Number motor
-     * @return start emergency mode or not.
+     * Update counter and step value for emergency controller.
+     * @param motIdx Number motor
+     * @param emergency configuration to save
      */
-    bool Emergency(short num);
+    void update_motor_emergency(short motIdx, motor_emergency_t emergency);
+    
+    /**
+     * Return information about state motor, torque velocity position.
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_measures(short motIdx);
+    /**
+     * Return information about motor reference of control.
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_reference(short motIdx);
+    /**
+     * Set position motor.
+     * @param motIdx number of motor
+     * @param value new value position
+     */
+    inline void reset_motor_position_measure(short motIdx, float value);
+    /**
+     * Write a correct value of motor reference and if necessary modify
+     * reference to control constraint.
+     * @param motIdx Number motor
+     * @param reference reference of velocity
+     * @return Time to compute this function
+     */
+    int set_motor_velocity(short motIdx, motor_control_t reference);
+
+    /**
+     * Return state of motor
+     * @param motIdx number of motor selected
+     * @return state of motor
+     */
+    inline motor_state_t get_motor_state(short motIdx);
+    /**
+     * Set state controller for all motors, if DISABLE, set enable motor to zero
+     * @param motIdx number motor to update state if -1 set all motor to state
+     * @param motor state command
+     */
+    void set_motor_state(short motIdx, motor_state_t motor);
 
     /**
      * Convert and check reference for type of law control selected. We have
@@ -203,19 +206,12 @@ extern "C" {
     int MotorTaskController(void);
 
     /**
-     * Return state of motor
-     * @param motIdx number of motor selected
-     * @return state of motor
-     */
-    inline state_controller_t get_motor_state(short motIdx);
-
-    /**
      * Measure velocity from Input Capture and QEI
-     * @param number Number motor
+     * @param motIdx Number motor
      * @return Time to Compute task control reference
      */
-    int measureVelocity(short num);
-
+    int measureVelocity(short motIdx);
+    
     /**
      * Execution velocity PID for left motor
      *           _____          _______
@@ -230,10 +226,17 @@ extern "C" {
      * information is important for odometry)
      * 2. Load data (reference, measure) and execution PID control and get value
      * 3. Conversion PID value for PWM controller
-     * @param number Number motor
+     * @param motIdx Number motor
      * @return time to compute parsing packet
      */
-    int MotorPID(short num);
+    int MotorPID(short motIdx);
+    
+    /**
+     * If not receive anything velocity messages. Start controlled stop motors
+     * @param motIdx Number motor
+     * @return start emergency mode or not.
+     */
+    bool Emergency(short motIdx);
 
     /**
      * Mean value for current measure motors

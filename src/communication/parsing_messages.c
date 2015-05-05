@@ -61,7 +61,7 @@ extern char receive_header;
 
 void init_hashmap() {
     INITIALIZE_HASHMAP_DEFAULT
-    INITIALIZE_HASHMAP_MOTOR
+    HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
 }
 

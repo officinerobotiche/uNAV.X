@@ -38,14 +38,14 @@
  */
 
 #define MOTION
-#define MOTOR
+#define MOTOR_PACKETS
 
 /*******/
 
 #ifdef MOTION
 #include "packet/motion.h"
 #endif
-#ifdef MOTOR
+#ifdef MOTOR_PACKETS
 #include "packet/motor.h"
 #endif
 
@@ -170,7 +170,7 @@ typedef union abstract_message {
 #ifdef MOTOR
     ABSTRACT_MESSAGE_MOTOR
 #endif
-#ifdef MOTION
+#ifdef MOTOR_PACKETS
     ABSTRACT_MESSAGE_MOTION
 #endif
 #ifdef NAVIGATION_BOARD

@@ -94,15 +94,15 @@ int16_t main(void) {
         /* Initialize variables for motors */
         init_motor(i);
         /* Initialize parameters for motors */
-        update_parameter_motors(i, init_parameter_motors(i));
+        update_motor_parameters(i, init_motor_parameters());
         /* Initialize pid controllers */
-        update_pid(i, init_pid_control(i));
+        update_motor_pid(i, init_motor_pid());
         /* Initialize emergency procedure to stop */
-        update_parameter_emergency(i, init_parameter_emergency(i));
+        update_motor_emergency(i, init_motor_emergency());
         /* Initialize constraints motor */
-        update_constraints_motor(i, init_parameter_constraints(i));
+        update_motor_constraints(i, init_motor_constraints());
         /* Init state controller */
-        UpdateStateController(i, STATE_CONTROL_DISABLE);
+        set_motor_state(i, STATE_CONTROL_DISABLE);
     }
 
     /* Initialize variables for unicycle */

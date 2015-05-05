@@ -78,13 +78,13 @@ typedef struct new_motor {
     float k_vel;
     float k_ang;
     //Common
-    emergency_t emergency;
-    parameter_motor_t parameter_motor;
+    motor_emergency_t emergency;
+    motor_parameter_t parameter_motor;
     motor_t constraint;
     motor_t reference;
     motor_t measure;
     //PID
-    pid_control_t pid;
+    motor_pid_t pid;
     tPID PIDstruct;
     fractional kCoeffs[3]; //Coefficients KP, KI, KD
 } new_motor_t;
@@ -107,45 +107,35 @@ extern volatile unsigned int control_state;
 /* User Functions                                                            */
 /*****************************************************************************/
 
-void init_motor(short num) {
-    motors[num].measure.position = 0;
-    motors[num].measure.velocity = 0;
-    motors[num].measure.torque = 0;
-    motors[num].measure.volt = 0;
-    motors[num].measure.state = STATE_CONTROL_DISABLE;
-    motors[num].reference.position = 0;
-    motors[num].reference.velocity = 0;
-    motors[num].reference.torque = 0;
-    motors[num].reference.volt = 0;
-    motors[num].reference.state = STATE_CONTROL_DISABLE;
+void init_motor(short motIdx) {
+    motors[motIdx].measure.position = 0;
+    motors[motIdx].measure.velocity = 0;
+    motors[motIdx].measure.torque = 0;
+    motors[motIdx].measure.volt = 0;
+    motors[motIdx].measure.state = STATE_CONTROL_DISABLE;
+    motors[motIdx].reference.position = 0;
+    motors[motIdx].reference.velocity = 0;
+    motors[motIdx].reference.torque = 0;
+    motors[motIdx].reference.volt = 0;
+    motors[motIdx].reference.state = STATE_CONTROL_DISABLE;
     //Input capture information
-    ICinfo[num].SIG_VEL = 0;
-    ICinfo[num].overTmr = 0;
-    ICinfo[num].timePeriod = 0;
-    switch (num) {
+    ICinfo[motIdx].SIG_VEL = 0;
+    ICinfo[motIdx].overTmr = 0;
+    ICinfo[motIdx].timePeriod = 0;
+    switch (motIdx) {
         case MOTOR_ZERO:
-            motors[num].pin_enable = &enable1;
+            motors[motIdx].pin_enable = &enable1;
             break;
         case MOTOR_ONE:
-            motors[num].pin_enable = &enable2;
+            motors[motIdx].pin_enable = &enable2;
             break;
     }
-    motors[num].CS_mask = 1 << motors[num].pin_enable->CS_pin;
-    motors[num].k_mul = 1;
+    motors[motIdx].CS_mask = 1 << motors[motIdx].pin_enable->CS_pin;
+    motors[motIdx].k_mul = 1;
 }
 
-motor_t init_parameter_constraints(short num) {
-    motor_t constraint;
-    constraint.state = 0;
-    constraint.position = -1;
-    constraint.torque = -1;
-    constraint.volt = -1;
-    constraint.velocity = 25000;
-    return constraint;
-}
-
-parameter_motor_t init_parameter_motors(short num) {
-    parameter_motor_t parameter;
+motor_parameter_t init_motor_parameters() {
+    motor_parameter_t parameter;
     parameter.cpr = CPR; //Gain to convert input capture value to velocity
     parameter.ratio = RATIO; //Gain to convert QEI value to rotation movement
     parameter.volt_bridge = VOLT_BRIDGE;
@@ -155,121 +145,120 @@ parameter_motor_t init_parameter_motors(short num) {
     return parameter;
 }
 
-void update_parameter_motors(short num, parameter_motor_t parameter) {
+/* inline */ motor_parameter_t get_motor_parameters(short motIdx) {
+    return motors[motIdx].parameter_motor;
+}
+
+void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //Update parameter configuration
-    motors[num].parameter_motor = parameter;
+    motors[motIdx].parameter_motor = parameters;
     // If CPR is before ratio
     //    ThC = CPR * RATIO   
     // else
     //    ThC = RATIO
     float angle_ratio;
-    if(motors[num].parameter_motor.encoder_pos) {
-        angle_ratio = motors[num].parameter_motor.cpr * motors[num].parameter_motor.ratio;
+    if(motors[motIdx].parameter_motor.encoder_pos) {
+        angle_ratio = motors[motIdx].parameter_motor.cpr * motors[motIdx].parameter_motor.ratio;
     } else {
-        angle_ratio = motors[num].parameter_motor.cpr;
+        angle_ratio = motors[motIdx].parameter_motor.cpr;
     }
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-    motors[num].k_vel = (float) 1000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
+    motors[motIdx].k_vel = (float) 1000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-    motors[num].k_ang = (float) 2*PI / (angle_ratio * 4);
+    motors[motIdx].k_ang = (float) 2*PI / (angle_ratio * 4);
     //Update encoder swap
-    switch (num) {
+    switch (motIdx) {
         case MOTOR_ZERO:
-            QEI1CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI1CONbits.SWPAB = (motors[motIdx].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
         case MOTOR_ONE:
-            QEI2CONbits.SWPAB = (motors[num].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI2CONbits.SWPAB = (motors[motIdx].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
     }
 }
 
-void update_constraints_motor(short num, motor_t constraint) {
+motor_t init_motor_constraints() {
+    motor_t constraint;
+    constraint.state = 0;
+    constraint.position = -1;
+    constraint.torque = -1;
+    constraint.volt = -1;
+    constraint.velocity = 25000;
+    return constraint;
+}
+
+/* inline */ motor_t get_motor_constraints(short motIdx) {
+    return motors[motIdx].constraint;
+}
+
+void update_motor_constraints(short motIdx, motor_t contraints) {
     //Update parameter constraints
-    motors[num].constraint = constraint;
+    motors[motIdx].constraint = contraints;
 }
 
-/* inline */ parameter_motor_t get_parameter_motor(short motIdx) {
-    return motors[motIdx].parameter_motor;
-}
-             
-/* inline */ emergency_t get_emergency_motor(short motIdx) {
-    return motors[motIdx].emergency;
-}
-
-pid_control_t init_pid_control(short num) {
-    pid_control_t pid;
+motor_pid_t init_motor_pid() {
+    motor_pid_t pid;
     pid.kp = DEFAULT_KP;
     pid.ki = DEFAULT_KI;
     pid.kd = DEFAULT_KD;
     return pid;
 }
 
-void update_pid(short num, pid_control_t pid) {
+/* inline */ motor_pid_t get_motor_pid(short motIdx) {
+    return motors[motIdx].pid;
+}
+
+void update_motor_pid(short motIdx, motor_pid_t pid) {
     // Update value of pid
-    motors[num].pid = pid;
-    motors[num].kCoeffs[0] = Q15(motors[num].pid.kp);
-    motors[num].kCoeffs[1] = Q15(motors[num].pid.ki);
-    motors[num].kCoeffs[2] = Q15(motors[num].pid.kd);
-    switch (num) {
+    motors[motIdx].pid = pid;
+    motors[motIdx].kCoeffs[0] = Q15(motors[motIdx].pid.kp);
+    motors[motIdx].kCoeffs[1] = Q15(motors[motIdx].pid.ki);
+    motors[motIdx].kCoeffs[2] = Q15(motors[motIdx].pid.kd);
+    switch (motIdx) {
         case MOTOR_ZERO:
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
-            motors[num].PIDstruct.abcCoefficients = &abcCoefficient1[0];
+            motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient1[0];
             //Set up pointer to controller history samples
-            motors[num].PIDstruct.controlHistory = &controlHistory1[0];
+            motors[motIdx].PIDstruct.controlHistory = &controlHistory1[0];
             break;
         case MOTOR_ONE:
             //Initialize the PID data structure: PIDstruct
             //Set up pointer to derived coefficients
-            motors[num].PIDstruct.abcCoefficients = &abcCoefficient2[0];
+            motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient2[0];
             //Set up pointer to controller history samples
-            motors[num].PIDstruct.controlHistory = &controlHistory2[0];
+            motors[motIdx].PIDstruct.controlHistory = &controlHistory2[0];
             break;
     }
     // Clear the controller history and the controller output
-    PIDInit(&motors[num].PIDstruct);
+    PIDInit(&motors[motIdx].PIDstruct);
     //Derive the a,b, & c coefficients from the Kp, Ki & Kd
-    PIDCoeffCalc(&motors[num].kCoeffs[0], &motors[num].PIDstruct);
+    PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
 }
-
-/* inline */ pid_control_t get_pid_value(short motIdx) {
-    return motors[motIdx].pid;
-}
-
-emergency_t init_parameter_emergency(short num) {
-    emergency_t emergency;
-    motors[num].counter_alive = 0;
-    motors[num].counter_stop = 0;
+             
+motor_emergency_t init_motor_emergency() {
+    motor_emergency_t emergency;
     emergency.slope_time = 1.0;
     emergency.timeout = 500;
     emergency.bridge_off = 2.0;
     return emergency;
 }
 
-void update_parameter_emergency(short num, emergency_t emergency_data) {
-    motors[num].emergency = emergency_data;
-    motors[num].emergency_step = motors[num].emergency.slope_time * FRTMR1;
-    motors[num].emergency_stop = motors[num].emergency.bridge_off * FRTMR1;
+/* inline */ motor_emergency_t get_motor_emergency(short motIdx) {
+    return motors[motIdx].emergency;
 }
 
-int set_motor_velocity(short number, int16_t ref_velocity) {
-    unsigned int t = TMR1; // Timing function
-    motors[number].counter_alive = 0; //Reset time emergency
-    motors[number].reference.state = STATE_CONTROL_VELOCITY;
-    motors[number].reference.velocity = ref_velocity;
-    if (abs(motors[number].reference.velocity) > motors[number].constraint.velocity) {
-        motors[number].reference.velocity = SGN(motors[number].reference.velocity) * motors[number].constraint.velocity;
-    }
-    return TMR1 - t; // Time of execution
+void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
+    motors[motIdx].emergency = emergency_data;
+    motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * FRTMR1;
+    motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * FRTMR1;
+    motors[motIdx].counter_alive = 0;
+    motors[motIdx].counter_stop = 0;
 }
 
-/* inline */ void set_position_measure(short motIdx, float value) {
-    motors[motIdx].measure.position = value;  
-}
-
-/* inline */ motor_t get_motor_measure(short motIdx) {
+/* inline */ motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position = motors[motIdx].PulsEnc * motors[motIdx].k_ang;
     motors[motIdx].PulsEnc = 0;
     motors[motIdx].measure.volt = ((float) motors[motIdx].pid_control) / motors[motIdx].parameter_motor.volt_bridge;
@@ -279,15 +268,34 @@ int set_motor_velocity(short number, int16_t ref_velocity) {
 /* inline */ motor_t get_motor_reference(short motIdx) {
     return motors[motIdx].reference;
 }
+             
+/* inline */ void reset_motor_position_measure(short motIdx, float value) {
+    motors[motIdx].measure.position = value;  
+}
+             
+int set_motor_velocity(short motIdx, motor_control_t reference) {
+    unsigned int t = TMR1; // Timing function
+    motors[motIdx].counter_alive = 0; //Reset time emergency
+    motors[motIdx].reference.state = STATE_CONTROL_VELOCITY;
+    motors[motIdx].reference.velocity = reference;
+    if (abs(motors[motIdx].reference.velocity) > motors[motIdx].constraint.velocity) {
+        motors[motIdx].reference.velocity = SGN(motors[motIdx].reference.velocity) * motors[motIdx].constraint.velocity;
+    }
+    return TMR1 - t; // Time of execution
+}
+    
+/* inline */ motor_state_t get_motor_state(short motIdx) {
+    return motors[motIdx].measure.state;
+}
 
-void UpdateStateController(short num, motor_control_t state) {
+void set_motor_state(short motIdx, motor_state_t state) {
     volatile bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
     int led_state = (state != STATE_CONTROL_EMERGENCY) ? state + 1 : state;
     /**
      * Set enable or disable motors
      */
 
-    switch (num) {
+    switch (motIdx) {
         case -1:
             motors[MOTOR_ZERO].reference.state = state;
             motors[MOTOR_ONE].reference.state = state;
@@ -299,37 +307,29 @@ void UpdateStateController(short num, motor_control_t state) {
 #endif
             break;
         case MOTOR_ZERO:
-            motors[num].reference.state = state;
-            MOTOR_ENABLE1_BIT = enable ^ motors[num].parameter_motor.enable_set;
+            motors[motIdx].reference.state = state;
+            MOTOR_ENABLE1_BIT = enable ^ motors[motIdx].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
-                motors[num].last_reference.velocity = motors[num].reference.velocity;
+                motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
             }
 #ifndef MOTION_CONTROL
-            UpdateBlink(num, led_state);
+            UpdateBlink(motIdx, led_state);
 #endif
             break;
         case MOTOR_ONE:
-            motors[num].reference.state = state;
-            MOTOR_ENABLE2_BIT = enable ^ motors[num].parameter_motor.enable_set;
+            motors[motIdx].reference.state = state;
+            MOTOR_ENABLE2_BIT = enable ^ motors[motIdx].parameter_motor.enable_set;
             if (state == STATE_CONTROL_EMERGENCY) {
-                motors[num].last_reference.velocity = motors[num].reference.velocity;
+                motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
             }
 #ifndef MOTION_CONTROL
-            UpdateBlink(num, led_state);
+            UpdateBlink(motIdx, led_state);
 #endif
             break;
     }
 #ifdef MOTION_CONTROL
     UpdateBlink(LED1, led_state);
 #endif
-}
-
-/* inline */ state_controller_t get_motor_state(short motIdx) {
-    return motors[motIdx].measure.state;
-}
-             
-/* inline */ motor_t get_motor_constraints(short motIdx) {
-    return motors[motIdx].constraint;
 }
 
 int MotorTaskController(void) {
@@ -371,7 +371,7 @@ int MotorTaskController(void) {
                 /**
                  * Set Motor in emergency mode
                  */
-                UpdateStateController(i, STATE_CONTROL_EMERGENCY);
+                set_motor_state(i, STATE_CONTROL_EMERGENCY);
                 motors[i].counter_stop = 0;
                 motors[i].counter_alive = 0;
             } else
@@ -382,65 +382,65 @@ int MotorTaskController(void) {
     return TMR1 - t; // Time of execution
 }
 
-int measureVelocity(short num) {
+int measureVelocity(short motIdx) {
     unsigned int t = TMR1; // Timing function
     unsigned long timePeriodtmp;
     int SIG_VELtmp;
-    motors[num].measure.velocity = 0;
-    timePeriodtmp = ICinfo[num].timePeriod;
-    ICinfo[num].timePeriod = 0;
-    SIG_VELtmp = ICinfo[num].SIG_VEL;
-    ICinfo[num].SIG_VEL = 0;
+    motors[motIdx].measure.velocity = 0;
+    timePeriodtmp = ICinfo[motIdx].timePeriod;
+    ICinfo[motIdx].timePeriod = 0;
+    SIG_VELtmp = ICinfo[motIdx].SIG_VEL;
+    ICinfo[motIdx].SIG_VEL = 0;
     // State control
-    motors[num].measure.state = motors[num].reference.state;
+    motors[motIdx].measure.state = motors[motIdx].reference.state;
     // Evaluate velocity
     if (SIG_VELtmp) {
-        int16_t vel = SIG_VELtmp * (motors[num].k_vel / timePeriodtmp);
-        motors[num].measure.velocity = vel;
+        int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
+        motors[motIdx].measure.velocity = vel;
     }
 
     //Evaluate position
-    switch (num) {
+    switch (motIdx) {
         case MOTOR_ZERO:
-            motors[num].PulsEnc += (int) POS1CNT; // Odometry
+            motors[motIdx].PulsEnc += (int) POS1CNT; // Odometry
             POS1CNT = 0;
             break;
         case MOTOR_ONE:
-            motors[num].PulsEnc += (int) POS2CNT; // Odometry
+            motors[motIdx].PulsEnc += (int) POS2CNT; // Odometry
             POS2CNT = 0;
             break;
     }
     return TMR1 - t; // Time of execution
 }
 
-int MotorPID(short num) {
+int MotorPID(short motIdx) {
     unsigned int t = TMR1; // Timing
     //Measure velocity
-    measureVelocity(num);
+    measureVelocity(motIdx);
     // Setpoint
-    motors[num].PIDstruct.controlReference =  Q15(((float) motors[num].reference.velocity) / motors[num].constraint.velocity);
+    motors[motIdx].PIDstruct.controlReference =  Q15(((float) motors[motIdx].reference.velocity) / motors[motIdx].constraint.velocity);
     // Measure
-    motors[num].PIDstruct.measuredOutput = Q15(((float) motors[num].measure.velocity) / motors[num].constraint.velocity);
+    motors[motIdx].PIDstruct.measuredOutput = Q15(((float) motors[motIdx].measure.velocity) / motors[motIdx].constraint.velocity);
     // PID execution
-    PID(&motors[num].PIDstruct);
+    PID(&motors[motIdx].PIDstruct);
     // Control value calculation
-    motors[num].pid_control = ((motors[num].parameter_motor.versus * motors[num].PIDstruct.controlOutput) >> 4);
+    motors[motIdx].pid_control = ((motors[motIdx].parameter_motor.versus * motors[motIdx].PIDstruct.controlOutput) >> 4);
     // PWM output
-    SetDCMCPWM1(num + 1,  motors[num].pid_control + 2048, 0);
+    SetDCMCPWM1(motIdx + 1,  motors[motIdx].pid_control + 2048, 0);
 
     return TMR1 - t; // Execution time
 }
 
-bool Emergency(short num) {
-    motors[num].reference.velocity -= motors[num].last_reference.velocity / (int16_t) (motors[num].emergency_step + 0.5f);
-    if (SGN(motors[num].reference.velocity) * motors[num].last_reference.velocity < 0)
-        motors[num].reference.velocity = 0;
-    if (motors[num].reference.velocity == 0) {
-        if ((motors[num].counter_stop + 1) >= motors[num].emergency_stop) {
-            UpdateStateController(num, STATE_CONTROL_DISABLE);
-            motors[num].counter_stop = 0;
+bool Emergency(short motIdx) {
+    motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / (int16_t) (motors[motIdx].emergency_step + 0.5f);
+    if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference.velocity < 0)
+        motors[motIdx].reference.velocity = 0;
+    if (motors[motIdx].reference.velocity == 0) {
+        if ((motors[motIdx].counter_stop + 1) >= motors[motIdx].emergency_stop) {
+            set_motor_state(motIdx, STATE_CONTROL_DISABLE);
+            motors[motIdx].counter_stop = 0;
         } else
-            motors[num].counter_stop++;
+            motors[motIdx].counter_stop++;
     }
     return true;
 }

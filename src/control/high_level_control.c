@@ -103,10 +103,10 @@ void UpdateHighStateController(int state) {
         control_state = state;
         switch (control_state) {
             case STATE_CONTROL_HIGH_DISABLE:
-                UpdateStateController(-1, STATE_CONTROL_DISABLE);
+                set_motor_state(-1, STATE_CONTROL_DISABLE);
                 break;
             default:
-                UpdateStateController(-1, STATE_CONTROL_VELOCITY);
+                set_motor_state(-1, STATE_CONTROL_VELOCITY);
                 break;
         }
     }
@@ -135,8 +135,8 @@ int HighLevelTaskController(void) {
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
     volatile coordinate_t delta;
-    float WheelSpL = parameter_unicycle.radius_l * get_motor_measure(MOTOR_ZERO).position;
-    float WheelSpR = parameter_unicycle.radius_r * get_motor_measure(MOTOR_ONE).position;
+    float WheelSpL = parameter_unicycle.radius_l * get_motor_measures(MOTOR_ZERO).position;
+    float WheelSpR = parameter_unicycle.radius_r * get_motor_measures(MOTOR_ONE).position;
     float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote
     float DifSp = WheelSpR - WheelSpL; // Calcolo della differenza degli spostamenti delle ruote
     //PulsEncL = 0; // Flush variabile
@@ -219,8 +219,8 @@ int set_high_velocity(velocity_t velocity) {
 
 int VelocityMeasure(void) {
     unsigned int t = TMR1; // Timing function
-    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measure(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measure(MOTOR_ZERO).velocity) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measure(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measure(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
+    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
     vel_mis.v = ((float) vel_v / 1000000);
     vel_mis.w = ((float) vel_w / 1000);
 
