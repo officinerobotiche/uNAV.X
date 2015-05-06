@@ -82,16 +82,22 @@ typedef struct _motor {
  * - [#]     Encoder CPR
  * - [#]     Gear ratio
  * - [mV]    Supplied voltage in H-bridge
- * - [0,  1] Position encoder respect to gear [0 after, 1 before]
- * - [-1, 1] Positive versus of the rotation of the motor [1 counterclockwise, -1 clockwise]
- * - [0,  1] Default logic value to enable the H-bridge [0 low, 1 high]
+ * - [ 0, 1] Position encoder respect to gear [0 after, 1 before]
+ * - [-1, 1] Positive versus of the rotation of the motor [-1 clockwise, 1 counterclockwise]
+ * - [ 0, 1] Default logic value to enable the H-bridge [0 low, 1 high]
  */
+#define MOTOR_GEAR_ENC_AFTER 0
+#define MOTOR_GEAR_ENC_BEFORE 1
+#define MOTOR_ROTATION_CLOCKWISE -1
+#define MOTOR_ROTATION_COUNTERCLOCKWISE 1
+#define MOTOR_ENABLE_LOW 0
+#define MOTOR_ENABLE_HIGH 1
 typedef struct _motor_parameter {
     uint16_t cpr;
     float ratio;
     motor_control_t volt_bridge;
     uint8_t encoder_pos;
-    int8_t versus;
+    int8_t rotation;
     uint8_t enable_set;
 } motor_parameter_t;
 #define LNG_MOTOR_PARAMETER sizeof(motor_parameter_t)

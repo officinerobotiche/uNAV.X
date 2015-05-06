@@ -204,17 +204,17 @@ int set_high_velocity(velocity_t velocity) {
     long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (parameter_unicycle.wheelbase * (-vel_rif.w)))*1000);
 
     // >>>>> Saturation on 16 bit values
-    if(motor_left_refer > 32767) {
-        set_motor_velocity(MOTOR_ZERO, 32767);
-    } else if (motor_left_refer < -32768) {
-        set_motor_velocity(MOTOR_ZERO, -32768);
+    if(motor_left_refer > INT16_MAX) {
+        set_motor_velocity(MOTOR_ZERO, INT16_MAX);
+    } else if (motor_left_refer < INT16_MIN) {
+        set_motor_velocity(MOTOR_ZERO, INT16_MIN);
     } else {
         set_motor_velocity(MOTOR_ZERO, motor_left_refer);
     }
-    if(motor_right_refer > 32767) {
-        set_motor_velocity(MOTOR_ONE, 32767);
-    } else if (motor_right_refer < -32768) {
-        set_motor_velocity(MOTOR_ONE, -32768);
+    if(motor_right_refer > INT16_MIN) {
+        set_motor_velocity(MOTOR_ONE, INT16_MIN);
+    } else if (motor_right_refer < INT16_MIN) {
+        set_motor_velocity(MOTOR_ONE, INT16_MIN);
     } else {
         set_motor_velocity(MOTOR_ONE, motor_right_refer);
     }

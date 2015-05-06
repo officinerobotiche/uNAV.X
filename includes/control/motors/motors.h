@@ -33,26 +33,6 @@ extern "C" {
 #define MOTOR_ZERO 0
 #define MOTOR_ONE 1
 
-#define ENC_BEFORE_GEAR 1
-#define ENC_AFTER_GEAR 0
-#define VOLT_BRIDGE 12
-#define CPR 300
-#define RATIO 30
-    // If CPR is before ratio
-    //    ThC = CPR * RATIO   
-    // else
-    //    ThC = RATIO
-    //Start define with fixed K_vel conversion velocity
-    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-#define K_VEL 27925268.03190926
-    //Start define with fixed K_ang conversion angular
-    // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-#define K_ANG 0.000174532925199
-
-#define DEFAULT_KP 0.6
-#define DEFAULT_KI 0.15
-#define DEFAULT_KD 0.2
-
 //Numbers and names associated at all processes
 #define PROCESS_MOTOR_LENGTH 4
 #define LEFT_PROCESS_PID 0

@@ -40,6 +40,22 @@
 #include "system/user.h"
 #include "packet/packet.h"
 
+/**
+ * Default value for motor parameters
+ */
+#define DEFAULT_VOLT_BRIDGE 12
+#define DEFAULT_CPR 300
+#define DEFAULT_RATIO 30
+#define DEFAULT_ENC_POSITION MOTOR_GEAR_ENC_BEFORE
+#define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
+#define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
+/**
+ * Default value for PID
+ */
+#define DEFAULT_KP 0.6
+#define DEFAULT_KI 0.15
+#define DEFAULT_KD 0.2
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -133,12 +149,12 @@ void init_motor(short motIdx) {
 
 motor_parameter_t init_motor_parameters() {
     motor_parameter_t parameter;
-    parameter.cpr = CPR; //Gain to convert input capture value to velocity
-    parameter.ratio = RATIO; //Gain to convert QEI value to rotation movement
-    parameter.volt_bridge = VOLT_BRIDGE;
-    parameter.encoder_pos = ENC_BEFORE_GEAR;
-    parameter.versus = 1;
-    parameter.enable_set = false;
+    parameter.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
+    parameter.ratio = DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
+    parameter.volt_bridge = DEFAULT_VOLT_BRIDGE;
+    parameter.encoder_pos = DEFAULT_ENC_POSITION;
+    parameter.rotation = DEFAULT_VERSUS_ROTATION;
+    parameter.enable_set = DEFAULT_MOTOR_ENABLE;
     return parameter;
 }
 
@@ -168,10 +184,10 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //Update encoder swap
     switch (motIdx) {
         case MOTOR_ZERO:
-            QEI1CONbits.SWPAB = (motors[motIdx].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI1CONbits.SWPAB = (motors[motIdx].parameter_motor.rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
         case MOTOR_ONE:
-            QEI2CONbits.SWPAB = (motors[motIdx].parameter_motor.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI2CONbits.SWPAB = (motors[motIdx].parameter_motor.rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             break;
     }
 }
@@ -422,7 +438,7 @@ int MotorPID(short motIdx) {
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Control value calculation
-    motors[motIdx].pid_control = ((motors[motIdx].parameter_motor.versus * motors[motIdx].PIDstruct.controlOutput) >> 4);
+    motors[motIdx].pid_control = ((motors[motIdx].parameter_motor.rotation * motors[motIdx].PIDstruct.controlOutput) >> 4);
     // PWM output
     SetDCMCPWM1(motIdx + 1,  motors[motIdx].pid_control + 2048, 0);
 
