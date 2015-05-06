@@ -39,7 +39,7 @@ typedef union _motor_command_map {
 
     struct {
         unsigned char motor : 4;    ///< Motor index
-        unsigned char command : 4;  ///< Motor command (TODO explain better with a list of command or a reference to the list of command)
+        unsigned char command : 4;  ///< Motor command
     } bitset;
     unsigned char command_message;  
 } motor_command_map_t;
@@ -132,15 +132,15 @@ typedef struct _motor_pid {
         motor_control_t motor_control;
 
 //Numbers associated for motor messages to be used in the structure @ref motor_command_map_t as value for @ref command 
-#define MOTOR 0
-#define MOTOR_PARAMETER 1
-#define MOTOR_CONSTRAINT 2
-#define MOTOR_EMERGENCY 3
-#define MOTOR_STATE 4
-#define MOTOR_VEL_PID 5
-#define MOTOR_VEL_REF 6
-#define MOTOR_VEL_MEAS 7
-#define MOTOR_POS_MEAS 8
+#define MOTOR               0 ///< TODO Explain what this means
+#define MOTOR_PARAMETER     1 ///< TODO Explain what this means
+#define MOTOR_CONSTRAINT    2 ///< TODO Explain what this means
+#define MOTOR_EMERGENCY     3 ///< TODO Explain what this means
+#define MOTOR_STATE         4 ///< TODO Explain what this means
+#define MOTOR_VEL_PID       5 ///< TODO Explain what this means
+#define MOTOR_VEL_REF       6 ///< TODO Explain what this means
+#define MOTOR_VEL_MEAS      7 ///< TODO Explain what this means
+#define MOTOR_POS_MEAS      8 ///< TODO Explain what this means
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTOR 'G'
