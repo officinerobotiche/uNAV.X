@@ -48,30 +48,31 @@
 #ifdef PACKETS_MOTOR
 #include "packet/motor.h"
 #endif
+#ifdef PACKETS_NAVIGATION
+#include "packet/navigaation.h"
+#endif
 
 /** Buffers dimension */
 // Dimension for UART transmit buffer
-#define MAX_TX_BUFF 200
+#define MAX_BUFF_TX 200
 // Dimension for UART receive buffer
-#define MAX_RX_BUFF 200
+#define MAX_BUFF_RX 200
 // Type of serial errors
-#define BUFF_SERIAL_ERROR 13
-// Numbers of process
-#define BUFF_ALL_PROCESS 10
+#define MAX_BUFF_ERROR_SERIAL 13
 // Numbers of names process
-#define BUFF_NAME_PROCESS 20
+#define MAX_BUFF_TASK_NAME 20
 // Dimension services buffer
-#define SERVICE_BUFF 20
+#define MAX_BUFF_SERVICE 20
 
 /** Type of option messages */
 // Request data
-#define REQUEST 'R'
+#define PACKET_REQUEST 'R'
 // Messages with data
-#define DATA 'D'
+#define PACKET_DATA 'D'
 // ACK
-#define ACK 'K'
+#define PACKET_ACK 'K'
 // NACK
-#define NACK 'N'
+#define PACKET_NACK 'N'
 // Length of information packet (without data)
 #define LNG_HEAD_INFORMATION_PACKET 4
 
@@ -80,20 +81,20 @@
      * * Clock of System timer
      * * Clock in milliseconds
  */
-typedef struct parameter_system {
+typedef struct _system_parameter {
     int16_t step_timer;
     int16_t int_tm_mill;
-} parameter_system_t;
-#define LNG_PARAMETER_SYSTEM sizeof(parameter_system_t)
+} system_parameter_t;
+#define LNG_SYSTEM_PARAMETER sizeof(system_parameter_t)
 
 /**
  * Service messages about number of error on serial communication
  * see on communication/serial.h type of errors
  */
-typedef struct error_pkg {
-    int16_t number[BUFF_SERIAL_ERROR];
-} error_pkg_t;
-#define LNG_ERROR_PKG sizeof(error_pkg_t)
+typedef struct _system_error_serial {
+    int16_t number[MAX_BUFF_ERROR_SERIAL];
+} system_error_serial_t;
+#define LNG_SYSTEM_ERROR_SERIAL sizeof(system_error_serial_t)
 
 /**
  * Services messages for control board:
@@ -103,19 +104,24 @@ typedef struct error_pkg {
  * * version code
  * * author code
  */
-typedef struct services {
+typedef struct _system_service {
     char command;
-    unsigned char buffer[SERVICE_BUFF];
-} services_t;
-#define LNG_SERVICES sizeof(services_t)
+    unsigned char buffer[MAX_BUFF_SERVICE];
+} system_service_t;
+#define LNG_SYSTEM_SERVICE sizeof(system_service_t)
 
-
-typedef struct process_state {
+/**
+ * Information about task running on firmware
+ * * HASHMAP type of task
+ * * number of task
+ * * data required or read
+ */
+typedef struct _system_task {
     uint8_t hashmap;
     uint8_t number;
     uint8_t data;
-} process_state_t;
-#define LNG_PROCESS_STATE sizeof(process_state_t)
+} system_task_t;
+#define LNG_SYSTEM_TASK sizeof(system_task_t)
 
 /**
  * Information about processes on board. We have standards process:
@@ -123,12 +129,12 @@ typedef struct process_state {
  * * time for parsing packet
  * * list for others processes
  */
-typedef struct process_name {
+typedef struct _system_task_name {
     uint8_t hashmap;
     uint8_t number;
-    char data[BUFF_NAME_PROCESS];
-} process_name_t;
-#define LNG_PROCESS_NAME sizeof(process_name_t)
+    char data[MAX_BUFF_TASK_NAME];
+} system_task_name_t;
+#define LNG_SYSTEM_TASK_NAME sizeof(system_task_name_t)
 
 /**** EO Messages ****/
 
@@ -146,27 +152,14 @@ typedef struct process_name {
  */
 
 /**
- * Structure with information about packet to send with serial port:
- * * length of packet
- * * buffer with data
- * * time to send packet (NOT IN USE)
- */
-typedef struct packet_data {
-    unsigned int length;
-    unsigned char buffer[MAX_RX_BUFF];
-    unsigned int time;
-} packet_t;
-
-/**
  * Union for conversion all type of packets in a standard packets
  */
-typedef union abstract_message {
-    //unsigned char buffer[MAX_RX_BUFF];
-    process_name_t process_name;
-    process_state_t process_state;
-    services_t services;
-    error_pkg_t error_pkg;
-    parameter_system_t parameter_system;
+typedef union _message_abstract {
+    system_task_name_t system_task_name;
+    system_task_t system_task;
+    system_service_t system_service;
+    system_error_serial_t system_error_serial;
+    system_parameter_t system_parameter;
 #ifdef PACKETS_MOTION
     ABSTRACT_MESSAGE_MOTOR
 #endif
@@ -176,10 +169,10 @@ typedef union abstract_message {
 #ifdef PACKETS_NAVIGATION
     ABSTRACT_MESSAGE_NAVIGATION
 #endif
-} abstract_message_u;
+} message_abstract_u;
 
 /**
- * Struct with information about a packet:
+ * Structure with information about a packet:
  * * length for packet
  * * information about packet (in top on this file):
  *      * (R) Request data
@@ -191,59 +184,71 @@ typedef union abstract_message {
  *      * other type messages (in UNAV file)
  * * command message
  */
-typedef struct information_packet {
+typedef struct _packet_information {
     unsigned char length;
     unsigned char option;
     unsigned char type;
     unsigned char command;
-    abstract_message_u packet;
-} information_packet_t;
+    message_abstract_u message;
+} packet_information_t;
 
 /**
  * Union for quickly transform information_packet_t in a buffer to add in
  * packet_t
  */
-typedef union buffer_packet {
-    information_packet_t information_packet;
-    unsigned char buffer[MAX_RX_BUFF];
-} buffer_packet_u;
-
-//Number association for standard messages
-#define SERVICES 0
-#define PROCESS_NAME 1
-#define PROCESS_TIME 2
-#define PROCESS_PRIORITY 3
-#define PROCESS_FRQ 4
-#define PROCESS_NUMBER 5
-#define PARAMETER_SYSTEM 6
-#define ERROR_SERIAL 7
-
-//Names for type service's messages
-#define RESET '*'
-#define DATE_CODE 'd'
-#define NAME_BOARD 'n'
-#define VERSION_CODE 'v'
-#define AUTHOR_CODE 'a'
-#define TYPE_BOARD 't'
-
-//Name for HASHMAP with information about standard messages
-#define HASHMAP_DEFAULT 'D'
-#define HASHMAP_DEFAULT_NUMBER 10
-
-// Definition on communication/parsing_packet.c
-//static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
+typedef union _packet_buffer {
+    packet_information_t packet_information;
+    unsigned char buffer[MAX_BUFF_RX];
+} packet_buffer_u;
 
 /**
- * Table with convertion number message in a length for data messages
+ * Structure with information about packet to send with serial port:
+ * * length of packet
+ * * buffer with data
+ * * time to send packet (NOT IN USE)
  */
-#define HASHMAP_DEFAULT_INITIALIZE hashmap_default[SERVICES] = LNG_SERVICES;                 \
-                                   hashmap_default[PROCESS_NAME] = LNG_PROCESS_NAME;         \
-                                   hashmap_default[PROCESS_TIME] = LNG_PROCESS_STATE;        \
-                                   hashmap_default[PROCESS_PRIORITY] = LNG_PROCESS_STATE;    \
-                                   hashmap_default[PROCESS_FRQ] = LNG_PROCESS_STATE;         \
-                                   hashmap_default[PROCESS_NUMBER] = LNG_PROCESS_STATE;      \
-                                   hashmap_default[PARAMETER_SYSTEM] = LNG_PARAMETER_SYSTEM; \
-                                   hashmap_default[ERROR_SERIAL] = LNG_ERROR_PKG;
+typedef struct _packet {
+    unsigned int length;
+    unsigned char buffer[MAX_BUFF_RX];
+    unsigned int time;
+} packet_t;
+
+//Number association for standard messages
+#define SYSTEM_SERVICE 0
+#define SYSTEM_TASK_NAME 1
+#define SYSTEM_TASK_TIME 2
+#define SYSTEM_TASK_PRIORITY 3
+#define SYSTEM_TASK_FRQ 4
+#define SYSTEM_TASK_NUM 5
+#define SYSTEM_PARAMETER 6
+#define SYSTEM_SERIAL_ERROR 7
+
+//Names for type services
+#define SERVICE_RESET '*'
+#define SERVICE_CODE_DATE 'd'
+#define SERVICE_CODE_VERSION 'v'
+#define SERVICE_CODE_AUTHOR 'a'
+#define SERVICE_CODE_BOARD_TYPE 't'
+#define SERVICE_CODE_BOARD_NAME 'n'
+
+//Name for HASHMAP with information about standard messages
+#define HASHMAP_SYSTEM 'S'
+#define HASHMAP_SYSTEM_NUMBER 10
+
+// Definition on communication/parsing_packet.c
+//static unsigned int hashmap_system[HASHMAP_SYSTEM_NUMBER];
+
+/**
+ * Table with conversion number message in a length for data messages
+ */
+#define HASHMAP_SYSTEM_INITIALIZE hashmap_system[SYSTEM_SERVICE] = LNG_SYSTEM_SERVICE;           \
+                                  hashmap_system[SYSTEM_TASK_NAME] = LNG_SYSTEM_TASK_NAME;       \
+                                  hashmap_system[SYSTEM_TASK_TIME] = LNG_SYSTEM_TASK;            \
+                                  hashmap_system[SYSTEM_TASK_PRIORITY] = LNG_SYSTEM_TASK;        \
+                                  hashmap_system[SYSTEM_TASK_FRQ] = LNG_SYSTEM_TASK;             \
+                                  hashmap_system[SYSTEM_TASK_NUM] = LNG_SYSTEM_TASK;             \
+                                  hashmap_system[SYSTEM_PARAMETER] = LNG_SYSTEM_PARAMETER;       \
+                                  hashmap_system[SYSTEM_SERIAL_ERROR] = LNG_SYSTEM_ERROR_SERIAL;
 
 #endif	/* PACKET_H */
 

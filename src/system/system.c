@@ -65,9 +65,9 @@ unsigned char author_code[] = "Officine Robotiche";
 
 unsigned char version_code[] = "v0.4";
 unsigned char type_board[] = "Motor Control";
-parameter_system_t parameter_system;
+system_parameter_t parameter_system;
 
-extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
+extern unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(256)));
@@ -145,89 +145,89 @@ void init_process(void) {
     parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
 }
 
-void set_process(uint8_t command, process_state_t process_state) {
-    if (process_state.hashmap == HASHMAP_DEFAULT) {
+void set_process(uint8_t command, system_task_t process_state) {
+    if (process_state.hashmap == HASHMAP_SYSTEM) {
         switch (command) {
-            case PROCESS_TIME:
+            case SYSTEM_TASK_TIME:
                 default_process[process_state.number].time = process_state.data;
                 break;
-            case PROCESS_PRIORITY:
+            case SYSTEM_TASK_PRIORITY:
                 default_process[process_state.number].priority = process_state.data;
                 break;
-            case PROCESS_FRQ:
+            case SYSTEM_TASK_FRQ:
                 default_process[process_state.number].frequency = process_state.data;
                 break;
         }
     } else if (process_state.hashmap == HASHMAP_MOTOR) {
         switch (command) {
-            case PROCESS_TIME:
+            case SYSTEM_TASK_TIME:
                 motor_process[process_state.number].time = process_state.data;
                 break;
-            case PROCESS_PRIORITY:
+            case SYSTEM_TASK_PRIORITY:
                 motor_process[process_state.number].priority = process_state.data;
                 break;
-            case PROCESS_FRQ:
+            case SYSTEM_TASK_FRQ:
                 motor_process[process_state.number].frequency = process_state.data;
                 break;
         }
     } else if (process_state.hashmap == HASHMAP_MOTION) {
         switch (command) {
-            case PROCESS_TIME:
+            case SYSTEM_TASK_TIME:
                 motion_process[process_state.number].time = process_state.data;
                 break;
-            case PROCESS_PRIORITY:
+            case SYSTEM_TASK_PRIORITY:
                 motion_process[process_state.number].priority = process_state.data;
                 break;
-            case PROCESS_FRQ:
+            case SYSTEM_TASK_FRQ:
                 motion_process[process_state.number].frequency = process_state.data;
                 break;
         }
     }
 }
 
-process_state_t get_process(uint8_t command, process_state_t process_state) {
-    if (process_state.hashmap == HASHMAP_DEFAULT) {
+system_task_t get_process(uint8_t command, system_task_t process_state) {
+    if (process_state.hashmap == HASHMAP_SYSTEM) {
         switch (command) {
-            case PROCESS_TIME:
+            case SYSTEM_TASK_TIME:
                 process_state.data = default_process[process_state.number].time;
                 break;
-            case PROCESS_PRIORITY:
+            case SYSTEM_TASK_PRIORITY:
                 process_state.data = default_process[process_state.number].priority;
                 break;
-            case PROCESS_FRQ:
+            case SYSTEM_TASK_FRQ:
                 process_state.data = default_process[process_state.number].frequency;
                 break;
-            case PROCESS_NUMBER:
+            case SYSTEM_TASK_NUM:
                 process_state.data = NUM_PROCESS_DEFAULT;
                 break;
         }
     } else if (process_state.hashmap == HASHMAP_MOTOR) {
         switch (command) {
-            case PROCESS_TIME:
+            case SYSTEM_TASK_TIME:
                 process_state.data = motor_process[process_state.number].time;
                 break;
-            case PROCESS_PRIORITY:
+            case SYSTEM_TASK_PRIORITY:
                 process_state.data = motor_process[process_state.number].priority;
                 break;
-            case PROCESS_FRQ:
+            case SYSTEM_TASK_FRQ:
                 process_state.data = motor_process[process_state.number].frequency;
                 break;
-            case PROCESS_NUMBER:
+            case SYSTEM_TASK_NUM:
                 process_state.data = PROCESS_MOTOR_LENGTH;
                 break;
         }
     } else if (process_state.hashmap == HASHMAP_MOTION) {
         switch (command) {
-            case PROCESS_TIME:
+            case SYSTEM_TASK_TIME:
                 process_state.data = motion_process[process_state.number].time;
                 break;
-            case PROCESS_PRIORITY:
+            case SYSTEM_TASK_PRIORITY:
                 process_state.data = motion_process[process_state.number].priority;
                 break;
-            case PROCESS_FRQ:
+            case SYSTEM_TASK_FRQ:
                 process_state.data = motion_process[process_state.number].frequency;
                 break;
-            case PROCESS_NUMBER:
+            case SYSTEM_TASK_NUM:
                 process_state.data = PROCESS_MOTION_LENGTH;
                 break;
         }
@@ -235,8 +235,8 @@ process_state_t get_process(uint8_t command, process_state_t process_state) {
     return process_state;
 }
 
-process_name_t get_process_name(process_name_t process_name) {
-    if (process_name.hashmap == HASHMAP_DEFAULT) {
+system_task_name_t get_process_name(system_task_name_t process_name) {
+    if (process_name.hashmap == HASHMAP_SYSTEM) {
         strcpy(process_name.data, default_process[process_name.number].name);
     } else if (process_name.hashmap == HASHMAP_MOTOR) {
         strcpy(process_name.data, motor_process[process_name.number].name);
@@ -249,7 +249,7 @@ process_name_t get_process_name(process_name_t process_name) {
 unsigned char update_priority(void) {
     default_process[PROCESS_IDLE].time = 0;
     InitInterrupts();
-    return ACK;
+    return PACKET_ACK;
 }
 
 unsigned char update_frequency(void) {
@@ -261,31 +261,31 @@ unsigned char update_frequency(void) {
         DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
     } else
         DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
-    return ACK;
+    return PACKET_ACK;
 }
 
-services_t services(services_t service) {
-    services_t service_send;
+system_service_t services(system_service_t service) {
+    system_service_t service_send;
     service_send.command = service.command;
     switch (service.command) {
-        case DATE_CODE:
+        case SERVICE_CODE_DATE:
             memcpy(service_send.buffer, version_date_, sizeof (version_date_));
             service_send.buffer[sizeof (version_date_) - 1] = ' ';
             memcpy(service_send.buffer + sizeof (version_date_), version_time_, sizeof (version_time_));
             break;
-        case NAME_BOARD:
+        case SERVICE_CODE_BOARD_NAME:
             memcpy(service_send.buffer, name_board, sizeof (name_board));
             break;
-        case TYPE_BOARD:
+        case SERVICE_CODE_BOARD_TYPE:
             memcpy(service_send.buffer, type_board, sizeof (type_board));
             break;
-        case VERSION_CODE:
+        case SERVICE_CODE_VERSION:
             memcpy(service_send.buffer, version_code, sizeof (version_code));
             break;
-        case AUTHOR_CODE:
+        case SERVICE_CODE_AUTHOR:
             memcpy(service_send.buffer, author_code, sizeof (author_code));
             break;
-        case RESET:
+        case SERVICE_RESET:
             if (reset_count < 3) {
                 reset_count++;
             } else {
@@ -539,7 +539,7 @@ void InitDMA1(void) {
     DMA1CONbits.AMODE = 0;
     DMA1CONbits.MODE = 1;
 
-    DMA1CNT = MAX_TX_BUFF - 1; // 32 DMA requests
+    DMA1CNT = MAX_BUFF_TX - 1; // 32 DMA requests
     DMA1REQ = 0x000c; // Select UART1 Transmitter
 
     DMA1STA = __builtin_dmaoffset(BufferTx);

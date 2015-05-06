@@ -86,7 +86,7 @@ extern "C" {
     #define PROCESS_IDLE 0
     #define PROCESS_PARSE 1
     typedef struct process {
-        char name[BUFF_NAME_PROCESS];
+        char name[MAX_BUFF_TASK_NAME];
         uint8_t time;
         uint8_t priority;
         uint8_t frequency;
@@ -121,21 +121,21 @@ go here. */
      */
     unsigned char update_frequency(void);
     
-    void set_process(uint8_t command, process_state_t process_state);
+    void set_process(uint8_t command, system_task_t process_state);
     /**
      * From name recived, return a process required.
      * @param number name process
      * @return save in process_buffer name associated for process
      */
-    process_name_t get_process_name(process_name_t process_state);
-    process_state_t get_process(uint8_t command, process_state_t process_state);
+    system_task_name_t get_process_name(system_task_name_t process_state);
+    system_task_t get_process(uint8_t command, system_task_t process_state);
 
     /**
      * Managment services messages. Return a service message for correct parsing
      * @param service to parsing
      * @return a new service message
      */
-    services_t services(services_t service);
+    system_service_t services(system_service_t service);
 
     /** Handles clock switching/osc initialization
      */
