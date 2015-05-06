@@ -41,10 +41,12 @@
 #include "communication/serial.h"
 #include "communication/parsing_messages.h"
 #include "system/user.h"
+#include "system/system.h"
 
 //State controller
 volatile state_controller_t control_state = 0;
 
+unsigned int counter_odo = 0;
 coordinate_t coordinate;
 unsigned int counter_delta = 0;
 bool autosend_delta_odometry = false;
@@ -63,6 +65,9 @@ parameter_unicycle_int_t parameter_unicycle_int;
 velocity_t vel_rif, vel_mis;
 
 volatile parameter_unicycle_t parameter_unicycle;
+
+//From system.c
+extern process_t motion_process[PROCESS_MOTION_LENGTH];
 
 /*****************************************************************************/
 /* Dead Reckoning functions                                                  */
@@ -121,6 +126,11 @@ int HighLevelTaskController(void) {
              * Measure linear and angular velocity for unicycle robot
              */
             VelocityMeasure();
+            if (counter_odo >= motion_process[PROCESS_ODOMETRY].frequency) {
+                motion_process[PROCESS_ODOMETRY].time = deadReckoning();
+                counter_odo = 0;
+            }
+            counter_odo++;
             break;
         case STATE_CONTROL_HIGH_CONFIGURATION:
             break;

@@ -70,6 +70,7 @@ typedef struct new_motor {
     unsigned int counter_alive;
     unsigned int counter_stop;
     int16_t pid_control;
+    unsigned int counter_pid;
     //Emergency
     float emergency_step;
     float emergency_stop;
@@ -90,18 +91,12 @@ typedef struct new_motor {
 } new_motor_t;
 new_motor_t motors[NUM_MOTORS];
 
-//variables for emergency
-
-//float emergency_step = 0;
-//float emergency_stop = 0;
-//bool save_velocity = true;
-
 /**/
 // From interrupt
 extern ICdata ICinfo[NUM_MOTORS];
 
-//From high_level_control
-extern volatile unsigned int control_state;
+//From system.c
+extern process_t motor_process[PROCESS_MOTOR_LENGTH];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -118,6 +113,8 @@ void init_motor(short motIdx) {
     motors[motIdx].reference.torque = 0;
     motors[motIdx].reference.volt = 0;
     motors[motIdx].reference.state = STATE_CONTROL_DISABLE;
+    //Counter frequency PID
+    motors[motIdx].counter_pid = 0;
     //Input capture information
     ICinfo[motIdx].SIG_VEL = 0;
     ICinfo[motIdx].overTmr = 0;
@@ -335,11 +332,6 @@ void set_motor_state(short motIdx, motor_state_t state) {
 int MotorTaskController(void) {
     unsigned int t = TMR1; // Timing function
     volatile short i;
-    /**
-     * If high level control selected, then set new reference for all motors.
-     */
-    if (control_state != STATE_CONTROL_HIGH_DISABLE)
-        HighLevelTaskController();
 
     for (i = 0; i < NUM_MOTORS; ++i) {
         switch (motors[i].reference.state) {
@@ -348,18 +340,24 @@ int MotorTaskController(void) {
                  * Set motor in emergency mode
                  */
                 Emergency(i);
-                break;
-            case STATE_CONTROL_DIRECT:
-                //TODO To be implemented (Read issue #14)
+                // Run emergency control
+                motor_process[i].time = MotorPID(i);
                 break;
             case STATE_CONTROL_POSITION:
                 //TODO to be implemented
                 break;
             case STATE_CONTROL_VELOCITY:
-                // No other operations
+                if (motors[i].counter_pid >= motor_process[i].frequency) {
+                    motor_process[i].time = MotorPID(i);
+                    motors[i].counter_pid = 0;
+                }
+                motors[i].counter_pid++;
                 break;
             case STATE_CONTROL_TORQUE:
                 //TODO to be implemented
+                break;
+            case STATE_CONTROL_DIRECT:
+                //TODO To be implemented (Read issue #14)
                 break;
             default:
                 motors[i].reference.velocity = 0;

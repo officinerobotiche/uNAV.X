@@ -46,21 +46,13 @@
 
 ICdata ICinfo[NUM_MOTORS];
 
-unsigned int counter_odo = 0;
-unsigned int counter_pid = 0;
-//volatile unsigned int overTmrL = 0;
-//volatile unsigned int overTmrR = 0;
-//volatile unsigned long timePeriodL = 0; //Periodo Ruota Sinistra
-//volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
-//volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
-//volatile int SIG_VELR = 0; //Verso rotazione ruota destra
-//volatile process_t time, priority, frequency;
-//process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
-
 //From system.c
 extern process_t default_process[2];
 extern process_t motor_process[PROCESS_MOTOR_LENGTH];
 extern process_t motion_process[PROCESS_MOTION_LENGTH];
+
+//From high_level_control
+extern volatile unsigned int control_state;
 
 //From user
 extern led_control_t led_controller[LED_NUM];
@@ -170,17 +162,17 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
     int led_counter = 0;
-
-    if (counter_pid >= motor_process[LEFT_PROCESS_PID].frequency) {
-        //Will be added in feature #39
-        //MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
-        PID_FLAG = 1; //Start OC1Interrupt for PID control
-        counter_pid = 0;
+    
+    /**
+     * If high level control selected, then set new reference for all motors.
+     */
+    if (control_state != STATE_CONTROL_HIGH_DISABLE) {
+        FLAG_TASK_HIGH_LEVEL = 1;
     }
-    if (counter_odo >= motion_process[PROCESS_ODOMETRY].frequency) {
-        DEAD_RECKONING_FLAG = 1;
-        counter_odo = 0;
-    }
+    /**
+     * Run motors control task
+     */
+    FLAG_TASK_MOTORS = 1; //Start OC1Interrupt for PID control
     /**
      * Blink controller for all leds
      */
@@ -188,8 +180,6 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         if (led_controller[led_counter].number_blink > LED_OFF)
             BlinkController(&led_controller[led_counter]);
     }
-    counter_pid++;
-    counter_odo++;
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
@@ -201,15 +191,13 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
-    PID_FLAG = 0; // interrupt flag reset
     motor_process[PROCESS_VELOCITY].time = MotorTaskController();
-    motor_process[LEFT_PROCESS_PID].time = MotorPID(MOTOR_ZERO);
-   motor_process[RIGHT_PROCESS_PID].time = MotorPID(MOTOR_ONE);
+    FLAG_TASK_MOTORS = 0; // interrupt flag reset
 }
 
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
-    PARSER_FLAG = 0; //interrupt flag reset
     default_process[PROCESS_PARSE].time = parse_packet();
+    PARSER_FLAG = 0; //interrupt flag reset
 }
 
 void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
@@ -220,8 +208,8 @@ void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
-    DEAD_RECKONING_FLAG = 0; //interrupt flag reset
-    //time.process[PROCESS_ODOMETRY] = deadReckoning();
+    HighLevelTaskController();
+    FLAG_TASK_HIGH_LEVEL = 0; //interrupt flag reset
 }
 
 unsigned int ReadUART1(void) {
