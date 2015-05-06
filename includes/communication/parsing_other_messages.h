@@ -15,26 +15,28 @@
  * Public License for more details
 */
 
-#ifndef DECODE_PACKET_H
-#define	DECODE_PACKET_H
+#ifndef PARSING_OTHER_MESSAGES_H
+#define	PARSING_OTHER_MESSAGES_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
     /**
-     *
-     * @param list_send
-     * @param len
-     * @param info
+     * Similar to saveData (in parsing_mesages.h) this function save messages
+     * from packet recived.
+     * @param list_send a pointer to buffer to save information from board
+     * @param len length of list_send list
+     * @param info message to parsing
      */
     void saveOtherData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
     /**
-     * 
-     * @param list_send
-     * @param len
-     * @param info
+     * Similar to sendData (in parsing_messages.h) this function send messages
+     * about unav board.
+     * @param list_send a pointer to buffer to save information from board
+     * @param len length of list_send list
+     * @param info message to parsing
      */
     void sendOtherData(information_packet_t* list_send, size_t len, information_packet_t* info);
 
@@ -43,5 +45,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* DECODE_PACKET_H */
+#endif	/* PARSING_OTHER_MESSAGES_H */
 

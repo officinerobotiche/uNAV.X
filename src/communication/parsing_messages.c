@@ -34,24 +34,25 @@
 #include <stdbool.h>       /* Includes true/false definition */
 #include <string.h>
 
-#include "communication/parsing_packet.h"
-#include "communication/decode_packet.h"
+#include "communication/parsing_messages.h"
+#include "communication/parsing_other_messages.h"
 #include "communication/serial.h"
 
 #include "system/user.h"
 #include "system/system.h"
 
-static unsigned int hashmap_default[10];
+//Table to convertion name (number) of message in a length
+//See packet/packet.h and packet/unav.h
+static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
 static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
-//From System
+/** GLOBAL VARIBLES */
+// From system/system.c
 extern parameter_system_t parameter_system;
-
-// From Interrupt
+// From system/interrupt.c
 extern volatile process_t time, priority, frequency;
 extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
-
-// From serial
+// From communication/serial.c
 extern error_pkg_t serial_error;
 extern packet_t receive_pkg;
 extern char receive_header;
@@ -66,7 +67,7 @@ void init_hashmap() {
 }
 
 void saveData(information_packet_t* list_send, size_t len, information_packet_t* info) {
-    abstract_packet_t send;
+    abstract_message_u send;
     if (info->type == HASHMAP_DEFAULT) {
         switch (info->command) {
             case SERVICES:
@@ -97,7 +98,7 @@ void saveData(information_packet_t* list_send, size_t len, information_packet_t*
 }
 
 void sendData(information_packet_t* list_send, size_t len, information_packet_t* info) {
-    abstract_packet_t send;
+    abstract_message_u send;
     if (info->type == HASHMAP_DEFAULT) {
         switch (info->command) {
             case SERVICES:
@@ -134,7 +135,7 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t*
 int parse_packet() {
     int i;
     unsigned int t = TMR1; // Timing function
-    information_packet_t list_data[10];
+    information_packet_t list_data[BUFFER_LIST_PARSING];
     unsigned int counter = 0;
     //Save single packet
     for (i = 0; i < receive_pkg.length; i += receive_pkg.buffer[i]) {
@@ -183,7 +184,7 @@ packet_t encoderSingle(information_packet_t send) {
     return packet_send;
 }
 
-information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_packet_t * packet) {
+information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet) {
     information_packet_t information;
     information.command = command;
     information.option = option;
@@ -204,11 +205,11 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
         information.length = LNG_HEAD_INFORMATION_PACKET;
     }
     if (packet != NULL) {
-        memcpy(&information.packet, packet, sizeof (abstract_packet_t));
+        memcpy(&information.packet, packet, sizeof (abstract_message_u));
     }
     return information;
 }
 
-information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_packet_t * packet) {
+information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet) {
     return createPacket(command, DATA, type, packet);
 }

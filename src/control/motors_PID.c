@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -34,6 +34,7 @@
 #include <stdbool.h>         /* For true/false definition                     */
 #include <dsp.h>
 #include <pwm12.h>
+#include "control/high_level_control.h"
 #include "control/motors_PID.h"       /* variables/params used by motorsPID.c         */
 #include "system/system.h"
 #include "system/user.h"
@@ -42,7 +43,10 @@
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
-
+/**
+ * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
+ * on zip file: asm/pid.s
+ */
 tPID PIDstruct1; // PID motore Sinistra
 fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
@@ -56,111 +60,117 @@ fractional kCoeffs2[3]; //Coefficienti KP, KI, KD Per PID2 Destra
 int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
 /** */
-//From System
-extern parameter_system_t parameter_system;
 
 volatile int PulsEncL = 0; //Buffer for deadReckoning
 volatile int PulsEncR = 0; //Buffer for deadReckoning
 
-parameter_motors_t parameter_motors;
+parameter_motor_t parameter_motor_left, parameter_motor_right;
 constraint_t constraint;
-velocity_t vel_rif, vel_mis;
 pid_control_t pid_left, pid_right;
-enable_motor_t enable_motors;
+//motor_control_t motor_ref[NUM_MOTORS];
+state_controller_t motor_state[NUM_MOTORS];
 motor_t motor_left, motor_right;
-
-//variables for emergency
-emergency_t emergency;
-velocity_t last_vel_rif;
-bool save_velocity = true;
-
-float const_vel[3];
-
-typedef struct parameter_int {
-    long radius_l;
-    long radius_r;
-    long wheelbase;
-    long k_vel_l;
-    long k_vel_r;
-} parameter_int_t;
 
 k_odo_t k_odo;
 float wheel_m;
 
-parameter_int_t parameter_int;
+//variables for emergency
+unsigned int counter_alive[NUM_MOTORS];
+unsigned int counter_stop[NUM_MOTORS];
+emergency_t emergency;
+float emergency_step = 0;
+float emergency_stop = 0;
+bool save_velocity = true;
+float last_motor_left, last_motor_right;
 
 /**/
-
+// From interrupt
 extern volatile unsigned long timePeriodL; //Periodo Ruota Sinistra
 extern volatile unsigned long timePeriodR; //Periodo Ruota Destra
 extern volatile unsigned SIG_VELL; //Verso rotazione ruota Sinistra
 extern volatile unsigned SIG_VELR; //Verso rotazione ruota Destra
+
+//From high_level_control
+extern volatile unsigned int control_state;
+
+//From System
+extern parameter_system_t parameter_system;
 
 /******************************************************************************/
 /* User Functions                                                             */
 
 /******************************************************************************/
 
-void init_parameter(void) {
-    parameter_motors.radius_l = 0.04; //Raggio ruota sinistra
-    parameter_motors.radius_r = 0.04; //Raggio ruota destra
-    parameter_motors.wheelbase = 0.20; //Interasse
-    parameter_motors.k_vel_l = K_VEL; //Costante velocità
-    parameter_motors.k_vel_r = K_VEL;
-    parameter_motors.k_ang_l = K_ANG; //Constante angolare
-    parameter_motors.k_ang_r = K_ANG;
-    parameter_motors.sp_min = 0.0001; // FLT_MIN
-    parameter_motors.pwm_step = 4096;
+void init_parameter_motors(void) {
+    int i;
+    //Left motor parameters
+    parameter_motor_left.k_vel = K_VEL; //Gain to convert input capture value to velocity
+    parameter_motor_left.k_ang = K_ANG; //Gain to convert QEI value to rotation movement
+    parameter_motor_left.versus = 1;
+    parameter_motor_left.enable_set = false;
+    //Right motor parameters
+    parameter_motor_right.k_vel = K_VEL;
+    parameter_motor_right.k_ang = K_ANG;
+    parameter_motor_right.versus = 1;
+    parameter_motor_right.enable_set = false;
 
-    update_parameter();
-
-    vel_rif.v = 0;
-    vel_rif.w = 0;
-    vel_mis.v = 0;
-    vel_mis.w = 0;
     motor_left.control_vel = 0;
     motor_left.measure_vel = 0;
-    motor_left.rifer_vel = 0;
+    motor_left.refer_vel = 0;
     motor_left.current = 0;
     motor_right.control_vel = 0;
     motor_right.measure_vel = 0;
-    motor_right.rifer_vel = 0;
+    motor_right.refer_vel = 0;
     motor_right.current = 0;
 
-    constraint.max_left = 14000;
-    constraint.max_right = 14000;
+    constraint.max_left = 24000;
+    constraint.max_right = 24000;
 
-    const_vel[0] = 1;
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        motor_state[i] = STATE_CONTROL_DISABLE;
+//        motor_ref[i] = 0;
+        UpdateStateController(i, motor_state[i]);
+    }
 
-    enable_motors = false;
+    update_parameter_motors();
+
+
+    //TODO To move in a new init function
+    counter_alive[0] = 0;
+    counter_alive[1] = 0;
+    counter_stop[0] = 0;
+    counter_stop[1] = 0;
+    emergency.slope_time = 1.0;
+    emergency.timeout = 500;
+    emergency.bridge_off = 2.0;
+    update_parameter_emergency(emergency);
 }
 
-void update_parameter(void) {
-    parameter_int.radius_l = ((int) (parameter_motors.radius_l * 1000.0));
-    parameter_int.radius_r = ((int) (parameter_motors.radius_r * 1000.0));
-    parameter_int.wheelbase = ((int) (parameter_motors.wheelbase * 1000.0));
-    parameter_int.k_vel_r = parameter_motors.k_vel_r;
-    parameter_int.k_vel_l = parameter_motors.k_vel_l;
-    k_odo.k_left = parameter_motors.radius_l * parameter_motors.k_ang_l;
-    k_odo.k_right = parameter_motors.radius_r * parameter_motors.k_ang_r;
-    wheel_m = parameter_motors.wheelbase / 2;
-    emergency.time = 1.0;
-    emergency.timeout = 500;
+void update_parameter_emergency(emergency_t emergency_data) {
+    emergency = emergency_data;
+    emergency_step = emergency.slope_time * FRTMR1;
+    emergency_stop = emergency.bridge_off * FRTMR1;
+}
+
+void update_parameter_motors(void) {
+    //Update encoder swap
+    QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
 }
 
 void init_pid_control(void) {
-    pid_left.kp = 0.6;
-    pid_left.ki = 0.7;
-    pid_left.kd = 0.1;
-    pid_right.kp = 0.6;
-    pid_right.ki = 0.7;
-    pid_right.kd = 0.1;
+    pid_left.kp = DEFAULT_KP;
+    pid_left.ki = DEFAULT_KI;
+    pid_left.kd = DEFAULT_KD;
+    pid_right.kp = DEFAULT_KP;
+    pid_right.ki = DEFAULT_KI;
+    pid_right.kd = DEFAULT_KD;
 }
 
 void update_pid_l(void) {
-    kCoeffs1[0] = Q15(pid_left.kp); //0.5
-    kCoeffs1[1] = Q15(pid_left.ki); //0.6
-    kCoeffs1[2] = Q15(pid_left.kp); //0.0
+    kCoeffs1[0] = Q15(pid_left.kp);
+    kCoeffs1[1] = Q15(pid_left.ki);
+    kCoeffs1[2] = Q15(pid_left.kd);
     InitPid1(); //Init PIDL
 }
 
@@ -195,71 +205,157 @@ void InitPid2(void) {
     PIDCoeffCalc(&kCoeffs2[0], &PIDstruct2);
 }
 
-bool Emergency(void) {
-    if (save_velocity) {
-        last_vel_rif.v = vel_rif.v;
-        last_vel_rif.w = vel_rif.w;
-        save_velocity = false;
+int MotorVelocityReference(short number) {
+    unsigned int t = TMR1; // Timing function
+
+    switch (number) {
+        case 0:
+            if (abs(motor_left.refer_vel) > constraint.max_left) {
+                motor_left.refer_vel = SGN(motor_left.refer_vel) * constraint.max_left;
+            }
+//            else {
+//                motor_left.refer_vel = motor_ref[number];
+//            }
+            break;
+        case 1:
+            if (abs(motor_right.refer_vel) > constraint.max_right) {
+                motor_right.refer_vel = SGN(motor_right.refer_vel) * constraint.max_right;
+            }
+//            else {
+//                motor_right.refer_vel = motor_ref[number];
+//            }
+            break;
     }
-    vel_rif.v -= last_vel_rif.v * (((float)parameter_system.int_tm_mill) / 1000) / emergency.time;
-    vel_rif.w -= last_vel_rif.w * (((float)parameter_system.int_tm_mill) / 1000) / emergency.time;
-    if (SGN(last_vel_rif.v) * vel_rif.v < 0) vel_rif.v = 0;
-    if (SGN(last_vel_rif.w) * vel_rif.w < 0) vel_rif.w = 0;
-    if((vel_rif.v == 0) && (vel_rif.w == 0)) {
-        save_velocity = true;
-        return true;
-    }
-    return false;
+    return TMR1 - t; // Time of esecution
 }
 
-int Velocity(void) {
-    unsigned int t = TMR1; // Timing function
-    int rifer_con_left, rifer_con_right;
-    MOTOR_ENABLE1 = enable_motors;
-    MOTOR_ENABLE2 = enable_motors;
-    long vel_v = (parameter_int.radius_r * motor_right.measure_vel + parameter_int.radius_l * motor_left.measure_vel) / 2;
-    long vel_w = (parameter_int.radius_r * motor_right.measure_vel - parameter_int.radius_l * motor_left.measure_vel) / (2 * parameter_int.wheelbase);
-    vel_mis.v = ((float) vel_v / 1000000);
-    vel_mis.w = ((float) vel_w / 1000);
+void UpdateStateController(short num, motor_control_t state) {
+    volatile bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
+    int led_state = (state != STATE_CONTROL_EMERGENCY) ? state + 1 : state;
+    /**
+     * Set enable or disable motors
+     */
+    switch (num) {
+        case -1:
+            motor_state[0] = state;
+            motor_state[1] = state;
+            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+#ifndef MOTION_CONTROL
+            UpdateBlink(0, led_state);
+            UpdateBlink(1, led_state);
+#endif
+            break;
+        case 0:
+            motor_state[num] = state;
+            MOTOR_ENABLE1 = enable ^ parameter_motor_left.enable_set;
+            if(state == STATE_CONTROL_EMERGENCY) {
+                last_motor_left = motor_left.refer_vel;
+            }
+#ifndef MOTION_CONTROL
+            UpdateBlink(num, led_state);
+#endif
+            break;
+        case 1:
+            motor_state[num] = state;
+            MOTOR_ENABLE2 = enable ^ parameter_motor_right.enable_set;
+            if(state == STATE_CONTROL_EMERGENCY) {
+                last_motor_right = motor_right.refer_vel;
+            }
+#ifndef MOTION_CONTROL
+            UpdateBlink(num, led_state);
+#endif
+            break;
+    }
+#ifdef MOTION_CONTROL
+    UpdateBlink(LED1, led_state);
+#endif
+}
 
-    rifer_con_left = (int) ((1 / parameter_motors.radius_r)*(vel_rif.v + (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
-    rifer_con_right = (int) ((1 / parameter_motors.radius_l)*(vel_rif.v - (parameter_motors.wheelbase * (-vel_rif.w)))*1000);
-    // Calculating constraint
-    if (abs(rifer_con_left) > constraint.max_left) {
-        motor_left.rifer_vel = SGN(rifer_con_left) * constraint.max_left;
-    } else {
-        motor_left.rifer_vel = rifer_con_left;
+int MotorTaskController(void) {
+    unsigned int t = TMR1; // Timing function
+    volatile short i;
+    /**
+     * If high level control selected, then set new reference for all motors.
+     */
+    if (control_state != STATE_CONTROL_HIGH_DISABLE)
+        HighLevelTaskController();
+
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        switch (motor_state[i]) {
+            case STATE_CONTROL_EMERGENCY:
+                /**
+                 * Set motor in emergency mode
+                 */
+                Emergency(i);
+                break;
+            case STATE_CONTROL_DIRECT:
+                //TODO To be implemented (Read issue #14)
+                break;
+            case STATE_CONTROL_POSITION:
+                //TODO to be implemented
+                break;
+            case STATE_CONTROL_VELOCITY:
+                /**
+                 * Enable motors and check velocity constraint and save references
+                 */
+                MotorVelocityReference(i);
+                break;
+            case STATE_CONTROL_TORQUE:
+                //TODO to be implemented
+                break;
+            default:
+                switch(i) {
+                    case 0:
+                        motor_left.refer_vel = 0;
+                        break;
+                    case 1:
+                        motor_right.refer_vel = 0;
+                        break;
+                }
+                break;
+        }
+        // Emergency controller
+        if (motor_state[i] > STATE_CONTROL_DISABLE) {
+            if ((counter_alive[i] + 1) >= emergency.timeout) {
+                /**
+                 * Set Motor in emergency mode
+                 */
+                UpdateStateController(i, STATE_CONTROL_EMERGENCY);
+                counter_stop[i] = 0;
+                counter_alive[i] = 0;
+            } else
+                counter_alive[i]++;
+        }
     }
-    if (abs(rifer_con_right) > constraint.max_right) {
-        motor_right.rifer_vel = SGN(rifer_con_right) * constraint.max_right;
-    } else {
-        motor_right.rifer_vel = rifer_con_right;
-    }
+
     return TMR1 - t; // Time of esecution
 }
 
 int MotorPIDL(void) {
     unsigned int t = TMR1; //Timing funzione
     unsigned long timePeriodLtmp; //Variabili temporanee Periodo
-    int SIG_VELLtmp; //Segno velocità
+    int SIG_VELLtmp; //Segno velocitÃ 
 
     timePeriodLtmp = timePeriodL; //Salvataggio TimerPeriod
     timePeriodL = 0; //Pulizia variabile
-    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocità
+    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocitÃ 
     SIG_VELL = 0; //Pulizia variabile
-    motor_left.measure_vel = 0; //Flush variaibile velocità R
+    motor_left.measure_vel = 0; //Flush variaibile velocitÃ  R
 
     PulsEncL += (int) POS1CNT; //Salvataggio spazio percorso
     POS1CNT = 0; //Reset registro
-    //calcolo della velocità
-    //Verifica SIG_VELLtmp!=0 & calcolo velocità
-    if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motors.k_vel_l / timePeriodLtmp);
-    PIDstruct1.controlReference = motor_left.rifer_vel; //Riferimento Ruota Sinistra
-    PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocità
+    //calcolo della velocitÃ 
+    //Verifica SIG_VELLtmp!=0 & calcolo velocitÃ 
+    if (SIG_VELLtmp) motor_left.measure_vel = SIG_VELLtmp * (parameter_motor_left.k_vel / timePeriodLtmp);
+
+    PIDstruct1.controlReference = motor_left.refer_vel; //Riferimento Ruota Sinistra
+    PIDstruct1.measuredOutput = motor_left.measure_vel; //Misura velocitÃ 
     PID(&PIDstruct1); //Esecuzione funzione PID
-    motor_left.control_vel = -(PIDstruct1.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = parameter_motor_left.versus * (PIDstruct1.controlOutput >> 4) + 2048; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
-    SetDCMCPWM1(1, motor_left.control_vel, 0);
+    SetDCMCPWM1(1, pid_control, 0);
+    motor_left.control_vel = parameter_motor_left.versus * PIDstruct1.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
@@ -267,41 +363,69 @@ int MotorPIDL(void) {
 int MotorPIDR(void) {
     unsigned int t = TMR1; //Timing funzione
     unsigned long timePeriodRtmp; //Variabili temporanee Periodo
-    int SIG_VELRtmp; //Segno velocità
+    int SIG_VELRtmp; //Segno velocitÃ 
 
     timePeriodRtmp = timePeriodR; //Salvataggio TimerPeriod
     timePeriodR = 0; //Pulizia variabile
-    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocità
+    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocitÃ 
     SIG_VELR = 0; //Pulizia variabile
-    motor_right.measure_vel = 0; //Flush variabile velocità R
+    motor_right.measure_vel = 0; //Flush variabile velocitÃ  R
 
     PulsEncR += (int) POS2CNT; //Salvataggio spazio percorso
     POS2CNT = 0; //Reset registro
-    //calcolo della velocità
-    //Verifica SIG_VELLtmp!=0 & calcolo velocità
-    if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motors.k_vel_r / timePeriodRtmp);
-    PIDstruct2.controlReference = motor_right.rifer_vel; //Riferimento Ruota Destra
-    PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocità
+    //calcolo della velocitÃ 
+    //Verifica SIG_VELLtmp!=0 & calcolo velocitÃ 
+    if (SIG_VELRtmp) motor_right.measure_vel = SIG_VELRtmp * (parameter_motor_right.k_vel / timePeriodRtmp);
+    PIDstruct2.controlReference = motor_right.refer_vel; //Riferimento Ruota Destra
+    PIDstruct2.measuredOutput = motor_right.measure_vel; //Misura velocitÃ 
     PID(&PIDstruct2); //Esecuzione funzione PID
-    motor_right.control_vel = (PIDstruct2.controlOutput >> 4) + 2049; //Conversione valore per PWM
+    int pid_control = parameter_motor_right.versus * (PIDstruct2.controlOutput >> 4) + 2048; //Conversione valore per PWM
     //Invio dell'azione di controllo al motore per mezzo del PWM
-    SetDCMCPWM1(2, motor_right.control_vel, 0);
+    SetDCMCPWM1(2, pid_control, 0);
+    motor_right.control_vel = parameter_motor_right.versus * PIDstruct2.controlOutput;
 
     return TMR1 - t; //Misura tempo di esecuzione
 }
 
-void adc_motors_current(void) {
-    int SIG_VELLtmp, SIG_VELRtmp; //Segno velocità
-    int AdcCount = 0; //Contatore
-    long ADCValueTmp[ADC_CHANNELS] = {0, 0}; //Valore temporaneo letture
-
-    for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Calcolo media di tutti i campioni
-    {
-        ADCValueTmp[0] += AdcBuffer[0][AdcCount]; //Sommatoria per AN0
-        ADCValueTmp[1] += AdcBuffer[1][AdcCount]; //Sommatoria per AN1
+bool Emergency(short num) {
+    switch (num) {
+        case 0:
+            motor_left.refer_vel -= (int16_t) (last_motor_left / emergency_step + 0.5f);
+            if (SGN(motor_left.refer_vel) * last_motor_left < 0)
+                motor_left.refer_vel = 0;
+            if (motor_left.refer_vel == 0) {
+                if ((counter_stop[num] + 1) >= emergency_stop) {
+                    UpdateStateController(num, STATE_CONTROL_DISABLE);
+                    counter_stop[num] = 0;
+                } else
+                    counter_stop[num]++;
+            }
+            break;
+        case 1:
+            motor_right.refer_vel -= (int16_t) (last_motor_right / emergency_step + 0.5f);
+            if (SGN(motor_right.refer_vel) * last_motor_right < 0)
+                motor_right.refer_vel = 0;
+            if (motor_right.refer_vel == 0) {
+                if ((counter_stop[num] + 1) >= emergency_stop) {
+                    UpdateStateController(num, STATE_CONTROL_DISABLE);
+                    counter_stop[num] = 0;
+                } else
+                    counter_stop[num]++;
+            }
+            break;
     }
-    SIG_VELLtmp = SIG_VELL; //Salvataggio Segno velocità
-    SIG_VELRtmp = SIG_VELR; //Salvataggio Segno velocità
-    motor_left.current = SIG_VELRtmp * ADCValueTmp[0] >> 6; //Divisione o shifth
-    motor_right.current = SIG_VELRtmp * ADCValueTmp[1] >> 6; //Divisione o shifth
+    return true;
+}
+
+void adc_motors_current(void) {
+    int AdcCount = 0; //Counter
+    long ADCValueTmp[ADC_CHANNELS] = {0, 0}; //Array to filter ADC data
+
+    for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Evaluate mean value
+    {
+        ADCValueTmp[0] += AdcBuffer[0][AdcCount]; //Sum for AN0
+        ADCValueTmp[1] += AdcBuffer[1][AdcCount]; //Sum for AN1
+    }
+    motor_left.current = ADCValueTmp[0] >> 6; //Shift
+    motor_right.current = ADCValueTmp[1] >> 6; //Shift
 }

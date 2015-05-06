@@ -1,25 +1,16 @@
-#############
-## MPLAB X ##
-#############
-*.d
-*.pre
-*.p1
-*.lst
-*.sym
-*.obj
-*.o
-*.sdb
-*.obj.dmp
-html/
+# Created by https://www.gitignore.io
+
+### NetBeans ###
 nbproject/private/
-nbproject/Package-*.bash
 build/
 nbbuild/
 dist/
 nbdist/
 nbactions.xml
 nb-configuration.xml
-funclist
-nbproject/Makefile-*
+
+### MPLAB X ###
 disassembly/
-*.map
+nbproject/Package-*.bash
+nbproject/Makefile-*.mk
+/.project

@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -35,8 +35,10 @@
 #include <pwm12.h>
 #include <string.h>
 
+#include "system/user.h"
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "packet/packet.h"
+#include "packet/motion.h"
 #include "communication/serial.h"
 
 /******************************************************************************/
@@ -46,9 +48,21 @@
 unsigned int reset_count = 0;
 unsigned char version_date_[] = __DATE__;
 unsigned char version_time_[] = __TIME__;
-unsigned char author_code[] = "Raffaello Bonghi";
+#ifdef UNAV_V1
 unsigned char name_board[] = "uNAV";
-unsigned char version_code[] = "v0.0.0 alpha";
+#elif ROBOCONTROLLER_V3
+unsigned char name_board[] = "RoboController";
+#elif MOTION_CONTROL
+unsigned char name_board[] = "Motion Control";
+#endif
+#ifdef MOTION_CONTROL
+unsigned char author_code[] = "Raffaello Bonghi";
+#else
+unsigned char author_code[] = "Officine Robotiche";
+#endif
+
+unsigned char version_code[] = "v0.4";
+unsigned char type_board[] = "Motor Control";
 parameter_system_t parameter_system;
 
 extern unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
@@ -59,6 +73,9 @@ extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(
 // From Interrupt
 extern volatile process_t time, priority, frequency;
 extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+
+// From motors PID
+extern parameter_motor_t parameter_motor_left, parameter_motor_right;
 
 /******************************************************************************/
 /* System Level Functions                                                     */
@@ -87,7 +104,7 @@ void init_process(void) {
     strcpy(name_process_velocity.buffer, VELOCITY_STRING);
     name_process_odometry.name = PROCESS_ODOMETRY;
     strcpy(name_process_odometry.buffer, ODOMETRY_STRING);
-    
+
     parameter_system.step_timer = (int) (TMR1_VALUE);
     parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
 
@@ -163,6 +180,9 @@ services_t services(services_t service) {
         case NAME_BOARD:
             memcpy(service_send.buffer, name_board, sizeof (name_board));
             break;
+        case TYPE_BOARD:
+            memcpy(service_send.buffer, type_board, sizeof (type_board));
+            break;
         case VERSION_CODE:
             memcpy(service_send.buffer, version_code, sizeof (version_code));
             break;
@@ -205,22 +225,18 @@ void InitInterrupts(void) {
 }
 
 void ConfigureOscillator(void) {
-
-    _ROI = 0x00; // Recover on Interrupt bit
-    _DOZE = 0x03; // Processor Clock Reduction Select bits
-    _DOZEN = 0x00; // DOZE Mode Enable bit
-    _FRCDIV = 0x00; // Internal Fast RC Oscillator Postscaler bits
-    _PLLDIV = 0x1E; // PLL divider (M=32)
-    //PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
-    // PLL VCO Output Divider Select bits (N2)
+    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
     CLKDIVbits.PLLPOST = 0; // N1=2
-    // PLL Phase Detector Input Divider bits (N1)
     CLKDIVbits.PLLPRE = 0; // N2=2
     // Disable Watch Dog Timer
     RCONbits.SWDTEN = 0;
-
+    // Clock switching to incorporate PLL
+    // Initiate Clock Switch to Primary
+    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
+    __builtin_write_OSCCONL(0x01); // Start clock switching
     while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
-    while (OSCCONbits.LOCK != 1); // Wait for PLL to lock
+    while (OSCCONbits.LOCK != 1) {
+    }; // Wait for PLL to lock
 }
 
 void InitPWM(void) {
@@ -267,7 +283,7 @@ void InitQEI1(void) {
     //QEI1CONbits.CNTERR= 0; // No position count error has occurred
     QEI1CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
     QEI1CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-    QEI1CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
+    QEI1CONbits.SWPAB = (parameter_motor_left.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
     QEI1CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
     //QEI1CONbits.TQGATE= 0  // Timer gated time accumulation disabled
     //QEI1CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -284,7 +300,7 @@ void InitQEI2(void) {
     //QEI2CONbits.CNTERR= 0; // No position count error has occurred
     QEI2CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
     QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-    QEI2CONbits.SWPAB = 1; // Phase A and Phase B inputs swapped
+    QEI2CONbits.SWPAB = (parameter_motor_right.versus >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
     QEI2CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
     //QEI2CONbits.TQGATE= 0  // Timer gated time accumulation disabled
     //QEI2CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -407,8 +423,6 @@ void InitDMA1(void) {
     DMA1CONbits.NULLW = 0;
     DMA1CONbits.AMODE = 0;
     DMA1CONbits.MODE = 1;
-
-
 
     DMA1CNT = MAX_TX_BUFF - 1; // 32 DMA requests
     DMA1REQ = 0x000c; // Select UART1 Transmitter

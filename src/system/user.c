@@ -13,76 +13,6 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
-
-/**********************************************************************
- * © 2014 µNAV crew
- *
- * GPIO remapping
- * Hardware init
- *
- * v 1.0 beta 21/09/2014
- *
- **********************************************************************/
-
-/* 
-
- *  µNAV pin map
-
-// input ADC
-AN0 -> RA0
-AN1 -> RA1
-AN2 -> RB0
-AN3 -> RB1
-
-// input encoder (5V tolerant)
-E1CHA -> RB10 (RP10)
-E1CHB -> RB11 (RP11)
-E2CHA -> RB6 (RP6)
-E2CHB -> RB5 (RP5)
-
-// input capture)
-IC1 -> RB10 (RP10)
-IC2 -> RB6 (RP6)
-
-// OUT PWM
-H1A -> RB14
-H1B -> RB15
-H2A -> RB12
-H2B -> RB13
-
-// H Bridge control
-H1EN   -> RA7
-H2EN   -> RA10
-(nota: AU1 e AU2 sono NC)
-
-// UART (5V tolerant)
-U1RX -> RC5 (RP21)
-U1TX -> RC4 (RP20)
-U2RX -> RB3 (RP3)
-U2TX -> RB2 (RP2)
-
-// I2C
-SDA -> RB9
-SCL -> RB8
-
-// LED
-LED1 -> RC6
-LED2 -> RC7
-LED3 -> RC8
-LED4 ->	RC9
-
-// GPIO
-GP1 -> RC0 (CN8)
-GP2 -> RC1 (CN9)
-GP3 -> RC2 (CN10)
-GP4 -> RC3 (CN28)
-GP5 -> RA4 (CN0)
-GP6 -> RB4 (CN1)
-GP7 -> RB7 (CN23)
-GP8 -> RA8
-HLT -> RA9
-
  */
 
 /******************************************************************************/
@@ -105,23 +35,35 @@ HLT -> RA9
 #include <dsp.h>             /* For DSP functionality                         */
 #include <string.h>
 #include <assert.h>
-#include "I2c.h"
-#include "system/user.h"            /* variables/params used by user.c               */
+#include "system/user.h"     /* variables/params used by user.c               */
 #include "system/system.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
+led_control_t led_controller[LED_NUM];
+bool led_effect = false;
+bool first = true;
+short load_blink[LED_NUM];
+pin_t led_1 = {&LED1_PORT, LED1_NUM};
+#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+pin_t led_2 = {&LED2_PORT, LED2_NUM};
+#endif
+#if defined(UNAV_V1)
+pin_t led_3 = {&LED3_PORT, LED3_NUM};
+pin_t led_4 = {&LED4_PORT, LED4_NUM};
+#endif
+
 /******************************************************************************/
 /* User Functions                                                             */
-/******************************************************************************/
 
-/* <Initialize variables in user.h and insert code for user algorithms.> */
+/******************************************************************************/
 
 void InitApp(void) {
 
     // Peripheral PIN remapping
+    //*************************************************************
     // Unlock Registers
     //*************************************************************
     asm volatile ( "mov #OSCCONL, w1 \n"
@@ -130,59 +72,58 @@ void InitApp(void) {
                 "mov.b w2, [w1] \n"
                 "mov.b w3, [w1] \n"
                 "bclr OSCCON, #6 ");
-
+#ifdef UNAV_V1
     // Input capture
-    //***************************
-    // Assign IC1 To Pin RP10
-    //***************************
-    RPINR7bits.IC1R = 10;
-    //***************************
-    // IC2 To Pin RP6
-    //***************************
-    RPINR7bits.IC2R = 6;
-
+    RPINR7bits.IC1R = 10; // IC1 To Pin RP10
+    RPINR7bits.IC2R = 6; // IC2 To Pin RP6
     // QEI
-    //***************************
-    // QEA1 To Pin RP10
-    //***************************
-    RPINR14bits.QEA1R = 10;
-    //***************************
-    // QEB1 To Pin RP11
-    //***************************
-    RPINR14bits.QEB1R = 11;
-    //***************************
-    // QEA2 To Pin RP5
-    //***************************
-    RPINR16bits.QEA2R = 5;
-    //***************************
-    // QEB2 To Pin RP6
-    //***************************
-    RPINR16bits.QEB2R = 6;
-
+    RPINR14bits.QEA1R = 10; // QEA1 To Pin RP10
+    RPINR14bits.QEB1R = 11; // QEB1 To Pin RP11
+    RPINR16bits.QEA2R = 5; // QEA2 To Pin RP5
+    RPINR16bits.QEB2R = 6; // QEB2 To Pin RP6
     // UART
-    //***************************
-    // Assign U2RX To Pin RP3, CTS tied Vss
-    //***************************
-    RPINR19bits.U2RXR = 3;
-    RPINR19bits.U2CTSR = 0x1f;
-    //***************************
-    // Assign U2Tx To Pin RP2
-    //***************************
-    RPOR1bits.RP2R = 5;
-
-    //***************************
-    // Assign U1RX To Pin RP21, CTS tied Vss
-    //***************************
-    RPINR18bits.U1RXR = 21;
+    RPINR18bits.U1RXR = 21; // U1RX To Pin RP21, CTS tied Vss
     RPINR18bits.U1CTSR = 0x1f;
-    //***************************
-    // Assign U1Tx To Pin RP20
-    //***************************
-    RPOR10bits.RP20R = 3;
+    RPOR10bits.RP20R = 3; // U1Tx To Pin RP20
 
-    //************************************************************
+    RPINR19bits.U2RXR = 3; // U2RX To Pin RP3, CTS tied Vss
+    RPINR19bits.U2CTSR = 0x1f;
+    RPOR1bits.RP2R = 5; // U2Tx To Pin RP2
+#elif ROBOCONTROLLER_V3
+    // Input capture
+    RPINR7bits.IC1R = 22; // IC1 To Pin RP22
+    RPINR7bits.IC2R = 24; // IC2 To Pin RP24
+    // QEI
+    RPINR14bits.QEA1R = 22; // QEA1 To Pin RP22
+    RPINR14bits.QEB1R = 23; // QEB1 To Pin RP23
+    RPINR16bits.QEA2R = 24; // QEA2 To Pin RP24
+    RPINR16bits.QEB2R = 25; // QEB2 To Pin RP25
+    // UART
+    RPINR18bits.U1RXR = 20; // U1RX To Pin RP20
+    RPOR10bits.RP21R = 3;   // U1TX To Pin RP21
+
+    //RPINR19bits.U2RXR = 6;  // U2RX To Pin RP6
+    RPINR19bits.U2RXR = 8;    // U2RX To Pin RP8
+    //RPOR2bits.RP5R = 5;     // U2TX To Pin RP5
+    RPOR4bits.RP8R = 5;       // U2TX To Pin RP5
+#elif MOTION_CONTROL
+    // Input capture
+    RPINR7bits.IC1R = 5; // Assign Input Capture 1 To Pin RP5
+    RPINR7bits.IC2R = 10; // Assign Input Capture 2 To Pin RP10
+    // QEI
+    RPINR14bits.QEA1R = 5; // Assign QEA1 To Pin RP5
+    RPINR14bits.QEB1R = 6; // Assign QEB1 To Pin RP6
+    RPINR16bits.QEA2R = 11; // Assign QEA2 To Pin RP11
+    RPINR16bits.QEB2R = 10; // Assign QEB2 To Pin RP10
+    //UART RX
+    RPINR18bits.U1RXR = 8; // Assign U1RX To Pin RP8
+    RPOR4bits.RP9R = 3; // Assign U1Tx To Pin RP9
+#else
+#error Configuration error. Does not selected a board!
+#endif
+    //*************************************************************
     // Lock Registers
-    //************************************************************
+    //*************************************************************
     asm volatile ( "mov #OSCCONL, w1 \n"
                 "mov #0x45, w2 \n"
                 "mov #0x57, w3 \n"
@@ -192,23 +133,21 @@ void InitApp(void) {
     // *********************************** Peripheral PIN selection
 
     /* Setup port direction */
-
     // weak pullups enable
     CNPU1 = 0xffff;
-    CNPU2 = 0xffff;
+    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
 
-    // led
-    _TRISC6 = 0; //Led1
-    _TRISC7 = 0; //Led2
-    _TRISC8 = 0; //Led3
-    _TRISC9 = 0; //Led4
-
-    // encoder
+#ifdef UNAV_V1
+    // LED
+    _TRISC6 = 0; // LED 1 Green
+    _TRISC7 = 0; // LED 2 Green
+    _TRISC8 = 0; // LED 3 Yellow
+    _TRISC9 = 0; // LED 4 Red
+    // Encoders
     _TRISB10 = 1;
     _TRISB11 = 1;
     _TRISB6 = 1;
     _TRISB5 = 1;
-
     // H bridge
     _TRISA7 = 0; //Enable - Motor 1
     _TRISA10 = 0; //Enable - Motor 2
@@ -216,7 +155,6 @@ void InitApp(void) {
     _TRISB12 = 0; // PWM1 -
     _TRISB12 = 0; // PWM2 +
     _TRISB12 = 0; // PWM2 -
-
     // GPIO
     _TRISC0 = 1; // GPIO1
     _TRISC1 = 1; // GPIO2
@@ -227,19 +165,52 @@ void InitApp(void) {
     _TRISB7 = 1; // GPIO7
     _TRISA8 = 1; // GPIO8
     _TRISA9 = 1; // HALT
-
     // ADC
     _TRISA0 = 1; // CH1
     _TRISA1 = 1; // CH2
     _TRISB0 = 1; // CH3
     _TRISB1 = 1; // CH4
+#elif ROBOCONTROLLER_V3
+    // LED
+    _TRISA8 = 0; // LED1
+    _TRISA9 = 0; // LED2
+    // Encodes
+    _TRISC6 = 1; // QEA_1
+    _TRISC7 = 1; // QEB_1
+    _TRISC8 = 1; // QEA_2
+    _TRISC9 = 1; // QEB_2
+    // H-Bridge
+    _TRISA1 = 0; // MOTOR_EN1
+    _TRISA4 = 0; // MOTOR_EN2
+    // GPIO
+    _TRISA7 = 0; // AUX1
+    _TRISA10 = 0; // AUX2
+    // ADC
+    _TRISB2 = 1; // CH1
+    _TRISB3 = 1; // CH2
+    _TRISC0 = 1; // CH3
+    _TRISC1 = 1; // CH4
+    // Others
+    _TRISB7 = 0; // DIR RS485 UART2
+    _TRISB8 = 0; // SDA = Out : Connettore IC2 pin 6
+    _TRISB9 = 0; // SCL = Out : Connettore IC2 pin 5
+    _TRISB4 = 0; // RB4 = Out : Connettore IC2 pin 4
+    _TRISC2 = 0; // OUT Float
+    _TRISC3 = 0; // DIR RS485 UART1
+#elif MOTION_CONTROL
+    _TRISA4 = 0; //Led
+    _TRISB2 = 0; //Enable - Motor 1
+    _TRISB3 = 0; //Enable - Motor 2
+    _TRISB5 = 1;
+    _TRISB6 = 1;
+    _TRISB10 = 1;
+    _TRISB11 = 1;
+#else
+#error Configuration error. Does not selected a board!
+#endif
 
-    /* Initialize peripherals */ // da controllare e adattare
-    LED1 = 0;
-    LED2 = 0;
-    LED3 = 0;
-    LED4 = 0;
-    
+    /* Peripherical initalization */
+    InitLed(); //Init led
     InitPWM(); //Open PWM
     InitQEI1(); //Open QEI1
     InitQEI2(); //Open QEI2
@@ -252,13 +223,10 @@ void InitApp(void) {
     InitUART1(); //Open UART1 for serial comunication
     InitDMA1(); //Open DMA1 for Tx UART1
 
-    //InitI2C(); //GO- Open I2C module
-
     InitTimer1(); //Open Timer1 for clock system
     InitInterrupts(); //Start others interrupts
 }
 
-/* Protected Memcpy */
 void inline protectedMemcpy(unsigned reg, void *destination, const void *source, size_t num) {
     if (1 == reg) {
         reg = 0;
@@ -269,7 +237,21 @@ void inline protectedMemcpy(unsigned reg, void *destination, const void *source,
     }
 }
 
-int maxValue(float myArray[], size_t size) {
+int maxValue(int* myArray, size_t size) {
+    /* enforce the contract */
+    //    assert(myArray && size);
+    size_t i;
+    int maxValue = myArray[0];
+
+    for (i = 1; i < size; ++i) {
+        if (myArray[i] > maxValue) {
+            maxValue = myArray[i];
+        }
+    }
+    return maxValue;
+}
+
+float maxValueFloat(float* myArray, size_t size) {
     /* enforce the contract */
     //    assert(myArray && size);
     size_t i;
@@ -281,4 +263,97 @@ int maxValue(float myArray[], size_t size) {
         }
     }
     return maxValue;
+}
+
+void InitLed(void) {
+    int i;
+    led_controller[0].pin = &led_1;
+#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+    led_controller[1].pin = &led_2;
+#endif
+#if defined(UNAV_V1)
+    led_controller[2].pin = &led_3;
+    led_controller[3].pin = &led_4;
+#endif
+    for (i = 0; i < LED_NUM; ++i) {
+        led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
+        led_controller[i].wait = 0;
+        UpdateBlink(i, 0);
+    }
+}
+
+void UpdateBlink(short num, short blink) {
+    led_controller[num].number_blink = blink;
+    switch (led_controller[num].number_blink) {
+        case LED_OFF:
+            //Clear bit - Set to 0
+            *(led_controller[num].pin->CS_PORT) &= ~led_controller[num].CS_mask;
+            break;
+        case LED_ALWAYS_HIGH:
+            //Set bit - Set to 1
+            *(led_controller[num].pin->CS_PORT) |= led_controller[num].CS_mask;
+            break;
+        default:
+            led_controller[num].fr_blink = FRTMR1 / (2 * led_controller[num].number_blink);
+            break;
+    }
+    led_controller[num].counter = 0;
+}
+
+/**
+ * Tc -> counter = 1sec = 1000 interrupts
+ * !       Tc/2        !   Tc/2       !
+ * !     !_____   _____!              !
+ * !     !|   |   |   |!              !
+ * !-----!|   |---|   |! . . . -------!
+ * !     !             !              !
+ * ! WAIT   Tc/2-WAIT  !   Tc/2       !
+ */
+
+inline void BlinkController(led_control_t *led) {
+    if (led->counter > led->wait && led->counter < FRTMR1) {
+        if (led->counter % led->fr_blink == 0) {
+            //Toggle bit
+            *(led->pin->CS_PORT) ^= led->CS_mask;
+        }
+        led->counter++;
+    } else if (led->counter >= 3 * FRTMR1 / 2) {
+        led->counter = 0;
+    } else {
+        //Clear bit - Set to 0
+        *(led->pin->CS_PORT) &= ~led->CS_mask;
+        led->counter++;
+    }
+}
+
+void blinkflush() {
+    int i;
+    for (i = 0; i < LED_NUM; ++i) {
+        led_controller[i].wait = i * ((float) FRTMR1 / LED_NUM);
+        load_blink[i] = led_controller[i].number_blink;
+        UpdateBlink(i, 1);
+    }
+    led_effect = true;
+}
+
+void EffectStop() {
+    int i;
+    int value = 0;
+    if (led_effect) {
+        for (i = 0; i < LED_NUM; ++i) {
+            value += led_controller[i].counter;
+        }
+        if (value == 0) {
+            if (~first) {
+                for (i = 0; i < LED_NUM; ++i) {
+                    UpdateBlink(i, load_blink[i]);
+                    led_controller[i].wait = 0;
+                }
+                led_effect = false;
+                first = true;
+            } else {
+                first = false;
+            }
+        }
+    }
 }
