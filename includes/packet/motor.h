@@ -111,7 +111,7 @@ typedef struct _motor_parameter {
 typedef struct _motor_emergency {
     float slope_time;
     float bridge_off;
-    int16_t timeout;
+    uint16_t timeout;
 } motor_emergency_t;
 #define LNG_MOTOR_EMERGENCY sizeof(motor_emergency_t)
 

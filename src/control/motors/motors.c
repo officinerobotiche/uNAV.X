@@ -158,7 +158,8 @@ motor_parameter_t init_motor_parameters() {
     return parameter;
 }
 
-/* inline */ motor_parameter_t get_motor_parameters(short motIdx) {
+/* inline */
+motor_parameter_t get_motor_parameters(short motIdx) {
     return motors[motIdx].parameter_motor;
 }
 
@@ -202,7 +203,8 @@ motor_t init_motor_constraints() {
     return constraint;
 }
 
-/* inline */ motor_t get_motor_constraints(short motIdx) {
+/* inline */
+motor_t get_motor_constraints(short motIdx) {
     return motors[motIdx].constraint;
 }
 
@@ -219,7 +221,8 @@ motor_pid_t init_motor_pid() {
     return pid;
 }
 
-/* inline */ motor_pid_t get_motor_pid(short motIdx) {
+/* inline */
+motor_pid_t get_motor_pid(short motIdx) {
     return motors[motIdx].pid;
 }
 
@@ -259,7 +262,8 @@ motor_emergency_t init_motor_emergency() {
     return emergency;
 }
 
-/* inline */ motor_emergency_t get_motor_emergency(short motIdx) {
+/* inline */
+motor_emergency_t get_motor_emergency(short motIdx) {
     return motors[motIdx].emergency;
 }
 
@@ -271,14 +275,16 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     motors[motIdx].counter_stop = 0;
 }
 
-/* inline */ motor_t get_motor_measures(short motIdx) {
+/* inline */
+motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position = motors[motIdx].PulsEnc * motors[motIdx].k_ang;
     motors[motIdx].PulsEnc = 0;
     motors[motIdx].measure.volt = ((float) motors[motIdx].pid_control) / motors[motIdx].parameter_motor.volt_bridge;
     return motors[motIdx].measure;
 }
              
-/* inline */ motor_t get_motor_reference(short motIdx) {
+/* inline */
+motor_t get_motor_reference(short motIdx) {
     return motors[motIdx].reference;
 }
              
@@ -297,7 +303,8 @@ int set_motor_velocity(short motIdx, motor_control_t reference) {
     return TMR1 - t; // Time of execution
 }
     
-/* inline */ motor_state_t get_motor_state(short motIdx) {
+/* inline */
+motor_state_t get_motor_state(short motIdx) {
     return motors[motIdx].measure.state;
 }
 
