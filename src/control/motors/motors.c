@@ -35,7 +35,7 @@
 #include <dsp.h>
 #include <pwm12.h>
 #include "control/high_level_control.h"
-#include "control/motors.h"      /* variables/params used by motorsPID.c */
+#include "control/motors/motors.h"      /* variables/params used by motorsPID.c */
 #include "system/system.h"
 #include "system/user.h"
 #include "packet/packet.h"

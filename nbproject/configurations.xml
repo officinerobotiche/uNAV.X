@@ -10,8 +10,11 @@
         <itemPath>includes/communication/parsing_messages.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="control" projectFiles="true">
+        <logicalFolder name="motors" displayName="motors" projectFiles="true">
+          <itemPath>includes/control/motors/init.h</itemPath>
+          <itemPath>includes/control/motors/motors.h</itemPath>
+        </logicalFolder>
         <itemPath>includes/control/high_level_control.h</itemPath>
-        <itemPath>includes/control/motors.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
         <itemPath>includes/packet/packet.h</itemPath>
@@ -49,8 +52,11 @@
         <itemPath>src/communication/parsing_other_messages.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="control" projectFiles="true">
+        <logicalFolder name="motors" displayName="motors" projectFiles="true">
+          <itemPath>src/control/motors/init.c</itemPath>
+          <itemPath>src/control/motors/motors.c</itemPath>
+        </logicalFolder>
         <itemPath>src/control/high_level_control.c</itemPath>
-        <itemPath>src/control/motors.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>

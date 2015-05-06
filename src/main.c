@@ -37,7 +37,8 @@
 #include "system/user.h"   /* User funct/params, such as InitApp              */
 #include "communication/serial.h"
 #include "communication/parsing_messages.h"
-#include "control/motors.h"
+#include "control/motors/init.h"
+#include "control/motors/motors.h"
 #include "control/high_level_control.h"
 
 /******************************************************************************/
@@ -90,7 +91,13 @@ int16_t main(void) {
     /* Initialize IO ports and peripherals */
     InitApp();
 
+    /* Open PWM */
+    InitPWM();
     for (i = 0; i < NUM_MOTORS; ++i) {
+        /* Open QEI */
+        InitQEI(i);
+        /* Open Input Capture */
+        InitIC(i);
         /* Initialize variables for motors */
         init_motor(i);
         /* Initialize parameters for motors */
