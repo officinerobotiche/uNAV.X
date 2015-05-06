@@ -52,27 +52,27 @@
 #include "packet/navigaation.h"
 #endif
 
-/** Buffers dimension */
+/** Buffer dimensions */
 // Dimension for UART transmit buffer
 #define MAX_BUFF_TX 200
 // Dimension for UART receive buffer
 #define MAX_BUFF_RX 200
 // Type of serial errors
 #define MAX_BUFF_ERROR_SERIAL 13
-// Numbers of names process
+// Numbers of process names 
 #define MAX_BUFF_TASK_NAME 20
 // Dimension services buffer
 #define MAX_BUFF_SERVICE 20
 
 /** Type of option messages */
 // Request data
-#define PACKET_REQUEST 'R'
+#define PACKET_REQUEST  'R'
 // Messages with data
-#define PACKET_DATA 'D'
+#define PACKET_DATA     'D'
 // ACK
-#define PACKET_ACK 'K'
+#define PACKET_ACK      'K'
 // NACK
-#define PACKET_NACK 'N'
+#define PACKET_NACK     'N'
 // Length of information packet (without data)
 #define LNG_HEAD_INFORMATION_PACKET 4
 
@@ -105,7 +105,7 @@ typedef struct _system_error_serial {
  * * author code
  */
 typedef struct _system_service {
-    char command;
+    char command; // TODO insert a list of commands or a reference to the list of commands
     unsigned char buffer[MAX_BUFF_SERVICE];
 } system_service_t;
 #define LNG_SYSTEM_SERVICE sizeof(system_service_t)
@@ -124,7 +124,7 @@ typedef struct _system_task {
 #define LNG_SYSTEM_TASK sizeof(system_task_t)
 
 /**
- * Information about processes on board. We have standards process:
+ * Information about processes running on board. We have standards process:
  * * time in idle
  * * time for parsing packet
  * * list for others processes
@@ -139,7 +139,7 @@ typedef struct _system_task_name {
 /**** EO Messages ****/
 
 /**
- * This is a definition for conversion packets in a big data packet to send in 
+ * This is a definition to convert packets in a big data packet to send in 
  * a serial communication. 
  * For all packet we have this transformation:
  * 1. UNION abstract_packet_u
@@ -177,7 +177,7 @@ typedef union _message_abstract {
  * * information about packet (in top on this file):
  *      * (R) Request data
  *      * (D) Packet with data
- *      * (A) ACK
+ *      * (K) ACK
  *      * (N) NACK
  * * type packet:
  *      * (D) Default messages (in top on this file)
@@ -193,7 +193,7 @@ typedef struct _packet_information {
 } packet_information_t;
 
 /**
- * Union for quickly transform information_packet_t in a buffer to add in
+ * Union to quickly transform information_packet_t in a buffer to add in
  * packet_t
  */
 typedef union _packet_buffer {
@@ -214,26 +214,26 @@ typedef struct _packet {
 } packet_t;
 
 //Number association for standard messages
-#define SYSTEM_SERVICE 0
-#define SYSTEM_TASK_NAME 1
-#define SYSTEM_TASK_TIME 2
-#define SYSTEM_TASK_PRIORITY 3
-#define SYSTEM_TASK_FRQ 4
-#define SYSTEM_TASK_NUM 5
-#define SYSTEM_PARAMETER 6
-#define SYSTEM_SERIAL_ERROR 7
+#define SYSTEM_SERVICE          0
+#define SYSTEM_TASK_NAME        1
+#define SYSTEM_TASK_TIME        2
+#define SYSTEM_TASK_PRIORITY    3
+#define SYSTEM_TASK_FRQ         4
+#define SYSTEM_TASK_NUM         5
+#define SYSTEM_PARAMETER        6
+#define SYSTEM_SERIAL_ERROR     7
 
 //Names for type services
-#define SERVICE_RESET '*'
-#define SERVICE_CODE_DATE 'd'
-#define SERVICE_CODE_VERSION 'v'
-#define SERVICE_CODE_AUTHOR 'a'
+#define SERVICE_RESET           '*'
+#define SERVICE_CODE_DATE       'd'
+#define SERVICE_CODE_VERSION    'v'
+#define SERVICE_CODE_AUTHOR     'a'
 #define SERVICE_CODE_BOARD_TYPE 't'
 #define SERVICE_CODE_BOARD_NAME 'n'
 
 //Name for HASHMAP with information about standard messages
-#define HASHMAP_SYSTEM 'S'
-#define HASHMAP_SYSTEM_NUMBER 10
+#define HASHMAP_SYSTEM          'S'
+#define HASHMAP_SYSTEM_NUMBER   10
 
 // Definition on communication/parsing_packet.c
 //static unsigned int hashmap_system[HASHMAP_SYSTEM_NUMBER];
