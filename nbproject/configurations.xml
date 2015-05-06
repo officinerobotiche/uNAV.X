@@ -37,6 +37,8 @@
     </logicalFolder>
     <logicalFolder name="f1" displayName="Other Files" projectFiles="true">
         <itemPath>LICENSE</itemPath>
+        <itemPath>CHANGELOG.md</itemPath>
+        <itemPath>README.md</itemPath>
     </logicalFolder>
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
