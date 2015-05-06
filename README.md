@@ -55,10 +55,12 @@ git checkout develop
 ## Communication libraries
 - [C++](https://github.com/officinerobotiche/orblibcpp)
 - [Java](https://github.com/officinerobotiche/orblibjar)
-- [ROS (Robotic Operative System)](https://github.com/officinerobotiche/serial_bridge)
+- [ROS (Robotic Operative System)](https://github.com/officinerobotiche/ros_serial_bridge)
  
 ## Software
 - [PID tuning](https://github.com/officinerobotiche/uNav_PID_Tuner)
+- [Robot Param Calculator](https://github.com/officinerobotiche/RobotParamCalculator)
+- [Simple unav Console](https://github.com/officinerobotiche/simple_unav_console)
 
 [wiki]:http://wiki.officinerobotiche.it/
 [Officine Robotiche]:http://www.officinerobotiche.it/
