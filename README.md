@@ -42,7 +42,7 @@ This repository follow **[Git flow](https://www.atlassian.com/git/tutorials/comp
 - **[GREEN] Master** branch stores the official release history
 - **[ORANGE] Develop** branch serves as an integration branch for features
 - **[BLUE] Feature** branches use *develop* as their parent branch
-- **[YELLOW] Release-*** No new features can be added after this point—only bug fixes
+- **[YELLOW] Release/vX.X** No new features can be added after this point—only bug fixes
 - **[GREY] Hotfix** branches are used to quickly patch production releases
  
 ## Develop working
