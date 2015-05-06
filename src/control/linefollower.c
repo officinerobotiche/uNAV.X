@@ -26,6 +26,7 @@
 extern velocity_t vel_rif, vel_mis;
 extern unsigned int counter_alive[NUM_MOTORS];
 
+linesensor_t line_sensor;
 int16_t pippoooo;
 
 void linefollowing()
@@ -56,7 +57,7 @@ void linefollowing()
         }
         else
         {
-            if( pippoooo < 50 )
+            if( pippoooo < 16 )
                 pippoooo++;
             else
                 pippoooo = 0;

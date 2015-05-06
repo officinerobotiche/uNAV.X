@@ -19,9 +19,16 @@
 #ifndef LINEFOLLOWER_H
 #define	LINEFOLLOWER_H
 
+
+#ifdef	__cplusplus
+extern "C" {
+#endif
     /**************************************************************************/
     /* System Level #define Macros                                            */
     /**************************************************************************/
+    
+    #define NUM_LINE_SENSOR     7
+    
     #define INPUT       1
     #define OUTPUT      0
 
@@ -43,24 +50,58 @@
     
 
     /**************************************************************************/
-    /* LineFollower extern variables                                          */
+    /* LineFollower structure                                                 */
     /**************************************************************************/
 
+
+    /**
+     * Data structure used to manage linefollower sensor
+     * - fsm_state  : state of "Finited State Machine" : Charge, discharge, Measure...
+     * - timebase : Configured during init, uSec time base if main function... used to calculate reading time.
+     * - sensor_time[NUM_LINE_SENSOR] : Measure time of each sensor
+     */
+    typedef struct linesensor {
+        int8_t fsm_state;
+        int16_t timebase;
+        float sensor_time[NUM_LINE_SENSOR];
+    } linesensor_t;
+    #define LNG_LINESENSOR sizeof(linesensor_t)    
     
     /**************************************************************************/
     /* System Function Prototypes                                             */
     /**************************************************************************/
-
+    
     /**
      * main function of line following algoritms.
+     * @param None
+     * @param None
      */
     void linefollowing(void);
 
+    
+    /**************************************************************************/
+    /* IR sensor reading related functions                                    */
+    /**************************************************************************/    
+    
     /*
-     * IR senso reading related functions
+     * Start a discharge of capacitor used to measure line reflectivity.
+     * This functon put line as Output at "1" and exit, don't wait a full 
+     * discharge
+     * @param None
+     * @param None
      */
-    void IRsensor_CapacitorDisCharge(void);    
+    void IRsensor_CapacitorDisCharge(void);  
+    
+     /*
+     * This functon put line as Input and exit.
+     * @param None
+     * @param None
+     */
     void IRsensor_StartMeasure(void);
 
+    
+#ifdef	__cplusplus
+}
+#endif
 
 #endif	/* LINEFOLLOWER_H */
