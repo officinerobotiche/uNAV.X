@@ -131,7 +131,7 @@ typedef struct _motor_pid {
         motor_pid_t motor_pid;                   \
         motor_control_t motor_control;
 
-//Numbers associated for motor messages
+//Numbers associated for motor messages to be used in the structure @ref motor_command_map_t as value for @ref command 
 #define MOTOR 0
 #define MOTOR_PARAMETER 1
 #define MOTOR_CONSTRAINT 2
