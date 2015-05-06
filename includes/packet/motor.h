@@ -52,7 +52,7 @@ typedef int16_t motor_control_t;
 #define LNG_MOTOR_CONTROL sizeof(motor_control_t)
 
 /**
- * Message to get stateus of a single motor
+ * Message to get status of a single motor
  * - [#] state of control
  */
 typedef int8_t motor_state_t;
@@ -61,7 +61,7 @@ typedef int8_t motor_state_t;
 /**
  * Message for the status of the motor controller, information about:
  * - [#]       state motor - type of control
- * - [mV]Â      mean voltage applied in the bridge - PWM
+ * - [mV]      mean voltage applied in the bridge - PWM
  * - [Nm]      torque
  * - [m rad/s] velocity
  * - [rad]     position

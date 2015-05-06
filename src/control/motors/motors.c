@@ -295,7 +295,9 @@ motor_t get_motor_reference(short motIdx) {
 int set_motor_velocity(short motIdx, motor_control_t reference) {
     unsigned int t = TMR1; // Timing function
     motors[motIdx].counter_alive = 0; //Reset time emergency
-    motors[motIdx].reference.state = STATE_CONTROL_VELOCITY;
+    if(motors[motIdx].reference.state != STATE_CONTROL_VELOCITY) {
+        set_motor_state(motIdx, STATE_CONTROL_VELOCITY);
+    }
     motors[motIdx].reference.velocity = reference;
     if (abs(motors[motIdx].reference.velocity) > motors[motIdx].constraint.velocity) {
         motors[motIdx].reference.velocity = SGN(motors[motIdx].reference.velocity) * motors[motIdx].constraint.velocity;
