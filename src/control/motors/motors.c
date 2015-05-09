@@ -81,12 +81,14 @@ typedef struct new_motor {
     pin_t * pin_enable;
     unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
-    volatile int PulsEnc; //Buffer for deadReckoning
+    
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
     int16_t pid_control;
     unsigned int counter_pid;
+    /// Motor position
+    volatile int PulsEnc;
     //Emergency
     float emergency_step;
     float emergency_stop;
@@ -278,8 +280,6 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 
 /* inline */
 motor_t get_motor_measures(short motIdx) {
-    motors[motIdx].measure.position = motors[motIdx].PulsEnc * motors[motIdx].k_ang;
-    motors[motIdx].PulsEnc = 0;
     motors[motIdx].measure.volt = motors[motIdx].pid_control / motors[motIdx].parameter_motor.bridge.volt;
     return motors[motIdx].measure;
 }
@@ -422,18 +422,23 @@ int measureVelocity(short motIdx) {
         int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
         motors[motIdx].measure.velocity = vel;
     }
-
     //Evaluate position
     switch (motIdx) {
         case MOTOR_ZERO:
-            motors[motIdx].PulsEnc += (int) POS1CNT; // Odometry
+            motors[motIdx].PulsEnc += (int) POS1CNT;
             POS1CNT = 0;
             break;
         case MOTOR_ONE:
-            motors[motIdx].PulsEnc += (int) POS2CNT; // Odometry
+            motors[motIdx].PulsEnc += (int) POS2CNT;
             POS2CNT = 0;
             break;
     }
+    // Evaluate angle position
+    motors[motIdx].measure.position += motors[motIdx].PulsEnc * motors[motIdx].k_ang;
+    if(abs(motors[motIdx].measure.position) > 2*PI) {
+        motors[motIdx].measure.position = 0;
+    }
+    motors[motIdx].PulsEnc = 0;
     return TMR1 - t; // Time of execution
 }
 
