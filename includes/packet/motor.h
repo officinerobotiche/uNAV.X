@@ -95,7 +95,7 @@ typedef struct _motor {
 typedef struct _motor_parameter {
     uint16_t cpr;
     float ratio;
-    motor_control_t volt_bridge;
+    uint16_t volt_bridge;
     uint8_t encoder_pos;
     int8_t rotation;
     uint8_t enable_set;

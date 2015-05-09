@@ -43,7 +43,7 @@
 /**
  * Default value for motor parameters
  */
-#define DEFAULT_VOLT_BRIDGE 12
+#define DEFAULT_VOLT_BRIDGE 12000
 #define DEFAULT_CPR 300
 #define DEFAULT_RATIO 30
 #define DEFAULT_ENC_POSITION MOTOR_GEAR_ENC_BEFORE
@@ -150,7 +150,7 @@ void init_motor(short motIdx) {
 motor_parameter_t init_motor_parameters() {
     motor_parameter_t parameter;
     parameter.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
-    parameter.ratio = DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
+    parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
     parameter.volt_bridge = DEFAULT_VOLT_BRIDGE;
     parameter.encoder_pos = DEFAULT_ENC_POSITION;
     parameter.rotation = DEFAULT_VERSUS_ROTATION;
@@ -385,7 +385,7 @@ int MotorTaskController(void) {
                 //TODO To be implemented (Read issue #14)
                 break;
             default:
-                motors[i].reference.velocity = 0;
+                motors[i].pid_control = 0;
                 break;
         }
         // Emergency controller
