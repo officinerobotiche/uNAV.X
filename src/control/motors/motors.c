@@ -149,12 +149,13 @@ void init_motor(short motIdx) {
 
 motor_parameter_t init_motor_parameters() {
     motor_parameter_t parameter;
-    parameter.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
-    parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
-    parameter.volt_bridge = DEFAULT_VOLT_BRIDGE;
-    parameter.encoder_pos = DEFAULT_ENC_POSITION;
+    parameter.bridge.volt = DEFAULT_VOLT_BRIDGE;
+    parameter.bridge.enable = DEFAULT_MOTOR_ENABLE;
+    parameter.encoder.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
+    parameter.encoder.position = DEFAULT_ENC_POSITION;
     parameter.rotation = DEFAULT_VERSUS_ROTATION;
-    parameter.enable_set = DEFAULT_MOTOR_ENABLE;
+    parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
+
     return parameter;
 }
 
@@ -171,10 +172,10 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     // else
     //    ThC = RATIO
     float angle_ratio;
-    if(motors[motIdx].parameter_motor.encoder_pos) {
-        angle_ratio = motors[motIdx].parameter_motor.cpr * motors[motIdx].parameter_motor.ratio;
+    if(motors[motIdx].parameter_motor.encoder.position) {
+        angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * motors[motIdx].parameter_motor.ratio;
     } else {
-        angle_ratio = motors[motIdx].parameter_motor.cpr;
+        angle_ratio = motors[motIdx].parameter_motor.encoder.cpr;
     }
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
@@ -279,7 +280,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position = motors[motIdx].PulsEnc * motors[motIdx].k_ang;
     motors[motIdx].PulsEnc = 0;
-    motors[motIdx].measure.volt = ((float) motors[motIdx].pid_control) / motors[motIdx].parameter_motor.volt_bridge;
+    motors[motIdx].measure.volt = motors[motIdx].pid_control / motors[motIdx].parameter_motor.bridge.volt;
     return motors[motIdx].measure;
 }
              
@@ -321,8 +322,8 @@ void set_motor_state(short motIdx, motor_state_t state) {
         case -1:
             motors[MOTOR_ZERO].reference.state = state;
             motors[MOTOR_ONE].reference.state = state;
-            MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.enable_set;
-            MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.enable_set;
+            MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.bridge.enable;
+            MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.bridge.enable;
 #ifndef MOTION_CONTROL
             UpdateBlink(0, led_state);
             UpdateBlink(1, led_state);
@@ -330,7 +331,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
             break;
         case MOTOR_ZERO:
             motors[motIdx].reference.state = state;
-            MOTOR_ENABLE1_BIT = enable ^ motors[motIdx].parameter_motor.enable_set;
+            MOTOR_ENABLE1_BIT = enable ^ motors[motIdx].parameter_motor.bridge.enable;
             if (state == STATE_CONTROL_EMERGENCY) {
                 motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
             }
@@ -340,7 +341,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
             break;
         case MOTOR_ONE:
             motors[motIdx].reference.state = state;
-            MOTOR_ENABLE2_BIT = enable ^ motors[motIdx].parameter_motor.enable_set;
+            MOTOR_ENABLE2_BIT = enable ^ motors[motIdx].parameter_motor.bridge.enable;
             if (state == STATE_CONTROL_EMERGENCY) {
                 motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
             }

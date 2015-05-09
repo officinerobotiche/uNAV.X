@@ -90,8 +90,6 @@ void saveOtherData(packet_information_t* list_send, size_t len, packet_informati
                 update_motor_emergency((short) motor.bitset.motor, info->message.motor_emergency);
                 list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
                 break;
-            case MOTOR_VEL_MEAS:
-            case MOTOR_POS_MEAS:
             case MOTOR:
             default:
                 list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
@@ -144,20 +142,12 @@ void sendOtherData(packet_information_t* list_send, size_t len, packet_informati
                 send.motor_control = get_motor_reference((short) motor.bitset.motor).velocity;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-           case MOTOR_VEL_MEAS:
-                send.motor_control = get_motor_measures((short) motor.bitset.motor).velocity;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
            case MOTOR_STATE:
                 send.motor_state = get_motor_state((short) motor.bitset.motor);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR:
                 send.motor = get_motor_measures((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case MOTOR_POS_MEAS:
-                send.motor_control = get_motor_measures((short) motor.bitset.motor).position;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_CONSTRAINT:
