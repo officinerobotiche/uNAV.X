@@ -280,7 +280,9 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 
 /* inline */
 motor_t get_motor_measures(short motIdx) {
+    motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.volt = motors[motIdx].pid_control / motors[motIdx].parameter_motor.bridge.volt;
+    motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
              
@@ -426,19 +428,19 @@ int measureVelocity(short motIdx) {
     switch (motIdx) {
         case MOTOR_ZERO:
             motors[motIdx].PulsEnc += (int) POS1CNT;
+            motors[motIdx].measure.position += motors[motIdx].k_ang * (int) POS1CNT;
             POS1CNT = 0;
             break;
         case MOTOR_ONE:
             motors[motIdx].PulsEnc += (int) POS2CNT;
+            motors[motIdx].measure.position +=  motors[motIdx].k_ang * (int) POS2CNT;
             POS2CNT = 0;
             break;
     }
     // Evaluate angle position
-    motors[motIdx].measure.position += motors[motIdx].PulsEnc * motors[motIdx].k_ang;
     if(abs(motors[motIdx].measure.position) > 2*PI) {
         motors[motIdx].measure.position = 0;
     }
-    motors[motIdx].PulsEnc = 0;
     return TMR1 - t; // Time of execution
 }
 
