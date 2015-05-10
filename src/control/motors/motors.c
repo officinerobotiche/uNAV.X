@@ -319,7 +319,6 @@ void set_motor_state(short motIdx, motor_state_t state) {
     /**
      * Set enable or disable motors
      */
-
     switch (motIdx) {
         case -1:
             motors[MOTOR_ZERO].reference.state = state;
@@ -351,6 +350,14 @@ void set_motor_state(short motIdx, motor_state_t state) {
             UpdateBlink(motIdx, led_state);
 #endif
             break;
+    }
+    if (enable) {
+        PTCONbits.PTEN = 1;
+    } else {
+        if ((motors[MOTOR_ZERO].reference.state == STATE_CONTROL_DISABLE) && 
+                (motors[MOTOR_ONE].reference.state == STATE_CONTROL_DISABLE)) {
+            PTCONbits.PTEN = 0;
+        }
     }
 #ifdef MOTION_CONTROL
     UpdateBlink(LED1, led_state);
