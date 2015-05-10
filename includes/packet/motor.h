@@ -186,12 +186,13 @@ typedef struct _motor_pid {
 #define MOTOR_CONSTRAINT          5 ///< TODO Explain what this means
 #define MOTOR_EMERGENCY           6 ///< TODO Explain what this means
 #define MOTOR_STATE               7 ///< TODO Explain what this means
-#define MOTOR_POS_PID             8 ///< TODO Explain what this means
-#define MOTOR_POS_REF             9 ///< TODO Explain what this means
-#define MOTOR_VEL_PID            10 ///< TODO Explain what this means
-#define MOTOR_VEL_REF            11 ///< TODO Explain what this means
-#define MOTOR_TORQUE_PID         12 ///< TODO Explain what this means
-#define MOTOR_TORQUE_REF         13 ///< TODO Explain what this means
+#define MOTOR_POS_RESET           8 ///< TODO Explain what this means
+#define MOTOR_POS_PID             9 ///< TODO Explain what this means
+#define MOTOR_POS_REF            10 ///< TODO Explain what this means
+#define MOTOR_VEL_PID            11 ///< TODO Explain what this means
+#define MOTOR_VEL_REF            12 ///< TODO Explain what this means
+#define MOTOR_TORQUE_PID         13 ///< TODO Explain what this means
+#define MOTOR_TORQUE_REF         14 ///< TODO Explain what this means
 
 //Name for HASHMAP with information about motion messages
 #define HASHMAP_MOTOR 'G'
@@ -211,6 +212,7 @@ typedef struct _motor_pid {
                                     hashmap_motor[MOTOR_CONSTRAINT] = LNG_MOTOR;                          \
                                     hashmap_motor[MOTOR_EMERGENCY] = LNG_MOTOR_EMERGENCY;                 \
                                     hashmap_motor[MOTOR_STATE] = LNG_MOTOR_STATE;                         \
+                                    hashmap_motor[MOTOR_POS_RESET] = LNG_MOTOR_CONTROL;                   \
                                     hashmap_motor[MOTOR_POS_PID] = LNG_MOTOR_PID;                         \
                                     hashmap_motor[MOTOR_POS_REF] = LNG_MOTOR_CONTROL;                     \
                                     hashmap_motor[MOTOR_VEL_PID] = LNG_MOTOR_PID;                         \

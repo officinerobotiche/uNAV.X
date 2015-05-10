@@ -151,7 +151,7 @@ extern "C" {
      * @param motIdx number of motor
      * @param value new value position
      */
-    inline void reset_motor_position_measure(short motIdx, float value);
+    inline void reset_motor_position_measure(short motIdx, motor_control_t value);
     /**
      * Write a correct value of motor reference and if necessary modify
      * reference to control constraint.

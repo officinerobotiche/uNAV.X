@@ -291,8 +291,8 @@ motor_t get_motor_reference(short motIdx) {
     return motors[motIdx].reference;
 }
              
-/* inline */ void reset_motor_position_measure(short motIdx, float value) {
-    motors[motIdx].measure.position = value;  
+/* inline */ void reset_motor_position_measure(short motIdx, motor_control_t value) {
+    motors[motIdx].measure.position = (float) value;  
 }
              
 int set_motor_velocity(short motIdx, motor_control_t reference) {

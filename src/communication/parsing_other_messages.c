@@ -86,6 +86,10 @@ void saveOtherData(packet_information_t* list_send, size_t len, packet_informati
                 control_state = STATE_CONTROL_HIGH_DISABLE; //TODO CORRECT
                 list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
                 break;
+            case MOTOR_POS_RESET:
+                reset_motor_position_measure((short) motor.bitset.motor, info->message.motor_control);
+                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+                break;
             case MOTOR_EMERGENCY:
                 update_motor_emergency((short) motor.bitset.motor, info->message.motor_emergency);
                 list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
