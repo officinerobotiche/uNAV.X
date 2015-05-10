@@ -43,17 +43,15 @@
 
 //Table to convertion name (number) of message in a length
 //See packet/packet.h and packet/unav.h
-static unsigned int hashmap_default[HASHMAP_DEFAULT_NUMBER];
+static unsigned int hashmap_system[HASHMAP_SYSTEM_NUMBER];
+static unsigned int hashmap_motor[HASHMAP_MOTOR_NUMBER];
 static unsigned int hashmap_motion[HASHMAP_MOTION_NUMBER];
 
 /** GLOBAL VARIBLES */
 // From system/system.c
-extern parameter_system_t parameter_system;
-// From system/interrupt.c
-extern volatile process_t time, priority, frequency;
-extern process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+extern system_parameter_t parameter_system;
 // From communication/serial.c
-extern error_pkg_t serial_error;
+extern system_error_serial_t serial_error;
 extern packet_t receive_pkg;
 extern char receive_header;
 
@@ -62,71 +60,67 @@ extern char receive_header;
 /******************************************************************************/
 
 void init_hashmap() {
-    INITIALIZE_HASHMAP_DEFAULT
+    HASHMAP_SYSTEM_INITIALIZE
+    HASHMAP_MOTOR_INITIALIZE
     INITIALIZE_HASHMAP_MOTION
 }
 
-void saveData(information_packet_t* list_send, size_t len, information_packet_t* info) {
-    abstract_message_u send;
-    if (info->type == HASHMAP_DEFAULT) {
+void saveData(packet_information_t* list_send, size_t len, packet_information_t* info) {
+    message_abstract_u send;
+    if (info->type == HASHMAP_SYSTEM) {
         switch (info->command) {
-            case SERVICES:
-                send.services = services(info->packet.services);
+            case SYSTEM_SERVICE:
+                send.system_service = services(info->message.system_service);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case PRIORITY_PROCESS:
-                priority = info->packet.process;
-                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
-            case FRQ_PROCESS:
-                frequency = info->packet.process;
-                list_send[len] = createPacket(info->command, ACK, info->type, NULL);
+            case SYSTEM_TASK_PRIORITY:
+            case SYSTEM_TASK_FRQ:
+                set_process(info->command, info->message.system_task);
+                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
                 break;
-            case NAME_PROCESS:
-                send.process_name = decodeNameProcess(info->packet.process_name.name);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case TIME_PROCESS:
-            case PARAMETER_SYSTEM:
-            case ERROR_SERIAL:
-                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
+            case SYSTEM_TASK_NUM:
+            case SYSTEM_TASK_NAME:
+            case SYSTEM_TASK_TIME:
+            case SYSTEM_PARAMETER:
+            case SYSTEM_SERIAL_ERROR:
+                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
                 return;
             default:
-                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
+                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
                 break;
         }
     } else saveOtherData(list_send, len, info);
 }
 
-void sendData(information_packet_t* list_send, size_t len, information_packet_t* info) {
-    abstract_message_u send;
-    if (info->type == HASHMAP_DEFAULT) {
+void sendData(packet_information_t* list_send, size_t len, packet_information_t* info) {
+    message_abstract_u send;
+    if (info->type == HASHMAP_SYSTEM) {
         switch (info->command) {
-            case SERVICES:
-                send.services = services(info->packet.services);
+            case SYSTEM_SERVICE:
+                send.system_service = services(info->message.system_service);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case PRIORITY_PROCESS:
-                send.process = priority;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-            case FRQ_PROCESS:
-                send.process = frequency;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case TIME_PROCESS:
-                send.process = time;
+            case SYSTEM_TASK_PRIORITY:
+            case SYSTEM_TASK_FRQ:
+            case SYSTEM_TASK_TIME:
+            case SYSTEM_TASK_NUM:
+                send.system_task = get_process(info->command, info->message.system_task);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case PARAMETER_SYSTEM:
-                send.parameter_system = parameter_system;
+            case SYSTEM_TASK_NAME:
+                send.system_task_name = get_process_name(info->message.system_task_name);
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case ERROR_SERIAL:
-                send.error_pkg = serial_error;
+            case SYSTEM_PARAMETER:
+                send.system_parameter = parameter_system;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
-            case NAME_PROCESS:
+            case SYSTEM_SERIAL_ERROR:
+                send.system_error_serial = serial_error;
+                list_send[len] = createDataPacket(info->command, info->type, &send);
+                break;
             default:
-                list_send[len] = createPacket(info->command, NACK, info->type, NULL);
+                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
                 break;
         }
     } else sendOtherData(list_send, len, info);
@@ -135,7 +129,7 @@ void sendData(information_packet_t* list_send, size_t len, information_packet_t*
 int parse_packet() {
     int i;
     unsigned int t = TMR1; // Timing function
-    information_packet_t list_data[BUFFER_LIST_PARSING];
+    packet_information_t list_data[BUFFER_LIST_PARSING];
     unsigned int counter = 0;
     //Save single packet
     for (i = 0; i < receive_pkg.length; i += receive_pkg.buffer[i]) {
@@ -143,12 +137,12 @@ int parse_packet() {
     }
     //Compute packet
     for (i = 0; i < counter; ++i) {
-        information_packet_t* info = &list_data[i];
+        packet_information_t* info = &list_data[i];
         switch (info->option) {
-            case DATA:
+            case PACKET_DATA:
                 saveData(&list_data[0], i, info);
                 break;
-            case REQUEST:
+            case PACKET_REQUEST:
                 sendData(&list_data[0], i, info);
                 break;
         }
@@ -160,42 +154,47 @@ int parse_packet() {
     return TMR1 - t; // Time of esecution
 }
 
-packet_t encoder(information_packet_t *list_send, size_t len) {
+packet_t encoder(packet_information_t *list_send, size_t len) {
     int i;
     packet_t packet_send;
     packet_send.length = 0;
     for (i = 0; i < len; ++i) {
-        buffer_packet_u buffer_packet;
-        buffer_packet.information_packet = list_send[i];
+        packet_buffer_u buffer_packet;
+        buffer_packet.packet_information = list_send[i];
 
-        memcpy(&packet_send.buffer[packet_send.length], &buffer_packet.buffer, buffer_packet.information_packet.length);
+        memcpy(&packet_send.buffer[packet_send.length], &buffer_packet.buffer, buffer_packet.packet_information.length);
 
-        packet_send.length += buffer_packet.information_packet.length;
+        packet_send.length += buffer_packet.packet_information.length;
     }
     return packet_send;
 }
 
-packet_t encoderSingle(information_packet_t send) {
+packet_t encoderSingle(packet_information_t send) {
     packet_t packet_send;
     packet_send.length = send.length + 1;
-    buffer_packet_u buffer_packet;
-    buffer_packet.information_packet = send;
-    memcpy(&packet_send.buffer, &buffer_packet.buffer, buffer_packet.information_packet.length + 1);
+    packet_buffer_u buffer_packet;
+    buffer_packet.packet_information = send;
+    memcpy(&packet_send.buffer, &buffer_packet.buffer, buffer_packet.packet_information.length + 1);
     return packet_send;
 }
 
-information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet) {
-    information_packet_t information;
+packet_information_t createPacket(unsigned char command, unsigned char option, unsigned char type, message_abstract_u * packet) {
+    packet_information_t information;
     information.command = command;
     information.option = option;
     information.type = type;
-    if (option == DATA) {
+    motor_command_map_t command_motor;
+    if (option == PACKET_DATA) {
         switch (type) {
-            case HASHMAP_DEFAULT:
-                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_default[command];
+            case HASHMAP_SYSTEM:
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_system[command];
                 break;
             case HASHMAP_MOTION:
                 information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motion[command];
+                break;
+            case HASHMAP_MOTOR:
+                command_motor.command_message = command;
+                information.length = LNG_HEAD_INFORMATION_PACKET + hashmap_motor[command_motor.bitset.command];
                 break;
             default:
                 //TODO throw
@@ -205,11 +204,11 @@ information_packet_t createPacket(unsigned char command, unsigned char option, u
         information.length = LNG_HEAD_INFORMATION_PACKET;
     }
     if (packet != NULL) {
-        memcpy(&information.packet, packet, sizeof (abstract_message_u));
+        memcpy(&information.message, packet, sizeof (message_abstract_u));
     }
     return information;
 }
 
-information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet) {
-    return createPacket(command, DATA, type, packet);
+packet_information_t createDataPacket(unsigned char command, unsigned char type, message_abstract_u * packet) {
+    return createPacket(command, PACKET_DATA, type, packet);
 }

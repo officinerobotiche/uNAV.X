@@ -73,8 +73,15 @@ extern "C" {
     #define LED4_NUM  9              // Led 4 red
     #define LED4 3                   // Led 4 red
 
-    #define MOTOR_ENABLE1 _LATA7     // Enable Motore 1
-    #define MOTOR_ENABLE2 _LATA10    // Enable Motore 2
+    #define MOTOR_ENABLE1_BIT _LATA7 // Enable Motor 1
+    #define MOTOR_ENABLE1_PORT LATA  // Enable Motor 1
+    #define MOTOR_ENABLE1_NUM  7     // Enable Motor 1
+    #define MOTOR_ENABLE1 0          // Enable Motor 1
+
+    #define MOTOR_ENABLE2_BIT _LATA10// Enable Motor 2
+    #define MOTOR_ENABLE2_PORT LATA  // Enable Motor 2
+    #define MOTOR_ENABLE2_NUM  10    // Enable Motor 2
+    #define MOTOR_ENABLE2 1          // Enable Motor 2
 #elif ROBOCONTROLLER_V3
     #define LED_NUM 2
     #define LED1_BIT _LATA8          // Led 1 green
@@ -86,8 +93,15 @@ extern "C" {
     #define LED2_NUM  9              // Led 2 green
     #define LED2 1                   // Led 2 green
 
-    #define MOTOR_ENABLE1 _LATA1     // Enable Motore 1
-    #define MOTOR_ENABLE2 _LATA4    // Enable Motore 2
+    #define MOTOR_ENABLE1_BIT _LATA1 // Enable Motor 1
+    #define MOTOR_ENABLE1_PORT LATA  // Enable Motor 1
+    #define MOTOR_ENABLE1_NUM  1     // Enable Motor 1
+    #define MOTOR_ENABLE1 0          // Enable Motor 1
+
+    #define MOTOR_ENABLE2_BIT _LATA4 // Enable Motor 2
+    #define MOTOR_ENABLE2_PORT LATA  // Enable Motor 2
+    #define MOTOR_ENABLE2_NUM  4     // Enable Motor 2
+    #define MOTOR_ENABLE2 1          // Enable Motor 2
 #elif MOTION_CONTROL
     #define LED_NUM 1
     #define LED1_BIT _LATA4          // Led Blue
@@ -95,14 +109,22 @@ extern "C" {
     #define LED1_NUM  4              // Led Blue
     #define LED1 0                   // Led Blue
 
-    #define MOTOR_ENABLE1 _LATB2    // Enable Motore 1
-    #define MOTOR_ENABLE2 _LATB3    // Enable Motore 2
+    #define MOTOR_ENABLE1_BIT _LATB2 // Enable Motor 1
+    #define MOTOR_ENABLE1_PORT LATB  // Enable Motor 1
+    #define MOTOR_ENABLE1_NUM  2     // Enable Motor 1
+    #define MOTOR_ENABLE1 0          // Enable Motor 1
+
+    #define MOTOR_ENABLE2_BIT _LATB3 // Enable Motor 2
+    #define MOTOR_ENABLE2_PORT LATB  // Enable Motor 2
+    #define MOTOR_ENABLE2_NUM  3     // Enable Motor 2
+    #define MOTOR_ENABLE2 1          // Enable Motor 2
 #endif
 
     /** Definition for user interrupt **/
-    #define PID_FLAG IFS0bits.OC1IF
+    #define FLAG_TASK_MOTORS IFS0bits.OC1IF
     #define PARSER_FLAG IFS0bits.OC2IF
-    #define DEAD_RECKONING_FLAG IFS3bits.RTCIF
+    #define MEASURE_FLAG IFS1bits.OC3IF
+    #define FLAG_TASK_HIGH_LEVEL IFS3bits.RTCIF
 
     #define SGN(x)  ( ((x) < 0) ?  -1 : ( ((x) == 0 ) ? 0 : 1) )
 

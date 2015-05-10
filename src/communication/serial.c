@@ -43,19 +43,19 @@
 /*! Pointer to function, initialized for pkg_header */
 int (*pkg_parse) (unsigned char inchar) = &pkg_header;
 /*! Array for DMA UART buffer */
-unsigned char BufferTx[MAX_TX_BUFF] __attribute__((space(dma)));
+unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 /*! Receive packet */
 packet_t receive_pkg;
 char receive_header;
 unsigned int index_data = 0;
-error_pkg_t serial_error;
+system_error_serial_t serial_error;
 
 /******************************************************************************/
 /* Comunication Functions                                                     */
 /******************************************************************************/
 
 void init_buff_serial_error(){
-    memset(serial_error.number, 0, BUFF_SERIAL_ERROR);
+    memset(serial_error.number, 0, MAX_BUFF_ERROR_SERIAL);
 }
 
 int decode_pkgs(unsigned char rxchar) {
@@ -73,7 +73,7 @@ int pkg_header(unsigned char rxchar) {
 }
 
 int pkg_length(unsigned char rxchar) {
-    if (rxchar > MAX_RX_BUFF) {
+    if (rxchar > MAX_BUFF_RX) {
         return pkg_error(ERROR_LENGTH);
     } else {
         pkg_parse = &pkg_data;

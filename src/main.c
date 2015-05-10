@@ -37,7 +37,8 @@
 #include "system/user.h"   /* User funct/params, such as InitApp              */
 #include "communication/serial.h"
 #include "communication/parsing_messages.h"
-#include "control/motors_PID.h"
+#include "control/motors/init.h"
+#include "control/motors/motors.h"
 #include "control/high_level_control.h"
 
 /******************************************************************************/
@@ -85,26 +86,36 @@ int16_t main(void) {
     init_hashmap();
     /* Initialize buffer serial error */
     init_buff_serial_error();
-    /* Initialize variables for motors */
-    init_parameter_motors();
-    /* Initialize variables for unicycle */
-    init_parameter_unicycle();
+    /* Initialize processes controller */
     init_process();
-    init_pid_control();
-
-    /* Initialize pid controllers */
-    update_pid_l();
-    update_pid_r();
-
-    /* Initialize dead reckoning */
-    init_coordinate();
-
     /* Initialize IO ports and peripherals */
     InitApp();
 
-    for(i=0; i<NUM_MOTORS ; ++i) {
-        UpdateStateController(i, STATE_CONTROL_DISABLE);
+    /* Open PWM */
+    InitPWM();
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        /* Open QEI */
+        InitQEI(i);
+        /* Open Input Capture */
+        InitIC(i);
+        /* Initialize variables for motors */
+        init_motor(i);
+        /* Initialize parameters for motors */
+        update_motor_parameters(i, init_motor_parameters());
+        /* Initialize pid controllers */
+        update_motor_pid(i, init_motor_pid());
+        /* Initialize emergency procedure to stop */
+        update_motor_emergency(i, init_motor_emergency());
+        /* Initialize constraints motor */
+        update_motor_constraints(i, init_motor_constraints());
+        /* Init state controller */
+        set_motor_state(i, STATE_CONTROL_DISABLE);
     }
+
+    /* Initialize variables for unicycle */
+    init_parameter_unicycle();
+    /* Initialize dead reckoning */
+    init_coordinate();
 
     while (1) {
 
