@@ -106,8 +106,8 @@ typedef struct new_motor {
     motor_pid_t pid;
     tPID PIDstruct;
     fractional kCoeffs[3]; //Coefficients KP, KI, KD
-} new_motor_t;
-new_motor_t motors[NUM_MOTORS];
+} motor_firmware_t;
+motor_firmware_t motors[NUM_MOTORS];
 
 /**/
 // From interrupt
@@ -323,8 +323,8 @@ void set_motor_state(short motIdx, motor_state_t state) {
         case -1:
             motors[MOTOR_ZERO].reference.state = state;
             motors[MOTOR_ONE].reference.state = state;
-            MOTOR_ENABLE1_BIT = enable ^ motors[0].parameter_motor.bridge.enable;
-            MOTOR_ENABLE2_BIT = enable ^ motors[1].parameter_motor.bridge.enable;
+            MOTOR_ENABLE1_BIT = enable ^ motors[MOTOR_ZERO].parameter_motor.bridge.enable;
+            MOTOR_ENABLE2_BIT = enable ^ motors[MOTOR_ONE].parameter_motor.bridge.enable;
 #ifndef MOTION_CONTROL
             UpdateBlink(0, led_state);
             UpdateBlink(1, led_state);
