@@ -63,6 +63,9 @@ extern "C" {
     typedef struct linesensor {
         int8_t fsm_state;
         int16_t timebase;
+        int16_t counter;
+        
+        int16_t sensor_count[NUM_LINE_SENSOR];
         float sensor_time[NUM_LINE_SENSOR];
     } linesensor_t;
     #define LNG_LINESENSOR sizeof(linesensor_t)    
@@ -82,6 +85,9 @@ extern "C" {
     /**************************************************************************/
     /* IR sensor reading related functions                                    */
     /**************************************************************************/    
+    void IRsensor(void);
+    
+    void IRsensor_Init(void);
     
     /*
      * Start a discharge of capacitor used to measure line reflectivity.

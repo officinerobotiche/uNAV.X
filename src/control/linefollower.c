@@ -27,7 +27,7 @@ extern velocity_t vel_rif, vel_mis;
 extern unsigned int counter_alive[NUM_MOTORS];
 
 linesensor_t line_sensor;
-int16_t pippoooo;
+//int16_t pippoooo;
 
 void linefollowing()
 {
@@ -37,32 +37,104 @@ void linefollowing()
                
     // Our Hello World!!!! :)
  
-    vel_rif.v = 0.0;
+    if(line_sensor.sensor_time[0] != 0)
+    {
+        vel_rif.v = (float)line_sensor.sensor_time[0] / 10000; //0.0;
+    }
+    else
+        vel_rif.v = 0.0;
     
-    /*
+    IRsensor();
+    
+//    /*
+//     *  test of sequential calling of IRsensor_XXXXX function
+//     *  to try a simple measure to evaluate sensor performance with 
+//     *  Oscilloscope
+//     */
+//    if(pippoooo == 0)
+//    {   pippoooo = 1;
+//        IRsensor_CapacitorDisCharge();
+//        
+//    }
+//    else
+//    {   
+//        if(pippoooo ==1 )
+//        {   pippoooo++;
+//            IRsensor_StartMeasure(); 
+//        }
+//        else
+//        {
+//            if( pippoooo < 16 )
+//                pippoooo++;
+//            else
+//                pippoooo = 0;
+//        }
+//    }
+}
+
+void IRsensor_Init(void)
+{   
+    line_sensor.timebase = 1000;    // 1mSec = 1000 uSec
+    
+}
+
+void IRsensor(void)
+{
+    unsigned char i;
+       /*
      *  test of sequential calling of IRsensor_XXXXX function
      *  to try a simple measure to evaluate sensor performance with 
      *  Oscilloscope
      */
-    if(pippoooo == 0)
-    {   pippoooo = 1;
-        IRsensor_CapacitorDisCharge();
-        
+    
+    
+    switch (line_sensor.fsm_state) {
+            case 0:
+                line_sensor.fsm_state = 1;
+                line_sensor.counter = 0;
+                IRsensor_CapacitorDisCharge();
+                for( i = 0; i<NUM_LINE_SENSOR; i++)
+                {
+                    line_sensor.sensor_time[i]=0;
+                }
+                break;
+            case 1:
+                IRsensor_StartMeasure(); 
+                line_sensor.fsm_state = 2;
+                break;
+            case 2:
+                //line_sensor.counter = 0;
+                line_sensor.counter++;
+                if(PIN_IO0) line_sensor.sensor_count[0]++;
+                if(PIN_IO1) line_sensor.sensor_count[1]++;
+                if(PIN_IO2) line_sensor.sensor_count[2]++;
+                if(PIN_IO3) line_sensor.sensor_count[3]++;
+                if(PIN_IO4) line_sensor.sensor_count[4]++;
+                if(PIN_IO5) line_sensor.sensor_count[5]++;
+                if(PIN_IO6) line_sensor.sensor_count[6]++;
+                
+                             
+                if( line_sensor.counter == 16 )  line_sensor.fsm_state = 3;
+                break;
+            
+            case 3:
+                // Counting Finish... convert measure in uSec.
+                for(i=0; i<NUM_LINE_SENSOR; i++)
+                {
+                    line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
+                }
+
+                line_sensor.fsm_state = 4;
+                break;
+                
+            case 4:
+                 line_sensor.fsm_state = 0;  
+                break;
+            default:        // Beer condition :) 
+                line_sensor.fsm_state = 0;
+                break; 
     }
-    else
-    {   
-        if(pippoooo ==1 )
-        {   pippoooo++;
-            IRsensor_StartMeasure(); 
-        }
-        else
-        {
-            if( pippoooo < 16 )
-                pippoooo++;
-            else
-                pippoooo = 0;
-        }
-    }
+
 }
 
 
