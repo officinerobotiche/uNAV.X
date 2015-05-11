@@ -88,7 +88,9 @@ typedef struct new_motor {
     int16_t pid_control;
     unsigned int counter_pid;
     /// Motor position
+    uint32_t angle_ratio;
     volatile int PulsEnc;
+    volatile int32_t enc_angle;
     //Emergency
     float emergency_step;
     float emergency_stop;
@@ -173,18 +175,17 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //    ThC = CPR * RATIO   
     // else
     //    ThC = RATIO
-    float angle_ratio;
     if(motors[motIdx].parameter_motor.encoder.position) {
-        angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * motors[motIdx].parameter_motor.ratio;
+        motors[motIdx].angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * ((uint32_t) 1000 * motors[motIdx].parameter_motor.ratio);
     } else {
-        angle_ratio = motors[motIdx].parameter_motor.encoder.cpr;
+        motors[motIdx].angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
     }
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-    motors[motIdx].k_vel = (float) 1000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
+    motors[motIdx].k_vel = (float) 1000000.0f * FRTMR2 * 2 * PI / (motors[motIdx].angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-    motors[motIdx].k_ang = (float) 2*PI / (angle_ratio * 4);
+    motors[motIdx].k_ang = (float) 2000.0f *PI / (motors[motIdx].angle_ratio * 4);
     //Update encoder swap
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -281,6 +282,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 /* inline */
 motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
+    motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
     motors[motIdx].measure.volt = motors[motIdx].pid_control / motors[motIdx].parameter_motor.bridge.volt;
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
@@ -435,18 +437,18 @@ int measureVelocity(short motIdx) {
     switch (motIdx) {
         case MOTOR_ZERO:
             motors[motIdx].PulsEnc += (int) POS1CNT;
-            motors[motIdx].measure.position += motors[motIdx].k_ang * (int) POS1CNT;
+            motors[motIdx].enc_angle += (int) POS1CNT;
             POS1CNT = 0;
             break;
         case MOTOR_ONE:
             motors[motIdx].PulsEnc += (int) POS2CNT;
-            motors[motIdx].measure.position +=  motors[motIdx].k_ang * (int) POS2CNT;
+            motors[motIdx].enc_angle +=  (int) POS2CNT;
             POS2CNT = 0;
             break;
     }
     // Evaluate angle position
-    if(abs(motors[motIdx].measure.position) > 2*PI) {
-        motors[motIdx].measure.position = 0;
+    if(abs(motors[motIdx].enc_angle) > motors[motIdx].angle_ratio ) {
+        motors[motIdx].enc_angle = 0;
     }
     return TMR1 - t; // Time of execution
 }
@@ -462,9 +464,9 @@ int MotorPID(short motIdx) {
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Control value calculation
-    motors[motIdx].pid_control = ((motors[motIdx].parameter_motor.rotation * motors[motIdx].PIDstruct.controlOutput) >> 4);
+    motors[motIdx].pid_control = motors[motIdx].parameter_motor.rotation * (motors[motIdx].PIDstruct.controlOutput >> 4);
     // PWM output
-    SetDCMCPWM1(motIdx + 1,  motors[motIdx].pid_control + 2048, 0);
+    SetDCMCPWM1(motIdx + 1, motors[motIdx].pid_control + 2048, 0);
 
     return TMR1 - t; // Execution time
 }
