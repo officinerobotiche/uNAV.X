@@ -81,7 +81,6 @@ typedef struct new_motor {
     pin_t * pin_enable;
     unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
-    
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
