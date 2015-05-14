@@ -63,10 +63,12 @@ extern "C" {
     typedef struct linesensor {
         int8_t fsm_state;
         int16_t timebase;
-        int16_t counter;
-        
-        int16_t sensor_count[NUM_LINE_SENSOR];
         float sensor_time[NUM_LINE_SENSOR];
+        
+        int16_t counter;
+        int16_t weight[NUM_LINE_SENSOR];    
+        float position;
+        int16_t sensor_count[NUM_LINE_SENSOR];
     } linesensor_t;
     #define LNG_LINESENSOR sizeof(linesensor_t)    
     

@@ -108,8 +108,8 @@ int16_t main(void) {
         UpdateStateController(i, STATE_CONTROL_DISABLE);
     }
 
-    UpdateHighStateController(STATE_CONTROL_LINEFOLLOWER); // TODO: Test
     IRsensor_Init();
+    
     while (1) {
 
     }

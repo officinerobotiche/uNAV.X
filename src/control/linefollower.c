@@ -45,37 +45,21 @@ void linefollowing()
         vel_rif.v = 0.0;
     
     IRsensor();
-    
-//    /*
-//     *  test of sequential calling of IRsensor_XXXXX function
-//     *  to try a simple measure to evaluate sensor performance with 
-//     *  Oscilloscope
-//     */
-//    if(pippoooo == 0)
-//    {   pippoooo = 1;
-//        IRsensor_CapacitorDisCharge();
-//        
-//    }
-//    else
-//    {   
-//        if(pippoooo ==1 )
-//        {   pippoooo++;
-//            IRsensor_StartMeasure(); 
-//        }
-//        else
-//        {
-//            if( pippoooo < 16 )
-//                pippoooo++;
-//            else
-//                pippoooo = 0;
-//        }
-//    }
 }
 
 void IRsensor_Init(void)
 {   
     line_sensor.timebase = 1000;    // 1mSec = 1000 uSec
     
+    line_sensor.weight[0] = 8;
+    line_sensor.weight[1] = 4;
+    line_sensor.weight[2] = 2;
+    line_sensor.weight[3] = 1;
+    line_sensor.weight[4] = -1;
+    line_sensor.weight[5] = -2;
+    line_sensor.weight[6] = -4;
+    line_sensor.weight[7] = -8;
+    UpdateHighStateController(STATE_CONTROL_LINEFOLLOWER); // TODO: Test
 }
 
 void IRsensor(void)
@@ -123,7 +107,13 @@ void IRsensor(void)
                 {
                     line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
                 }
-
+                
+                line_sensor.position = 0;
+                for(i=0; i<NUM_LINE_SENSOR; i++)
+                {
+                    line_sensor.position +=   line_sensor.sensor_time[i] *  line_sensor.weight[i];
+                }
+                
                 line_sensor.fsm_state = 4;
                 break;
                 
