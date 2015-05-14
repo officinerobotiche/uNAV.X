@@ -98,6 +98,7 @@ typedef struct new_motor {
     float k_vel;
     float k_ang;
     //Common
+    motor_diagnostic_t diagnostic;
     motor_emergency_t emergency;
     motor_parameter_t parameter_motor;
     motor_t constraint;
@@ -132,6 +133,9 @@ void init_motor(short motIdx) {
     motors[motIdx].reference.torque = 0;
     motors[motIdx].reference.volt = 0;
     motors[motIdx].reference.state = STATE_CONTROL_DISABLE;
+    //Setup diagnostic
+    motors[motIdx].diagnostic.current = 0;
+    motors[motIdx].diagnostic.temperature = 0;
     //Counter frequency PID
     motors[motIdx].counter_pid = 0;
     //Input capture information
@@ -283,6 +287,7 @@ motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
     motors[motIdx].measure.volt = motors[motIdx].pid_control / motors[motIdx].parameter_motor.bridge.volt;
+    motors[motIdx].measure.torque = motors[motIdx].diagnostic.current; //TODO Add a coefficient conversion
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
@@ -493,6 +498,6 @@ void adc_motors_current(void) {
         ADCValueTmp[MOTOR_ZERO] += AdcBuffer[MOTOR_ZERO][AdcCount]; //Sum for AN0
         ADCValueTmp[MOTOR_ONE] += AdcBuffer[MOTOR_ONE][AdcCount]; //Sum for AN1
     }
-    motors[MOTOR_ZERO].measure.torque = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
-    motors[MOTOR_ONE].measure.torque = ADCValueTmp[MOTOR_ONE] >> 6; //Shift
+    motors[MOTOR_ZERO].diagnostic.current = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
+    motors[MOTOR_ONE].diagnostic.current = ADCValueTmp[MOTOR_ONE] >> 6; //Shift
 }
