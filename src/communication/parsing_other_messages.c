@@ -53,7 +53,7 @@ extern constraint_t constraint;
 extern pid_control_t pid_left, pid_right;
 //extern motor_control_t motor_ref[NUM_MOTORS];
 extern motor_control_t motor_state[NUM_MOTORS];
-extern motor_t motor_left, motor_right;
+extern motor_t motor_left, motor_right, linefollower_test;
 extern emergency_t emergency;
 
 // From high level control
@@ -114,7 +114,7 @@ void saveOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
             case VEL_MOTOR_L:
-                motor_left.refer_vel = info->packet.motor_control;
+                linefollower_test.refer_vel = info->packet.motor_control;
                 counter_alive[0] = 0; //Reset time emergency
                 list_send[len] = createPacket(info->command, ACK, info->type, NULL);
                 break;
@@ -196,7 +196,7 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_L:
-                send.motor_control = motor_left.refer_vel;
+                send.motor_control = linefollower_test.refer_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_R:
@@ -204,7 +204,7 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_L:
-                send.motor_control = motor_left.measure_vel;
+                send.motor_control = linefollower_test.measure_vel;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
            case VEL_MOTOR_MIS_R:
@@ -224,7 +224,7 @@ void sendOtherData(information_packet_t* list_send, size_t len, information_pack
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_L:
-                send.motor = motor_left;
+                send.motor = linefollower_test;
                 list_send[len] = createDataPacket(info->command, info->type, &send);
                 break;
             case MOTOR_R:

@@ -26,6 +26,8 @@
 extern velocity_t vel_rif, vel_mis;
 extern unsigned int counter_alive[NUM_MOTORS];
 
+motor_t linefollower_test;
+
 linesensor_t line_sensor;
 //int16_t pippoooo;
 
@@ -34,9 +36,12 @@ void linefollowing()
     //Reset time emergency
     counter_alive[0] = 0;
     counter_alive[1] = 0;
-               
+       
     // Our Hello World!!!! :)
  
+    linefollower_test.current = (float)(4);
+    linefollower_test.refer_vel = 2500;
+    
     if(line_sensor.sensor_time[0] != 0)
     {
         vel_rif.v = (float)line_sensor.sensor_time[0] / 10000; //0.0;
@@ -65,6 +70,7 @@ void IRsensor_Init(void)
 void IRsensor(void)
 {
     unsigned char i;
+    signed char linedata;
        /*
      *  test of sequential calling of IRsensor_XXXXX function
      *  to try a simple measure to evaluate sensor performance with 
@@ -102,17 +108,30 @@ void IRsensor(void)
                 break;
             
             case 3:
-                // Counting Finish... convert measure in uSec.
-                for(i=0; i<NUM_LINE_SENSOR; i++)
-                {
-                    line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
-                }
+//                // Counting Finish... convert measure in uSec.
+
                 
                 line_sensor.position = 0;
+                linedata = 0;
                 for(i=0; i<NUM_LINE_SENSOR; i++)
-                {
-                    line_sensor.position +=   line_sensor.sensor_time[i] *  line_sensor.weight[i];
+                {   
+                    // Convert measure in uSec.
+                    line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
+                    
+                    if(line_sensor.sensor_count[i] > 1)     // TODO : 1 is a threshold, in future it mus be calculated in a setup routine
+                                                             //         on startup
+                        linedata |= 1 << i;                   
                 }
+                // Now linedata contain a bit rappresentation of IR state
+                // This value can be converted in Int using a GrayCode to Binary conversion
+                
+                
+                
+                
+                
+                // now, with a -64 offset I obtain a 0-Value with line centered to sensor array.
+                linedata -= 64;
+
                 
                 line_sensor.fsm_state = 4;
                 break;
@@ -165,3 +184,36 @@ void IRsensor_StartMeasure(void)
     PORT_IO5 = INPUT; // Set IO5 as Input
     PORT_IO6 = INPUT; // Set IO6 as Input
 }
+
+
+//
+//    #include<stdio.h> 
+//    #include<conio.h> 
+//
+//    void main() 
+//    {
+//        int a[10],i=0,c=0,n;
+//        printf("\n enter the gray code");
+//        scanf("%d",&n);
+//        while(n!=0)
+//            {
+//                a[i]=n%10;
+//                n/=10;
+//                i++;
+//                c++;
+//            }
+//
+//        for(i=c-1;i>=0;i--)
+//        {
+//            if(a[i]==1)
+//            { 
+//                if(a[i-1]==1)
+//                    a[i-1]=0;
+//                else
+//                    a[i-1]=1;
+//            }
+//        } 
+//        printf("\n the binary code is"); 
+//        for(i=c-1;i>=0;i--) printf("%d",a[i]); 
+//        getch(); 
+//    } 
