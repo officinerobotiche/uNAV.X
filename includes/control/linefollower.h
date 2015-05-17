@@ -68,8 +68,8 @@ extern "C" {
      */
     typedef struct linesensor {
         int8_t fsm_state;
-        int16_t timebase;
-        float sensor_time[NUM_LINE_SENSOR];
+        //int16_t timebase;
+        //float sensor_time[NUM_LINE_SENSOR];
         
         int16_t counter;
         int16_t weight[NUM_LINE_SENSOR];    
@@ -114,7 +114,12 @@ extern "C" {
      */
     void IRsensor_StartMeasure(void);
 
+    /**************************************************************************/
+    /* Vatious                                    */
+    /**************************************************************************/ 
     
+    unsigned char GrayToDecimal_7bit(unsigned char gray);
+    int LineCodeToDecimal_7bit(unsigned char line);
 #ifdef	__cplusplus
 }
 #endif
