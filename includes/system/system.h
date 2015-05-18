@@ -50,7 +50,8 @@ extern "C" {
     #define DEAD_RECK_LEVEL 2
     #define UART_TX_LEVEL 1
     #define RX_PARSER_LEVEL 1
-
+    #define TIMER3_PRIORITY_LEVEL 1
+    
     /* Microcontroller MIPs (FCY) */
     #define SYS_FREQ        80000000
     #define FCY             SYS_FREQ/2
@@ -59,6 +60,9 @@ extern "C" {
     #define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
     #define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
     #define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
+
+    #define TMR3_VALUE 2000       // Timer3 - 50uSec Overflow
+    
 
 //    //Blink LED
 //    /**
@@ -150,6 +154,10 @@ go here. */
     /** Initalization Timer 2 for IC (Input Capture)
      */
     void InitTimer2(void);
+    
+    /** Initalization Timer 3
+     */
+    void InitTimer3(void);
 
     /** Initalization others interrupts
      */

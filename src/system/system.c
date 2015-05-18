@@ -374,6 +374,22 @@ void InitTimer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
+void InitTimer3(void) {
+    T3CONbits.TON = 0; // Disable Timer
+    T3CONbits.TSIDL = 1; // Stop in Idle Mode bit
+    T3CONbits.TGATE = 0; // Disable Gated Timer mode
+    T3CONbits.TCKPS = 0b00; // Select 1:1 Prescaler
+    T3CONbits.TCS = 0; // Select internal clock source
+    TMR3 = 0x00; // Clear timer register
+    PR3 = TMR3_VALUE; // Load the period value
+
+    IPC2bits.T3IP = TIMER3_PRIORITY_LEVEL; // Set Timer 1 Interrupt Priority Level
+    IFS0bits.T3IF = 0; // Clear Timer 3 Interrupt Flag
+    IEC0bits.T3IE = 1; // Enable Timer3 interrupt
+
+    T3CONbits.TON = 1; // Start Timer
+}
+
 void InitUART1(void) {
     U1MODEbits.STSEL = 0; // 1-stop bit
     U1MODEbits.PDSEL = 0; // No Parity, 8-data bits

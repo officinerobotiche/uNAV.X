@@ -39,6 +39,7 @@
 #include "communication/parsing_messages.h"
 #include "control/motors_PID.h"
 #include "control/high_level_control.h"
+#include "control/linefollower.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -227,6 +228,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
     if (timePeriodL) overTmrL++; // overflow timer for Left engines
     if (timePeriodR) overTmrR++; // overflow timer for Right engines
+}
+
+void __attribute__((interrupt, auto_psv, shadow)) _T3Interrupt(void) {
+    IFS0bits.T3IF = 0; // interrupt flag reset
+    IRsensor();
 }
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {

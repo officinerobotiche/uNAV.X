@@ -29,7 +29,6 @@ extern unsigned int counter_alive[NUM_MOTORS];
 motor_t linefollower_test;
 
 linesensor_t line_sensor;
-//int16_t pippoooo;
 
 void linefollowing() {
 
@@ -49,7 +48,7 @@ void linefollowing() {
 //    else {
 //        vel_rif.v = 0.0;
 //    }
-    IRsensor();
+    //IRsensor();
 }
 
 void IRsensor_Init(void) {
@@ -71,12 +70,6 @@ void IRsensor(void) {
 
     unsigned char i;
     signed char linedata;
-       /*
-     *  test of sequential calling of IRsensor_XXXXX function
-     *  to try a simple measure to evaluate sensor performance with 
-     *  Oscilloscope
-     */
-    
     
     switch (line_sensor.fsm_state) {
             case 0:
@@ -84,7 +77,6 @@ void IRsensor(void) {
                 line_sensor.counter = 0;
                 IRsensor_CapacitorDisCharge();
                 for( i = 0; i<NUM_LINE_SENSOR; i++) {
-                
                     line_sensor.sensor_count[i]=0;
                 }
                 break;
@@ -109,16 +101,12 @@ void IRsensor(void) {
             
             case 3:
 //                // Counting Finish... convert measure in uSec.
-
-                
                 line_sensor.position = 0;
                 linedata = 0;
                 for(i=0; i<NUM_LINE_SENSOR; i++) {   
                     // Convert measure in uSec.
                     //line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
-                    
-                    if(line_sensor.sensor_count[i] > 1) {     // TODO : 1 is a threshold, in future it mus be calculated in a setup routine
-                                                              //         on startup
+                    if(line_sensor.sensor_count[i] > 1) {     // TODO : 1 is a threshold, in future it must be calculated in a startup routine
                         linedata |= 1 << i;                   
                     }
                 }
