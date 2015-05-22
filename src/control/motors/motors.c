@@ -80,6 +80,7 @@ pin_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 typedef struct new_motor {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
+    volatile unsigned int * icm;
     pin_t * pin_enable;
     unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
@@ -156,9 +157,13 @@ void init_motor(short motIdx) {
     switch (motIdx) {
         case MOTOR_ZERO:
             motors[motIdx].pin_enable = &enable1;
+            //motors[motIdx].icm = IC1CONbits.ICM;
+            motors[motIdx].icm = &IC1CON;
             break;
         case MOTOR_ONE:
             motors[motIdx].pin_enable = &enable2;
+            //motors[motIdx].icm = IC2CONbits.ICM;
+            motors[motIdx].icm = &IC2CON;
             break;
     }
     motors[motIdx].CS_mask = 1 << motors[motIdx].pin_enable->CS_pin;
@@ -433,89 +438,47 @@ int MotorTaskController(void) {
 }
 
 void SelectIcPrescaler(int motIdx, motor_control_t abs_vel) {
-    
-    if (motIdx == 0) {
-        switch (IC1CONbits.ICM) {
-            case IC_MODE0:
-                if (abs_vel >= MAX1) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                }
-                break;
-                
-            case IC_MODE1:
-                if (abs_vel < MIN1) {
-                    motors[motIdx].k_mul = 1;
-                    SwitchIcPrescaler(0, motIdx);
-                } else if (abs_vel >= MAX2) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-                
-            case IC_MODE2:
-                if (abs_vel < MIN2) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                } else if (abs_vel >= MAX3) {
-                    motors[motIdx].k_mul = 32;
-                    SwitchIcPrescaler(3, motIdx);
-                }
-                break;
-                
-            case IC_MODE3:
-                if (abs_vel < MIN3) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-                
-            default:
+
+    int icm = (int)(motors[motIdx].icm & (int) 0b0000000000000011); ///< TODO
+    switch (icm) {
+        case IC_MODE0:
+            if (abs_vel >= MAX1) {
+                motors[motIdx].k_mul = 2;
+                SwitchIcPrescaler(1, motIdx);
+            }
+            break;
+
+        case IC_MODE1:
+            if (abs_vel < MIN1) {
                 motors[motIdx].k_mul = 1;
                 SwitchIcPrescaler(0, motIdx);
-                break;
-        }
-    } else {
-        switch (IC2CONbits.ICM) {
-            case IC_MODE0:
-                if (abs_vel >= MAX1) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                }
-                break;
-                
-            case IC_MODE1:
-                if (abs_vel < MIN1) {
-                    motors[motIdx].k_mul = 1;
-                    SwitchIcPrescaler(0, motIdx);
-                } else if (abs_vel >= MAX2) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-                
-            case IC_MODE2:
-                if (abs_vel < MIN2) {
-                    motors[motIdx].k_mul = 2;
-                    SwitchIcPrescaler(1, motIdx);
-                } else if (abs_vel >= MAX3) {
-                    motors[motIdx].k_mul = 32;
-                    SwitchIcPrescaler(3, motIdx);
-                }
-                break;
-                
-            case IC_MODE3:
-                if (abs_vel < MIN3) {
-                    motors[motIdx].k_mul = 8;
-                    SwitchIcPrescaler(2, motIdx);
-                }
-                break;
-                
-            default:
-                motors[motIdx].k_mul = 1;
-                SwitchIcPrescaler(0, motIdx);
-                break;
-        }
+            } else if (abs_vel >= MAX2) {
+                motors[motIdx].k_mul = 8;
+                SwitchIcPrescaler(2, motIdx);
+            }
+            break;
+
+        case IC_MODE2:
+            if (abs_vel < MIN2) {
+                motors[motIdx].k_mul = 2;
+                SwitchIcPrescaler(1, motIdx);
+            } else if (abs_vel >= MAX3) {
+                motors[motIdx].k_mul = 32;
+                SwitchIcPrescaler(3, motIdx);
+            }
+            break;
+
+        case IC_MODE3:
+            if (abs_vel < MIN3) {
+                motors[motIdx].k_mul = 8;
+                SwitchIcPrescaler(2, motIdx);
+            }
+            break;
+
+        default:
+            motors[motIdx].k_mul = 1;
+            SwitchIcPrescaler(0, motIdx);
+            break;
     }
 }
 
@@ -537,7 +500,7 @@ int measureVelocity(short motIdx) {
     }
     // Set prescaler
     //SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
-    
+
     //Evaluate position
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -547,12 +510,12 @@ int measureVelocity(short motIdx) {
             break;
         case MOTOR_ONE:
             motors[motIdx].PulsEnc += (int) POS2CNT;
-            motors[motIdx].enc_angle +=  (int) POS2CNT;
+            motors[motIdx].enc_angle += (int) POS2CNT;
             POS2CNT = 0;
             break;
     }
     // Evaluate angle position
-    if(abs(motors[motIdx].enc_angle) > motors[motIdx].angle_ratio ) {
+    if (abs(motors[motIdx].enc_angle) > motors[motIdx].angle_ratio) {
         motors[motIdx].enc_angle = 0;
     }
     return TMR1 - t; // Time of execution
@@ -563,7 +526,7 @@ int MotorPID(short motIdx) {
     //Measure velocity
     measureVelocity(motIdx);
     // Setpoint
-    motors[motIdx].PIDstruct.controlReference =  Q15(((float) motors[motIdx].reference.velocity) / motors[motIdx].constraint.velocity);
+    motors[motIdx].PIDstruct.controlReference = Q15(((float) motors[motIdx].reference.velocity) / motors[motIdx].constraint.velocity);
     // Measure
     motors[motIdx].PIDstruct.measuredOutput = Q15(((float) motors[motIdx].measure.velocity) / motors[motIdx].constraint.velocity);
     // PID execution
