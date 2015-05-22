@@ -354,6 +354,7 @@ int MotorTaskController(void) {
 
 void SelectIcPrescaler(int motIdx, int16_t abs_vel) {
 
+    int a = 0;
     if (motIdx == 0) {
         switch (IC1CONbits.ICM) {
             case IC_MODE0:
