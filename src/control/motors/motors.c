@@ -439,7 +439,8 @@ int MotorTaskController(void) {
 
 void SelectIcPrescaler(int motIdx, motor_control_t abs_vel) {
 
-    int icm = (int)(motors[motIdx].icm & (int) 0b0000000000000011); ///< TODO
+    // Take the first 3 BITS (Input Capture Mode Select bits)
+    unsigned int icm = ((unsigned int) motors[motIdx].icm) & 0b0000000000000111;
     switch (icm) {
         case IC_MODE0:
             if (abs_vel >= MAX1) {
@@ -498,8 +499,8 @@ int measureVelocity(short motIdx) {
         int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
         motors[motIdx].measure.velocity = vel;
     }
-    // Set prescaler
-    //SelectIcPrescaler(num, motors[num].motor.measure_vel * SIG_VELtmp);
+    // Set Input Capture Prescaler
+    SelectIcPrescaler(motIdx, motors[motIdx].measure.velocity * SIG_VELtmp);
 
     //Evaluate position
     switch (motIdx) {

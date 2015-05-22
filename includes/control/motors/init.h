@@ -27,7 +27,7 @@ extern "C" {
 #define IC_MODE1    0b011 // 1X mode
 #define IC_MODE2    0b100 // 1/4X mode
 #define IC_MODE3    0b101 // 1/16X mode
-#define IC_DISABLE  0b00
+#define IC_DISABLE  0b000
     
     /** 
      * Initialization PWM for all motors
