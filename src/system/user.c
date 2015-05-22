@@ -211,11 +211,6 @@ void InitApp(void) {
 
     /* Peripherical initalization */
     InitLed(); //Init led
-    InitPWM(); //Open PWM
-    InitQEI1(); //Open QEI1
-    InitQEI2(); //Open QEI2
-    InitIC1(); //Open Input Capture 1
-    InitIC2(); //Open Input Capture 2
     InitTimer2(); //Open Timer2 for InputCapture 1 & 2
     InitADC(); //Open ADC for measure current motors
     InitDMA0(); //Open DMA0 for buffering measures ADC

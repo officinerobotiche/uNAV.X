@@ -121,10 +121,10 @@ extern "C" {
 #endif
 
     /** Definition for user interrupt **/
-    #define PID_FLAG IFS0bits.OC1IF
+    #define FLAG_TASK_MOTORS IFS0bits.OC1IF
     #define PARSER_FLAG IFS0bits.OC2IF
     #define MEASURE_FLAG IFS1bits.OC3IF
-    #define DEAD_RECKONING_FLAG IFS3bits.RTCIF
+    #define FLAG_TASK_HIGH_LEVEL IFS3bits.RTCIF
 
     #define SGN(x)  ( ((x) < 0) ?  -1 : ( ((x) == 0 ) ? 0 : 1) )
 

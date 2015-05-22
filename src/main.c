@@ -37,7 +37,8 @@
 #include "system/user.h"   /* User funct/params, such as InitApp              */
 #include "communication/serial.h"
 #include "communication/parsing_messages.h"
-#include "control/motors_PID.h"
+#include "control/motors/init.h"
+#include "control/motors/motors.h"
 #include "control/high_level_control.h"
 
 /******************************************************************************/
@@ -90,17 +91,25 @@ int16_t main(void) {
     /* Initialize IO ports and peripherals */
     InitApp();
 
+    /* Open PWM */
+    InitPWM();
     for (i = 0; i < NUM_MOTORS; ++i) {
+        /* Open QEI */
+        InitQEI(i);
+        /* Open Input Capture */
+        InitIC(i);
         /* Initialize variables for motors */
         init_motor(i);
         /* Initialize parameters for motors */
-        update_parameter_motors(i, init_parameter_motors(i));
+        update_motor_parameters(i, init_motor_parameters());
         /* Initialize pid controllers */
-        update_pid(i, init_pid_control(i));
+        update_motor_pid(i, init_motor_pid());
         /* Initialize emergency procedure to stop */
-        update_parameter_emergency(i, init_parameter_emergency(i));
+        update_motor_emergency(i, init_motor_emergency());
+        /* Initialize constraints motor */
+        update_motor_constraints(i, init_motor_constraints());
         /* Init state controller */
-        UpdateStateController(i, STATE_CONTROL_DISABLE);
+        set_motor_state(i, STATE_CONTROL_DISABLE);
     }
 
     /* Initialize variables for unicycle */

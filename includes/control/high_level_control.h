@@ -24,6 +24,17 @@ extern "C" {
 
 #include "packet/packet.h"
 
+    //Numbers and names associated at all processes
+#define PROCESS_MOTION_LENGTH 2
+#define PROCESS_VELOCITY 0
+#define VELOCITY_STRING "Velocity"
+#define PROCESS_ODOMETRY 1
+#define ODOMETRY_STRING "Odometry"
+
+    /*************************************************************************/
+    /* System Function Prototypes                                            */
+    /*************************************************************************/
+
     /**
      * Initialization all parameters for motor controller.
      */

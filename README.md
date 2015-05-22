@@ -42,7 +42,7 @@ This repository follow **[Git flow](https://www.atlassian.com/git/tutorials/comp
 - **[GREEN] Master** branch stores the official release history
 - **[ORANGE] Develop** branch serves as an integration branch for features
 - **[BLUE] Feature** branches use *develop* as their parent branch
-- **[YELLOW] Release-*** No new features can be added after this point—only bug fixes
+- **[YELLOW] Release/vX.X** No new features can be added after this point—only bug fixes
 - **[GREY] Hotfix** branches are used to quickly patch production releases
  
 ## Develop working
@@ -55,10 +55,12 @@ git checkout develop
 ## Communication libraries
 - [C++](https://github.com/officinerobotiche/orblibcpp)
 - [Java](https://github.com/officinerobotiche/orblibjar)
-- [ROS (Robotic Operative System)](https://github.com/officinerobotiche/serial_bridge)
+- [ROS (Robotic Operative System)](https://github.com/officinerobotiche/ros_serial_bridge)
  
 ## Software
 - [PID tuning](https://github.com/officinerobotiche/uNav_PID_Tuner)
+- [Robot Param Calculator](https://github.com/officinerobotiche/RobotParamCalculator)
+- [Simple unav Console](https://github.com/officinerobotiche/simple_unav_console)
 
 [wiki]:http://wiki.officinerobotiche.it/
 [Officine Robotiche]:http://www.officinerobotiche.it/

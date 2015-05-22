@@ -37,7 +37,7 @@
 #include "system/system.h"
 #include "communication/serial.h"
 #include "communication/parsing_messages.h"
-#include "control/motors_PID.h"
+#include "control/motors/motors.h"
 #include "control/high_level_control.h"
 
 /******************************************************************************/
@@ -46,16 +46,13 @@
 
 ICdata ICinfo[NUM_MOTORS];
 
-unsigned int counter_odo = 0;
-unsigned int counter_pid = 0;
-//volatile unsigned int overTmrL = 0;
-//volatile unsigned int overTmrR = 0;
-//volatile unsigned long timePeriodL = 0; //Periodo Ruota Sinistra
-//volatile unsigned long timePeriodR = 0; //Periodo Ruota Destra
-//volatile int SIG_VELL = 0; //Verso rotazione ruota sinistra
-//volatile int SIG_VELR = 0; //Verso rotazione ruota destra
-volatile process_t time, priority, frequency;
-process_buffer_t name_process_pid_l, name_process_pid_r, name_process_velocity, name_process_odometry;
+//From system.c
+extern process_t default_process[2];
+extern process_t motor_process[PROCESS_MOTOR_LENGTH];
+extern process_t motion_process[PROCESS_MOTION_LENGTH];
+
+//From high_level_control
+extern volatile unsigned int control_state;
 
 //From user
 extern led_control_t led_controller[LED_NUM];
@@ -140,42 +137,46 @@ extern bool led_effect;
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     unsigned int t1, t2;
-    t2 = IC1BUF;    // IC1BUF is a FIFO, each reading is a POP
+    t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
-    IFS0bits.IC1IF = 0;
-    ICinfo[REF_MOTOR_LEFT].timePeriod = ICinfo[REF_MOTOR_LEFT].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
-    ICinfo[REF_MOTOR_LEFT].overTmr = 0;
 
-    //ICinfo[REF_MOTOR_LEFT].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
-    (QEI1CONbits.UPDN ? ICinfo[REF_MOTOR_LEFT].SIG_VEL++ : ICinfo[REF_MOTOR_LEFT].SIG_VEL--); //Save sign Vel L
+    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    ICinfo[MOTOR_ZERO].overTmr = 0;
+
+    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); //Save sign Vel motor 0
+//    ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+    IFS0bits.IC1IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
     unsigned int t1, t2;
-    t2 = IC2BUF;    // IC1BUF is a FIFO, each reading is a POP
+    t2 = IC2BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC2BUF;
-    IFS0bits.IC2IF = 0;
-    ICinfo[REF_MOTOR_RIGHT].timePeriod = ICinfo[REF_MOTOR_RIGHT].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
-    ICinfo[REF_MOTOR_RIGHT].overTmr = 0;
+
+    ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    ICinfo[MOTOR_ONE].overTmr = 0;
+    
     //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
     //	else SIG_VELR--;
-    ICinfo[REF_MOTOR_RIGHT].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); //Save sign Vel motor 1
+//    ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    IFS0bits.IC2IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
     int led_counter = 0;
-
-    if (counter_pid >= frequency.process[PROCESS_PID_LEFT]) {
-        //Will be added in feature #39
-        //MEASURE_FLAG = 1;   //Start OC3Interrupt for measure velocity control
-        PID_FLAG = 1; //Start OC1Interrupt for PID control
-        counter_pid = 0;
+    
+    /**
+     * If high level control selected, then set new reference for all motors.
+     */
+    if (control_state != STATE_CONTROL_HIGH_DISABLE) {
+        FLAG_TASK_HIGH_LEVEL = 1;
     }
-    if (counter_odo >= frequency.process[PROCESS_ODOMETRY]) {
-        DEAD_RECKONING_FLAG = 1;
-        counter_odo = 0;
-    }
+    /**
+     * Run motors control task
+     */
+    FLAG_TASK_MOTORS = 1; //Start OC1Interrupt for PID control
     /**
      * Blink controller for all leds
      */
@@ -183,28 +184,24 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
         if (led_controller[led_counter].number_blink > LED_OFF)
             BlinkController(&led_controller[led_counter]);
     }
-    counter_pid++;
-    counter_odo++;
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    if (ICinfo[REF_MOTOR_LEFT].timePeriod)
-        ICinfo[REF_MOTOR_LEFT].overTmr++; // timer overflow counter for Left engines
-    if (ICinfo[REF_MOTOR_RIGHT].timePeriod)
-        ICinfo[REF_MOTOR_RIGHT].overTmr++; // timer overflow counter for Right engines
+    if (ICinfo[MOTOR_ZERO].timePeriod)
+        ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for Left engines
+    if (ICinfo[MOTOR_ONE].timePeriod)
+        ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for Right engines
 }
 
 void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
-    PID_FLAG = 0; // interrupt flag reset
-    time.process[PROCESS_VELOCITY] = MotorTaskController();
-    time.process[PROCESS_PID_LEFT] = MotorPID(REF_MOTOR_LEFT);
-    time.process[PROCESS_PID_RIGHT] = MotorPID(REF_MOTOR_RIGHT);
+    motor_process[PROCESS_VELOCITY].time = MotorTaskController();
+    FLAG_TASK_MOTORS = 0; // interrupt flag reset
 }
 
 void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
+    default_process[PROCESS_PARSE].time = parse_packet();
     PARSER_FLAG = 0; //interrupt flag reset
-    time.parse_packet = parse_packet();
 }
 
 void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
@@ -215,8 +212,8 @@ void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
-    DEAD_RECKONING_FLAG = 0; //interrupt flag reset
-    time.process[PROCESS_ODOMETRY] = deadReckoning();
+    HighLevelTaskController();
+    FLAG_TASK_HIGH_LEVEL = 0; //interrupt flag reset
 }
 
 unsigned int ReadUART1(void) {

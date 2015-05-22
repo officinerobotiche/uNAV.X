@@ -41,7 +41,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void saveData(information_packet_t* list_send, size_t len, information_packet_t* info);
+    void saveData(packet_information_t* list_send, size_t len, packet_information_t* info);
 
     /**
      * Send for all standard messages the data. The information are saved
@@ -51,7 +51,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void sendData(information_packet_t* list_send, size_t len, information_packet_t* info);
+    void sendData(packet_information_t* list_send, size_t len, packet_information_t* info);
 
     /**
      * In a packet we have more messages. A typical data packet
@@ -86,7 +86,7 @@ extern "C" {
      * @param len length of list_send list
      * @return a packet_t with all data to send
      */
-    packet_t encoder(information_packet_t *list_send, size_t len);
+    packet_t encoder(packet_information_t *list_send, size_t len);
 
     /**
      * Get an information_packet to convert in a buffer of char to put
@@ -94,7 +94,7 @@ extern "C" {
      * @param list_send information_packet_t to send
      * @return a packet_t with data to send
      */
-    packet_t encoderSingle(information_packet_t list_send);
+    packet_t encoderSingle(packet_information_t list_send);
 
     /**
      * Create a information_packet_t associated a message listed in
@@ -106,7 +106,7 @@ extern "C" {
      * @param packet abstract_message to convert in a information_packet
      * @return information_packet ready to send
      */
-    information_packet_t createPacket(unsigned char command, unsigned char option, unsigned char type, abstract_message_u * packet);
+    packet_information_t createPacket(unsigned char command, unsigned char option, unsigned char type, message_abstract_u * packet);
     
     /**
      * Create an information packet for a message with data (D).
@@ -116,7 +116,7 @@ extern "C" {
      * @param packet abstract_message to convert in a information_packet
      * @return information_packet ready to send
      */
-    information_packet_t createDataPacket(unsigned char command, unsigned char type, abstract_message_u * packet);
+    packet_information_t createDataPacket(unsigned char command, unsigned char type, message_abstract_u * packet);
 
 #ifdef	__cplusplus
 }

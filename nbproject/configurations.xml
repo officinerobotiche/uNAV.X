@@ -10,11 +10,15 @@
         <itemPath>includes/communication/parsing_messages.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="control" projectFiles="true">
+        <logicalFolder name="motors" displayName="motors" projectFiles="true">
+          <itemPath>includes/control/motors/init.h</itemPath>
+          <itemPath>includes/control/motors/motors.h</itemPath>
+        </logicalFolder>
         <itemPath>includes/control/high_level_control.h</itemPath>
-        <itemPath>includes/control/motors_PID.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="packet" projectFiles="true">
         <itemPath>includes/packet/packet.h</itemPath>
+        <itemPath>includes/packet/motor.h</itemPath>
         <itemPath>includes/packet/motion.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
@@ -36,8 +40,9 @@
                    projectFiles="true">
     </logicalFolder>
     <logicalFolder name="f1" displayName="Other Files" projectFiles="true">
-      <itemPath>docs/getting_started.txt</itemPath>
-      <itemPath>docs/legal_disclaimer.txt</itemPath>
+      <itemPath>LICENSE</itemPath>
+      <itemPath>CHANGELOG.md</itemPath>
+      <itemPath>README.md</itemPath>
     </logicalFolder>
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
@@ -48,8 +53,11 @@
         <itemPath>src/communication/parsing_other_messages.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="control" projectFiles="true">
+        <logicalFolder name="motors" displayName="motors" projectFiles="true">
+          <itemPath>src/control/motors/init.c</itemPath>
+          <itemPath>src/control/motors/motors.c</itemPath>
+        </logicalFolder>
         <itemPath>src/control/high_level_control.c</itemPath>
-        <itemPath>src/control/motors_PID.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
@@ -70,6 +78,9 @@
     <Elem>src/communication</Elem>
     <Elem>includes/communication</Elem>
     <Elem>includes/packet</Elem>
+    <Elem>src/system</Elem>
+    <Elem>src/control</Elem>
+    <Elem>includes/control</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -81,7 +92,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -299,7 +310,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -517,7 +528,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -737,7 +748,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -954,7 +965,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>Simulator</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.23</languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -1097,6 +1108,7 @@
         <property key="save-temps" value="false"/>
       </C30Global>
       <Simulator>
+        <property key="W0204_ADC_TAD_TOO_SMALL" value="report"/>
         <property key="breakoptions.coreerrors" value="Ignore"/>
         <property key="breakoptions.corewarnings" value="Ignore"/>
         <property key="breakoptions.peripheralerrors" value="Ignore"/>
