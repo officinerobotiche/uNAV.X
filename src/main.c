@@ -35,8 +35,11 @@
 
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
 #include "system/user.h"   /* User funct/params, such as InitApp              */
-#include "communication/serial.h"
+
+#include <serial/message.h>
+#include <serial/frame.h>
 #include "communication/parsing_messages.h"
+
 #include "control/motors/init.h"
 #include "control/motors/motors.h"
 #include "control/high_level_control.h"
@@ -81,11 +84,13 @@ int16_t main(void) {
     int i;
     /* Configure the oscillator for the device */
     ConfigureOscillator();
-
-    /* Initialize hashmap packet */
-    init_hashmap();
+    
     /* Initialize buffer serial error */
     init_buff_serial_error();
+    /* Initialize hashmap packet */
+    init_hashmap();
+    /* */
+    
     /* Initialize processes controller */
     init_process();
     /* Initialize IO ports and peripherals */

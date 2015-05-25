@@ -62,135 +62,135 @@ extern bool coord_busy;
 /*****************************************************************************/
 
 void saveOtherData(packet_information_t* list_send, size_t len, packet_information_t* info) {
-    if (info->type == HASHMAP_MOTOR) {
-        motor.command_message = info->command;
-        switch (motor.bitset.command) {
-            case MOTOR_VEL_PID:
-                update_motor_pid((short) motor.bitset.motor, info->message.motor_pid);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR_PARAMETER:
-                update_motor_parameters((short) motor.bitset.motor, info->message.motor_parameter);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR_CONSTRAINT:
-                update_motor_constraints((short) motor.bitset.motor, info->message.motor);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR_VEL_REF:
-                set_motor_velocity((short) motor.bitset.motor, info->message.motor_control);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR_STATE:
-                set_motor_state((short) motor.bitset.motor, info->message.motor_state);
-                control_state = STATE_CONTROL_HIGH_DISABLE; //TODO CORRECT
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR_POS_RESET:
-                reset_motor_position_measure((short) motor.bitset.motor, info->message.motor_control);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR_EMERGENCY:
-                update_motor_emergency((short) motor.bitset.motor, info->message.motor_emergency);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case MOTOR:
-            default:
-                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-                break;
-        }
-    } else if (info->type == HASHMAP_MOTION) {
-        switch (info->command) {
-            case COORDINATE:
-                coordinate = info->message.motion_coordinate;
-                update_coord();
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case PARAMETER_UNICYCLE:
-                parameter_unicycle = info->message.motion_parameter_unicycle;
-                update_parameter_unicycle();
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case VELOCITY:
-                vel_rif = info->message.motion_velocity;
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            case VELOCITY_MIS:
-                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-                break;
-            case ENABLE:
-                UpdateHighStateController(info->message.motion_state);
-                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-                break;
-            default:
-                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-                break;
-        }
-    }
+//    if (info->type == HASHMAP_MOTOR) {
+//        motor.command_message = info->command;
+//        switch (motor.bitset.command) {
+//            case MOTOR_VEL_PID:
+//                update_motor_pid((short) motor.bitset.motor, info->message.motor_pid);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR_PARAMETER:
+//                update_motor_parameters((short) motor.bitset.motor, info->message.motor_parameter);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR_CONSTRAINT:
+//                update_motor_constraints((short) motor.bitset.motor, info->message.motor);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR_VEL_REF:
+//                set_motor_velocity((short) motor.bitset.motor, info->message.motor_control);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR_STATE:
+//                set_motor_state((short) motor.bitset.motor, info->message.motor_state);
+//                control_state = STATE_CONTROL_HIGH_DISABLE; //TODO CORRECT
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR_POS_RESET:
+//                reset_motor_position_measure((short) motor.bitset.motor, info->message.motor_control);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR_EMERGENCY:
+//                update_motor_emergency((short) motor.bitset.motor, info->message.motor_emergency);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case MOTOR:
+//            default:
+//                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+//                break;
+//        }
+//    } else if (info->type == HASHMAP_MOTION) {
+//        switch (info->command) {
+//            case COORDINATE:
+//                coordinate = info->message.motion_coordinate;
+//                update_coord();
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case PARAMETER_UNICYCLE:
+//                parameter_unicycle = info->message.motion_parameter_unicycle;
+//                update_parameter_unicycle();
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case VELOCITY:
+//                vel_rif = info->message.motion_velocity;
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            case VELOCITY_MIS:
+//                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+//                break;
+//            case ENABLE:
+//                UpdateHighStateController(info->message.motion_state);
+//                list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+//                break;
+//            default:
+//                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+//                break;
+//        }
+//    }
 }
 
 void sendOtherData(packet_information_t* list_send, size_t len, packet_information_t* info) {
-    message_abstract_u send;
-    if (info->type == HASHMAP_MOTOR) {
-        motor.command_message = info->command;
-        switch (motor.bitset.command) {
-            case MOTOR_PARAMETER:
-                send.motor_parameter = get_motor_parameters((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case MOTOR_VEL_PID:
-                send.motor_pid = get_motor_pid((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-           case MOTOR_VEL_REF:
-                send.motor_control = get_motor_reference((short) motor.bitset.motor).velocity;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-           case MOTOR_STATE:
-                send.motor_state = get_motor_state((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case MOTOR:
-                send.motor = get_motor_measures((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case MOTOR_CONSTRAINT:
-                send.motor = get_motor_constraints((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case MOTOR_EMERGENCY:
-                send.motor_emergency = get_motor_emergency((short) motor.bitset.motor);
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            default:
-                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-                break;
-        }
-    } else if (info->type == HASHMAP_MOTION) {
-        switch (info->command) {
-            case COORDINATE:
-                send.motion_coordinate = coordinate;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case VELOCITY:
-                send.motion_velocity = vel_rif;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case VELOCITY_MIS:
-                send.motion_velocity = vel_mis;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case ENABLE:
-                send.motion_state = control_state;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            case PARAMETER_UNICYCLE:
-                send.motion_parameter_unicycle = parameter_unicycle;
-                list_send[len] = createDataPacket(info->command, info->type, &send);
-                break;
-            default:
-                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-                break;
-        }
-    }
+//    message_abstract_u send;
+//    if (info->type == HASHMAP_MOTOR) {
+//        motor.command_message = info->command;
+//        switch (motor.bitset.command) {
+//            case MOTOR_PARAMETER:
+//                send.motor_parameter = get_motor_parameters((short) motor.bitset.motor);
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case MOTOR_VEL_PID:
+//                send.motor_pid = get_motor_pid((short) motor.bitset.motor);
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//           case MOTOR_VEL_REF:
+//                send.motor_control = get_motor_reference((short) motor.bitset.motor).velocity;
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//           case MOTOR_STATE:
+//                send.motor_state = get_motor_state((short) motor.bitset.motor);
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case MOTOR:
+//                send.motor = get_motor_measures((short) motor.bitset.motor);
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case MOTOR_CONSTRAINT:
+//                send.motor = get_motor_constraints((short) motor.bitset.motor);
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case MOTOR_EMERGENCY:
+//                send.motor_emergency = get_motor_emergency((short) motor.bitset.motor);
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            default:
+//                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+//                break;
+//        }
+//    } else if (info->type == HASHMAP_MOTION) {
+//        switch (info->command) {
+//            case COORDINATE:
+//                send.motion_coordinate = coordinate;
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case VELOCITY:
+//                send.motion_velocity = vel_rif;
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case VELOCITY_MIS:
+//                send.motion_velocity = vel_mis;
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case ENABLE:
+//                send.motion_state = control_state;
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            case PARAMETER_UNICYCLE:
+//                send.motion_parameter_unicycle = parameter_unicycle;
+//                list_send[len] = createDataPacket(info->command, info->type, &send);
+//                break;
+//            default:
+//                list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+//                break;
+//        }
+//    }
 }

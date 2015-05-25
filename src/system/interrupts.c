@@ -35,8 +35,11 @@
 
 #include "system/user.h"
 #include "system/system.h"
-#include "communication/serial.h"
+
+#include <serial/message.h>
 #include "communication/parsing_messages.h"
+
+
 #include "control/motors/motors.h"
 #include "control/high_level_control.h"
 
