@@ -37,7 +37,6 @@
 #include "system/user.h"   /* User funct/params, such as InitApp              */
 
 #include <serial/message.h>
-#include <serial/frame.h>
 #include "communication/parsing_messages.h"
 
 #include "control/motors/init.h"
@@ -87,9 +86,8 @@ int16_t main(void) {
     
     /* Initialize buffer serial error */
     init_buff_serial_error();
-    /* Initialize hashmap packet */
-    init_hashmap();
     /* */
+    init_parsing_function();
     
     /* Initialize processes controller */
     init_process();

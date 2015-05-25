@@ -87,6 +87,18 @@ int parse_packet() {
     return TMR1 - t; // Time of execution
 }
 
+void decodeSaveMessage(packet_information_t* list_send, size_t len, packet_information_t* info) {
+    
+}
+
+void init_parsing_function() {
+    /* Initialize hashmap packet */
+    init_hashmap();
+    
+    set_frame_save(decodeSaveMessage);
+    //set_frame_send(frame_reader save_f);
+}
+
 void save_frame_system(packet_information_t* list_send, size_t len, packet_information_t* info) {
     message_abstract_u send;
     switch (info->command) {

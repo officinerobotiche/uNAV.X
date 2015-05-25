@@ -26,6 +26,8 @@ extern "C" {
 
     //Dimension of list messages to decode in a packet
     #define BUFFER_LIST_PARSING 10
+
+    void init_parsing_function();
     
     /**
      * Save for all standard messages the data in tail and save in controller.

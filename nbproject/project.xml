@@ -12,7 +12,7 @@
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <asminc-extensions/>
             <make-dep-projects>
-                <make-dep-project>../lib_orbus_c.X</make-dep-project>
+                <make-dep-project>../or_bus_c.X</make-dep-project>
             </make-dep-projects>
         </data>
     </configuration>
