@@ -35,11 +35,15 @@
 
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
 #include "system/user.h"   /* User funct/params, such as InitApp              */
+
 #include "communication/serial.h"
-#include "communication/parsing_messages.h"
-#include "control/motors/init.h"
-#include "control/motors/motors.h"
-#include "control/high_level_control.h"
+
+#include "motors/motor_init.h"
+#include "motors/motor_control.h"
+#include "motors/motor_comm.h"
+
+#include "high_control/manager.h"
+#include "high_control/high_comm.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -81,16 +85,20 @@ int16_t main(void) {
     int i;
     /* Configure the oscillator for the device */
     ConfigureOscillator();
-
-    /* Initialize hashmap packet */
-    init_hashmap();
-    /* Initialize buffer serial error */
-    init_buff_serial_error();
     /* Initialize processes controller */
     init_process();
     /* Initialize IO ports and peripherals */
     InitApp();
-
+    
+    /** SERIAL CONFIGURATION **/
+    /* Initialize hashmap packet */
+    init_hashmap_packet();
+    /* Initialize buffer serial error */
+    init_buff_serial_error();
+    /* Initialize parsing reader */
+    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system);
+    
+    /*** MOTOR INITIALIZATION ***/
     /* Open PWM */
     InitPWM();
     for (i = 0; i < NUM_MOTORS; ++i) {
@@ -102,21 +110,26 @@ int16_t main(void) {
         init_motor(i);
         /* Initialize parameters for motors */
         update_motor_parameters(i, init_motor_parameters());
-        /* Initialize pid controllers */
+        /* Initialize PID controllers */
         update_motor_pid(i, init_motor_pid());
         /* Initialize emergency procedure to stop */
         update_motor_emergency(i, init_motor_emergency());
         /* Initialize constraints motor */
         update_motor_constraints(i, init_motor_constraints());
-        /* Init state controller */
+        /* Initialize state controller */
         set_motor_state(i, STATE_CONTROL_DISABLE);
     }
-
+    /* Initialize communication */
+    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
+    
+    /** HIGH LEVEL INITIALIZATION **/
     /* Initialize variables for unicycle */
     init_parameter_unicycle();
     /* Initialize dead reckoning */
     init_coordinate();
-
+    /* Initialize communication */
+    set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
+    
     while (1) {
 
     }

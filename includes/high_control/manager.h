@@ -15,8 +15,8 @@
  * Public License for more details
  */
 
-#ifndef HIGHLEVELCONTROL_H
-#define	HIGHLEVELCONTROL_H
+#ifndef MANAGER_H
+#define	MANAGER_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -93,7 +93,7 @@ extern "C" {
     inline velocity_t get_high_velocity_ref(void);
 
     /**
-     * Convertion data from rotor motors measure and save value for velocity.
+     * Conversion data from rotor motors measure and save value for velocity.
      * @return time to compute this function
      */
     int VelocityMeasure(void);
@@ -102,5 +102,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* HIGHLEVELCONTROL_H */
+#endif	/* MANAGER_H */
 

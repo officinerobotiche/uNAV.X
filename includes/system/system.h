@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#include "packet/packet.h"
+#include <packet/packet.h>
 
     /******************************************************************************/
     /* System Level #define Macros                                                */
@@ -97,7 +97,7 @@ extern "C" {
     /* System Function Prototypes                                                 */
     /******************************************************************************/
 
-    /* Custom oscillator configuration funtions, reset source evaluation
+    /* Custom oscillator configuration functions, reset source evaluation
     functions, and other non-peripheral microcontroller initialization functions
     go here. */
 
@@ -116,7 +116,7 @@ extern "C" {
     unsigned char update_priority(void);
 
     /**
-     * Upgdate frequency for working processes. If value is equal to zero,
+     * Update frequency for working processes. If value is equal to zero,
      * the process are disabled.
      * @return ACK value for correct update priority
      */
@@ -124,7 +124,7 @@ extern "C" {
 
     void set_process(uint8_t command, system_task_t process_state);
     /**
-     * From name recived, return a process required.
+     * From name received, return a process required.
      * @param number name process
      * @return save in process_buffer name associated for process
      */
@@ -132,7 +132,7 @@ extern "C" {
     system_task_t get_process(uint8_t command, system_task_t process_state);
 
     /**
-     * Managment services messages. Return a service message for correct parsing
+     * Management services messages. Return a service message for correct parsing
      * @param service to parsing
      * @return a new service message
      */
@@ -146,15 +146,15 @@ extern "C" {
      */
     void InitTimer1(void);
 
-    /** Initalization Timer 2 for IC (Input Capture)
+    /** Initialization Timer 2 for IC (Input Capture)
      */
     void InitTimer2(void);
 
-    /** Initalization others interrupts
+    /** Initialization others interrupts
      */
     void InitInterrupts(void);
 
-    /** Initialization UART1 for comunication
+    /** Initialization UART1 for communication
      */
     void InitUART1(void);
 

@@ -15,8 +15,8 @@
  * Public License for more details
  */
 
-#ifndef INIT_H
-#define	INIT_H
+#ifndef MOTOR_INIT_H
+#define	MOTOR_INIT_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -51,5 +51,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* INIT_H */
+#endif	/* MOTOR_INIT_H */
 
