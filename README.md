@@ -56,7 +56,7 @@ git checkout develop
 cd ../
 git clone https://github.com/officinerobotiche/uNAV.X.git
 cd uNAV.X
-git checkcout develop
+git checkout develop
 ```
 
 ## Communication libraries
