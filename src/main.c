@@ -96,7 +96,7 @@ int16_t main(void) {
     /* Initialize buffer serial error */
     init_buff_serial_error();
     /* Initialize parsing reader */
-    set_frame_reader(HASHMAP_SYSTEM, &save_frame_system, &send_frame_system);
+    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system);
     
     /*** MOTOR INITIALIZATION ***/
     /* Open PWM */
@@ -120,7 +120,7 @@ int16_t main(void) {
         set_motor_state(i, STATE_CONTROL_DISABLE);
     }
     /* Initialize communication */
-    set_frame_reader(HASHMAP_MOTOR, &save_frame_motor, &send_frame_motor);
+    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
     
     /** HIGH LEVEL INITIALIZATION **/
     /* Initialize variables for unicycle */
@@ -128,7 +128,7 @@ int16_t main(void) {
     /* Initialize dead reckoning */
     init_coordinate();
     /* Initialize communication */
-    set_frame_reader(HASHMAP_MOTION, &save_frame_motion, &send_frame_motion);
+    set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
     
     while (1) {
 

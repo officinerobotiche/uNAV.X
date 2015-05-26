@@ -93,7 +93,7 @@ extern "C" {
     inline velocity_t get_high_velocity_ref(void);
 
     /**
-     * Convertion data from rotor motors measure and save value for velocity.
+     * Conversion data from rotor motors measure and save value for velocity.
      * @return time to compute this function
      */
     int VelocityMeasure(void);
