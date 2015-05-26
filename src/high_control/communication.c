@@ -52,60 +52,60 @@ extern bool coord_busy;
 
 /******************************************************************************/
 
-void save_frame_motion(packet_information_t* list_send, size_t len, packet_information_t* info) {
+void save_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     switch (info->command) {
         case COORDINATE:
             coordinate = info->message.motion_coordinate;
             update_coord();
-            list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case PARAMETER_UNICYCLE:
             parameter_unicycle = info->message.motion_parameter_unicycle;
             update_parameter_unicycle();
-            list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case VELOCITY:
             vel_rif = info->message.motion_velocity;
-            list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case VELOCITY_MIS:
-            list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
         case ENABLE:
             UpdateHighStateController(info->message.motion_state);
-            list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         default:
-            list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
     }
 }
 
-void send_frame_motion(packet_information_t* list_send, size_t len, packet_information_t* info) {
+void send_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     message_abstract_u send;
     switch (info->command) {
         case COORDINATE:
             send.motion_coordinate = coordinate;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case VELOCITY:
             send.motion_velocity = vel_rif;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case VELOCITY_MIS:
             send.motion_velocity = vel_mis;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case ENABLE:
             send.motion_state = control_state;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case PARAMETER_UNICYCLE:
             send.motion_parameter_unicycle = parameter_unicycle;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         default:
-            list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
     }
 }

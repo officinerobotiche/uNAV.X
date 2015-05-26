@@ -68,7 +68,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void save_frame_system(packet_information_t* list_send, size_t len, packet_information_t* info);
+    void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
 
     /**
      * Send for all standard messages the data. The information are saved
@@ -78,7 +78,7 @@ extern "C" {
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void send_frame_system(packet_information_t* list_send, size_t len, packet_information_t* info);
+    void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
 
 #ifdef	__cplusplus
 }

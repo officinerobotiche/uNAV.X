@@ -75,7 +75,7 @@ void serial_send(char header, packet_t packet) {
 int parse_packet() {
     unsigned int t = TMR1; // Timing function
     packet_information_t list_data[BUFFER_LIST_PARSING];
-    unsigned short len = 0;
+    size_t len = 0;
 
     if(parser(&list_data[0], &len) && len != 0) {
         //Build a new message
@@ -86,52 +86,52 @@ int parse_packet() {
     return TMR1 - t; // Time of execution
 }
 
-void save_frame_system(packet_information_t* list_send, size_t len, packet_information_t* info) {
+void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     message_abstract_u send;
     switch (info->command) {
         case SYSTEM_SERVICE:
             send.system_service = services(info->message.system_service);
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
             set_process(info->command, info->message.system_task);
-            list_send[len] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         default:
-            list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
     }
 }
 
-void send_frame_system(packet_information_t* list_send, size_t len, packet_information_t* info) {
+void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     message_abstract_u send;
     switch (info->command) {
         case SYSTEM_SERVICE:
             send.system_service = services(info->message.system_service);
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
         case SYSTEM_TASK_TIME:
         case SYSTEM_TASK_NUM:
             send.system_task = get_process(info->command, info->message.system_task);
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_TASK_NAME:
             send.system_task_name = get_process_name(info->message.system_task_name);
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_PARAMETER:
             send.system_parameter = parameter_system;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_SERIAL_ERROR:
             send.system_error_serial = serial_error;
-            list_send[len] = createDataPacket(info->command, info->type, &send);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         default:
-            list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
     }
 }
