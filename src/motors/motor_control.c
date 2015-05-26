@@ -322,41 +322,21 @@ motor_state_t get_motor_state(short motIdx) {
 void set_motor_state(short motIdx, motor_state_t state) {
     volatile bool enable = (state != STATE_CONTROL_DISABLE) ? true : false;
     int led_state = (state != STATE_CONTROL_EMERGENCY) ? state + 1 : state;
-    /**
-     * Set enable or disable motors
-     */
+    
+    /// Set enable or disable motors
+    motors[motIdx].reference.state = state;
     switch (motIdx) {
-        case -1:
-            motors[MOTOR_ZERO].reference.state = state;
-            motors[MOTOR_ONE].reference.state = state;
-            MOTOR_ENABLE1_BIT = enable ^ motors[MOTOR_ZERO].parameter_motor.bridge.enable;
-            MOTOR_ENABLE2_BIT = enable ^ motors[MOTOR_ONE].parameter_motor.bridge.enable;
-#ifndef MOTION_CONTROL
-            UpdateBlink(0, led_state);
-            UpdateBlink(1, led_state);
-#endif
-            break;
         case MOTOR_ZERO:
-            motors[motIdx].reference.state = state;
             MOTOR_ENABLE1_BIT = enable ^ motors[motIdx].parameter_motor.bridge.enable;
-            if (state == STATE_CONTROL_EMERGENCY) {
-                motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
-            }
-#ifndef MOTION_CONTROL
-            UpdateBlink(motIdx, led_state);
-#endif
             break;
         case MOTOR_ONE:
-            motors[motIdx].reference.state = state;
             MOTOR_ENABLE2_BIT = enable ^ motors[motIdx].parameter_motor.bridge.enable;
-            if (state == STATE_CONTROL_EMERGENCY) {
-                motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
-            }
-#ifndef MOTION_CONTROL
-            UpdateBlink(motIdx, led_state);
-#endif
             break;
     }
+    if (state == STATE_CONTROL_EMERGENCY) {
+        motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
+    }
+    /// Disable PWM generator
     if (enable) {
         PTCONbits.PTEN = 1;
     } else {
@@ -365,7 +345,9 @@ void set_motor_state(short motIdx, motor_state_t state) {
             PTCONbits.PTEN = 0;
         }
     }
-#ifdef MOTION_CONTROL
+#ifndef MOTION_CONTROL
+    UpdateBlink(motIdx, led_state);
+#elif MOTION_CONTROL
     UpdateBlink(LED1, led_state);
 #endif
 }

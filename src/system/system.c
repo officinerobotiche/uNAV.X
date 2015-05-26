@@ -38,7 +38,7 @@
 #include "system/user.h"
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "packet/packet.h"
-#include "packet/motion.h"
+#include "packet/frame_motion.h"
 #include "communication/serial.h"
 #include "motors/motor_control.h"
 #include "high_control/manager.h"

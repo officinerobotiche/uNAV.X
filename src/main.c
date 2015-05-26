@@ -123,14 +123,16 @@ int16_t main(void) {
     set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
     
     /** HIGH LEVEL INITIALIZATION **/
+    /* Initialize motion parameters */
+    init_motion();
     /* Initialize variables for unicycle */
-    init_parameter_unicycle();
+    update_motion_parameter_unicycle(init_motion_parameter_unicycle());
     /* Initialize dead reckoning */
-    init_coordinate();
+    update_motion_coordinate(init_motion_coordinate());
     /* Initialize communication */
     set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
     
-    while (1) {
+    while (true) {
 
     }
 

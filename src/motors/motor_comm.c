@@ -45,9 +45,6 @@
 //Split motor and command
 motor_command_map_t motor;
 
-// From high level control
-extern state_controller_t control_state;
-
 /******************************************************************************/
 /* Parsing functions                                                          */
 /******************************************************************************/
@@ -73,7 +70,6 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             break;
         case MOTOR_STATE:
             set_motor_state((short) motor.bitset.motor, info->message.motor_state);
-            control_state = STATE_CONTROL_HIGH_DISABLE; //TODO CORRECT
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case MOTOR_POS_RESET:
@@ -84,7 +80,6 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             update_motor_emergency((short) motor.bitset.motor, info->message.motor_emergency);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
-        case MOTOR:
         default:
             list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
