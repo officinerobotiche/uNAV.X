@@ -35,9 +35,9 @@
 #include <pwm12.h>
 #include <string.h>
 
-#include "control/motors/init.h"
 #include "system/system.h"
-#include "control/motors/motors.h"
+#include "motors/motor_control.h"
+#include "motors/motor_init.h"
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */

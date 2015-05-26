@@ -34,106 +34,104 @@
 #include <stdbool.h>       /* Includes true/false definition */
 #include <string.h>
 
+#include <serial/or_message.h>
+#include <serial/or_frame.h>
 #include "communication/serial.h"
+
+#include "system/user.h"
+#include "system/system.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-/*! Pointer to function, initialized for pkg_header */
-int (*pkg_parse) (unsigned char inchar) = &pkg_header;
-/*! Array for DMA UART buffer */
+/* Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
-/*! Receive packet */
-packet_t receive_pkg;
-char receive_header;
-unsigned int index_data = 0;
-system_error_serial_t serial_error;
+
+/** GLOBAL VARIBLES */
+// From system/system.c
+extern system_parameter_t parameter_system;
+// From communication/serial.c
+extern system_error_serial_t serial_error;
+extern packet_t receive_pkg;
+extern char receive_header;
 
 /******************************************************************************/
-/* Comunication Functions                                                     */
+/* Communication Functions                                                    */
 /******************************************************************************/
 
-void init_buff_serial_error(){
-    memset(serial_error.number, 0, MAX_BUFF_ERROR_SERIAL);
-}
-
-int decode_pkgs(unsigned char rxchar) {
-    return (*pkg_parse)(rxchar);
-}
-
-int pkg_header(unsigned char rxchar) {
-    if ((rxchar == HEADER_SYNC) || (rxchar == HEADER_ASYNC)) {
-        receive_header = rxchar;    // Save
-        pkg_parse = &pkg_length;
-        return false;
-    } else {
-        return pkg_error(ERROR_HEADER);
-    }
-}
-
-int pkg_length(unsigned char rxchar) {
-    if (rxchar > MAX_BUFF_RX) {
-        return pkg_error(ERROR_LENGTH);
-    } else {
-        pkg_parse = &pkg_data;
-        receive_pkg.length = rxchar;
-        return false;
-    }
-}
-
-int pkg_data(unsigned char rxchar) {
-    int cks_clc;
-    if ((index_data + 1) == (receive_pkg.length + 1)) {
-        pkg_parse = &pkg_header; //Restart parse serial packet
-        if ((cks_clc = pkg_checksum(receive_pkg.buffer, 0, index_data)) == rxchar) { //checksum data
-            index_data = 0; //flush index array data buffer
-            return true;
-        } else {
-            bool t = pkg_error(ERROR_CKS);
-            return t;
-        }
-    } else {
-        receive_pkg.buffer[index_data] = rxchar;
-        index_data++;
-        return false;
-    }
-}
-
-int pkg_error(int error) {
-    index_data = 0;
-    pkg_parse = &pkg_header; //Restart parse serial packet
-    serial_error.number[(-error - 1)] += 1;
-    return error;
-}
-
-unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int LastIndx) {
-    unsigned char ChkSum = 0;
-    int ChkCnt;
-    for (ChkCnt = FirstIndx; ChkCnt < LastIndx; ChkCnt++) {
-        ChkSum += Buffer[ChkCnt];
-    }
-    return ChkSum;
-}
-
-void pkg_send(char header, packet_t packet) {
-
+void serial_send(char header, packet_t packet) {
+    
     //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
-
-    int i;
-    BufferTx[0] = header;
-    BufferTx[1] = packet.length;
-
-    //Copy all element to DMA buffer
-    for (i = 0; i < packet.length; i++) {
-        BufferTx[i + HEAD_PKG] = packet.buffer[i];
-    }
-
-    // Create a checksum
-    BufferTx[packet.length + HEAD_PKG] = pkg_checksum(BufferTx, HEAD_PKG, packet.length + HEAD_PKG);
-
+    //Build a message to send to serial
+    build_pkg(BufferTx, header, packet);
+    
     DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
+}
+
+int parse_packet() {
+    unsigned int t = TMR1; // Timing function
+    packet_information_t list_data[BUFFER_LIST_PARSING];
+    size_t len = 0;
+
+    if(parser(&list_data[0], &len) && len != 0) {
+        //Build a new message
+        packet_t send = encoder(&list_data[0], len);
+        // Send a new packet
+        serial_send(receive_header, send);
+    }
+    return TMR1 - t; // Time of execution
+}
+
+void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+    message_abstract_u send;
+    switch (info->command) {
+        case SYSTEM_SERVICE:
+            send.system_service = services(info->message.system_service);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            break;
+        case SYSTEM_TASK_PRIORITY:
+        case SYSTEM_TASK_FRQ:
+            set_process(info->command, info->message.system_task);
+            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            break;
+        default:
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            break;
+    }
+}
+
+void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+    message_abstract_u send;
+    switch (info->command) {
+        case SYSTEM_SERVICE:
+            send.system_service = services(info->message.system_service);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            break;
+        case SYSTEM_TASK_PRIORITY:
+        case SYSTEM_TASK_FRQ:
+        case SYSTEM_TASK_TIME:
+        case SYSTEM_TASK_NUM:
+            send.system_task = get_process(info->command, info->message.system_task);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            break;
+        case SYSTEM_TASK_NAME:
+            send.system_task_name = get_process_name(info->message.system_task_name);
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            break;
+        case SYSTEM_PARAMETER:
+            send.system_parameter = parameter_system;
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            break;
+        case SYSTEM_SERIAL_ERROR:
+            send.system_error_serial = serial_error;
+            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            break;
+        default:
+            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            break;
+    }
 }

@@ -15,8 +15,8 @@
  * Public License for more details
  */
 
-#ifndef MOTORS_H
-#define	MOTORS_H
+#ifndef MOTOR_CONTROL_H
+#define	MOTOR_CONTROL_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -234,4 +234,4 @@ extern "C" {
 }
 #endif
 
-#endif	/* MOTORS_H */
+#endif	/* MOTOR_CONTROL_H */

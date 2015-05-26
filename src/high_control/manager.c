@@ -36,10 +36,9 @@
 #include <string.h>
 #include <float.h>
 
-#include "control/high_level_control.h"
-#include "control/motors/motors.h"
+#include "high_control/manager.h"
+#include "motors/motor_control.h"
 #include "communication/serial.h"
-#include "communication/parsing_messages.h"
 #include "system/user.h"
 #include "system/system.h"
 
