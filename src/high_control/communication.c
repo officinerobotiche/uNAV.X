@@ -109,9 +109,3 @@ void send_frame_motion(packet_information_t* list_send, size_t len, packet_infor
             break;
     }
 }
-
-void init_parsing_motion_frame() {
-    
-    set_frame_data(HASHMAP_MOTION, &save_frame_motion);
-    set_frame_request(HASHMAP_MOTION, &send_frame_motion);
-}

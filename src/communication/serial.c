@@ -65,7 +65,7 @@ void serial_send(char header, packet_t packet) {
     //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
     //Build a message to send to serial
-    //build_pkg(BufferTx, header, packet);
+    build_pkg(BufferTx, header, packet);
     
     DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
@@ -79,9 +79,9 @@ int parse_packet() {
 
     if(parser(&list_data[0], &len) && len != 0) {
         //Build a new message
-        //packet_t send = encoder(&list_data[0], len);
+        packet_t send = encoder(&list_data[0], len);
         // Send a new packet
-        //serial_send(receive_header, send);
+        serial_send(receive_header, send);
     }
     return TMR1 - t; // Time of execution
 }
@@ -134,10 +134,4 @@ void send_frame_system(packet_information_t* list_send, size_t len, packet_infor
             list_send[len] = createPacket(info->command, PACKET_NACK, info->type, NULL);
             break;
     }
-}
-
-void init_parsing_system_frame() {
-   
-    set_frame_data(HASHMAP_SYSTEM, &save_frame_system);
-    set_frame_request(HASHMAP_SYSTEM, &send_frame_system);
 }

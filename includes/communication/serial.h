@@ -60,8 +60,6 @@ extern "C" {
      */
     int parse_packet();
     
-    void init_parsing_system_frame();
-    
     /**
      * Save for all standard messages the data in tail and save in controller.
      * Others messages, typical for this board are saved with function

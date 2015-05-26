@@ -23,8 +23,6 @@ extern "C" {
 #endif
 
 #include <serial/or_message.h>
-
-    void init_parsing_motion_frame();
     
     /**
      * Save for all standard messages the data in tail and save in controller.

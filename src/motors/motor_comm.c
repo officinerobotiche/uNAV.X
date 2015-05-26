@@ -128,9 +128,3 @@ void send_frame_motor(packet_information_t* list_send, size_t len, packet_inform
             break;
     }
 }
-
-void init_parsing_motor_frame() {
-    
-    set_frame_data(HASHMAP_MOTOR, &save_frame_motor);
-    set_frame_request(HASHMAP_MOTOR, &send_frame_motor);
-}

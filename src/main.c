@@ -38,7 +38,7 @@
 
 #include "communication/serial.h"
 
-#include "motors/init.h"
+#include "motors/motor_init.h"
 #include "motors/motor_control.h"
 #include "motors/motor_comm.h"
 
@@ -92,11 +92,11 @@ int16_t main(void) {
     
     /** SERIAL CONFIGURATION **/
     /* Initialize hashmap packet */
-    init_hashmap();
+    init_hashmap_packet();
     /* Initialize buffer serial error */
     init_buff_serial_error();
     /* Initialize parsing reader */
-    init_parsing_system_frame();
+    set_frame_reader(HASHMAP_SYSTEM, &save_frame_system, &send_frame_system);
     
     /*** MOTOR INITIALIZATION ***/
     /* Open PWM */
@@ -120,7 +120,7 @@ int16_t main(void) {
         set_motor_state(i, STATE_CONTROL_DISABLE);
     }
     /* Initialize communication */
-    init_parsing_motor_frame();
+    set_frame_reader(HASHMAP_MOTOR, &save_frame_motor, &send_frame_motor);
     
     /** HIGH LEVEL INITIALIZATION **/
     /* Initialize variables for unicycle */
@@ -128,7 +128,7 @@ int16_t main(void) {
     /* Initialize dead reckoning */
     init_coordinate();
     /* Initialize communication */
-    init_parsing_motion_frame();
+    set_frame_reader(HASHMAP_MOTION, &save_frame_motion, &send_frame_motion);
     
     while (1) {
 
