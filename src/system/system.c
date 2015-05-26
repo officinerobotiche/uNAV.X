@@ -63,7 +63,7 @@ unsigned char author_code[] = "Raffaello Bonghi";
 unsigned char author_code[] = "Officine Robotiche";
 #endif
 
-unsigned char version_code[] = "v0.4";
+unsigned char version_code[] = "v0.5";
 unsigned char type_board[] = "Motor Control";
 system_parameter_t parameter_system;
 
