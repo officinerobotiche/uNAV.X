@@ -140,11 +140,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
 
-    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    ICinfo[MOTOR_ZERO].timePeriod = ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
     ICinfo[MOTOR_ZERO].overTmr = 0;
 
-    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); //Save sign Vel motor 0
-//    ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+//  (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); //Save sign Vel motor 0
+    ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
     IFS0bits.IC1IF = 0;
 }
 
@@ -153,13 +153,11 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
     t2 = IC2BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC2BUF;
 
-    ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    ICinfo[MOTOR_ONE].timePeriod = ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
     ICinfo[MOTOR_ONE].overTmr = 0;
     
-    //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
-    //	else SIG_VELR--;
-    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); //Save sign Vel motor 1
-//    ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+//    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); //Save sign Vel motor 1
+    ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
     IFS0bits.IC2IF = 0;
 }
 

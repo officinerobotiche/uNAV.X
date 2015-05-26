@@ -440,7 +440,7 @@ int MotorTaskController(void) {
 void SelectIcPrescaler(int motIdx, motor_control_t abs_vel) {
 
     // Take the first 3 BITS (Input Capture Mode Select bits)
-    unsigned int icm = ((unsigned int) motors[motIdx].icm) & 0b0000000000000111;
+    unsigned int icm = ((unsigned int) motors[motIdx].icm) & 7;
     switch (icm) {
         case IC_MODE0:
             if (abs_vel >= MAX1) {
