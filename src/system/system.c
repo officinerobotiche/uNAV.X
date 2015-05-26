@@ -40,8 +40,8 @@
 #include "packet/packet.h"
 #include "packet/motion.h"
 #include "communication/serial.h"
-#include "control/motors/motors.h"
-#include "control/high_level_control.h"
+#include "motors/motor_control.h"
+#include "high_control/control.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Officine Robotiche
+ * Copyright (C) 2015 Officine Robotiche
  * Author: Raffaello Bonghi
  * email:  raffaello.bonghi@officinerobotiche.it
  * Permission is granted to copy, distribute, and/or modify this program
@@ -15,35 +15,41 @@
  * Public License for more details
 */
 
-#ifndef PARSING_OTHER_MESSAGES_H
-#define	PARSING_OTHER_MESSAGES_H
+#ifndef MOTOR_COMM_H
+#define	MOTOR_COMM_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
+    
+#include <serial/or_message.h>
 
+    void init_parsing_motor_frame();
+    
     /**
-     * Similar to saveData (in parsing_mesages.h) this function save messages
-     * from packet recived.
+     * Save for all standard messages the data in tail and save in controller.
+     * Others messages, typical for this board are saved with function
+     * save_other_data in file parsing_other_messages.h
      * @param list_send a pointer to buffer to save information from board
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void saveOtherData(packet_information_t* list_send, size_t len, packet_information_t* info);
+    void save_frame_motor(packet_information_t* list_send, size_t len, packet_information_t* info);
 
     /**
-     * Similar to sendData (in parsing_messages.h) this function send messages
-     * about unav board.
+     * Send for all standard messages the data. The information are saved
+     * in a information_packet_t by functions createPacket and createDataPacket
+     * in tail of this file.
      * @param list_send a pointer to buffer to save information from board
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void sendOtherData(packet_information_t* list_send, size_t len, packet_information_t* info);
+    void send_frame_motor(packet_information_t* list_send, size_t len, packet_information_t* info);
 
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* PARSING_OTHER_MESSAGES_H */
+#endif	/* MOTOR_COMM_H */
 

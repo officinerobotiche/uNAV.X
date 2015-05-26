@@ -5,15 +5,16 @@
                    displayName="Header Files"
                    projectFiles="true">
       <logicalFolder name="f2" displayName="communication" projectFiles="true">
-        <itemPath>includes/communication/parsing_messages.h</itemPath>
         <itemPath>includes/communication/serial.h</itemPath>
       </logicalFolder>
-      <logicalFolder name="f4" displayName="control" projectFiles="true">
-        <logicalFolder name="motors" displayName="motors" projectFiles="true">
-          <itemPath>includes/control/motors/init.h</itemPath>
-          <itemPath>includes/control/motors/motors.h</itemPath>
-        </logicalFolder>
-        <itemPath>includes/control/high_level_control.h</itemPath>
+      <logicalFolder name="f4" displayName="high_control" projectFiles="true">
+        <itemPath>includes/high_control/communication.h</itemPath>
+        <itemPath>includes/high_control/control.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f1" displayName="motors" projectFiles="true">
+        <itemPath>includes/motors/init.h</itemPath>
+        <itemPath>includes/motors/motor_comm.h</itemPath>
+        <itemPath>includes/motors/motor_control.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
         <itemPath>includes/system/user.h</itemPath>
@@ -42,15 +43,16 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="f1" displayName="communication" projectFiles="true">
-        <itemPath>src/communication/parsing_messages.c</itemPath>
         <itemPath>src/communication/serial.c</itemPath>
       </logicalFolder>
-      <logicalFolder name="f3" displayName="control" projectFiles="true">
-        <logicalFolder name="motors" displayName="motors" projectFiles="true">
-          <itemPath>src/control/motors/init.c</itemPath>
-          <itemPath>src/control/motors/motors.c</itemPath>
-        </logicalFolder>
-        <itemPath>src/control/high_level_control.c</itemPath>
+      <logicalFolder name="f3" displayName="high_control" projectFiles="true">
+        <itemPath>src/high_control/communication.c</itemPath>
+        <itemPath>src/high_control/control.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f4" displayName="motors" projectFiles="true">
+        <itemPath>src/motors/init.c</itemPath>
+        <itemPath>src/motors/motor_control.c</itemPath>
+        <itemPath>src/motors/motor_comm.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
@@ -70,6 +72,10 @@
   <sourceRootList>
     <Elem>includes/communication</Elem>
     <Elem>src/communication</Elem>
+    <Elem>src/motors</Elem>
+    <Elem>includes/motors</Elem>
+    <Elem>includes/high_control</Elem>
+    <Elem>src/high_control</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

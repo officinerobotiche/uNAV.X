@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include "system/system.h"
-#include "control/motors/motors.h"
+#include "motors/motor_control.h"
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
