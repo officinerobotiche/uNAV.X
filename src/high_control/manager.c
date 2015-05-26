@@ -36,7 +36,7 @@
 #include <string.h>
 #include <float.h>
 
-#include "high_control/control.h"
+#include "high_control/manager.h"
 #include "motors/motor_control.h"
 #include "communication/serial.h"
 #include "system/user.h"

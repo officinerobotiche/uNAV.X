@@ -41,7 +41,7 @@
 #include "communication/serial.h"
 
 #include "motors/motor_control.h"
-#include "high_control/control.h"
+#include "high_control/manager.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */

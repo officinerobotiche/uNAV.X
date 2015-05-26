@@ -40,7 +40,7 @@
 #include <serial/or_frame.h>
 #include "motors/motor_control.h"
 
-#include "high_control/control.h"
+#include "high_control/manager.h"
 
 //Split motor and command
 motor_command_map_t motor;

@@ -8,8 +8,8 @@
         <itemPath>includes/communication/serial.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="high_control" projectFiles="true">
-        <itemPath>includes/high_control/communication.h</itemPath>
-        <itemPath>includes/high_control/control.h</itemPath>
+        <itemPath>includes/high_control/high_comm.h</itemPath>
+        <itemPath>includes/high_control/manager.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="motors" projectFiles="true">
         <itemPath>includes/motors/motor_comm.h</itemPath>
@@ -46,8 +46,8 @@
         <itemPath>src/communication/serial.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="high_control" projectFiles="true">
-        <itemPath>src/high_control/communication.c</itemPath>
-        <itemPath>src/high_control/control.c</itemPath>
+        <itemPath>src/high_control/high_comm.c</itemPath>
+        <itemPath>src/high_control/manager.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="motors" projectFiles="true">
         <itemPath>src/motors/motor_control.c</itemPath>

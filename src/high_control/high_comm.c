@@ -34,11 +34,11 @@
 #include <stdbool.h>       /* Includes true/false definition */
 #include <string.h>
 
-#include "high_control/communication.h"
+#include "high_control/high_comm.h"
 
 #include "communication/serial.h"
 #include <serial/or_frame.h>
-#include "high_control/control.h"
+#include "high_control/manager.h"
 
 // From high level control
 extern state_controller_t control_state;

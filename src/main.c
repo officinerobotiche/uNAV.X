@@ -42,8 +42,8 @@
 #include "motors/motor_control.h"
 #include "motors/motor_comm.h"
 
-#include "high_control/control.h"
-#include "high_control/communication.h"
+#include "high_control/manager.h"
+#include "high_control/high_comm.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */

@@ -34,7 +34,7 @@
 #include <stdbool.h>         /* For true/false definition                    */
 #include <dsp.h>
 #include <pwm12.h>
-#include "high_control/control.h"
+#include "high_control/manager.h"
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
 #include "system/system.h"
 #include "system/user.h"

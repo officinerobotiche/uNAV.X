@@ -15,8 +15,8 @@
  * Public License for more details
  */
 
-#ifndef HIGHLEVELCONTROL_H
-#define	HIGHLEVELCONTROL_H
+#ifndef MANAGER_H
+#define	MANAGER_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -102,5 +102,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* HIGHLEVELCONTROL_H */
+#endif	/* MANAGER_H */
 

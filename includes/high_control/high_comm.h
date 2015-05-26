@@ -15,8 +15,8 @@
  * Public License for more details
 */
 
-#ifndef COMMUNICATION_H
-#define	COMMUNICATION_H
+#ifndef HIGH_COMM_H
+#define	HIGH_COMM_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -49,5 +49,5 @@ extern "C" {
 }
 #endif
 
-#endif	/* COMMUNICATION_H */
+#endif	/* HIGH_COMM_H */
 
