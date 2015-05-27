@@ -34,9 +34,13 @@ void init_cartesian (motor_state_t* state) {
     *state = STATE_CONTROL_VELOCITY;
 }
 
-motion_velocity_t loop_cartesian (motion_coordinate_t* coordinate) {
+motion_velocity_t loop_cartesian (motion_velocity_t* measure, motion_coordinate_t* coordinate) {
     motion_velocity_t vel;
     vel.v = 0;
     vel.w = 0;
     return vel;
+}
+
+void parameter_cartesian (parameter_control_t* parameter) {
+    
 }

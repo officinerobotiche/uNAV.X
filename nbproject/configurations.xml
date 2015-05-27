@@ -71,14 +71,6 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
-  <sourceRootList>
-    <Elem>includes/communication</Elem>
-    <Elem>src/communication</Elem>
-    <Elem>src/motors</Elem>
-    <Elem>includes/motors</Elem>
-    <Elem>includes/high_control</Elem>
-    <Elem>src/high_control</Elem>
-  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="uNAV_V1" type="2">
@@ -89,7 +81,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion></languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>

@@ -48,9 +48,12 @@ volatile motion_state_t control_state = 0;
 #define MAX_HIGH_TASK 3
 
 typedef struct _control_task {
-    motor_state_t motor_state;
+    bool autostart;
+    parameter_control_t parameter;
+    motor_state_t state;
     control_task_init_t init;
     control_task_loop_t loop;
+    control_task_parameter_t parameter_fnc;
 } control_task_manager_t;
 
 control_task_manager_t high_level_task[MAX_HIGH_TASK];
@@ -80,17 +83,42 @@ extern process_t motion_process[PROCESS_MOTION_LENGTH];
 /* Dead Reckoning functions                                                  */
 /*****************************************************************************/
 
-void add_task(control_task_init_t init, control_task_loop_t loop) {
-    high_level_task[counter_task].init = init;
-    high_level_task[counter_task].loop = loop;
-    counter_task++;
+bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop, control_task_parameter_t parameter) {
+    if(counter_task < MAX_HIGH_TASK) {
+        high_level_task[counter_task].autostart = autostart;
+        high_level_task[counter_task].init = init;
+        high_level_task[counter_task].loop = loop;
+        high_level_task[counter_task].parameter_fnc = parameter;
+        counter_task++;
+        return true;
+    } else
+        return false;
 }
 
 void load_all_task(void) {
     int i;
     /// Initialize all high level task
     for(i = 0; i < counter_task; ++i) {
-        high_level_task[i].init(&high_level_task[i].motor_state);
+        /// Start function to initialize high level task
+        high_level_task[i].init(&high_level_task[i].state);
+        /// Set autostart to selected task
+        if(high_level_task[i].autostart) {
+            set_motion_state(i + 1);
+        }
+        
+        /*** TEMP ***/
+        /// To remove when EEPROM controller run
+        /// Start function to initialize high level task
+        high_level_task[i].parameter_fnc(&high_level_task[i].parameter);
+        /// Update parameter unicycle
+        update_motion_parameter_unicycle(*high_level_task[i].parameter.unicycle);
+        // Update parameter motors
+        int motor_counter;
+        for(motor_counter = 0; motor_counter < NUM_MOTORS; ++motor_counter) {
+            update_motor_parameters(motor_counter, high_level_task[i].parameter.motor[motor_counter]);
+            update_motor_pid(motor_counter, high_level_task[i].parameter.pid[motor_counter]);
+        }
+
     }
 }
 
@@ -154,8 +182,8 @@ void set_motion_state(motion_state_t state) {
             set_motor_state(MOTOR_LEFT, STATE_CONTROL_VELOCITY);
             set_motor_state(MOTOR_RIGHT, STATE_CONTROL_VELOCITY);
         } else if(control_state - 1 < counter_task) {
-            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].motor_state);
-            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].motor_state);
+            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
+            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
         } else {
             control_state = STATE_CONTROL_HIGH_DISABLE;
             set_motor_state(MOTOR_LEFT, STATE_CONTROL_EMERGENCY);
@@ -175,7 +203,7 @@ int HighLevelTaskController(void) {
     if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
         /// Set led to velocity control
     } else if (control_state - 1 < counter_task) {
-       set_motion_velocity_ref_unicycle(high_level_task[control_state - 1].loop(&coordinate));
+       set_motion_velocity_ref_unicycle(high_level_task[control_state - 1].loop(&measure, &coordinate));
     } else {
         set_motion_state(STATE_CONTROL_HIGH_DISABLE);
     }
