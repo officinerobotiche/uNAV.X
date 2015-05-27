@@ -13,7 +13,10 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ * 
+ * Original code:
+ * https://code.google.com/p/gentlenav/source/browse/trunk/libUDB/I2C1.c
+ */
 
 /* ////////////////////////////////////////////////////////////////////////////
  ** It contains all functions related to I2C communication
@@ -48,6 +51,7 @@
 #endif
 
 #include <stdbool.h>       /* Includes true/false definition */
+
 #include "communication/I2c.h"
 
 /******************************************************************************/
