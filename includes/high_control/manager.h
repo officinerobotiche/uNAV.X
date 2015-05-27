@@ -51,7 +51,7 @@ extern "C" {
 
     bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop, control_task_parameter_t parameter);
     
-    void load_all_task(void);
+    bool load_all_task(void);
     
     void init_motion(void);
     /**

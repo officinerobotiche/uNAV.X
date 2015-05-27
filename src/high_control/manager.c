@@ -95,31 +95,34 @@ bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop
         return false;
 }
 
-void load_all_task(void) {
+bool load_all_task(void) {
     int i;
     /// Initialize all high level task
-    for(i = 0; i < counter_task; ++i) {
-        /// Start function to initialize high level task
-        high_level_task[i].init(&high_level_task[i].state);
-        /// Set autostart to selected task
-        if(high_level_task[i].autostart) {
-            set_motion_state(i + 1);
-        }
-        
-        /*** TEMP ***/
-        /// To remove when EEPROM controller run
-        /// Start function to initialize high level task
-        high_level_task[i].parameter_fnc(&high_level_task[i].parameter);
-        /// Update parameter unicycle
-        update_motion_parameter_unicycle(*high_level_task[i].parameter.unicycle);
-        // Update parameter motors
-        int motor_counter;
-        for(motor_counter = 0; motor_counter < NUM_MOTORS; ++motor_counter) {
-            update_motor_parameters(motor_counter, high_level_task[i].parameter.motor[motor_counter]);
-            update_motor_pid(motor_counter, high_level_task[i].parameter.pid[motor_counter]);
-        }
+    if(counter_task > 0) {
+        for(i = 0; i < counter_task; ++i) {
+            /// Start function to initialize high level task
+            high_level_task[i].init(&high_level_task[i].state);
+            /// Set autostart to selected task
+            if(high_level_task[i].autostart) {
+                set_motion_state(i + 1);
+            }
 
+            /*** TEMP ***/
+            /// To remove when EEPROM controller run
+            /// Start function to initialize high level task
+            high_level_task[i].parameter_fnc(&high_level_task[i].parameter);
+            /// Update parameter unicycle
+            update_motion_parameter_unicycle(*high_level_task[i].parameter.unicycle);
+            // Update parameter motors
+            int motor_counter;
+            for(motor_counter = 0; motor_counter < NUM_MOTORS; ++motor_counter) {
+                update_motor_parameters(motor_counter, high_level_task[i].parameter.motor[motor_counter]);
+                update_motor_pid(motor_counter, high_level_task[i].parameter.pid[motor_counter]);
+            }
+        }
+        return true;
     }
+    return false;
 }
 
 void init_motion(void) {

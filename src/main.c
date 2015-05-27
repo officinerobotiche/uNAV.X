@@ -128,18 +128,18 @@ int16_t main(void) {
     /** HIGH LEVEL INITIALIZATION **/
     /* Initialize motion parameters */
     init_motion();
-    /* Initialize variables for unicycle */
-    update_motion_parameter_unicycle(init_motion_parameter_unicycle());
-    /* Initialize dead reckoning */
-    update_motion_coordinate(init_motion_coordinate());
     /* Initialize communication */
     set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
-    
     /* LOAD high level task */
-    add_task(false, &init_cartesian, &loop_cartesian, &parameter_cartesian);
-    
+    //add_task(false, &init_cartesian, &loop_cartesian, &parameter_cartesian);
+
     /* Load all tasks */
-    load_all_task();
+    if (!load_all_task()) {
+        /* Initialize variables for unicycle */
+        update_motion_parameter_unicycle(init_motion_parameter_unicycle());
+        /* Initialize dead reckoning */
+        update_motion_coordinate(init_motion_coordinate());
+    }
     
     while (true) {
 
