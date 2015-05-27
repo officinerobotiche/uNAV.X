@@ -77,10 +77,6 @@ unsigned int I2C_command_data_size = 0; // command data size
 unsigned char* pI2CBuffer = NULL; // pointer to buffer
 unsigned char* pI2CcommandBuffer = NULL; // pointer to receive  buffer
 
-unsigned int I2C2_service_handle = INVALID_HANDLE;
-
-unsigned int I2C2_ERROR = 0;
-
 /******************************************************************************/
 /* Parsing functions                                                          */
 /******************************************************************************/
@@ -107,7 +103,7 @@ void InitI2C(void) {
     _I2CEN = 1; // enable I2C
 
     _MI2C1IP = 5; // I2C at priority 5
-    _MI2C1IF = 0; // clear the I2C2 master interrupt
+    _MI2C1IF = 0; // clear the I2C master interrupt
     _MI2C1IE = 1; // enable the interrupt
 
 
@@ -116,7 +112,7 @@ void InitI2C(void) {
     return;
 }
 
-void I2C2_reset(void) {
+void I2C_reset(void) {
     I2C_state = &I2C_idle; // disable the response to any more interrupts
     I2C_ERROR = I2CSTAT; // record the error for diagnostics
 
@@ -137,25 +133,17 @@ void I2C2_reset(void) {
     return;
 }
 
-void serviceI2C2(void) // service the I2C
-{
-    //      unsigned int counter;
-
-    if (_I2CEN == 0) // I2C is off
-    {
-        I2C_state = &I2C_idle; // disable response to any interrupts
-        InitI2C(); // turn the I2C back on
-        // Put something here to reset state machine.  Make sure attached servies exit nicely.
-        return;
-    }
-
-    return;
-}
-
 void __attribute__((__interrupt__, __no_auto_psv__)) _MI2C1Interrupt(void) {
     _MI2C1IF = 0; // clear the interrupt
     (* I2C_state) (); // execute the service routine
 
+    return;
+}
+
+/**
+ *  do nothing
+ */
+void I2C_idle(void) {
     return;
 }
 
@@ -260,7 +248,7 @@ boolean I2C_Read(unsigned char command, unsigned char* pcommandData, unsigned ch
         }
     }
 
-    I2C2_reset();
+    I2C_reset();
     return false;
 
 }
@@ -301,7 +289,6 @@ void I2C_writeCommand(void) {
     I2C_state = &I2C_writeCommandData;
     return;
 }
-
 
 // Write command data (address or similar)
 
@@ -365,7 +352,7 @@ void I2C_doneWrite(void) {
     return;
 }
 
-// Start a read after a write by settign the start bit again
+// Start a read after a write by setting the start bit again
 
 void I2C_readStart(void) {
     I2C_Index = 0; // Reset index into buffer
@@ -435,32 +422,4 @@ void I2C_Failed(void) {
     I2C_Busy = false;
     if (pI2C_callback != NULL)
         pI2C_callback(false);
-}
-
-/**
- *  do nothing
- */
-void I2C_idle(void) {
-    return;
-}
-
-void I2C_reset(void) {
-    I2C_state = &I2C_idle; // disable the response to any more interrupts
-    I2C_ERROR = I2CSTAT; // record the error for diagnostics
-
-    _I2CEN = 0; // turn off the I2C
-    _MI2C1IF = 0; // clear the I2C master interrupt
-    _MI2C1IE = 0; // disable the interrupt
-    // pull SDA and SCL low
-    I2C_SCL = 0;
-    I2C_SDA = 0;
-    Nop();
-    // pull SDA and SCL high
-    I2C_SCL = 1;
-    I2C_SDA = 1;
-
-    I2CCON = 0x1000;
-    I2CSTAT = 0x0000;
-    InitI2C();
-    return;
 }
