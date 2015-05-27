@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2014 Officine Robotiche
- * Author: Guido Ottaviani
- * email:  guido@guiott.com
+ * Authors: Guido Ottaviani, Raffaello Bonghi
+ * email:  guido@guiott.com, raffaello.bonghi@officinerobotiche.it
  * Permission is granted to copy, distribute, and/or modify this program
  * under the terms of the GNU Lesser General Public License, version 2 or any
  * later version published by the Free Software Foundation.
@@ -48,7 +48,6 @@
 #endif
 
 #include <stdbool.h>       /* Includes true/false definition */
-#include "system/system.h"
 #include "communication/I2c.h"
 
 /******************************************************************************/

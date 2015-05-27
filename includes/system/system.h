@@ -72,11 +72,6 @@ extern "C" {
     //    #define BLINK_LED 0.5 //Value in seconds [s]
     //    #define BLINKSW (int)(BLINK_LED/TCTMR1)
 
-    //UART
-#define BAUDRATE 115200
-    //#define BAUDRATE 57600
-#define BRGVAL   ((FCY/BAUDRATE)/16)-1
-
     // Current ADC buffer dimension
 #define ADC_CHANNELS 2
 #define ADC_BUFF 64

@@ -35,7 +35,6 @@
 #include <dsp.h>             /* For DSP functionality                         */
 #include <string.h>
 #include <assert.h>
-#include "communication/I2c.h"
 #include "system/user.h"     /* variables/params used by user.c               */
 #include "system/system.h"
 
@@ -209,20 +208,6 @@ void InitApp(void) {
 #else
 #error Configuration error. Does not selected a board!
 #endif
-
-    /* Peripherical initalization */
-    InitLed(); //Init led
-    InitTimer2(); //Open Timer2 for InputCapture 1 & 2
-    InitADC(); //Open ADC for measure current motors
-    InitDMA0(); //Open DMA0 for buffering measures ADC
-
-    InitUART1(); //Open UART1 for serial comunication
-    InitDMA1(); //Open DMA1 for Tx UART1
-
-    InitI2C(); // Open I2C module
-
-    InitTimer1(); //Open Timer1 for clock system
-    InitInterrupts(); //Start others interrupts
 }
 
 void inline protectedMemcpy(unsigned reg, void *destination, const void *source, size_t num) {

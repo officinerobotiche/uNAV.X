@@ -24,9 +24,15 @@ extern "C" {
 
     #include <serial/or_message.h>
     #include <serial/or_frame.h>
+    #include "system/system.h"
     
     //Dimension of list messages to decode in a packet
     #define BUFFER_LIST_PARSING 10
+
+    //UART
+    #define BAUDRATE 115200
+    //#define BAUDRATE 57600
+    #define BRGVAL   ((FCY/BAUDRATE)/16)-1
 
     /**
      * Send serial message to uart
