@@ -44,6 +44,18 @@
 
 //State controller
 volatile motion_state_t control_state = 0;
+
+#define MAX_HIGH_TASK 3
+
+typedef struct _control_task {
+    motor_state_t motor_state;
+    control_task_init_t init;
+    control_task_loop_t loop;
+} control_task_manager_t;
+
+control_task_manager_t high_level_task[MAX_HIGH_TASK];
+unsigned short counter_task = 0;
+
 unsigned int counter_odo = 0;
 
 float sinTh_old = 0, cosTh_old = 1;
@@ -67,6 +79,20 @@ extern process_t motion_process[PROCESS_MOTION_LENGTH];
 /*****************************************************************************/
 /* Dead Reckoning functions                                                  */
 /*****************************************************************************/
+
+void add_task(control_task_init_t init, control_task_loop_t loop) {
+    high_level_task[counter_task].init = init;
+    high_level_task[counter_task].loop = loop;
+    counter_task++;
+}
+
+void load_all_task(void) {
+    int i;
+    /// Initialize all high level task
+    for(i = 0; i < counter_task; ++i) {
+        high_level_task[i].init(&high_level_task[i].motor_state);
+    }
+}
 
 void init_motion(void) {
     reference.v = 0;
@@ -124,36 +150,40 @@ motion_state_t get_motion_state(void) {
 void set_motion_state(motion_state_t state) {
     if (state != control_state) {
         control_state = state;
-        switch (control_state) {
-            case STATE_CONTROL_HIGH_DISABLE:
-                set_motor_state(MOTOR_LEFT, STATE_CONTROL_DISABLE);
-                set_motor_state(MOTOR_RIGHT, STATE_CONTROL_DISABLE);
-                break;
-            default:
-                set_motor_state(MOTOR_LEFT, STATE_CONTROL_VELOCITY);
-                set_motor_state(MOTOR_RIGHT, STATE_CONTROL_VELOCITY);
-                break;
+        if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
+            set_motor_state(MOTOR_LEFT, STATE_CONTROL_VELOCITY);
+            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_VELOCITY);
+        } else if(control_state - 1 < counter_task) {
+            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].motor_state);
+            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].motor_state);
+        } else {
+            control_state = STATE_CONTROL_HIGH_DISABLE;
+            set_motor_state(MOTOR_LEFT, STATE_CONTROL_EMERGENCY);
+            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_EMERGENCY);
         }
     }
 }
 
 int HighLevelTaskController(void) {
     unsigned int t = TMR1; // Timing function
-
     /// Measure velocity unicycle
     VelocityMeasure();
     /// Odometry unicycle
     deadReckoning();
-    switch (control_state) {
-        case STATE_CONTROL_HIGH_VELOCITY:
-            break;
-        case STATE_CONTROL_HIGH_CONFIGURATION:
-            break;
-        default:
-            set_motor_velocity(MOTOR_LEFT, 0);
-            set_motor_velocity(MOTOR_RIGHT, 0);
-            break;
+    
+    /// High level task manager
+    if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
+        /// Set led to velocity control
+    } else if (control_state - 1 < counter_task) {
+       set_motion_velocity_ref_unicycle(high_level_task[control_state - 1].loop(&coordinate));
+    } else {
+        set_motion_state(STATE_CONTROL_HIGH_DISABLE);
     }
+
+#ifndef MOTION_CONTROL
+    UpdateBlink(3, control_state);
+#endif
+    
     return TMR1 - t; // Time of execution
 }
 

@@ -34,11 +34,18 @@ extern "C" {
     
 #define MOTOR_LEFT MOTOR_ZERO
 #define MOTOR_RIGHT MOTOR_ONE
+    
+    typedef void (*control_task_init_t) (motor_state_t*);
+    typedef motion_velocity_t (*control_task_loop_t) (motion_coordinate_t*);
 
     /*************************************************************************/
     /* System Function Prototypes                                            */
     /*************************************************************************/
 
+    void add_task(control_task_init_t init, control_task_loop_t loop);
+    
+    void load_all_task(void);
+    
     void init_motion(void);
     /**
      * Initialization all parameters for motor controller.
