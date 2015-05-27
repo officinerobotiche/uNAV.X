@@ -11,6 +11,7 @@
         <itemPath>includes/high_control/high_comm.h</itemPath>
         <itemPath>includes/high_control/manager.h</itemPath>
         <itemPath>includes/high_control/cartesian.h</itemPath>
+        <itemPath>includes/high_control/linefollower.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="motors" projectFiles="true">
         <itemPath>includes/motors/motor_comm.h</itemPath>
@@ -50,6 +51,7 @@
         <itemPath>src/high_control/high_comm.c</itemPath>
         <itemPath>src/high_control/manager.c</itemPath>
         <itemPath>src/high_control/cartesian.c</itemPath>
+        <itemPath>src/high_control/linefollower.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="motors" projectFiles="true">
         <itemPath>src/motors/motor_control.c</itemPath>
@@ -71,6 +73,10 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>includes/high_control</Elem>
+    <Elem>src/high_control</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="uNAV_V1" type="2">

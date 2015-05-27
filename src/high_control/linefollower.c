@@ -1,11 +1,28 @@
-/* 
- * File:   linefollower.c
- * Author: Marco
+/*
+ * Copyright (C) 2014 Officine Robotiche
+ * Authors: Marco Fabbri, Mauro Soligo, Raffaello Bonghi
+ * email:  {marco.fabbri, mauro.soligo, raffaello.bonghi}@officinerobotiche.it
+ * Permission is granted to copy, distribute, and/or modify this program
+ * under the terms of the GNU Lesser General Public License, version 2 or any
+ * later version published by the Free Software Foundation.
  *
- * Created on 25 aprile 2015, 10.36
+ * A copy of the license can be found at
+ * https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details
  */
 
+/*****************************************************************************/
+/* Files to Include                                                          */
+/*****************************************************************************/
+
+#include "high_control/manager.h"
+
 /* Device header file */
+/*
 #if defined(__XC16__)
 #include <xc.h>
 #elif defined(__C30__)
@@ -16,19 +33,26 @@
 #endif
 #endif
 
-#include <stdint.h>        /* Includes uint16_t definition                    */
-#include <stdbool.h>       /* Includes true/false definition                  */
 
 #include "control/high_level_control.h"
 #include "control/motors_PID.h"
 #include "control/linefollower.h"
+ */
 
-extern velocity_t vel_rif, vel_mis;
-extern unsigned int counter_alive[NUM_MOTORS];
+//#include <stdint.h>        /* Includes uint16_t definition                    */
+//#include <stdbool.h>       /* Includes true/false definition                  */
+
+/*****************************************************************************/
+/* Global Variable Declaration                                               */
+/*****************************************************************************/
 
 motor_t linefollower_test;
 
 linesensor_t line_sensor;
+
+/*****************************************************************************/
+/* User Functions                                                            */
+/*****************************************************************************/
 
 void linefollowing() {
 
