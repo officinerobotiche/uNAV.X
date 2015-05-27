@@ -22,104 +22,63 @@
 extern "C" {
 #endif
 
-#include "packet/packet.h"
-
-#define HEADER_SYNC '#'
-#define HEADER_ASYNC '@'
-#define HEAD_PKG 2
-
-#define ERROR_FRAMMING -1   //Framing Error bit
-#define ERROR_OVERRUN -2    //overrun error
-
-#define ERROR_HEADER -3
-#define ERROR_LENGTH -4
-#define ERROR_DATA -5
-#define ERROR_CKS -6
-#define ERROR_CMD -7
-#define ERROR_NACK -8
-#define ERROR_OPTION -9
-#define ERROR_PKG -10
-#define ERROR_CREATE_PKG -11
-
-    /******************************************************************************/
-    /* System Function Prototypes                                                 */
-    /******************************************************************************/
+    #include <serial/or_message.h>
+    #include <serial/or_frame.h>
+    
+    //Dimension of list messages to decode in a packet
+    #define BUFFER_LIST_PARSING 10
 
     /**
-     * Init buffer serial_error to zero
+     * Send serial message to uart
+     * @param header
+     * @param packet
      */
-    void init_buff_serial_error();
-
-    /**
-     * Function called on _U1RXInterrupt for decode packet
-     * Data structure:
-     * ------------------------------------------------
-     * | HEADER | LENGTH |       DATA           | CKS |
-     * ------------------------------------------------
-     *     1        2             3 -> n          n+1
-     *
-     * Only element of packet have a relative function to decode
-     * 1) Header -> pkg_header
-     * 2) Length -> pkg_length
-     * 3 to n+1) Data -> pkg_data
-     * @param rxchar char character received from interrupt
-     * @return boolean result from pointer function called on decode
-     */
-    void pkg_send(char header, packet_t packet);
-
-    /**
-     * First function to decode Header from Serial interrupt
-     * Verify if rxchar is a HEADER_SYNC or HEADER_ASYNC then
-     * update pointer function pkg_parse for next function pkg_length
-     * and save type of header, else save error header and going to pkg_error
-     * @param rxchar character received from interrupt
-     * @return boolean result, only false
-     */
-    int pkg_header(unsigned char rxchar);
+    void serial_send(char header, packet_t packet);
     
     /**
-     * Second function for decode packet, this function is to able to verify
-     * length of packet. If length (rxchar) is larger than MAX_RX_BUFF
-     * call function pkg_error with ERROR_LENGTH. Else change function to call
-     * pkg_data and save information on length in receive_pkg
-     * @param rxchar character received from interrupt
-     * @return boolean result, only false
+     * In a packet we have more messages. A typical data packet
+     * have this structure:
+     * -------------------------- ---------------------------- -----------------------
+     * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
+     * -------------------------- ---------------------------- -----------------------
+     *    1        2 -> length    length+1 length+2 length+3   ...
+     * It is possible to have different type of messages:
+     * * Message with data (D)
+     * * Message with state information:
+     *      * (R) request data
+     *      * (A) ack
+     *      * (N) nack
+     * We have three parts to elaborate and send a new packet (if required)
+     * 1. [SAVING] The first part of this function split packets in a
+     * list of messages to compute.
+     * 2. [COMPUTE] If message have a data in tail, start compute and return a
+     * new ACK or NACK message to append in a new packet. If is a request
+     * message (R), the new message have in tail the data required.
+     * 3. [SEND] Encoding de messages and transform in a packet to send.
+     * *This function is a long function*
+     * @return time to compute parsing packet
      */
-    int pkg_length(unsigned char rxchar);
-
-    /**
-     * Function for decode packet, save in receive_pkg.buffer all bytes. In (n+1)
-     * start pkg_checksum() function to verify correct receive packet.
-     * @param rxchar character received from interrupt
-     * @return boolean result. True if don't have any error else start pkg_error
-     * and return false.
-     */
-    int pkg_data(unsigned char rxchar);
+    int parse_packet();
     
     /**
-     * Reset all function about decode packet and save increase counter error
-     * for type.
-     * @param error Number of type error.
-     * @return same number error.
+     * Save for all standard messages the data in tail and save in controller.
+     * Others messages, typical for this board are saved with function
+     * save_other_data in file parsing_other_messages.h
+     * @param list_send a pointer to buffer to save information from board
+     * @param len length of list_send list
+     * @param info message to parsing
      */
-    int pkg_error(int error);
+    void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
 
     /**
-     * Function to evaluate checksum. Count all bytes in a Buffer and return
-     * number for checksum.
-     * @param Buffer It's a buffer to sum all bytes
-     * @param FirstIndx The number for first element buffer to count all bytes.
-     * @param LastIndx The number for last element buffer.
-     * @return number evaluated for sum bytes
+     * Send for all standard messages the data. The information are saved
+     * in a information_packet_t by functions createPacket and createDataPacket
+     * in tail of this file.
+     * @param list_send a pointer to buffer to save information from board
+     * @param len length of list_send list
+     * @param info message to parsing
      */
-    unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int LastIndx);
-
-    /**
-     * Function to send a packet. Copy on DMA buffer all bytes 
-     * @param header type of packet. SYNC or ASYNC packet
-     * @param packet packet to send.
-     */
-    int decode_pkgs(unsigned char rxchar);
+    void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
 
 #ifdef	__cplusplus
 }

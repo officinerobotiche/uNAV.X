@@ -211,11 +211,6 @@ void InitApp(void) {
 
     /* Peripherical initalization */
     InitLed(); //Init led
-    InitPWM(); //Open PWM
-    InitQEI1(); //Open QEI1
-    InitQEI2(); //Open QEI2
-    InitIC1(); //Open Input Capture 1
-    InitIC2(); //Open Input Capture 2
     InitTimer2(); //Open Timer2 for InputCapture 1 & 2
     
     InitTimer3(); // 50uSe Linefollower sensor timebase
@@ -281,7 +276,7 @@ void InitLed(void) {
     for (i = 0; i < LED_NUM; ++i) {
         led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
         led_controller[i].wait = 0;
-        UpdateBlink(i, 0);
+        UpdateBlink(i, LED_OFF);
     }
 }
 
