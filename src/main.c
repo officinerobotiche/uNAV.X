@@ -134,6 +134,8 @@ int16_t main(void) {
     //add_task(false, &init_cartesian, &loop_cartesian);
 
     /* Load all tasks */
+    /*** TEMP TO REMOVE when EEPROM is in function ***/
+    /// If empty task, load default value
     if (!load_all_task()) {
         /* Initialize variables for unicycle */
         update_motion_parameter_unicycle(init_motion_parameter_unicycle());
