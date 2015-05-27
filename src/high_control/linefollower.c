@@ -90,7 +90,7 @@ typedef struct linesensor {
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-//motor_t linefollower_test;
+//motor_t linefollower_test; ///< TODO
 
 linesensor_t line_sensor;
 
