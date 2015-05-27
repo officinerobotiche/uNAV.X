@@ -19,10 +19,7 @@
 /* Files to Include                                                          */
 /*****************************************************************************/
 
-#include "high_control/manager.h"
-
 /* Device header file */
-/*
 #if defined(__XC16__)
 #include <xc.h>
 #elif defined(__C30__)
@@ -33,20 +30,67 @@
 #endif
 #endif
 
+#include "high_control/manager.h"
 
-#include "control/high_level_control.h"
-#include "control/motors_PID.h"
-#include "control/linefollower.h"
- */
 
 //#include <stdint.h>        /* Includes uint16_t definition                    */
 //#include <stdbool.h>       /* Includes true/false definition                  */
+
+#define NUM_LINE_SENSOR     7
+
+#define INPUT       1
+#define OUTPUT      0
+
+#define PORT_IO0    _TRISA9
+#define PORT_IO1    _TRISC0
+#define PORT_IO2    _TRISC1
+#define PORT_IO3    _TRISC2
+#define PORT_IO4    _TRISC3
+#define PORT_IO5    _TRISA4
+#define PORT_IO6    _TRISB4
+
+#define PIN_IO0     PORTAbits.RA9
+#define PIN_IO1     PORTCbits.RC0       
+#define PIN_IO2     PORTCbits.RC1
+#define PIN_IO3     PORTCbits.RC2
+#define PIN_IO4     PORTCbits.RC3
+#define PIN_IO5     PORTAbits.RA4
+#define PIN_IO6     PORTBbits.RB4
+
+/*****************************************************************************/
+/* LineFollower structure                                                    */
+/*****************************************************************************/
+
+/**
+ * Data structure used to manage linefollower sensor
+ * - fsm_state  : state of "Finited State Machine" : Charge, discharge, Measure...
+ * - timebase : Configured during init, uSec time base if main function... used to calculate reading time.
+ * - sensor_time[NUM_LINE_SENSOR] : Measure time of each sensor
+ * 
+ * - data: a single byte with a rapresentation of line respect at sensor.
+ *          127 : Line on last sensor ( IR7 )
+ *          0 : Line centered to sensor
+ *          -127: Line on first sensor ( IR0 )
+ * 
+ */
+typedef struct linesensor {
+    int8_t fsm_state;
+    //int16_t timebase;
+    //float sensor_time[NUM_LINE_SENSOR];
+
+    int16_t counter;
+    int16_t weight[NUM_LINE_SENSOR];
+    float position;
+    int16_t sensor_count[NUM_LINE_SENSOR];
+    int8_t data;
+} linesensor_t;
+#define LNG_LINESENSOR sizeof(linesensor_t)    
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-motor_t linefollower_test;
+//motor_t linefollower_test;
 
 linesensor_t line_sensor;
 
@@ -93,13 +137,6 @@ motion_velocity_t loop_linefollower (motion_velocity_t* measure, motion_coordina
     vel.v = 0;
     vel.w = 0;
     
-    return vel;
-}
-
-void linefollowing() {
-       
-
- 
 //    linefollower_test.current = 4;
 //    linefollower_test.refer_vel = 2500;
     
@@ -111,73 +148,17 @@ void linefollowing() {
 //        vel_rif.v = 0.0;
 //    }
     //IRsensor();
-}
-
-void IRsensor(void) {
-
-    unsigned char i;
-    signed char linedata;
     
-    switch (line_sensor.fsm_state) {
-            case 0:
-                line_sensor.fsm_state = 1;
-                line_sensor.counter = 0;
-                IRsensor_CapacitorDisCharge();
-                for( i = 0; i<NUM_LINE_SENSOR; i++) {
-                    line_sensor.sensor_count[i]=0;
-                }
-                break;
-            case 1:
-                IRsensor_StartMeasure(); 
-                line_sensor.fsm_state = 2;
-                break;
-            case 2:
-                //line_sensor.counter = 0;
-                line_sensor.counter++;
-                if(PIN_IO0) line_sensor.sensor_count[0]++;
-                if(PIN_IO1) line_sensor.sensor_count[1]++;
-                if(PIN_IO2) line_sensor.sensor_count[2]++;
-                if(PIN_IO3) line_sensor.sensor_count[3]++;
-                if(PIN_IO4) line_sensor.sensor_count[4]++;
-                if(PIN_IO5) line_sensor.sensor_count[5]++;
-                if(PIN_IO6) line_sensor.sensor_count[6]++;
-                
-                             
-                if( line_sensor.counter == 16 )  line_sensor.fsm_state = 3;
-                break;
-            
-            case 3:
-//                // Counting Finish... convert measure in uSec.
-                line_sensor.position = 0;
-                linedata = 0;
-                for(i=0; i<NUM_LINE_SENSOR; i++) {   
-                    // Convert measure in uSec.
-                    //line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
-                    if(line_sensor.sensor_count[i] > 1) {     // TODO : 1 is a threshold, in future it must be calculated in a startup routine
-                        linedata |= 1 << i;                   
-                    }
-                }
-                // Now linedata contain a bit rappresentation of IR state
-                linefollower_test.current =   linedata * 1000;
-                linedata = LineCodeToDecimal_7bit(linedata);
-                 // Now LineData contain a decimal rappresentation of line respect to sensor
-                 // 0 = centered
-                linefollower_test.refer_vel = linedata * 1000;
-              
-                line_sensor.fsm_state = 4;
-                break;
-                
-            case 4:
-                 line_sensor.fsm_state = 0;  
-                break;
-            default:        // Beer condition :) 
-                line_sensor.fsm_state = 0;
-                break; 
-    }
-
+    return vel;
 }
 
-
+/*
+ * Start a discharge of capacitor used to measure line reflectivity.
+ * This functon put line as Output at "1" and exit, don't wait a full 
+ * discharge
+ * @param None
+ * @param None
+ */
 void IRsensor_CapacitorDisCharge(void) {
 
     /*
@@ -204,6 +185,11 @@ void IRsensor_CapacitorDisCharge(void) {
     
 }
 
+/*
+ * This function put line as Input and exit.
+ * @param None
+ * @param None
+ */
 void IRsensor_StartMeasure(void) {
 
     // Set IO0 ... IO6 pin as input
@@ -404,39 +390,66 @@ int LineCodeToDecimal_7bit(unsigned char line) {
     }
 }
 
+void IRsensor(void) {
 
+    unsigned char i;
+    signed char linedata;
+    
+    switch (line_sensor.fsm_state) {
+            case 0:
+                line_sensor.fsm_state = 1;
+                line_sensor.counter = 0;
+                IRsensor_CapacitorDisCharge();
+                for( i = 0; i<NUM_LINE_SENSOR; i++) {
+                    line_sensor.sensor_count[i]=0;
+                }
+                break;
+            case 1:
+                IRsensor_StartMeasure(); 
+                line_sensor.fsm_state = 2;
+                break;
+            case 2:
+                //line_sensor.counter = 0;
+                line_sensor.counter++;
+                if(PIN_IO0) line_sensor.sensor_count[0]++;
+                if(PIN_IO1) line_sensor.sensor_count[1]++;
+                if(PIN_IO2) line_sensor.sensor_count[2]++;
+                if(PIN_IO3) line_sensor.sensor_count[3]++;
+                if(PIN_IO4) line_sensor.sensor_count[4]++;
+                if(PIN_IO5) line_sensor.sensor_count[5]++;
+                if(PIN_IO6) line_sensor.sensor_count[6]++;
+                
+                             
+                if( line_sensor.counter == 16 )  line_sensor.fsm_state = 3;
+                break;
+            
+            case 3:
+//                // Counting Finish... convert measure in uSec.
+                line_sensor.position = 0;
+                linedata = 0;
+                for(i=0; i<NUM_LINE_SENSOR; i++) {   
+                    // Convert measure in uSec.
+                    //line_sensor.sensor_time[i] = line_sensor.sensor_count[i] * line_sensor.timebase;
+                    if(line_sensor.sensor_count[i] > 1) {     // TODO : 1 is a threshold, in future it must be calculated in a startup routine
+                        linedata |= 1 << i;                   
+                    }
+                }
+                // Now linedata contain a bit rappresentation of IR state
+                //linefollower_test.current =   linedata * 1000; ///< TODO
+                linedata = LineCodeToDecimal_7bit(linedata);
+                 // Now LineData contain a decimal rappresentation of line respect to sensor
+                 // 0 = centered
+                //linefollower_test.refer_vel = linedata * 1000; ///< TODO
+              
+                line_sensor.fsm_state = 4;
+                break;
+                
+            case 4:
+                 line_sensor.fsm_state = 0;  
+                break;
+            default:        // Beer condition :) 
+                line_sensor.fsm_state = 0;
+                break; 
+    }
 
-
-
-
-//
-//    #include<stdio.h> 
-//    #include<conio.h> 
-//
-//    void main() 
-//    {
-//        int a[10],i=0,c=0,n;
-//        printf("\n enter the gray code");
-//        scanf("%d",&n);
-//        while(n!=0)
-//            {
-//                a[i]=n%10;
-//                n/=10;
-//                i++;
-//                c++;
-//            }
-//
-//        for(i=c-1;i>=0;i--)
-//        {
-//            if(a[i]==1)
-//            { 
-//                if(a[i-1]==1)
-//                    a[i-1]=0;
-//                else
-//                    a[i-1]=1;
-//            }
-//        } 
-//        printf("\n the binary code is"); 
-//        for(i=c-1;i>=0;i--) printf("%d",a[i]); 
-//        getch(); 
-//    } 
+}
