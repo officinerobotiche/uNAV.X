@@ -131,7 +131,7 @@ int16_t main(void) {
     /* Initialize communication */
     set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
     /* LOAD high level task */
-    //add_task(false, &init_cartesian, &loop_cartesian, &parameter_cartesian);
+    //add_task(false, &init_cartesian, &loop_cartesian);
 
     /* Load all tasks */
     if (!load_all_task()) {

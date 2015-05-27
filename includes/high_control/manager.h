@@ -35,21 +35,14 @@ extern "C" {
 #define MOTOR_LEFT MOTOR_ZERO
 #define MOTOR_RIGHT MOTOR_ONE
     
-    typedef struct _parameter_control {
-        motion_parameter_unicycle_t* unicycle;
-        motor_parameter_t* motor;
-        motor_pid_t* pid;
-    } parameter_control_t;
-    
     typedef void (*control_task_init_t) (motor_state_t*);
-    typedef void (*control_task_parameter_t) (parameter_control_t*);
     typedef motion_velocity_t (*control_task_loop_t) (motion_velocity_t*, motion_coordinate_t*);
 
     /*************************************************************************/
     /* System Function Prototypes                                            */
     /*************************************************************************/
 
-    bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop, control_task_parameter_t parameter);
+    bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop);
     
     bool load_all_task(void);
     

@@ -49,11 +49,9 @@ volatile motion_state_t control_state = 0;
 
 typedef struct _control_task {
     bool autostart;
-    parameter_control_t parameter;
     motor_state_t state;
     control_task_init_t init;
     control_task_loop_t loop;
-    control_task_parameter_t parameter_fnc;
 } control_task_manager_t;
 
 control_task_manager_t high_level_task[MAX_HIGH_TASK];
@@ -83,12 +81,11 @@ extern process_t motion_process[PROCESS_MOTION_LENGTH];
 /* Dead Reckoning functions                                                  */
 /*****************************************************************************/
 
-bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop, control_task_parameter_t parameter) {
+bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop) {
     if(counter_task < MAX_HIGH_TASK) {
         high_level_task[counter_task].autostart = autostart;
         high_level_task[counter_task].init = init;
         high_level_task[counter_task].loop = loop;
-        high_level_task[counter_task].parameter_fnc = parameter;
         counter_task++;
         return true;
     } else
@@ -105,19 +102,6 @@ bool load_all_task(void) {
             /// Set autostart to selected task
             if(high_level_task[i].autostart) {
                 set_motion_state(i + 1);
-            }
-
-            /*** TEMP ***/
-            /// To remove when EEPROM controller run
-            /// Start function to initialize high level task
-            high_level_task[i].parameter_fnc(&high_level_task[i].parameter);
-            /// Update parameter unicycle
-            update_motion_parameter_unicycle(*high_level_task[i].parameter.unicycle);
-            // Update parameter motors
-            int motor_counter;
-            for(motor_counter = 0; motor_counter < NUM_MOTORS; ++motor_counter) {
-                update_motor_parameters(motor_counter, high_level_task[i].parameter.motor[motor_counter]);
-                update_motor_pid(motor_counter, high_level_task[i].parameter.pid[motor_counter]);
             }
         }
         return true;
