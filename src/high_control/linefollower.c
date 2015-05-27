@@ -54,27 +54,6 @@ linesensor_t line_sensor;
 /* User Functions                                                            */
 /*****************************************************************************/
 
-void linefollowing() {
-
-    //Reset time emergency
-    counter_alive[0] = 0;
-    counter_alive[1] = 0;
-       
-    // Our Hello World!!!! :)
- 
-//    linefollower_test.current = 4;
-//    linefollower_test.refer_vel = 2500;
-    
-//    if(line_sensor.sensor_time[0] != 0) {
-//    
-//        vel_rif.v = (float)line_sensor.sensor_time[0] / 10000; //0.0;
-//    }
-//    else {
-//        vel_rif.v = 0.0;
-//    }
-    //IRsensor();
-}
-
 void IRsensor_Init(void) {
    
     //line_sensor.timebase = 1000;    // 1mSec = 1000 uSec
@@ -87,7 +66,51 @@ void IRsensor_Init(void) {
     line_sensor.weight[5] = -2;
     line_sensor.weight[6] = -4;
     line_sensor.weight[7] = -8;
-    UpdateHighStateController(STATE_CONTROL_LINEFOLLOWER); // TODO: Test
+}
+
+void init_linefollower (motor_state_t* state) {
+    *state = STATE_CONTROL_VELOCITY;
+    int i;
+    motion_parameter_unicycle_t unicycle;
+    motor_parameter_t motor[NUM_MOTORS];
+    motor_pid_t pid[NUM_MOTORS];
+    /// Update parameter unicycle
+    update_motion_parameter_unicycle(unicycle);
+    // Update parameter motors
+    for(i = 0; i < NUM_MOTORS; ++i) {
+        update_motor_parameters(i, motor[i]);
+        update_motor_pid(i, pid[i]);
+    }
+    
+    IRsensor_Init();
+}
+
+motion_velocity_t loop_linefollower (motion_velocity_t* measure, motion_coordinate_t* coordinate) {
+    
+    // Our Hello World!!!! :)
+    
+    motion_velocity_t vel;
+    vel.v = 0;
+    vel.w = 0;
+    
+    return vel;
+}
+
+void linefollowing() {
+       
+
+ 
+//    linefollower_test.current = 4;
+//    linefollower_test.refer_vel = 2500;
+    
+//    if(line_sensor.sensor_time[0] != 0) {
+//    
+//        vel_rif.v = (float)line_sensor.sensor_time[0] / 10000; //0.0;
+//    }
+//    else {
+//        vel_rif.v = 0.0;
+//    }
+    //IRsensor();
 }
 
 void IRsensor(void) {

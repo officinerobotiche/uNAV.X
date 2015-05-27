@@ -47,6 +47,7 @@
 
 // high level include
 #include "high_control/cartesian.h"
+#include "high_control/linefollower.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -131,7 +132,7 @@ int16_t main(void) {
     /* Initialize communication */
     set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
     /* LOAD high level task */
-    //add_task(false, &init_cartesian, &loop_cartesian);
+    add_task(false, &init_linefollower, &loop_linefollower);
 
     /* Load all tasks */
     /*** TEMP TO REMOVE when EEPROM is in function ***/

@@ -83,20 +83,14 @@ extern "C" {
     /* System Function Prototypes                                             */
     /**************************************************************************/
     
-    /**
-     * main function of line following algoritms.
-     * @param None
-     * @param None
-     */
-    void linefollowing(void);
+    void init_linefollower (motor_state_t* state);
 
+    motion_velocity_t loop_linefollower (motion_velocity_t* measure, motion_coordinate_t* coordinate);
     
     /**************************************************************************/
     /* IR sensor reading related functions                                    */
     /**************************************************************************/    
     void IRsensor(void);
-    
-    void IRsensor_Init(void);
     
     /*
      * Start a discharge of capacitor used to measure line reflectivity.
@@ -120,6 +114,7 @@ extern "C" {
     
     unsigned char GrayToDecimal_7bit(unsigned char gray);
     int LineCodeToDecimal_7bit(unsigned char line);
+    
 #ifdef	__cplusplus
 }
 #endif
