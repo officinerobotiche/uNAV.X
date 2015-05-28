@@ -47,19 +47,19 @@
 void save_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     switch (info->command) {
         case MOTION_COORDINATE:
-            update_motion_coordinate(info->message.motion_coordinate);
+            update_motion_coordinate(info->message.motion.coordinate);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case MOTION_PARAMETER_UNICYCLE:
-            update_motion_parameter_unicycle(info->message.motion_parameter_unicycle);
+            update_motion_parameter_unicycle(info->message.motion.parameter_unicycle);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case MOTION_VEL_REF:
-            set_motion_velocity_ref_unicycle(info->message.motion_velocity);
+            set_motion_velocity_ref_unicycle(info->message.motion.velocity);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case MOTION_STATE:
-            set_motion_state(info->message.motion_state);
+            set_motion_state(info->message.motion.state);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         default:
@@ -72,23 +72,23 @@ void send_frame_motion(packet_information_t* list_send, size_t* len, packet_info
     message_abstract_u send;
     switch (info->command) {
         case MOTION_COORDINATE:
-            send.motion_coordinate = get_motion_coordinate();
+            send.motion.coordinate = get_motion_coordinate();
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case MOTION_VEL_REF:
-            send.motion_velocity = get_motion_velocity_ref_unicycle();
+            send.motion.velocity = get_motion_velocity_ref_unicycle();
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case MOTION_VEL:
-            send.motion_velocity = get_motion_velocity_meas_unicycle();
+            send.motion.velocity = get_motion_velocity_meas_unicycle();
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case MOTION_STATE:
-            send.motion_state = get_motion_state();
+            send.motion.state = get_motion_state();
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case MOTION_PARAMETER_UNICYCLE:
-            send.motion_parameter_unicycle = get_motion_parameter_unicycle();
+            send.motion.parameter_unicycle = get_motion_parameter_unicycle();
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         default:
