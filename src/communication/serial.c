@@ -90,12 +90,12 @@ void save_frame_system(packet_information_t* list_send, size_t* len, packet_info
     message_abstract_u send;
     switch (info->command) {
         case SYSTEM_SERVICE:
-            send.system_service = services(info->message.system_service);
+            send.system.service = services(info->message.system.service);
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
-            set_process(info->command, info->message.system_task);
+            set_process(info->command, info->message.system.task);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         default:
@@ -108,26 +108,26 @@ void send_frame_system(packet_information_t* list_send, size_t* len, packet_info
     message_abstract_u send;
     switch (info->command) {
         case SYSTEM_SERVICE:
-            send.system_service = services(info->message.system_service);
+            send.system.service = services(info->message.system.service);
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
         case SYSTEM_TASK_TIME:
         case SYSTEM_TASK_NUM:
-            send.system_task = get_process(info->command, info->message.system_task);
+            send.system.task = get_process(info->command, info->message.system.task);
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_TASK_NAME:
-            send.system_task_name = get_process_name(info->message.system_task_name);
+            send.system.task_name = get_process_name(info->message.system.task_name);
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_PARAMETER:
-            send.system_parameter = parameter_system;
+            send.system.parameter = parameter_system;
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         case SYSTEM_SERIAL_ERROR:
-            send.system_error_serial = serial_error;
+            send.system.error_serial = serial_error;
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
             break;
         default:
