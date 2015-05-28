@@ -52,6 +52,8 @@
 
 #include <stdbool.h>       /* Includes true/false definition */
 
+#include "system/events.h"
+
 #include "communication/I2c.h"
 
 /******************************************************************************/
@@ -81,11 +83,13 @@ unsigned int I2C_command_data_size = 0; // command data size
 unsigned char* pI2CBuffer = NULL; // pointer to buffer
 unsigned char* pI2CcommandBuffer = NULL; // pointer to receive  buffer
 
+static uint16_t I2C_service_handle = INVALID_HANDLE;
+
 /******************************************************************************/
 /* Parsing functions                                                          */
 /******************************************************************************/
 
-void InitI2C(void) {
+void I2C_Init(void) {
 
     int queueIndex;
 
@@ -106,6 +110,8 @@ void InitI2C(void) {
     _MI2C1IP = 5; // I2C at priority 5
     _MI2C1IF = 0; // clear the I2C master interrupt
     _MI2C1IE = 1; // enable the interrupt
+    
+    I2C_service_handle = register_event(&serviceI2C);
 
     I2C_Busy = false;
 
@@ -129,8 +135,26 @@ void I2C_reset(void) {
 
     I2CCON = 0x1000;
     I2CSTAT = 0x0000;
-    InitI2C();
+    I2C_Init();
     return;
+}
+
+bool I2C_checkACK(unsigned int command, I2C_callbackFunc pCallback) {
+    if (!I2C_CheckAvailable()) return false;
+
+    pI2C_callback = pCallback;
+
+    I2C_command_data_size = 0;
+    I2C_CommandByte = command;
+    pI2CBuffer = NULL;
+
+    I2C_tx_data_size = 0; // tx data size
+    I2C_rx_data_size = 0; // rx data size
+
+    // Set ISR callback and trigger the ISR
+    I2C_state = &I2C_startWrite;
+    _MI2C1IF = 1;
+    return true;
 }
 
 bool I2C_Write(unsigned char command, unsigned char* pcommandData, unsigned char commandDataSize, unsigned char* ptxData, unsigned int txSize, I2C_callbackFunc pCallback) {
@@ -374,15 +398,6 @@ void I2C_Failed(void) {
         pI2C_callback(false);
 }
 
-void __attribute__((__interrupt__, __no_auto_psv__)) _MI2C1Interrupt(void) {
-    _MI2C1IF = 0; // clear the interrupt
-    (* I2C_state) (); // execute the service routine
-
-    return;
-}
-
-/************* ??????????????????????? *************/
-
 bool I2C_Normal(void) {
     if (I2C_NORMAL)
         return true;
@@ -392,24 +407,24 @@ bool I2C_Normal(void) {
     }
 }
 
-// Only send command byte to check for ACK.
-
-bool I2C_checkACK(unsigned int command, I2C_callbackFunc pCallback) {
-    if (!I2C_CheckAvailable()) return false;
-
-    pI2C_callback = pCallback;
-
-    I2C_command_data_size = 0;
-    I2C_CommandByte = command;
-    pI2CBuffer = NULL;
-
-    I2C_tx_data_size = 0; // tx data size
-    I2C_rx_data_size = 0; // rx data size
-
-    // Set ISR callback and trigger the ISR
-    I2C_state = &I2C_startWrite;
-    _MI2C1IF = 1;
-    return true;
+void I2C_trigger_service(void) {
+    trigger_event(I2C_service_handle);
 }
 
-/************* ??????????????????????? *************/
+time_t serviceI2C(void) {
+    unsigned int t = TMR1; // Timing function
+    if (_I2CEN == 0) ///< I2C is off
+    {
+        I2C_state = &I2C_idle; ///< disable response to any interrupts
+        I2C_Init(); //< turn the I2C back on
+        ///< Put something here to reset state machine.  Make sure attached services exit nicely.
+    }
+    return TMR1 - t; // Time of execution
+}
+
+void __attribute__((__interrupt__, __no_auto_psv__)) _MI2C1Interrupt(void) {
+    _MI2C1IF = 0; // clear the interrupt
+    (* I2C_state) (); // execute the service routine
+
+    return;
+}

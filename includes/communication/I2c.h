@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 #include "system/system.h"
+#include <system/events.h>
     
 /******************************************************************************/
 /* System Level #define Macros                                                */
@@ -67,11 +68,18 @@ extern "C" {
      * Trigger the I2C service routine to run at low priority in libUDB.c
      * initialize the I2C peripheral
      */
-    void InitI2C(void);
+    void I2C_Init(void);
     /**
      * Reset the I2C module
      */
     void I2C_reset(void);
+    /**
+     * Check for I2C ACK on command
+     * @param command
+     * @param pCallback
+     * @return 
+     */
+    bool I2C_checkACK(unsigned int command, I2C_callbackFunc pCallback);
     /**
      * 
      * @param command
@@ -173,21 +181,19 @@ extern "C" {
      * On failure, stop the bus, go into idle and callback with failure
      */
     void I2C_Failed(void);
-
-    /************* ??????????????????????? *************/
-    
-    // Trigger the I2C service routine to run at low priority
-    void I2C_trigger_service(void);
-
-    void I2C_start(void) ;
-    
-    // Check if the I2CCON and I2CSTAT register are normal
+    /**
+     * Check if the I2CCON and I2CSTAT register are normal
+     */
     bool I2C_Normal(void);
     
-    // Check for I2C ACK on command
-    bool I2C_checkACK(unsigned int command, I2C_callbackFunc pCallback);
-    
-    /************* ??????????????????????? *************/
+    /**
+     * Trigger the I2C service routine to run at low priority
+     */
+    void I2C_trigger_service(void);
+    /**
+     * service the I2C
+     */
+    time_t serviceI2C(void);
 
 #ifdef	__cplusplus
 }

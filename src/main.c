@@ -106,7 +106,7 @@ int16_t main(void) {
     
     /* I2C CONFIGURATION */
     /// Open I2C module
-    InitI2C();
+    I2C_Init();
     
     /** SERIAL CONFIGURATION **/
     /// Open UART1 for serial communication

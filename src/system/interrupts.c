@@ -185,7 +185,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
      */
     for (led_counter = 0; led_counter < LED_NUM; led_counter++) {
         if (led_controller[led_counter].number_blink > LED_OFF)
-            BlinkController(&led_controller[led_counter]);
+            LED_blinkController(&led_controller[led_counter]);
     }
 }
 

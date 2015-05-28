@@ -293,7 +293,7 @@ void UpdateBlink(short num, short blink) {
  * ! WAIT   Tc/2-WAIT  !   Tc/2       !
  */
 
-inline void BlinkController(led_control_t *led) {
+inline void LED_blinkController(led_control_t *led) {
     if (led->counter > led->wait && led->counter < FRTMR1) {
         if (led->counter % led->fr_blink == 0) {
             //Toggle bit
