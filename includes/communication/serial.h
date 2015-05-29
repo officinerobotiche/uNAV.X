@@ -28,6 +28,12 @@ extern "C" {
     //Dimension of list messages to decode in a packet
     #define BUFFER_LIST_PARSING 10
 
+    /** 
+     * Initialization UART1 for communication and
+     * Initialization DMA1 for UART Tx transmition
+     */
+    void SerialComm_Init(void);
+
     /**
      * Send serial message to uart
      * @param header

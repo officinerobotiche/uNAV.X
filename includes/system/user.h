@@ -24,8 +24,8 @@ extern "C" {
 
 #include <stddef.h>
     
-#define LED_ALWAYS_HIGH -1
-#define LED_OFF 0
+//#define LED_ALWAYS_HIGH -1
+//#define LED_OFF 0
 
     /**
      * Struct to control blink led
@@ -37,19 +37,19 @@ extern "C" {
      *      -# n number of blink
      */
 
-    typedef struct pin {
-        volatile unsigned int * CS_PORT;
-        const unsigned int CS_pin;
-    } pin_t;
-
-    typedef struct led_control {
-        pin_t * pin;
-        unsigned int CS_mask;
-        unsigned int counter;
-        unsigned int fr_blink;
-        unsigned int wait;
-        short number_blink;
-    } led_control_t;
+//    typedef struct pin {
+//        volatile unsigned int * CS_PORT;
+//        const unsigned int CS_pin;
+//    } pin_t;
+//
+//    typedef struct led_control {
+//        pin_t * pin;
+//        unsigned int CS_mask;
+//        unsigned int counter;
+//        unsigned int fr_blink;
+//        unsigned int wait;
+//        short number_blink;
+//    } led_control_t;
 
 /******************************************************************************/
 /* User Level #define Macros                                                  */
@@ -120,12 +120,6 @@ extern "C" {
     #define MOTOR_ENABLE2 1          // Enable Motor 2
 #endif
 
-    /** Definition for user interrupt **/
-    #define FLAG_TASK_MOTORS IFS0bits.OC1IF
-    #define PARSER_FLAG IFS0bits.OC2IF
-    #define MEASURE_FLAG IFS1bits.OC3IF
-    #define FLAG_TASK_HIGH_LEVEL IFS3bits.RTCIF
-
     #define SGN(x)  ( ((x) < 0) ?  -1 : ( ((x) == 0 ) ? 0 : 1) )
 
 /******************************************************************************/
@@ -145,39 +139,36 @@ extern "C" {
      */
     void protectedMemcpy(unsigned reg, void *destination, const void *source, size_t num);
 
-    /**
-     * Evaluate max value of array in int
-     * @param myArray array to find max value
-     * @param size size of array
-     * @return max value on array
-     */
-    int maxValue(int *myArray, size_t size);
+//    /**
+//     * Evaluate max value of array in int
+//     * @param myArray array to find max value
+//     * @param size size of array
+//     * @return max value on array
+//     */
+//    int maxValue(int *myArray, size_t size);
+//
+//    /**
+//     * Evaluate max value of array on float
+//     * @param myArray array to find max value
+//     * @param size size of array
+//     * @return max value on array
+//     */
+//    float maxValueFloat(float *myArray, size_t size);
 
-    /**
-     * Evaluate max value of array on float
-     * @param myArray array to find max value
-     * @param size size of array
-     * @return max value on array
-     */
-    float maxValueFloat(float *myArray, size_t size);
 
-    /**
-     * Initialization led blink
-     */
-    void InitLed(void);
 
     /**
      * Update frequency or type of blink
      * @param led to control
      * @param blink number of blinks
      */
-    void UpdateBlink(short num, short blink);
+    //void UpdateBlink(short num, short blink);
 
     /**
      * Blink control led
      * @param led to control
      */
-    inline void BlinkController(led_control_t *led);
+    //inline void BlinkController(led_control_t *led);
 
     void blinkflush();
     

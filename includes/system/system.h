@@ -28,18 +28,6 @@ extern "C" {
     /* System Level #define Macros                                                */
     /******************************************************************************/
 
-    /* Name interrupt */
-#define VEL_PID_PRIORITY IPC0bits.OC1IP
-#define RX_PARSER_PRIORITY IPC1bits.OC2IP
-#define MEASURE_PRIORITY IPC6bits.OC3IP
-#define DEAD_RECK_PRIORITY IPC15bits.RTCIP
-
-    /* Interrupt enable */
-#define VEL_PID_ENABLE IEC0bits.OC1IE
-#define RX_PARSER_ENABLE IEC0bits.OC2IE
-#define MEASURE_ENABLE IEC1bits.OC3IE
-#define DEAD_RECK_ENABLE IEC3bits.RTCIE
-
     /* Interrupt priority */
     /* Max priority 7 - Min priority 1 */
 #define PWM_TIMER_LEVEL 7
@@ -47,12 +35,17 @@ extern "C" {
 #define ADC_DMA_LEVEL 6
 #define UART_RX_LEVEL 6
 #define SYS_TIMER_LEVEL 5
-#define MEASURE_LEVEL 4
-#define CURR_PID_LEVEL 4
-#define VEL_PID_LEVEL 3
-#define DEAD_RECK_LEVEL 2
+    
+#define EVENT_PRIORITY_HIGH_LEVEL 4
+#define EVENT_PRIORITY_MEDIUM_LEVEL 3
+#define EVENT_PRIORITY_LOW_LEVEL 2
+//#define MEASURE_LEVEL 4
+//#define CURR_PID_LEVEL 4
+//#define VEL_PID_LEVEL 3
+//#define DEAD_RECK_LEVEL 2
+    
 #define UART_TX_LEVEL 1
-#define RX_PARSER_LEVEL 1
+//#define RX_PARSER_LEVEL 1
 
     /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        80000000
@@ -102,10 +95,28 @@ extern "C" {
     go here. */
 
     /**
+     * Initialization led blink
+     */
+    void InitLEDs(void);
+    /**
+     * Update frequency or type of blink
+     * @param led to control
+     * @param blink number of blinks
+     */
+    void UpdateBlink(short num, short blink);
+    
+    /**
+     * Initialization all system events
+     */
+    void InitEvents(void);
+    
+    /**
      * Initialization name process and set standard priority for all procesees
      */
-    void init_process(void);
-
+    //void init_process(void);
+    /** Initialization others interrupts
+     */
+    //void InitInterrupts(void);
 
 
     /**
@@ -150,21 +161,9 @@ extern "C" {
      */
     void InitTimer2(void);
 
-    /** Initialization others interrupts
-     */
-    void InitInterrupts(void);
-
-    /** Initialization UART1 for communication
-     */
-    void InitUART1(void);
-
     /** Initialization DMA0 for ADC current
      */
     void InitDMA0(void);
-
-    /** Initialization DMA1 for UART Tx transmition
-     */
-    void InitDMA1(void);
 
     /** Initialization ADC for measure current motors
      */

@@ -42,18 +42,18 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-led_control_t led_controller[LED_NUM];
-bool led_effect = false;
-bool first = true;
-short load_blink[LED_NUM];
-pin_t led_1 = {&LED1_PORT, LED1_NUM};
-#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-pin_t led_2 = {&LED2_PORT, LED2_NUM};
-#endif
-#if defined(UNAV_V1)
-pin_t led_3 = {&LED3_PORT, LED3_NUM};
-pin_t led_4 = {&LED4_PORT, LED4_NUM};
-#endif
+//led_control_t led_controller[LED_NUM];
+//bool led_effect = false;
+//bool first = true;
+//short load_blink[LED_NUM];
+//pin_t led_1 = {&LED1_PORT, LED1_NUM};
+//#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+//pin_t led_2 = {&LED2_PORT, LED2_NUM};
+//#endif
+//#if defined(UNAV_V1)
+//pin_t led_3 = {&LED3_PORT, LED3_NUM};
+//pin_t led_4 = {&LED4_PORT, LED4_NUM};
+//#endif
 
 /******************************************************************************/
 /* User Functions                                                             */
@@ -210,16 +210,12 @@ void InitApp(void) {
 #endif
 
     /* Peripherical initalization */
-    InitLed(); //Init led
     InitTimer2(); //Open Timer2 for InputCapture 1 & 2
     InitADC(); //Open ADC for measure current motors
     InitDMA0(); //Open DMA0 for buffering measures ADC
 
-    InitUART1(); //Open UART1 for serial comunication
-    InitDMA1(); //Open DMA1 for Tx UART1
-
     InitTimer1(); //Open Timer1 for clock system
-    InitInterrupts(); //Start others interrupts
+    //InitInterrupts(); //Start others interrupts
 }
 
 void inline protectedMemcpy(unsigned reg, void *destination, const void *source, size_t num) {
@@ -232,123 +228,123 @@ void inline protectedMemcpy(unsigned reg, void *destination, const void *source,
     }
 }
 
-int maxValue(int* myArray, size_t size) {
-    /* enforce the contract */
-    //    assert(myArray && size);
-    size_t i;
-    int maxValue = myArray[0];
+//int maxValue(int* myArray, size_t size) {
+//    /* enforce the contract */
+//    //    assert(myArray && size);
+//    size_t i;
+//    int maxValue = myArray[0];
+//
+//    for (i = 1; i < size; ++i) {
+//        if (myArray[i] > maxValue) {
+//            maxValue = myArray[i];
+//        }
+//    }
+//    return maxValue;
+//}
+//
+//float maxValueFloat(float* myArray, size_t size) {
+//    /* enforce the contract */
+//    //    assert(myArray && size);
+//    size_t i;
+//    float maxValue = myArray[0];
+//
+//    for (i = 1; i < size; ++i) {
+//        if (myArray[i] > maxValue) {
+//            maxValue = myArray[i];
+//        }
+//    }
+//    return maxValue;
+//}
 
-    for (i = 1; i < size; ++i) {
-        if (myArray[i] > maxValue) {
-            maxValue = myArray[i];
-        }
-    }
-    return maxValue;
-}
+//void InitLed(void) {
+//    int i;
+//    led_controller[0].pin = &led_1;
+//#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+//    led_controller[1].pin = &led_2;
+//#endif
+//#if defined(UNAV_V1)
+//    led_controller[2].pin = &led_3;
+//    led_controller[3].pin = &led_4;
+//#endif
+//    for (i = 0; i < LED_NUM; ++i) {
+//        led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
+//        led_controller[i].wait = 0;
+//        UpdateBlink(i, LED_OFF);
+//    }
+//}
 
-float maxValueFloat(float* myArray, size_t size) {
-    /* enforce the contract */
-    //    assert(myArray && size);
-    size_t i;
-    float maxValue = myArray[0];
-
-    for (i = 1; i < size; ++i) {
-        if (myArray[i] > maxValue) {
-            maxValue = myArray[i];
-        }
-    }
-    return maxValue;
-}
-
-void InitLed(void) {
-    int i;
-    led_controller[0].pin = &led_1;
-#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-    led_controller[1].pin = &led_2;
-#endif
-#if defined(UNAV_V1)
-    led_controller[2].pin = &led_3;
-    led_controller[3].pin = &led_4;
-#endif
-    for (i = 0; i < LED_NUM; ++i) {
-        led_controller[i].CS_mask = 1 << led_controller[i].pin->CS_pin;
-        led_controller[i].wait = 0;
-        UpdateBlink(i, LED_OFF);
-    }
-}
-
-void UpdateBlink(short num, short blink) {
-    led_controller[num].number_blink = blink;
-    switch (led_controller[num].number_blink) {
-        case LED_OFF:
-            //Clear bit - Set to 0
-            *(led_controller[num].pin->CS_PORT) &= ~led_controller[num].CS_mask;
-            break;
-        case LED_ALWAYS_HIGH:
-            //Set bit - Set to 1
-            *(led_controller[num].pin->CS_PORT) |= led_controller[num].CS_mask;
-            break;
-        default:
-            led_controller[num].fr_blink = FRTMR1 / (2 * led_controller[num].number_blink);
-            break;
-    }
-    led_controller[num].counter = 0;
-}
-
-/**
- * Tc -> counter = 1sec = 1000 interrupts
- * !       Tc/2        !   Tc/2       !
- * !     !_____   _____!              !
- * !     !|   |   |   |!              !
- * !-----!|   |---|   |! . . . -------!
- * !     !             !              !
- * ! WAIT   Tc/2-WAIT  !   Tc/2       !
- */
-
-inline void BlinkController(led_control_t *led) {
-    if (led->counter > led->wait && led->counter < FRTMR1) {
-        if (led->counter % led->fr_blink == 0) {
-            //Toggle bit
-            *(led->pin->CS_PORT) ^= led->CS_mask;
-        }
-        led->counter++;
-    } else if (led->counter >= 3 * FRTMR1 / 2) {
-        led->counter = 0;
-    } else {
-        //Clear bit - Set to 0
-        *(led->pin->CS_PORT) &= ~led->CS_mask;
-        led->counter++;
-    }
-}
-
-void blinkflush() {
-    int i;
-    for (i = 0; i < LED_NUM; ++i) {
-        led_controller[i].wait = i * ((float) FRTMR1 / LED_NUM);
-        load_blink[i] = led_controller[i].number_blink;
-        UpdateBlink(i, 1);
-    }
-    led_effect = true;
-}
-
-void EffectStop() {
-    int i;
-    int value = 0;
-    if (led_effect) {
-        for (i = 0; i < LED_NUM; ++i) {
-            value += led_controller[i].counter;
-        }
-        if (value == 0) {
-            if (~first) {
-                for (i = 0; i < LED_NUM; ++i) {
-                    UpdateBlink(i, load_blink[i]);
-                    led_controller[i].wait = 0;
-                }
-                led_effect = false;
-                first = true;
-            } else {
-                first = false;
-            }
-        }
-    }
-}
+//void UpdateBlink(short num, short blink) {
+//    led_controller[num].number_blink = blink;
+//    switch (led_controller[num].number_blink) {
+//        case LED_OFF:
+//            //Clear bit - Set to 0
+//            *(led_controller[num].pin->CS_PORT) &= ~led_controller[num].CS_mask;
+//            break;
+//        case LED_ALWAYS_HIGH:
+//            //Set bit - Set to 1
+//            *(led_controller[num].pin->CS_PORT) |= led_controller[num].CS_mask;
+//            break;
+//        default:
+//            led_controller[num].fr_blink = FRTMR1 / (2 * led_controller[num].number_blink);
+//            break;
+//    }
+//    led_controller[num].counter = 0;
+//}
+//
+///**
+// * Tc -> counter = 1sec = 1000 interrupts
+// * !       Tc/2        !   Tc/2       !
+// * !     !_____   _____!              !
+// * !     !|   |   |   |!              !
+// * !-----!|   |---|   |! . . . -------!
+// * !     !             !              !
+// * ! WAIT   Tc/2-WAIT  !   Tc/2       !
+// */
+//
+//inline void BlinkController(led_control_t *led) {
+//    if (led->counter > led->wait && led->counter < FRTMR1) {
+//        if (led->counter % led->fr_blink == 0) {
+//            //Toggle bit
+//            *(led->pin->CS_PORT) ^= led->CS_mask;
+//        }
+//        led->counter++;
+//    } else if (led->counter >= 3 * FRTMR1 / 2) {
+//        led->counter = 0;
+//    } else {
+//        //Clear bit - Set to 0
+//        *(led->pin->CS_PORT) &= ~led->CS_mask;
+//        led->counter++;
+//    }
+//}
+//
+//void blinkflush() {
+//    int i;
+//    for (i = 0; i < LED_NUM; ++i) {
+//        led_controller[i].wait = i * ((float) FRTMR1 / LED_NUM);
+//        load_blink[i] = led_controller[i].number_blink;
+//        UpdateBlink(i, 1);
+//    }
+//    led_effect = true;
+//}
+//
+//void EffectStop() {
+//    int i;
+//    int value = 0;
+//    if (led_effect) {
+//        for (i = 0; i < LED_NUM; ++i) {
+//            value += led_controller[i].counter;
+//        }
+//        if (value == 0) {
+//            if (~first) {
+//                for (i = 0; i < LED_NUM; ++i) {
+//                    UpdateBlink(i, load_blink[i]);
+//                    led_controller[i].wait = 0;
+//                }
+//                led_effect = false;
+//                first = true;
+//            } else {
+//                first = false;
+//            }
+//        }
+//    }
+//}

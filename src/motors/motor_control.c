@@ -34,6 +34,9 @@
 #include <stdbool.h>         /* For true/false definition                    */
 #include <dsp.h>
 #include <pwm12.h>
+
+#include <system/led.h>
+
 #include "high_control/manager.h"
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
 #include "system/system.h"
@@ -70,15 +73,15 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
-pin_t enable1 = {&MOTOR_ENABLE1_PORT, MOTOR_ENABLE1_NUM};
-pin_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
+hardware_bit_t enable1 = {&MOTOR_ENABLE1_PORT, MOTOR_ENABLE1_NUM};
+hardware_bit_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 
 /** */
 
 typedef struct new_motor {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
-    pin_t * pin_enable;
+    hardware_bit_t * pin_enable;
     unsigned int CS_mask;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;

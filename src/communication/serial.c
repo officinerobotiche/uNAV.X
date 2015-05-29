@@ -34,6 +34,8 @@
 #include <stdbool.h>       /* Includes true/false definition */
 #include <string.h>
 
+#include <system/events.h>
+
 #include <serial/or_message.h>
 #include <serial/or_frame.h>
 #include "communication/serial.h"
@@ -47,6 +49,7 @@
 
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
+hEvent_t parseEvent = INVALID_HANDLE;
 
 /** GLOBAL VARIBLES */
 // From system/system.c
@@ -60,6 +63,58 @@ extern char receive_header;
 /* Communication Functions                                                    */
 /******************************************************************************/
 
+void InitUART1(void) {
+    U1MODEbits.STSEL = 0; // 1-stop bit
+    U1MODEbits.PDSEL = 0; // No Parity, 8-data bits
+    U1MODEbits.ABAUD = 0; // Auto-Baud Disabled
+    U1MODEbits.BRGH = 0; // Low Speed mode
+
+    U1BRG = BRGVAL; // BAUD Rate Setting on System.h
+
+    U1STAbits.UTXISEL0 = 0; // Interrupt after one Tx character is transmitted
+    U1STAbits.UTXISEL1 = 0;
+
+    IEC0bits.U1TXIE = 0; // Disable UART Tx interrupt
+    U1STAbits.URXISEL = 0; // Interrupt after one RX character is received
+
+    U1MODEbits.UARTEN = 1; // Enable UART
+    U1STAbits.UTXEN = 1; // Enable UART Tx
+
+    IEC4bits.U1EIE = 0;
+    IPC2bits.U1RXIP = UART_RX_LEVEL; // Set UART Rx Interrupt Priority Level
+    IFS0bits.U1RXIF = 0; // Reset RX interrupt flag
+    IEC0bits.U1RXIE = 1; // Enable RX interrupt
+}
+
+void InitDMA1(void) {
+    //DMA1CON = 0x2001;			// One-Shot, Post-Increment, RAM-to-Peripheral
+
+    DMA1CONbits.CHEN = 0;
+    DMA1CONbits.SIZE = 1;
+    DMA1CONbits.DIR = 1;
+    DMA1CONbits.HALF = 0;
+    DMA1CONbits.NULLW = 0;
+    DMA1CONbits.AMODE = 0;
+    DMA1CONbits.MODE = 1;
+
+    DMA1CNT = MAX_BUFF_TX - 1; // 32 DMA requests
+    DMA1REQ = 0x000c; // Select UART1 Transmitter
+
+    DMA1STA = __builtin_dmaoffset(BufferTx);
+    DMA1PAD = (volatile unsigned int) &U1TXREG;
+
+    IPC3bits.DMA1IP = UART_TX_LEVEL; // Set DMA Interrupt Priority Level
+    IFS0bits.DMA1IF = 0; // Clear DMA Interrupt Flag
+    IEC0bits.DMA1IE = 1; // Enable DMA interrupt
+}
+
+void SerialComm_Init(void) {
+    InitUART1();
+    InitDMA1();
+    /// Register event
+    parseEvent = register_event_p(&parse_packet, EVENT_PRIORITY_LOW);
+}
+
 void serial_send(char header, packet_t packet) {
     
     //Wait to complete send packet from UART1 and DMA1.
@@ -72,7 +127,7 @@ void serial_send(char header, packet_t packet) {
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
 }
 
-int parse_packet() {
+int parse_packet(void) {
     unsigned int t = TMR1; // Timing function
     packet_information_t list_data[BUFFER_LIST_PARSING];
     size_t len = 0;
@@ -84,6 +139,34 @@ int parse_packet() {
         serial_send(receive_header, send);
     }
     return TMR1 - t; // Time of execution
+}
+
+unsigned int ReadUART1(void) {
+    if (U1MODEbits.PDSEL == 3)
+        return (U1RXREG);
+    else
+        return (U1RXREG & 0xFF);
+}
+
+void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
+    IFS0bits.U1RXIF = 0; // clear RX interrupt flag
+
+    /* get the data */
+    if (U1STAbits.URXDA == 1) {
+        if (decode_pkgs(ReadUART1())) {
+            trigger_event(parseEvent);
+        }
+    } else {
+        /* check for receive errors */
+        if (U1STAbits.FERR == 1) {
+            pkg_error(ERROR_FRAMMING);
+        }
+        /* must clear the overrun error to keep uart receiving */
+        if (U1STAbits.OERR == 1) {
+            U1STAbits.OERR = 0;
+            pkg_error(ERROR_OVERRUN);
+        }
+    }
 }
 
 void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {

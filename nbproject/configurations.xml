@@ -81,7 +81,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.24</languageToolchainVersion>
+        <languageToolchainVersion></languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>
@@ -119,6 +119,23 @@
                             FL="dist/default/production/or_common_c.X.a"
                             PD="dist/default/production/or_common_c.X.a"
                             DD="dist/default/debug/or_common_c.X.a">
+              </makeArtifact>
+            </linkerLibProjectItem>
+            <linkerLibProjectItem>
+              <makeArtifact PL="../or_system_c.X"
+                            CT="3"
+                            CN="default"
+                            AC="true"
+                            BL="true"
+                            WD="../or_system_c.X"
+                            BC="${MAKE}  -f Makefile CONF=default"
+                            DBC="${MAKE}  -f Makefile CONF=default TYPE_IMAGE=DEBUG_RUN"
+                            CC="rm -rf &quot;build/default&quot; &quot;dist/default&quot;"
+                            OP="dist/default/production/or_system_c.X.a"
+                            DOP="dist/default/debug/or_system_c.X.a"
+                            FL="dist/default/production/or_system_c.X.a"
+                            PD="dist/default/production/or_system_c.X.a"
+                            DD="dist/default/debug/or_system_c.X.a">
               </makeArtifact>
             </linkerLibProjectItem>
           </linkerLibItems>
@@ -248,7 +265,7 @@
       </C30-LD>
       <C30Global>
         <property key="common-include-directories"
-                  value="includes;../or_bus_c.X/includes;../or_common_c.X/includes"/>
+                  value="includes;../or_bus_c.X/includes;../or_common_c.X/includes;../or_system_c.X/includes"/>
         <property key="dual-boot-partition" value="0"/>
         <property key="fast-math" value="false"/>
         <property key="generic-16-bit" value="false"/>

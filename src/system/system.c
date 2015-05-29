@@ -35,6 +35,9 @@
 #include <pwm12.h>
 #include <string.h>
 
+#include <system/events.h>
+#include <system/led.h>
+
 #include "system/user.h"
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "packet/packet.h"
@@ -76,66 +79,217 @@ process_t default_process[NUM_PROCESS_DEFAULT];
 process_t motor_process[PROCESS_MOTOR_LENGTH];
 process_t motion_process[PROCESS_MOTION_LENGTH];
 
-// From motors PID
-//extern parameter_motor_t parameter_motor_left, parameter_motor_right;
+/******************************************************************************/
+/* NEW Global Variable Declaration                                            */
+/******************************************************************************/
+
+uint16_t FRQ_CPU = FRTMR1;
+
+#define EVENT_PRIORITY_LOW_ENABLE IEC3bits.RTCIE
+#define EVENT_PRIORITY_LOW_FLAG IFS3bits.RTCIF
+#define EVENT_PRIORITY_LOW IPC15bits.RTCIP
+hardware_bit_t RTCIF = {&IFS3, 14};
+
+#define EVENT_PRIORITY_MEDIUM_ENABLE IEC0bits.OC1IE
+#define EVENT_PRIORITY_MEDIUM_FLAG IFS0bits.OC1IF
+#define EVENT_PRIORITY_MEDIUM IPC0bits.OC1IP
+hardware_bit_t OC1IF = {&IFS0, 2};
+
+#define EVENT_PRIORITY_HIGH_ENABLE IEC0bits.OC2IE
+#define EVENT_PRIORITY_HIGH_FLAG IFS0bits.OC2IF
+#define EVENT_PRIORITY_HIGH IPC1bits.OC2IP
+hardware_bit_t OC2IF = {&IFS0, 6};
+
+//#define MEASURE_ENABLE IEC1bits.OC3IE
+//#define MEASURE_FLAG IFS1bits.OC3IF
+//#define MEASURE_PRIORITY IPC6bits.OC3IP
+//hardware_bit_t OC3IF = {&IFS1, 9};
+
+led_control_t led_controller[LED_NUM];
+hardware_bit_t led_1 = {&LED1_PORT, LED1_NUM};
+#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+hardware_bit_t led_2 = {&LED2_PORT, LED2_NUM};
+#endif
+#if defined(UNAV_V1)
+hardware_bit_t led_3 = {&LED3_PORT, LED3_NUM};
+hardware_bit_t led_4 = {&LED4_PORT, LED4_NUM};
+#endif
 
 /******************************************************************************/
 /* System Level Functions                                                     */
-/*                                                                            */
-/* Custom oscillator configuration funtions, reset source evaluation          */
-/* functions, and other non-peripheral microcontroller initialization         */
-/* functions get placed in system.c.                                          */
-/*                                                                            */
 /******************************************************************************/
 
-/* Refer to the device Family Reference Manual Oscillator section for
-information about available oscillator configurations.  Typically
-this would involve configuring the oscillator tuning register or clock
-switching useing the compiler's __builtin_write_OSCCON functions.
-Refer to the C Compiler for PIC24 MCUs and dsPIC DSCs User Guide in the
-compiler installation directory /doc folder for documentation on the
-__builtin functions.*/
-
-void init_process(void) {
-    strcpy(default_process[PROCESS_IDLE].name, "idle");
-    default_process[PROCESS_IDLE].time = 0;
-    strcpy(default_process[PROCESS_PARSE].name, "parse");
-    default_process[PROCESS_PARSE].time = 0;
-    //Init left process pid
-    strcpy(motor_process[LEFT_PROCESS_PID].name, LEFT_PROCESS_PID_STRING);
-    motor_process[LEFT_PROCESS_PID].time = 0;
-    motor_process[LEFT_PROCESS_PID].priority = VEL_PID_LEVEL;
-    motor_process[LEFT_PROCESS_PID].frequency = 1;
-    //Init right process pid
-    strcpy(motor_process[RIGHT_PROCESS_PID].name, RIGHT_PROCESS_PID_STRING);
-    motor_process[RIGHT_PROCESS_PID].time = 0;
-    motor_process[RIGHT_PROCESS_PID].priority = VEL_PID_LEVEL;
-    motor_process[RIGHT_PROCESS_PID].frequency = 1;
-    //Init left process measure
-    strcpy(motor_process[LEFT_PROCESS_MEASURE].name, LEFT_PROCESS_MEASURE_STRING);
-    motor_process[LEFT_PROCESS_MEASURE].time = 0;
-    motor_process[LEFT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
-    motor_process[LEFT_PROCESS_MEASURE].frequency = 1;
-    //Init right process measure
-    strcpy(motor_process[RIGHT_PROCESS_MEASURE].name, RIGHT_PROCESS_MEASURE_STRING);
-    motor_process[RIGHT_PROCESS_MEASURE].time = 0;
-    motor_process[RIGHT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
-    motor_process[RIGHT_PROCESS_MEASURE].frequency = 1;
-    
-    //Init process odometry
-    strcpy(motion_process[PROCESS_ODOMETRY].name, ODOMETRY_STRING);
-    motion_process[PROCESS_ODOMETRY].time = 0;
-    motion_process[PROCESS_ODOMETRY].priority = DEAD_RECK_LEVEL;
-    motion_process[PROCESS_ODOMETRY].frequency = 10;
-    //Init process odometry
-    strcpy(motion_process[PROCESS_VELOCITY].name, VELOCITY_STRING);
-    motion_process[PROCESS_VELOCITY].time = 0;
-    motion_process[PROCESS_VELOCITY].priority = VEL_PID_LEVEL;
-    motion_process[PROCESS_VELOCITY].frequency = 10;
-
-    parameter_system.step_timer = (int) (TMR1_VALUE);
-    parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
+void ConfigureOscillator(void) {
+    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
+    CLKDIVbits.PLLPOST = 0; // N1=2
+    CLKDIVbits.PLLPRE = 0; // N2=2
+    // Disable Watch Dog Timer
+    RCONbits.SWDTEN = 0;
+    // Clock switching to incorporate PLL
+    // Initiate Clock Switch to Primary
+    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
+    __builtin_write_OSCCONL(0x01); // Start clock switching
+    while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
+    while (OSCCONbits.LOCK != 1) {
+    }; // Wait for PLL to lock
 }
+
+void InitLEDs(void) {
+    led_controller[0].pin.pin = &led_1;
+#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
+    led_controller[1].pin.pin = &led_2;
+#endif
+#if defined(UNAV_V1)
+    led_controller[2].pin.pin = &led_3;
+    led_controller[3].pin.pin = &led_4;
+#endif
+    LED_Init(&FRQ_CPU, &led_controller[0], LED_NUM);
+}
+
+void UpdateBlink(short num, short blink) {
+    LED_updateBlink(led_controller, num, blink);
+}
+
+void InitEvents(void) {
+    init_events();
+    
+    EVENT_PRIORITY_LOW_ENABLE = 0;
+    EVENT_PRIORITY_LOW = EVENT_PRIORITY_LOW_LEVEL;
+    register_interrupt(EVENT_PRIORITY_LOW, &RTCIF);
+    EVENT_PRIORITY_LOW_ENABLE = 1;
+    
+    EVENT_PRIORITY_MEDIUM_ENABLE = 0;
+    EVENT_PRIORITY_MEDIUM = EVENT_PRIORITY_MEDIUM_LEVEL;
+    register_interrupt(EVENT_PRIORITY_MEDIUM, &OC1IF);
+    EVENT_PRIORITY_MEDIUM_ENABLE = 1;
+    
+    EVENT_PRIORITY_HIGH_ENABLE = 0;
+    EVENT_PRIORITY_HIGH = EVENT_PRIORITY_HIGH_LEVEL;
+    register_interrupt(EVENT_PRIORITY_HIGH, &OC2IF);
+    EVENT_PRIORITY_HIGH_ENABLE = 1;
+}
+
+void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
+    event_manager(EVENT_PRIORITY_LOW);
+    EVENT_PRIORITY_LOW_FLAG = 0; //interrupt flag reset
+}
+
+void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
+    event_manager(EVENT_PRIORITY_MEDIUM);
+    EVENT_PRIORITY_MEDIUM_FLAG = 0; // interrupt flag reset
+}
+
+void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
+    event_manager(EVENT_PRIORITY_HIGH);
+    EVENT_PRIORITY_HIGH_FLAG = 0; //interrupt flag reset
+}
+
+void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
+    //event_manager(eventPriority priority);
+    IFS1bits.OC3IF = 0;
+}
+
+void InitTimer1(void) {
+    //T1CON = 10100000 00000000
+    T1CONbits.TON = 0; // Disable Timer
+    T1CONbits.TSIDL = 1; // Stop in Idle Mode bit
+    T1CONbits.TGATE = 0; // Disable Gated Timer mode
+    T1CONbits.TCKPS = 0b00; // Select 1:1 Prescaler
+    T1CONbits.TSYNC = 0; // Disable Synchronization
+    T1CONbits.TCS = 0; // Select internal clock source
+    TMR1 = 0x00; // Clear timer register
+    PR1 = TMR1_VALUE; // Load the period value
+
+    IPC0bits.T1IP = SYS_TIMER_LEVEL; // Set Timer 1 Interrupt Priority Level
+    IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
+    IEC0bits.T1IE = 1; // Enable Timer1 interrupt
+
+    T1CONbits.TON = 1; // Start Timer
+}
+
+void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
+//    /**
+//     * If high level control selected, then set new reference for all motors.
+//     */
+//    if (control_state != STATE_CONTROL_HIGH_DISABLE) {
+//        FLAG_TASK_HIGH_LEVEL = 1;
+//    }
+//    /**
+//     * Run motors control task
+//     */
+//    FLAG_TASK_MOTORS = 1; //Start OC1Interrupt for PID control
+    
+    /// Blink controller for all LEDs
+    LED_blinkController(&led_controller[0], LED_NUM);
+    IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
+}
+
+//void InitInterrupts(void) {
+//    //For PID velocity control
+//    EVENT_PRIORITY_MEDIUM_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
+//    EVENT_PRIORITY_MEDIUM_PRIORITY = motor_process[LEFT_PROCESS_PID].priority; // Set Output Compare Channel 1 Priority Level
+//    IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
+//    EVENT_PRIORITY_MEDIUM_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
+//
+//    //For Parsing UART message
+//    EVENT_PRIORITY_HIGH_ENABLE = 0; // Disable Output Compare Channel 2 interrupt
+//    EVENT_PRIORITY_HIGH = RX_PARSER_LEVEL; // Set Output Compare Channel 2 Priority Level
+//    IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
+//    EVENT_PRIORITY_HIGH_ENABLE = 1; // Enable Output Compare Channel 2 interrupt
+//
+//    //For measure position and velocity estimation
+//    MEASURE_ENABLE = 0; // Disable Output Compare Channel 3 interrupt
+//    MEASURE_PRIORITY = motor_process[LEFT_PROCESS_MEASURE].priority; // Set Output Compare Channel 3 Priority Level
+//    IFS1bits.OC3IF = 0; // Clear Output Compare Channel 3 Interrupt Flag
+//    MEASURE_ENABLE = 1; // Enable Output Compare Channel 3 interrupt
+//    
+//    // For dead reckoning
+//    EVENT_PRIORITY_LOW_ENABLE = 0; // Disable RTC interrupt
+//    EVENT_PRIORITY_LOW_PRIORITY = motion_process[PROCESS_ODOMETRY].priority; // Set RTC Priority Level
+//    IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
+//    EVENT_PRIORITY_LOW_ENABLE = 1; // Enable RTC interrupt
+//}
+
+//void init_process(void) {
+//    strcpy(default_process[PROCESS_IDLE].name, "idle");
+//    default_process[PROCESS_IDLE].time = 0;
+//    strcpy(default_process[PROCESS_PARSE].name, "parse");
+//    default_process[PROCESS_PARSE].time = 0;
+//    //Init left process pid
+//    strcpy(motor_process[LEFT_PROCESS_PID].name, LEFT_PROCESS_PID_STRING);
+//    motor_process[LEFT_PROCESS_PID].time = 0;
+//    motor_process[LEFT_PROCESS_PID].priority = VEL_PID_LEVEL;
+//    motor_process[LEFT_PROCESS_PID].frequency = 1;
+//    //Init right process pid
+//    strcpy(motor_process[RIGHT_PROCESS_PID].name, RIGHT_PROCESS_PID_STRING);
+//    motor_process[RIGHT_PROCESS_PID].time = 0;
+//    motor_process[RIGHT_PROCESS_PID].priority = VEL_PID_LEVEL;
+//    motor_process[RIGHT_PROCESS_PID].frequency = 1;
+//    //Init left process measure
+//    strcpy(motor_process[LEFT_PROCESS_MEASURE].name, LEFT_PROCESS_MEASURE_STRING);
+//    motor_process[LEFT_PROCESS_MEASURE].time = 0;
+//    motor_process[LEFT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
+//    motor_process[LEFT_PROCESS_MEASURE].frequency = 1;
+//    //Init right process measure
+//    strcpy(motor_process[RIGHT_PROCESS_MEASURE].name, RIGHT_PROCESS_MEASURE_STRING);
+//    motor_process[RIGHT_PROCESS_MEASURE].time = 0;
+//    motor_process[RIGHT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
+//    motor_process[RIGHT_PROCESS_MEASURE].frequency = 1;
+//    
+//    //Init process odometry
+//    strcpy(motion_process[PROCESS_ODOMETRY].name, ODOMETRY_STRING);
+//    motion_process[PROCESS_ODOMETRY].time = 0;
+//    motion_process[PROCESS_ODOMETRY].priority = DEAD_RECK_LEVEL;
+//    motion_process[PROCESS_ODOMETRY].frequency = 10;
+//    //Init process odometry
+//    strcpy(motion_process[PROCESS_VELOCITY].name, VELOCITY_STRING);
+//    motion_process[PROCESS_VELOCITY].time = 0;
+//    motion_process[PROCESS_VELOCITY].priority = VEL_PID_LEVEL;
+//    motion_process[PROCESS_VELOCITY].frequency = 10;
+//
+//    parameter_system.step_timer = (int) (TMR1_VALUE);
+//    parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
+//}
 
 void set_process(uint8_t command, system_task_t process_state) {
     if (process_state.hashmap == HASHMAP_SYSTEM) {
@@ -238,21 +392,21 @@ system_task_name_t get_process_name(system_task_name_t process_name) {
     return process_name;
 }
 
-unsigned char update_priority(void) {
-    default_process[PROCESS_IDLE].time = 0;
-    InitInterrupts();
-    return PACKET_ACK;
-}
+//unsigned char update_priority(void) {
+//    default_process[PROCESS_IDLE].time = 0;
+//    InitInterrupts();
+//    return PACKET_ACK;
+//}
 
 unsigned char update_frequency(void) {
     if (motor_process[LEFT_PROCESS_PID].frequency == 0 || motor_process[RIGHT_PROCESS_PID].frequency == 0) {
-        VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
+        EVENT_PRIORITY_MEDIUM_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
     } else
-        VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
+        EVENT_PRIORITY_MEDIUM_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
     if (motion_process[PROCESS_ODOMETRY].frequency == 0 || motion_process[PROCESS_VELOCITY].frequency == 0) {
-        DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
+        EVENT_PRIORITY_LOW_ENABLE = 0; // Disable RTC interrupt
     } else
-        DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
+        EVENT_PRIORITY_LOW_ENABLE = 1; // Enable RTC interrupt
     return PACKET_ACK;
 }
 
@@ -292,65 +446,6 @@ system_service_t services(system_service_t service) {
     return service_send;
 }
 
-void InitInterrupts(void) {
-    //For PID velocity control
-    VEL_PID_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-    VEL_PID_PRIORITY = motor_process[LEFT_PROCESS_PID].priority; // Set Output Compare Channel 1 Priority Level
-    IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
-    VEL_PID_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
-
-    //For Parsing UART message
-    RX_PARSER_ENABLE = 0; // Disable Output Compare Channel 2 interrupt
-    RX_PARSER_PRIORITY = RX_PARSER_LEVEL; // Set Output Compare Channel 2 Priority Level
-    IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
-    RX_PARSER_ENABLE = 1; // Enable Output Compare Channel 2 interrupt
-
-    //For measure position and velocity estimation
-    MEASURE_ENABLE = 0; // Disable Output Compare Channel 3 interrupt
-    MEASURE_PRIORITY = motor_process[LEFT_PROCESS_MEASURE].priority; // Set Output Compare Channel 3 Priority Level
-    IFS1bits.OC3IF = 0; // Clear Output Compare Channel 3 Interrupt Flag
-    MEASURE_ENABLE = 1; // Enable Output Compare Channel 3 interrupt
-    
-    // For dead reckoning
-    DEAD_RECK_ENABLE = 0; // Disable RTC interrupt
-    DEAD_RECK_PRIORITY = motion_process[PROCESS_ODOMETRY].priority; // Set RTC Priority Level
-    IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
-    DEAD_RECK_ENABLE = 1; // Enable RTC interrupt
-}
-
-void ConfigureOscillator(void) {
-    PLLFBD = 30; // M=32  //Old configuration: PLLFBD=29 - M=31
-    CLKDIVbits.PLLPOST = 0; // N1=2
-    CLKDIVbits.PLLPRE = 0; // N2=2
-    // Disable Watch Dog Timer
-    RCONbits.SWDTEN = 0;
-    // Clock switching to incorporate PLL
-    // Initiate Clock Switch to Primary
-    __builtin_write_OSCCONH(0x03); // Oscillator with PLL (NOSC=0b011)
-    __builtin_write_OSCCONL(0x01); // Start clock switching
-    while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
-    while (OSCCONbits.LOCK != 1) {
-    }; // Wait for PLL to lock
-}
-
-void InitTimer1(void) {
-    //T1CON = 10100000 00000000
-    T1CONbits.TON = 0; // Disable Timer
-    T1CONbits.TSIDL = 1; // Stop in Idle Mode bit
-    T1CONbits.TGATE = 0; // Disable Gated Timer mode
-    T1CONbits.TCKPS = 0b00; // Select 1:1 Prescaler
-    T1CONbits.TSYNC = 0; // Disable Synchronization
-    T1CONbits.TCS = 0; // Select internal clock source
-    TMR1 = 0x00; // Clear timer register
-    PR1 = TMR1_VALUE; // Load the period value
-
-    IPC0bits.T1IP = SYS_TIMER_LEVEL; // Set Timer 1 Interrupt Priority Level
-    IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
-    IEC0bits.T1IE = 1; // Enable Timer1 interrupt
-
-    T1CONbits.TON = 1; // Start Timer
-}
-
 void InitTimer2(void) {
     //T2CON = 10100000 00000000
     T2CONbits.TON = 0; // Disable Timer
@@ -368,29 +463,6 @@ void InitTimer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
-void InitUART1(void) {
-    U1MODEbits.STSEL = 0; // 1-stop bit
-    U1MODEbits.PDSEL = 0; // No Parity, 8-data bits
-    U1MODEbits.ABAUD = 0; // Auto-Baud Disabled
-    U1MODEbits.BRGH = 0; // Low Speed mode
-
-    U1BRG = BRGVAL; // BAUD Rate Setting on System.h
-
-    U1STAbits.UTXISEL0 = 0; // Interrupt after one Tx character is transmitted
-    U1STAbits.UTXISEL1 = 0;
-
-    IEC0bits.U1TXIE = 0; // Disable UART Tx interrupt
-    U1STAbits.URXISEL = 0; // Interrupt after one RX character is received
-
-    U1MODEbits.UARTEN = 1; // Enable UART
-    U1STAbits.UTXEN = 1; // Enable UART Tx
-
-    IEC4bits.U1EIE = 0;
-    IPC2bits.U1RXIP = UART_RX_LEVEL; // Set UART Rx Interrupt Priority Level
-    IFS0bits.U1RXIF = 0; // Reset RX interrupt flag
-    IEC0bits.U1RXIE = 1; // Enable RX interrupt
-}
-
 void InitDMA0(void) {
     DMA0CNT = TOT_ADC_BUFF - 1; // 64 DMA request
     DMA0REQ = 13; // Select ADC1 as DMA Request source
@@ -405,28 +477,6 @@ void InitDMA0(void) {
     IPC1bits.DMA0IP = ADC_DMA_LEVEL; // Set DMA Interrupt Priority Level
     IEC0bits.DMA0IE = 1; // Enable DMA interrupt
     DMA0CONbits.CHEN = 1; // Enable DMA
-}
-
-void InitDMA1(void) {
-    //DMA1CON = 0x2001;			// One-Shot, Post-Increment, RAM-to-Peripheral
-
-    DMA1CONbits.CHEN = 0;
-    DMA1CONbits.SIZE = 1;
-    DMA1CONbits.DIR = 1;
-    DMA1CONbits.HALF = 0;
-    DMA1CONbits.NULLW = 0;
-    DMA1CONbits.AMODE = 0;
-    DMA1CONbits.MODE = 1;
-
-    DMA1CNT = MAX_BUFF_TX - 1; // 32 DMA requests
-    DMA1REQ = 0x000c; // Select UART1 Transmitter
-
-    DMA1STA = __builtin_dmaoffset(BufferTx);
-    DMA1PAD = (volatile unsigned int) &U1TXREG;
-
-    IPC3bits.DMA1IP = UART_TX_LEVEL; // Set DMA Interrupt Priority Level
-    IFS0bits.DMA1IF = 0; // Clear DMA Interrupt Flag
-    IEC0bits.DMA1IE = 1; // Enable DMA interrupt
 }
 
 void InitADC(void) {

@@ -36,11 +36,13 @@
 #include <string.h>
 #include <float.h>
 
+#include "system/system.h"
+
 #include "high_control/manager.h"
 #include "motors/motor_control.h"
 #include "communication/serial.h"
 #include "system/user.h"
-#include "system/system.h"
+
 
 //State controller
 volatile motion_state_t control_state = 0;

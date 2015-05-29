@@ -88,12 +88,18 @@ int16_t main(void) {
     int i;
     /* Configure the oscillator for the device */
     ConfigureOscillator();
-    /* Initialize processes controller */
-    init_process();
     /* Initialize IO ports and peripherals */
     InitApp();
     
+    /* INIT OS */
+    /// Initialize processes controller
+    InitEvents();
+    /// Initialization LEDs
+    InitLEDs();
+    
     /** SERIAL CONFIGURATION **/
+    /// Open UART1 for serial communication and Open DMA1 for TX UART1
+    SerialComm_Init();
     /* Initialize hashmap packet */
     init_hashmap_packet();
     /* Initialize buffer serial error */
