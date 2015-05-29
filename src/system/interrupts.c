@@ -33,6 +33,8 @@
 #include <stdint.h>        /* Includes uint16_t definition   */
 #include <stdbool.h>       /* Includes true/false definition */
 
+#include <system/events.h>
+
 #include "system/user.h"
 #include "system/system.h"
 
@@ -208,9 +210,7 @@ void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
-    //Will be added in feature #39
-    //time.process[PROCESS_MEASURE_VEL] = measureVelocity(REF_MOTOR_LEFT);
-    //time.process[PROCESS_MEASURE_VEL] += measureVelocity(REF_MOTOR_RIGHT);
+    event_manager(EVENT_PRIORITY_LOW);
     MEASURE_FLAG = 0;
 }
 
