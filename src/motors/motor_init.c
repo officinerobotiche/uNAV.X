@@ -38,6 +38,23 @@
 #include "system/system.h"
 #include "motors/motor_control.h"
 
+#ifdef UNAV_V1
+/// ENABLE 1
+hardware_bit_t enable_1 = {&LATA, 7};
+/// ENABLE 2
+hardware_bit_t enable_2 = {&LATA, 10};
+#elif ROBOCONTROLLER_V3
+/// ENABLE 1
+hardware_bit_t enable_1 = {&LATA, 1};
+/// ENABLE 2
+hardware_bit_t enable_2 = {&LATA, 4};
+#elif MOTION_CONTROL
+/// ENABLE 1
+hardware_bit_t enable_1 = {&LATB, 2};
+/// ENABLE 2
+hardware_bit_t enable_2 = {&LATB, 3};
+#endif
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -131,19 +148,6 @@ void InitQEI(short motIdx) {
     }
 }
 
-void SwitchIcPrescaler(int mode, int motIdx) {
-    // here is the assignment of the ICx module to the correct wheel
-    if (motIdx == 0) {
-        IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC1CONbits.ICM = IcMode[mode];
-        _IC1IF = 0; // interrupt flag reset
-    } else {
-        IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC2CONbits.ICM = IcMode[mode];
-        _IC2IF = 0; // interrupt flag reset
-    }
-}
-
 void InitIC(short motIdx) {
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -170,6 +174,36 @@ void InitIC(short motIdx) {
             IFS0bits.IC2IF = 0; // Clear IC2 Interrupt Status Flag
             IEC0bits.IC2IE = 1; // Enable IC2 interrupt
             break;
+    }
+}
+
+void Motor_Init(short motIdx) {
+    /* Open QEI */
+    InitQEI(motIdx);
+    /* Open Input Capture */
+    InitIC(motIdx);
+    /* Initialize variables for motors */
+    switch(motIdx) {
+        case MOTOR_ZERO:
+            init_motor(motIdx, &enable_1);
+            break;
+        case MOTOR_ONE:
+            init_motor(motIdx, &enable_2);
+            break;
+    }
+    
+}
+
+void SwitchIcPrescaler(int mode, int motIdx) {
+    // here is the assignment of the ICx module to the correct wheel
+    if (motIdx == 0) {
+        IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
+        IC1CONbits.ICM = IcMode[mode];
+        _IC1IF = 0; // interrupt flag reset
+    } else {
+        IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
+        IC2CONbits.ICM = IcMode[mode];
+        _IC2IF = 0; // interrupt flag reset
     }
 }
 

@@ -36,10 +36,11 @@
 #include <string.h>
 
 #include <system/events.h>
+#include <system/task_manager.h>
 #include <system/led.h>
 
-#include "system/user.h"
 #include "system/system.h"   /* variables/params used by system.c             */
+
 #include "packet/packet.h"
 #include "packet/frame_motion.h"
 #include "communication/serial.h"
@@ -70,8 +71,6 @@ unsigned char version_code[] = "v0.5";
 unsigned char type_board[] = "Motor Control";
 system_parameter_t parameter_system;
 
-extern unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
-
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 extern int AdcBuffer[ADC_CHANNELS][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
@@ -87,17 +86,17 @@ uint16_t FRQ_CPU = FRTMR1;
 
 #define EVENT_PRIORITY_LOW_ENABLE IEC3bits.RTCIE
 #define EVENT_PRIORITY_LOW_FLAG IFS3bits.RTCIF
-#define EVENT_PRIORITY_LOW IPC15bits.RTCIP
+#define EVENT_PRIORITY_LOW_P IPC15bits.RTCIP
 hardware_bit_t RTCIF = {&IFS3, 14};
 
 #define EVENT_PRIORITY_MEDIUM_ENABLE IEC0bits.OC1IE
 #define EVENT_PRIORITY_MEDIUM_FLAG IFS0bits.OC1IF
-#define EVENT_PRIORITY_MEDIUM IPC0bits.OC1IP
+#define EVENT_PRIORITY_MEDIUM_P IPC0bits.OC1IP
 hardware_bit_t OC1IF = {&IFS0, 2};
 
 #define EVENT_PRIORITY_HIGH_ENABLE IEC0bits.OC2IE
 #define EVENT_PRIORITY_HIGH_FLAG IFS0bits.OC2IF
-#define EVENT_PRIORITY_HIGH IPC1bits.OC2IP
+#define EVENT_PRIORITY_HIGH_P IPC1bits.OC2IP
 hardware_bit_t OC2IF = {&IFS0, 6};
 
 //#define MEASURE_ENABLE IEC1bits.OC3IE
@@ -105,15 +104,32 @@ hardware_bit_t OC2IF = {&IFS0, 6};
 //#define MEASURE_PRIORITY IPC6bits.OC3IP
 //hardware_bit_t OC3IF = {&IFS1, 9};
 
+#ifdef UNAV_V1
+/// Number of available LEDs
+#define LED_NUM 4
+/// LED 1 - Green
+hardware_bit_t led_1 = {&LATC, 6};
+/// LED 2 - Red
+hardware_bit_t led_2 = {&LATC, 7};
+/// LED 3 - Yellow
+hardware_bit_t led_3 = {&LATC, 8};
+/// LED 4 - Blue
+hardware_bit_t led_4 = {&LATC, 9};
+#elif ROBOCONTROLLER_V3
+/// Number of available LEDs
+#define LED_NUM 2
+/// LED 1 - Green
+hardware_bit_t led_1 = {&LATA, 8};
+/// LED 2 - Green
+hardware_bit_t led_2 = {&LATA, 9};
+#elif MOTION_CONTROL
+/// Number of available LEDs
+#define LED_NUM 1
+/// LED 1 - Green
+hardware_bit_t led_1 = {&LATA, 4};
+#endif
+
 led_control_t led_controller[LED_NUM];
-hardware_bit_t led_1 = {&LED1_PORT, LED1_NUM};
-#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-hardware_bit_t led_2 = {&LED2_PORT, LED2_NUM};
-#endif
-#if defined(UNAV_V1)
-hardware_bit_t led_3 = {&LED3_PORT, LED3_NUM};
-hardware_bit_t led_4 = {&LED4_PORT, LED4_NUM};
-#endif
 
 /******************************************************************************/
 /* System Level Functions                                                     */
@@ -154,17 +170,17 @@ void InitEvents(void) {
     init_events();
     
     EVENT_PRIORITY_LOW_ENABLE = 0;
-    EVENT_PRIORITY_LOW = EVENT_PRIORITY_LOW_LEVEL;
+    EVENT_PRIORITY_LOW_P = EVENT_PRIORITY_LOW_LEVEL;
     register_interrupt(EVENT_PRIORITY_LOW, &RTCIF);
     EVENT_PRIORITY_LOW_ENABLE = 1;
     
     EVENT_PRIORITY_MEDIUM_ENABLE = 0;
-    EVENT_PRIORITY_MEDIUM = EVENT_PRIORITY_MEDIUM_LEVEL;
+    EVENT_PRIORITY_MEDIUM_P = EVENT_PRIORITY_MEDIUM_LEVEL;
     register_interrupt(EVENT_PRIORITY_MEDIUM, &OC1IF);
     EVENT_PRIORITY_MEDIUM_ENABLE = 1;
     
     EVENT_PRIORITY_HIGH_ENABLE = 0;
-    EVENT_PRIORITY_HIGH = EVENT_PRIORITY_HIGH_LEVEL;
+    EVENT_PRIORITY_HIGH_P = EVENT_PRIORITY_HIGH_LEVEL;
     register_interrupt(EVENT_PRIORITY_HIGH, &OC2IF);
     EVENT_PRIORITY_HIGH_ENABLE = 1;
 }
@@ -208,88 +224,17 @@ void InitTimer1(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
-//    /**
-//     * If high level control selected, then set new reference for all motors.
-//     */
-//    if (control_state != STATE_CONTROL_HIGH_DISABLE) {
-//        FLAG_TASK_HIGH_LEVEL = 1;
-//    }
-//    /**
-//     * Run motors control task
-//     */
-//    FLAG_TASK_MOTORS = 1; //Start OC1Interrupt for PID control
-    
+    /// Execution task manager
+    task_manager();
     /// Blink controller for all LEDs
     LED_blinkController(&led_controller[0], LED_NUM);
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
 }
 
-//void InitInterrupts(void) {
-//    //For PID velocity control
-//    EVENT_PRIORITY_MEDIUM_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-//    EVENT_PRIORITY_MEDIUM_PRIORITY = motor_process[LEFT_PROCESS_PID].priority; // Set Output Compare Channel 1 Priority Level
-//    IFS0bits.OC1IF = 0; // Clear Output Compare Channel 1 Interrupt Flag
-//    EVENT_PRIORITY_MEDIUM_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
-//
-//    //For Parsing UART message
-//    EVENT_PRIORITY_HIGH_ENABLE = 0; // Disable Output Compare Channel 2 interrupt
-//    EVENT_PRIORITY_HIGH = RX_PARSER_LEVEL; // Set Output Compare Channel 2 Priority Level
-//    IFS0bits.OC2IF = 0; // Clear Output Compare Channel 2 Interrupt Flag
-//    EVENT_PRIORITY_HIGH_ENABLE = 1; // Enable Output Compare Channel 2 interrupt
-//
-//    //For measure position and velocity estimation
-//    MEASURE_ENABLE = 0; // Disable Output Compare Channel 3 interrupt
-//    MEASURE_PRIORITY = motor_process[LEFT_PROCESS_MEASURE].priority; // Set Output Compare Channel 3 Priority Level
-//    IFS1bits.OC3IF = 0; // Clear Output Compare Channel 3 Interrupt Flag
-//    MEASURE_ENABLE = 1; // Enable Output Compare Channel 3 interrupt
-//    
-//    // For dead reckoning
-//    EVENT_PRIORITY_LOW_ENABLE = 0; // Disable RTC interrupt
-//    EVENT_PRIORITY_LOW_PRIORITY = motion_process[PROCESS_ODOMETRY].priority; // Set RTC Priority Level
-//    IFS3bits.RTCIF = 0; // Clear RTC Interrupt Flag
-//    EVENT_PRIORITY_LOW_ENABLE = 1; // Enable RTC interrupt
-//}
 
-//void init_process(void) {
-//    strcpy(default_process[PROCESS_IDLE].name, "idle");
-//    default_process[PROCESS_IDLE].time = 0;
-//    strcpy(default_process[PROCESS_PARSE].name, "parse");
-//    default_process[PROCESS_PARSE].time = 0;
-//    //Init left process pid
-//    strcpy(motor_process[LEFT_PROCESS_PID].name, LEFT_PROCESS_PID_STRING);
-//    motor_process[LEFT_PROCESS_PID].time = 0;
-//    motor_process[LEFT_PROCESS_PID].priority = VEL_PID_LEVEL;
-//    motor_process[LEFT_PROCESS_PID].frequency = 1;
-//    //Init right process pid
-//    strcpy(motor_process[RIGHT_PROCESS_PID].name, RIGHT_PROCESS_PID_STRING);
-//    motor_process[RIGHT_PROCESS_PID].time = 0;
-//    motor_process[RIGHT_PROCESS_PID].priority = VEL_PID_LEVEL;
-//    motor_process[RIGHT_PROCESS_PID].frequency = 1;
-//    //Init left process measure
-//    strcpy(motor_process[LEFT_PROCESS_MEASURE].name, LEFT_PROCESS_MEASURE_STRING);
-//    motor_process[LEFT_PROCESS_MEASURE].time = 0;
-//    motor_process[LEFT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
-//    motor_process[LEFT_PROCESS_MEASURE].frequency = 1;
-//    //Init right process measure
-//    strcpy(motor_process[RIGHT_PROCESS_MEASURE].name, RIGHT_PROCESS_MEASURE_STRING);
-//    motor_process[RIGHT_PROCESS_MEASURE].time = 0;
-//    motor_process[RIGHT_PROCESS_MEASURE].priority = MEASURE_LEVEL;
-//    motor_process[RIGHT_PROCESS_MEASURE].frequency = 1;
-//    
-//    //Init process odometry
-//    strcpy(motion_process[PROCESS_ODOMETRY].name, ODOMETRY_STRING);
-//    motion_process[PROCESS_ODOMETRY].time = 0;
-//    motion_process[PROCESS_ODOMETRY].priority = DEAD_RECK_LEVEL;
-//    motion_process[PROCESS_ODOMETRY].frequency = 10;
-//    //Init process odometry
-//    strcpy(motion_process[PROCESS_VELOCITY].name, VELOCITY_STRING);
-//    motion_process[PROCESS_VELOCITY].time = 0;
-//    motion_process[PROCESS_VELOCITY].priority = VEL_PID_LEVEL;
-//    motion_process[PROCESS_VELOCITY].frequency = 10;
-//
-//    parameter_system.step_timer = (int) (TMR1_VALUE);
-//    parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
-//}
+
+
+
 
 void set_process(uint8_t command, system_task_t process_state) {
     if (process_state.hashmap == HASHMAP_SYSTEM) {

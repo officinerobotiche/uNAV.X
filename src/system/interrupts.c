@@ -49,13 +49,13 @@
 
 ICdata ICinfo[NUM_MOTORS];
 
-//From system.c
-extern process_t default_process[2];
-extern process_t motor_process[PROCESS_MOTOR_LENGTH];
-extern process_t motion_process[PROCESS_MOTION_LENGTH];
-
-//From high_level_control
-extern volatile unsigned int control_state;
+////From system.c
+//extern process_t default_process[2];
+//extern process_t motor_process[PROCESS_MOTOR_LENGTH];
+//extern process_t motion_process[PROCESS_MOTION_LENGTH];
+//
+////From high_level_control
+//extern volatile unsigned int control_state;
 
 ////From user
 //extern led_control_t led_controller[LED_NUM];
@@ -166,8 +166,6 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
     IFS0bits.IC2IF = 0;
 }
 
-
-
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
     if (ICinfo[MOTOR_ZERO].timePeriod)
@@ -176,33 +174,7 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
         ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for Right engines
 }
 
-//void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
-//    motor_process[PROCESS_VELOCITY].time = MotorTaskController();
-//    FLAG_TASK_MOTORS = 0; // interrupt flag reset
-//}
-//
-//void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
-//    default_process[PROCESS_PARSE].time = parse_packet();
-//    PARSER_FLAG = 0; //interrupt flag reset
-//}
-//
-//void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
-//    //Will be added in feature #39
-//    //time.process[PROCESS_MEASURE_VEL] = measureVelocity(REF_MOTOR_LEFT);
-//    //time.process[PROCESS_MEASURE_VEL] += measureVelocity(REF_MOTOR_RIGHT);
-//    MEASURE_FLAG = 0;
-//}
-//
-//void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
-//    HighLevelTaskController();
-//    FLAG_TASK_HIGH_LEVEL = 0; //interrupt flag reset
-//}
-
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
     adc_motors_current(); // Esecution mean value for current motors
-}
-
-void __attribute__((interrupt, auto_psv)) _DMA1Interrupt(void) {
-    IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
 }

@@ -81,7 +81,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion></languageToolchainVersion>
+        <languageToolchainVersion>1.24</languageToolchainVersion>
         <platform>4</platform>
       </toolsSet>
       <compileType>

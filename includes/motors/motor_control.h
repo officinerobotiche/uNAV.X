@@ -24,6 +24,7 @@ extern "C" {
 
     #include <stdint.h>
     #include <stdbool.h>
+    #include <system/gpio.h>
     
     /**************************************************************************/
     /* System Level #define Macros                                            */
@@ -61,7 +62,7 @@ extern "C" {
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
      */
-    void init_motor(short motIdx);
+    void init_motor(short motIdx, hardware_bit_t* enable);
     
     /**
      * Initialization parameters for motor controller.

@@ -169,6 +169,10 @@ void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
     }
 }
 
+void __attribute__((interrupt, auto_psv)) _DMA1Interrupt(void) {
+    IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
+}
+
 void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     message_abstract_u send;
     switch (info->command) {

@@ -91,11 +91,18 @@ int16_t main(void) {
     /* Initialize IO ports and peripherals */
     InitApp();
     
+    /* Peripherals initialization */
+    InitTimer2(); //Open Timer2 for InputCapture 1 & 2
+    InitADC(); //Open ADC for measure current motors
+    InitDMA0(); //Open DMA0 for buffering measures ADC
+    
     /* INIT OS */
     /// Initialize processes controller
     InitEvents();
     /// Initialization LEDs
     InitLEDs();
+    /// Open Timer1 for clock system
+    InitTimer1();
     
     /** SERIAL CONFIGURATION **/
     /// Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -111,12 +118,8 @@ int16_t main(void) {
     /* Open PWM */
     InitPWM();
     for (i = 0; i < NUM_MOTORS; ++i) {
-        /* Open QEI */
-        InitQEI(i);
-        /* Open Input Capture */
-        InitIC(i);
-        /* Initialize variables for motors */
-        init_motor(i);
+        /// Initialization Motor peripherals
+        Motor_Init(i);
         /* Initialize parameters for motors */
         update_motor_parameters(i, init_motor_parameters());
         /* Initialize PID controllers */

@@ -35,12 +35,13 @@
 #include <dsp.h>
 #include <pwm12.h>
 
-#include <system/led.h>
+#include <system/gpio.h>
+
+#include <or_math/math.h>
 
 #include "high_control/manager.h"
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
 #include "system/system.h"
-#include "system/user.h"
 #include "packet/packet.h"
 
 /**
@@ -73,16 +74,13 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 
 // ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
 int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
-hardware_bit_t enable1 = {&MOTOR_ENABLE1_PORT, MOTOR_ENABLE1_NUM};
-hardware_bit_t enable2 = {&MOTOR_ENABLE2_PORT, MOTOR_ENABLE2_NUM};
 
 /** */
 
 typedef struct new_motor {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
-    hardware_bit_t * pin_enable;
-    unsigned int CS_mask;
+    bit_control_t * pin_enable;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -125,7 +123,7 @@ extern process_t motor_process[PROCESS_MOTOR_LENGTH];
 /* User Functions                                                            */
 /*****************************************************************************/
 
-void init_motor(short motIdx) {
+void init_motor(short motIdx, hardware_bit_t* enable) {
     motors[motIdx].measure.position = 0;
     motors[motIdx].measure.velocity = 0;
     motors[motIdx].measure.torque = 0;
@@ -145,15 +143,10 @@ void init_motor(short motIdx) {
     ICinfo[motIdx].SIG_VEL = 0;
     ICinfo[motIdx].overTmr = 0;
     ICinfo[motIdx].timePeriod = 0;
-    switch (motIdx) {
-        case MOTOR_ZERO:
-            motors[motIdx].pin_enable = &enable1;
-            break;
-        case MOTOR_ONE:
-            motors[motIdx].pin_enable = &enable2;
-            break;
-    }
-    motors[motIdx].CS_mask = 1 << motors[motIdx].pin_enable->CS_pin;
+    /// Setup bit enable
+    motors[motIdx].pin_enable->pin = enable;
+    bit_setup(motors[motIdx].pin_enable);
+    
     motors[motIdx].k_mul = 1;
 }
 
@@ -328,14 +321,11 @@ void set_motor_state(short motIdx, motor_state_t state) {
     
     /// Set enable or disable motors
     motors[motIdx].reference.state = state;
-    switch (motIdx) {
-        case MOTOR_ZERO:
-            MOTOR_ENABLE1_BIT = enable ^ motors[motIdx].parameter_motor.bridge.enable;
-            break;
-        case MOTOR_ONE:
-            MOTOR_ENABLE2_BIT = enable ^ motors[motIdx].parameter_motor.bridge.enable;
-            break;
-    }
+    if(enable ^ motors[motIdx].parameter_motor.bridge.enable)
+        bit_high(motors[motIdx].pin_enable);
+    else
+        bit_low(motors[motIdx].pin_enable);
+    
     if (state == STATE_CONTROL_EMERGENCY) {
         motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
     }
