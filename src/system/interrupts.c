@@ -49,18 +49,6 @@
 
 ICdata ICinfo[NUM_MOTORS];
 
-////From system.c
-//extern process_t default_process[2];
-//extern process_t motor_process[PROCESS_MOTOR_LENGTH];
-//extern process_t motion_process[PROCESS_MOTION_LENGTH];
-//
-////From high_level_control
-//extern volatile unsigned int control_state;
-
-////From user
-//extern led_control_t led_controller[LED_NUM];
-//extern bool led_effect;
-
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
 /******************************************************************************/
@@ -135,7 +123,6 @@ ICdata ICinfo[NUM_MOTORS];
 /*                                                                            */
 /******************************************************************************/
 /* Interrupt Routines                                                         */
-
 /******************************************************************************/
 
 void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {

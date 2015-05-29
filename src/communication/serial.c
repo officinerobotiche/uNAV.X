@@ -30,17 +30,14 @@
 #endif
 #endif
 
-#include <stdint.h>        /* Includes uint16_t definition   */
-#include <stdbool.h>       /* Includes true/false definition */
-#include <string.h>
+//#include <stdint.h>        /* Includes uint16_t definition   */
+//#include <stdbool.h>       /* Includes true/false definition */
+//#include <string.h>
 
 #include <system/events.h>
 
-#include <serial/or_message.h>
-#include <serial/or_frame.h>
 #include "communication/serial.h"
 
-#include "system/user.h"
 #include "system/system.h"
 
 /******************************************************************************/
@@ -56,7 +53,7 @@ hEvent_t parseEvent = INVALID_HANDLE;
 extern system_parameter_t parameter_system;
 // From communication/serial.c
 extern system_error_serial_t serial_error;
-extern packet_t receive_pkg;
+//extern packet_t receive_pkg;
 extern char receive_header;
 
 /******************************************************************************/
@@ -111,6 +108,10 @@ void InitDMA1(void) {
 void SerialComm_Init(void) {
     InitUART1();
     InitDMA1();
+    
+    init_hashmap_packet();          ///< Initialize hash map packet
+    init_buff_serial_error();       ///< Initialize buffer serial error
+    
     /// Register event
     parseEvent = register_event_p(&parse_packet, EVENT_PRIORITY_LOW);
 }

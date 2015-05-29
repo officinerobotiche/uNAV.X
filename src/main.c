@@ -34,6 +34,9 @@
 #include <stdbool.h>       /* Includes true/false definition                  */
 
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
+
+#include <system/task_manager.h>
+
 #include "system/user.h"   /* User funct/params, such as InitApp              */
 
 #include "communication/serial.h"
@@ -85,38 +88,30 @@
  */
 
 int16_t main(void) {
-    int i;
-    /* Configure the oscillator for the device */
-    ConfigureOscillator();
-    /* Initialize IO ports and peripherals */
-    InitApp();
+    /* INIT OS */
+    ConfigureOscillator();  ///< Configure the oscillator for the device
+    InitApp();              ///< Initialize IO ports and peripherals
+    InitLEDs();             ///< Initialization LEDs
+    
+    InitEvents();   ///< Initialize processes controller
+    task_init();    ///< Initialization task controller
+    InitTimer1();   ///< Open Timer1 for clock system
     
     /* Peripherals initialization */
-    InitTimer2(); //Open Timer2 for InputCapture 1 & 2
-    InitADC(); //Open ADC for measure current motors
-    InitDMA0(); //Open DMA0 for buffering measures ADC
-    
-    /* INIT OS */
-    /// Initialize processes controller
-    InitEvents();
-    /// Initialization LEDs
-    InitLEDs();
-    /// Open Timer1 for clock system
-    InitTimer1();
+    InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
+    InitADC();    ///< Open ADC for measure current motors
+    InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
     /** SERIAL CONFIGURATION **/
     /// Open UART1 for serial communication and Open DMA1 for TX UART1
     SerialComm_Init();
-    /* Initialize hashmap packet */
-    init_hashmap_packet();
-    /* Initialize buffer serial error */
-    init_buff_serial_error();
     /* Initialize parsing reader */
     set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system);
     
     /*** MOTOR INITIALIZATION ***/
     /* Open PWM */
     InitPWM();
+    int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
         /// Initialization Motor peripherals
         Motor_Init(i);

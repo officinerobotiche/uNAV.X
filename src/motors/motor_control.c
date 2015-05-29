@@ -80,7 +80,7 @@ int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 typedef struct new_motor {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
-    bit_control_t * pin_enable;
+    bit_control_t pin_enable;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -144,8 +144,8 @@ void init_motor(short motIdx, hardware_bit_t* enable) {
     ICinfo[motIdx].overTmr = 0;
     ICinfo[motIdx].timePeriod = 0;
     /// Setup bit enable
-    motors[motIdx].pin_enable->pin = enable;
-    bit_setup(motors[motIdx].pin_enable);
+    motors[motIdx].pin_enable.pin = enable;
+    bit_setup(&motors[motIdx].pin_enable);
     
     motors[motIdx].k_mul = 1;
 }
@@ -322,9 +322,9 @@ void set_motor_state(short motIdx, motor_state_t state) {
     /// Set enable or disable motors
     motors[motIdx].reference.state = state;
     if(enable ^ motors[motIdx].parameter_motor.bridge.enable)
-        bit_high(motors[motIdx].pin_enable);
+        bit_high(&motors[motIdx].pin_enable);
     else
-        bit_low(motors[motIdx].pin_enable);
+        bit_low(&motors[motIdx].pin_enable);
     
     if (state == STATE_CONTROL_EMERGENCY) {
         motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
