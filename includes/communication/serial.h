@@ -65,26 +65,6 @@ extern "C" {
      * @return time to compute parsing packet
      */
     int parse_packet();
-    
-    /**
-     * Save for all standard messages the data in tail and save in controller.
-     * Others messages, typical for this board are saved with function
-     * save_other_data in file parsing_other_messages.h
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
-
-    /**
-     * Send for all standard messages the data. The information are saved
-     * in a information_packet_t by functions createPacket and createDataPacket
-     * in tail of this file.
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
 
 #ifdef	__cplusplus
 }

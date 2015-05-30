@@ -49,11 +49,6 @@ unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 hEvent_t parseEvent = INVALID_HANDLE;
 
 /** GLOBAL VARIBLES */
-// From system/system.c
-extern system_parameter_t parameter_system;
-// From communication/serial.c
-extern system_error_serial_t serial_error;
-//extern packet_t receive_pkg;
 extern char receive_header;
 
 /******************************************************************************/
@@ -172,54 +167,4 @@ void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _DMA1Interrupt(void) {
     IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
-}
-
-void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
-    message_abstract_u send;
-    switch (info->command) {
-        case SYSTEM_SERVICE:
-            send.system.service = services(info->message.system.service);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
-            break;
-        case SYSTEM_TASK_PRIORITY:
-        case SYSTEM_TASK_FRQ:
-            set_process(info->command, info->message.system.task);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
-            break;
-        default:
-            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-            break;
-    }
-}
-
-void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
-    message_abstract_u send;
-    switch (info->command) {
-        case SYSTEM_SERVICE:
-            send.system.service = services(info->message.system.service);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
-            break;
-        case SYSTEM_TASK_PRIORITY:
-        case SYSTEM_TASK_FRQ:
-        case SYSTEM_TASK_TIME:
-        case SYSTEM_TASK_NUM:
-            send.system.task = get_process(info->command, info->message.system.task);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
-            break;
-        case SYSTEM_TASK_NAME:
-            send.system.task_name = get_process_name(info->message.system.task_name);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
-            break;
-        case SYSTEM_PARAMETER:
-            send.system.parameter = parameter_system;
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
-            break;
-        case SYSTEM_SERIAL_ERROR:
-            send.system.error_serial = serial_error;
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
-            break;
-        default:
-            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
-            break;
-    }
 }

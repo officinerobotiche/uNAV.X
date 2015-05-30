@@ -28,7 +28,7 @@ extern "C" {
     void InitPWM(void);
 
     /**
-     * Initaliazion motor
+     * Initialiazion motor
      */
     void Motor_Init(short motIdx);
     
@@ -49,6 +49,10 @@ extern "C" {
      * @param motIdx number motor
      */
     void InitIC(short motIdx);
+    /** 
+     * Initialization Timer 2 for IC (Input Capture)
+     */
+    void InitTimer2(void);
 
 
 #ifdef	__cplusplus

@@ -36,7 +36,6 @@
 #include <pwm12.h>
 
 #include <system/gpio.h>
-
 #include <or_math/math.h>
 
 #include "high_control/manager.h"
@@ -71,9 +70,6 @@ fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
 fractional abcCoefficient2[3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
-
-// ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
-int AdcBuffer[2][ADC_BUFF] __attribute__((space(dma), aligned(256)));
 
 /** */
 
@@ -464,14 +460,14 @@ bool Emergency(short motIdx) {
     return true;
 }
 
-void adc_motors_current(void) {
+inline void adc_motors_current(ADC* AdcBuffer, size_t len) {
     int AdcCount = 0; //Counter
-    long ADCValueTmp[ADC_CHANNELS] = {0, 0}; //Array to filter ADC data
+    long ADCValueTmp[NUM_MOTORS] = {0, 0}; //Array to filter ADC data
 
-    for (AdcCount = 0; AdcCount < ADC_BUFF; AdcCount++) // Evaluate mean value
+    for (AdcCount = 0; AdcCount < len; ++AdcCount) // Evaluate mean value
     {
-        ADCValueTmp[MOTOR_ZERO] += AdcBuffer[MOTOR_ZERO][AdcCount]; //Sum for AN0
-        ADCValueTmp[MOTOR_ONE] += AdcBuffer[MOTOR_ONE][AdcCount]; //Sum for AN1
+        ADCValueTmp[MOTOR_ZERO] += (*AdcBuffer)[MOTOR_ZERO][AdcCount]; //Sum for AN0
+        ADCValueTmp[MOTOR_ONE] += (*AdcBuffer)[MOTOR_ONE][AdcCount]; //Sum for AN1
     }
     motors[MOTOR_ZERO].diagnostic.current = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
     motors[MOTOR_ONE].diagnostic.current = ADCValueTmp[MOTOR_ONE] >> 6; //Shift

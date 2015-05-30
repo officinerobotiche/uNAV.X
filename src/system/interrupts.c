@@ -159,8 +159,3 @@ void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     if (ICinfo[MOTOR_ONE].timePeriod)
         ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for Right engines
 }
-
-void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
-    IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
-    adc_motors_current(); // Esecution mean value for current motors
-}

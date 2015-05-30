@@ -19,6 +19,8 @@
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
         <itemPath>includes/system/system.h</itemPath>
+        <itemPath>includes/system/peripherals.h</itemPath>
+        <itemPath>includes/system/system_comm.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="LibraryFiles"
@@ -58,10 +60,12 @@
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
         <itemPath>src/system/traps.c</itemPath>
-        <itemPath>src/system/configuration_bits.c</itemPath>
         <itemPath>src/system/interrupts.c</itemPath>
+        <itemPath>src/system/peripherals.c</itemPath>
+        <itemPath>src/system/system_comm.c</itemPath>
       </logicalFolder>
       <itemPath>src/main.c</itemPath>
+      <itemPath>src/configuration_bits.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -69,6 +73,9 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>src</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="uNAV_V1" type="2">

@@ -24,7 +24,11 @@ extern "C" {
 
     #include <stdint.h>
     #include <stdbool.h>
+    #include <string.h>
+    
     #include <system/gpio.h>
+
+    #include "system/peripherals.h"
     
     /**************************************************************************/
     /* System Level #define Macros                                            */
@@ -225,7 +229,7 @@ extern "C" {
     /**
      * Mean value for current measure motors
      */
-    void adc_motors_current(void);
+    inline void adc_motors_current(ADC* AdcBuffer, size_t len);
 
 #ifdef	__cplusplus
 }

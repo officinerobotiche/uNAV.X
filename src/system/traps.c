@@ -34,7 +34,7 @@
 #include <stdbool.h>       /* Includes true/false definition */
 #include <libpic30.h>      /* Includes for delay definition */
 
-#include "system/system.h" /* System funct/params, like osc/peripheral config */
+#include "system/peripherals.h"
 
 /******************************************************************************/
 /* Trap Function Prototypes                                                   */
