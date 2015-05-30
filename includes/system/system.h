@@ -127,6 +127,16 @@ extern "C" {
     functions, and other non-peripheral microcontroller initialization functions
     go here. */
 
+    /** 
+     * Handles clock switching/osc initialization
+     */
+    void ConfigureOscillator(void);
+    
+    /**
+     * I/O and Peripheral Initialization
+     */
+    void Peripherals_Init(void);
+    
     /**
      * Initialization led blink
      */
@@ -136,20 +146,12 @@ extern "C" {
      * @param led to control
      * @param blink number of blinks
      */
-    void UpdateBlink(short num, short blink);
+    inline void UpdateBlink(short num, short blink);
     
     /**
      * Initialization all system events
      */
     void InitEvents(void);
-    
-    /**
-     * Initialization name process and set standard priority for all procesees
-     */
-    //void init_process(void);
-    /** Initialization others interrupts
-     */
-    //void InitInterrupts(void);
 
 
     /**
@@ -182,9 +184,7 @@ extern "C" {
      */
     system_service_t services(system_service_t service);
 
-    /** Handles clock switching/osc initialization
-     */
-    void ConfigureOscillator(void);
+
 
     /** Initialization Timer 1 - Timer system
      */

@@ -18,7 +18,6 @@
         <itemPath>includes/motors/motor_init.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
-        <itemPath>includes/system/user.h</itemPath>
         <itemPath>includes/system/system.h</itemPath>
       </logicalFolder>
     </logicalFolder>
@@ -59,7 +58,6 @@
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
         <itemPath>src/system/traps.c</itemPath>
-        <itemPath>src/system/user.c</itemPath>
         <itemPath>src/system/configuration_bits.c</itemPath>
         <itemPath>src/system/interrupts.c</itemPath>
       </logicalFolder>

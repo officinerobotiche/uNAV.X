@@ -37,8 +37,6 @@
 
 #include <system/task_manager.h>
 
-#include "system/user.h"   /* User funct/params, such as InitApp              */
-
 #include "communication/serial.h"
 
 #include "motors/motor_init.h"
@@ -90,7 +88,7 @@
 int16_t main(void) {
     /* INIT OS */
     ConfigureOscillator();  ///< Configure the oscillator for the device
-    InitApp();              ///< Initialize IO ports and peripherals
+    Peripherals_Init();     ///< Initialize IO ports and peripherals
     InitLEDs();             ///< Initialization LEDs
     
     InitEvents();   ///< Initialize processes controller

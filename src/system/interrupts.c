@@ -33,7 +33,6 @@
 #include <stdint.h>        /* Includes uint16_t definition   */
 #include <stdbool.h>       /* Includes true/false definition */
 
-#include "system/user.h"
 #include "system/system.h"
 
 #include <serial/or_message.h>

@@ -41,7 +41,6 @@
 #include "high_control/manager.h"
 #include "motors/motor_control.h"
 #include "communication/serial.h"
-#include "system/user.h"
 
 
 //State controller
