@@ -65,7 +65,7 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case MOTOR_VEL_REF:
-            set_motor_velocity((short) motor.bitset.motor, info->message.motor.reference);
+            set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, info->message.motor.reference);
             list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
             break;
         case MOTOR_STATE:

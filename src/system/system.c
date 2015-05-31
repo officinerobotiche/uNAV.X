@@ -126,7 +126,7 @@ inline uint16_t get_Frequency(void) {
 }
 
 void InitEvents(void) {
-    init_events();
+    init_events(&TMR1);
     
     EVENT_PRIORITY_LOW_ENABLE = 0;
     EVENT_PRIORITY_LOW_P = EVENT_PRIORITY_LOW_LEVEL;

@@ -64,7 +64,7 @@ extern "C" {
      * *This function is a long function*
      * @return time to compute parsing packet
      */
-    int parse_packet();
+    void parse_packet(int argc, char *argv);
 
 #ifdef	__cplusplus
 }

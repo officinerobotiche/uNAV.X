@@ -123,8 +123,7 @@ void serial_send(char header, packet_t packet) {
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
 }
 
-int parse_packet(void) {
-    unsigned int t = TMR1; // Timing function
+void parse_packet(int argc, char *argv) {
     packet_information_t list_data[BUFFER_LIST_PARSING];
     size_t len = 0;
 
@@ -134,7 +133,6 @@ int parse_packet(void) {
         // Send a new packet
         serial_send(receive_header, send);
     }
-    return TMR1 - t; // Time of execution
 }
 
 unsigned int ReadUART1(void) {

@@ -216,18 +216,18 @@ void set_motion_velocity_ref_unicycle(motion_velocity_t velocity) {
 
     // >>>>> Saturation on 16 bit values
     if(motor_left_refer > INT16_MAX) {
-        set_motor_velocity(MOTOR_ZERO, INT16_MAX);
+        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MAX);
     } else if (motor_left_refer < INT16_MIN) {
-        set_motor_velocity(MOTOR_ZERO, INT16_MIN);
+        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MIN);
     } else {
-        set_motor_velocity(MOTOR_ZERO, motor_left_refer);
+        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, motor_left_refer);
     }
     if(motor_right_refer > INT16_MIN) {
-        set_motor_velocity(MOTOR_ONE, INT16_MIN);
+        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
     } else if (motor_right_refer < INT16_MIN) {
-        set_motor_velocity(MOTOR_ONE, INT16_MIN);
+        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
     } else {
-        set_motor_velocity(MOTOR_ONE, motor_right_refer);
+        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, motor_right_refer);
     }
     // <<<<< Saturation on 16 bit values
 }
