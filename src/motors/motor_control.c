@@ -35,7 +35,7 @@
 #include <dsp.h>
 #include <pwm12.h>
 
-#include <system/gpio.h>
+#include <peripherals/gpio.h>
 #include <system/task_manager.h>
 
 #include <or_math/math.h>

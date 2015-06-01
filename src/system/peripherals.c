@@ -30,7 +30,7 @@
 #endif
 #endif
 
-#include <system/led.h>
+#include <peripherals/led.h>
 
 #include "system/peripherals.h"
 #include "system/system.h"

@@ -26,7 +26,7 @@ extern "C" {
     #include <stdbool.h>
     #include <string.h>
     
-    #include <system/gpio.h>
+    #include <peripherals/gpio.h>
 
     #include "system/peripherals.h"
     
