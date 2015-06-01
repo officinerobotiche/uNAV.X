@@ -67,6 +67,10 @@
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
+
+#define MOTOR "MOTOR"
+string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
+
 /**
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
@@ -162,16 +166,16 @@ void init_motor(short motIdx, hardware_bit_t* enable) {
     motors[motIdx].k_mul = 1;
     
     /// Register event and add in task controller
-    motors[motIdx].task_manager = task_load_data(register_event_p(&MotorTaskController, EVENT_PRIORITY_MEDIUM), 1000, 1, (char*) &motIdx);
+    motors[motIdx].task_manager = task_load_data(register_event_p(&MotorTaskController, &_MODULE_MOTOR, EVENT_PRIORITY_MEDIUM), 1000, 1, (char*) &motIdx);
     /// Run task controller
     task_status(motors[motIdx].task_manager, RUN);
     /// Load controller EMERGENCY
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = 1000;
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(&Emergency, EVENT_PRIORITY_HIGH),
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(&Emergency, &_MODULE_MOTOR, EVENT_PRIORITY_HIGH),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency, 1, (char*) &motIdx);
     /// Load controllers VELOCITY
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = 1000;
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(&controller_velocity, EVENT_PRIORITY_MEDIUM),
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(&controller_velocity, &_MODULE_MOTOR, EVENT_PRIORITY_MEDIUM),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency, 1, (char*) &motIdx);
 }
 
