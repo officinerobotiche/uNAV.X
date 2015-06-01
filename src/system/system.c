@@ -53,23 +53,6 @@
 /******************************************************************************/
 
 unsigned int reset_count = 0;
-unsigned char version_date_[] = __DATE__;
-unsigned char version_time_[] = __TIME__;
-#ifdef UNAV_V1
-unsigned char name_board[] = "uNAV";
-#elif ROBOCONTROLLER_V3
-unsigned char name_board[] = "RoboController";
-#elif MOTION_CONTROL
-unsigned char name_board[] = "Motion Control";
-#endif
-#ifdef MOTION_CONTROL
-unsigned char author_code[] = "Raffaello Bonghi";
-#else
-unsigned char author_code[] = "Officine Robotiche";
-#endif
-
-unsigned char version_code[] = "v0.5";
-unsigned char type_board[] = "Motor Control";
 system_parameter_t parameter_system;
 
 process_t default_process[NUM_PROCESS_DEFAULT];
@@ -79,6 +62,20 @@ process_t motion_process[PROCESS_MOTION_LENGTH];
 /******************************************************************************/
 /* NEW Global Variable Declaration                                            */
 /******************************************************************************/
+
+unsigned char _VERSION_DATE[] = __DATE__;
+unsigned char _VERSION_TIME[] = __TIME__;
+unsigned char _VERSION_CODE[] = "v0.5";
+unsigned char _AUTHOR_CODE[] = "Officine Robotiche";
+unsigned char _BOARD_TYPE[] = "Motor Control";
+#ifdef UNAV_V1
+unsigned char _BOARD_NAME[] = "uNAV";
+#elif ROBOCONTROLLER_V3
+unsigned char _BOARD_NAME[] = "RoboController";
+#elif MOTION_CONTROL
+unsigned char _BOARD_NAME[] = "Motion Control";
+#endif
+
 
 uint16_t FRQ_CPU = FRTMR1;
 
@@ -189,11 +186,6 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     ControllerBlink();
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
 }
-
-
-
-
-
 
 void set_process(uint8_t command, system_task_t process_state) {
     if (process_state.hashmap == HASHMAP_SYSTEM) {
@@ -319,21 +311,21 @@ system_service_t services(system_service_t service) {
     service_send.command = service.command;
     switch (service.command) {
         case SERVICE_CODE_DATE:
-            memcpy(service_send.buffer, version_date_, sizeof (version_date_));
-            service_send.buffer[sizeof (version_date_) - 1] = ' ';
-            memcpy(service_send.buffer + sizeof (version_date_), version_time_, sizeof (version_time_));
+            memcpy(service_send.buffer, _VERSION_DATE, sizeof (_VERSION_DATE));
+            service_send.buffer[sizeof (_VERSION_DATE) - 1] = ' ';
+            memcpy(service_send.buffer + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
             break;
         case SERVICE_CODE_BOARD_NAME:
-            memcpy(service_send.buffer, name_board, sizeof (name_board));
+            memcpy(service_send.buffer, _BOARD_NAME, sizeof (_BOARD_NAME));
             break;
         case SERVICE_CODE_BOARD_TYPE:
-            memcpy(service_send.buffer, type_board, sizeof (type_board));
+            memcpy(service_send.buffer, _BOARD_TYPE, sizeof (_BOARD_TYPE));
             break;
         case SERVICE_CODE_VERSION:
-            memcpy(service_send.buffer, version_code, sizeof (version_code));
+            memcpy(service_send.buffer, _VERSION_CODE, sizeof (_VERSION_CODE));
             break;
         case SERVICE_CODE_AUTHOR:
-            memcpy(service_send.buffer, author_code, sizeof (author_code));
+            memcpy(service_send.buffer, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
             break;
         case SERVICE_RESET:
             if (reset_count < 3) {

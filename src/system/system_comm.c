@@ -34,6 +34,8 @@
 
 #include "system/system.h"
 
+#include <system/events.h>
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -76,6 +78,8 @@ void send_frame_system(packet_information_t* list_send, size_t* len, packet_info
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
         case SYSTEM_TASK_TIME:
+            
+            break;
         case SYSTEM_TASK_NUM:
             send.system.task = get_process(info->command, info->message.system.task);
             list_send[(*len)++] = createDataPacket(info->command, info->type, &send);

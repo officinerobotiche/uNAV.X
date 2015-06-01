@@ -48,9 +48,6 @@
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 hEvent_t parseEvent = INVALID_HANDLE;
 
-/** GLOBAL VARIBLES */
-extern char receive_header;
-
 /******************************************************************************/
 /* Communication Functions                                                    */
 /******************************************************************************/
@@ -111,12 +108,12 @@ void SerialComm_Init(void) {
     parseEvent = register_event_p(&parse_packet, EVENT_PRIORITY_LOW);
 }
 
-void serial_send(char header, packet_t packet) {
+void serial_send(packet_t packet) {
     
     //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
     //Build a message to send to serial
-    build_pkg(BufferTx, header, packet);
+    build_pkg(BufferTx, packet);
     
     DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
@@ -131,7 +128,7 @@ void parse_packet(int argc, char *argv) {
         //Build a new message
         packet_t send = encoder(&list_data[0], len);
         // Send a new packet
-        serial_send(receive_header, send);
+        serial_send(send);
     }
 }
 
