@@ -52,7 +52,7 @@
 
 #include <stdbool.h>       /* Includes true/false definition */
 
-#include "system/events.h"
+#include <system/events.h>
 
 #include "communication/I2c.h"
 
