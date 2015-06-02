@@ -69,7 +69,7 @@
 /*****************************************************************************/
 
 #define MOTOR "MOTOR"
-string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
+static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
 
 /**
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip

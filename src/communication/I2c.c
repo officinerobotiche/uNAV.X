@@ -60,6 +60,9 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
+#define I2C "I2C"
+static string_data_t _MODULE_I2C = {I2C, sizeof(I2C)};
+
 I2C_callbackFunc pI2C_callback = NULL;
 
 int I2C_ERROR = 0;
@@ -83,7 +86,7 @@ unsigned int I2C_command_data_size = 0; // command data size
 unsigned char* pI2CBuffer = NULL; // pointer to buffer
 unsigned char* pI2CcommandBuffer = NULL; // pointer to receive  buffer
 
-static uint16_t I2C_service_handle = INVALID_HANDLE;
+static hEvent_t I2C_service_handle = INVALID_HANDLE;
 
 /******************************************************************************/
 /* Parsing functions                                                          */
@@ -111,7 +114,8 @@ void I2C_Init(void) {
     _MI2C1IF = 0; // clear the I2C master interrupt
     _MI2C1IE = 1; // enable the interrupt
     
-    I2C_service_handle = register_event(&serviceI2C);
+    /// Register event
+    I2C_service_handle = register_event_p(&serviceI2C, &_MODULE_I2C, EVENT_PRIORITY_LOW);
 
     I2C_Busy = false;
 
@@ -411,15 +415,13 @@ void I2C_trigger_service(void) {
     trigger_event(I2C_service_handle);
 }
 
-time_t serviceI2C(void) {
-    unsigned int t = TMR1; // Timing function
+void serviceI2C(int argc, char* argv) {
     if (_I2CEN == 0) ///< I2C is off
     {
         I2C_state = &I2C_idle; ///< disable response to any interrupts
         I2C_Init(); //< turn the I2C back on
         ///< Put something here to reset state machine.  Make sure attached services exit nicely.
     }
-    return TMR1 - t; // Time of execution
 }
 
 void __attribute__((__interrupt__, __no_auto_psv__)) _MI2C1Interrupt(void) {

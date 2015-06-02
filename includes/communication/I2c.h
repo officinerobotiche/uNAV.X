@@ -193,7 +193,7 @@ extern "C" {
     /**
      * service the I2C
      */
-    time_t serviceI2C(void);
+    void serviceI2C(int argc, char* argv);
 
 #ifdef	__cplusplus
 }

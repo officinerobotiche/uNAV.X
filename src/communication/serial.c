@@ -45,7 +45,7 @@
 /******************************************************************************/
 
 #define SERIAL "SERIAL"
-string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
+static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 
 //UART
 #define BAUDRATE 115200
@@ -54,7 +54,7 @@ string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
-hEvent_t parseEvent = INVALID_HANDLE;
+static hEvent_t parseEvent = INVALID_HANDLE;
 
 /******************************************************************************/
 /* Communication Functions                                                    */

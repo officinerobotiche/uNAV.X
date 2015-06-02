@@ -37,6 +37,7 @@
 #include "system/system_comm.h"
 #include "system/peripherals.h"
 
+#include "communication/I2c.h"
 
 #include "communication/serial.h"
 
@@ -99,6 +100,9 @@ int16_t main(void) {
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
     InitADC();    ///< Open ADC for measure current motors
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
+    
+    /* I2C CONFIGURATION */
+    I2C_Init();   ///< Open I2C module
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
