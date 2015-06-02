@@ -34,9 +34,9 @@
 #include <stdbool.h>       /* Includes true/false definition                  */
 
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
-#include "system/user.h"   /* User funct/params, such as InitApp              */
+#include "system/system_comm.h"
+#include "system/peripherals.h"
 
-#include "communication/I2c.h"
 
 #include "communication/serial.h"
 
@@ -87,90 +87,52 @@
  */
 
 int16_t main(void) {
-    int i;
-    /* CORE CONFIGURATION */
-    /// Configure the oscillator for the device
-    ConfigureOscillator();
-    /// Initialize IO ports and peripherals
-    InitApp();
-    /// Start others interrupts
-    InitInterrupts();
-    /// Initialization leds
-    InitLed();
+    /** INITIALIZATION Operative System **/
+    ConfigureOscillator();  ///< Configure the oscillator for the device
+    Peripherals_Init();     ///< Initialize IO ports and peripherals
+    InitLEDs();             ///< Initialization LEDs
     
-    /* PROCESSES INITIALIZAITION */
-    /// Open Timer1 for clock system
-    InitTimer1();
-    /// Initialize processes controller
-    init_process();
+    InitEvents();   ///< Initialize processes controller
+    InitTimer1();   ///< Open Timer1 for clock system
     
-    /* I2C CONFIGURATION */
-    /// Open I2C module
-    I2C_Init();
+    /* Peripherals initialization */
+    InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
+    InitADC();    ///< Open ADC for measure current motors
+    InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
     /** SERIAL CONFIGURATION **/
-    /// Open UART1 for serial communication
-    InitUART1();
-    /// Open DMA1 for Tx UART1
-    InitDMA1();
-    /// Initialize hashmap packet
-    init_hashmap_packet();
-    /// Initialize buffer serial error
-    init_buff_serial_error();
-    /// Initialize parsing reader
-    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system);
+    SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
+    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system); ///< Initialize parsing reader
     
     /*** MOTOR INITIALIZATION ***/
-    /// Open ADC for measure current motors
-    InitADC(); 
-    /// Open DMA0 for buffering measures ADC
-    InitDMA0();
-    /// Open Timer2 for InputCapture 1 & 2 and ADC
-    InitTimer2(); 
-    /// Open PWM
-    InitPWM();
+    InitPWM();      ///< Open PWM
+    int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
-        /// Open QEI
-        InitQEI(i);
-        /// Open Input Capture
-        InitIC(i);
-        /// Initialize variables for motors
-        init_motor(i);
-        /// Initialize parameters for motors
-        update_motor_parameters(i, init_motor_parameters());
-        /// Initialize PID controllers
-        update_motor_pid(i, init_motor_pid());
-        /// Initialize emergency procedure to stop
-        update_motor_emergency(i, init_motor_emergency());
-        /// Initialize constraints motor
-        update_motor_constraints(i, init_motor_constraints());
-        /// Initialize state controller
-        set_motor_state(i, STATE_CONTROL_DISABLE);
+        Motor_Init(i);                              ///< Initialization Motor peripherals
+        update_motor_parameters(i, init_motor_parameters()); ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());      ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency()); ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints()); ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE); ///< Initialize state controller
     }
-    /// Initialize communication
-    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);
+    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);  ///< Initialize communication
     
     /** HIGH LEVEL INITIALIZATION **/
-    /// Initialize motion parameters
-    init_motion();
+    /// Initialize variables for unicycle 
+    update_motion_parameter_unicycle(init_motion_parameter_unicycle());
+    /// Initialize dead reckoning
+    update_motion_coordinate(init_motion_coordinate());
+    /// Initialize motion parameters and controller
+    HighControl_Init();
     /// Initialize communication
     set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
-    /// LOAD high level task
+    
+    /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
-
-    /* Load all tasks */
-    /*** TEMP TO REMOVE when EEPROM is in function ***/
-    /// If empty task, load default value
-    if (!load_all_task()) {
-        /// Initialize variables for unicycle
-        update_motion_parameter_unicycle(init_motion_parameter_unicycle());
-        /// Initialize dead reckoning
-        update_motion_coordinate(init_motion_coordinate());
-    }
     
     while (true) {
 
     }
 
-    return 1;
+    return true;
 }

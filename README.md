@@ -48,12 +48,10 @@ This repository follow **[Git flow](https://www.atlassian.com/git/tutorials/comp
 ## Develop working
 To start with uNAV.X you should go on your terminal and write
 ```bash
-mkdir officine_robotiche
-cd officine_robotiche
+mkdir uNAV
+cd uNAV
 git clone https://github.com/officinerobotiche/or_bus_c.X.git
-cd or_bus_c.X
-git checkout develop
-cd ../
+git clone https://github.com/officinerobotiche/or_common_c.X.git
 git clone https://github.com/officinerobotiche/uNAV.X.git
 cd uNAV.X
 git checkout develop
