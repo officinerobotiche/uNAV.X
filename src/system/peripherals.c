@@ -226,7 +226,6 @@ void Peripherals_Init(void) {
 }
 
 void InitLEDs(void) {
-    uint16_t frq = get_Frequency();
     led_controller[0].pin.pin = &led_1;
 #if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
     led_controller[1].pin.pin = &led_2;
@@ -235,7 +234,7 @@ void InitLEDs(void) {
     led_controller[2].pin.pin = &led_3;
     led_controller[3].pin.pin = &led_4;
 #endif
-    LED_Init(&frq, &led_controller[0], LED_NUM);
+    LED_Init(get_Frequency(), &led_controller[0], LED_NUM);
 }
 
 inline void UpdateBlink(short num, short blink) {

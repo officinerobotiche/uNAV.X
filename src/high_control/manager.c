@@ -38,16 +38,25 @@
 
 #include "system/system.h"
 
+#include <peripherals/gpio.h>
+#include <system/task_manager.h>
+
 #include "high_control/manager.h"
 #include "motors/motor_control.h"
 #include "communication/serial.h"
 
+#define HIGH_CONTROL "HIGH_CONTROL"
+string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)};
+
+
+hTask_t HighControlTask = NULL;
 
 //State controller
 volatile motion_state_t control_state = 0;
 
 #define MAX_HIGH_TASK 3
 
+typedef unsigned short hHighControlTask_t;
 typedef struct _control_task {
     bool autostart;
     motor_state_t state;
@@ -75,12 +84,16 @@ motion_velocity_t reference, measure;
 motion_parameter_unicycle_t parameter_unicycle;
 motion_coordinate_t coordinate;
 
-//From system.c
-extern process_t motion_process[PROCESS_MOTION_LENGTH];
-
 /*****************************************************************************/
 /* Dead Reckoning functions                                                  */
 /*****************************************************************************/
+
+void reset_motion(void) {
+    reference.v = 0;
+    reference.w = 0;
+    measure.v = 0;
+    measure.w = 0;
+}
 
 bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop) {
     if(counter_task < MAX_HIGH_TASK) {
@@ -94,15 +107,15 @@ bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop
 }
 
 bool load_all_task(void) {
-    int i;
+    hHighControlTask_t hControl;
     /// Initialize all high level task
     if(counter_task > 0) {
-        for(i = 0; i < counter_task; ++i) {
+        for(hControl = 0; hControl < MAX_HIGH_TASK; ++hControl) {
             /// Start function to initialize high level task
-            high_level_task[i].init(&high_level_task[i].state);
+            high_level_task[hControl].init(&high_level_task[hControl].state);
             /// Set autostart to selected task
-            if(high_level_task[i].autostart) {
-                set_motion_state(i + 1);
+            if(high_level_task[hControl].autostart) {
+                set_motion_state(hControl + 1);
             }
         }
         return true;
@@ -110,11 +123,31 @@ bool load_all_task(void) {
     return false;
 }
 
-void init_motion(void) {
-    reference.v = 0;
-    reference.w = 0;
-    measure.v = 0;
-    measure.w = 0;
+void HighControl_Init(void) {
+    reset_motion();
+    
+    HighControlTask = task_load_data(register_event_p(&MotorTaskController, &_MODULE_HIGH_CONTROL, EVENT_PRIORITY_LOW), 10, 0, NULL);
+    task_status(HighControlTask, load_all_task());
+}
+
+void HighLevelTaskController(int argc, char *argv) {
+    /// Measure velocity unicycle
+    VelocityMeasure();
+    /// Odometry unicycle
+    deadReckoning();
+    
+    /// High level task manager
+    if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
+        /// Set led to velocity control
+    } else if (control_state - 1 < counter_task) {
+       set_motion_velocity_ref_unicycle(high_level_task[control_state - 1].loop(&measure, &coordinate));
+    } else {
+        set_motion_state(STATE_CONTROL_HIGH_DISABLE);
+    }
+
+#ifndef MOTION_CONTROL
+    UpdateBlink(3, control_state);
+#endif
 }
 
 motion_parameter_unicycle_t init_motion_parameter_unicycle(void) {
@@ -147,8 +180,7 @@ motion_coordinate_t init_motion_coordinate(void) {
     return coordinate;
 }
 
-/* inline */ 
-motion_coordinate_t get_motion_coordinate(void) {
+inline motion_coordinate_t get_motion_coordinate(void) {
     return coordinate;
 }
 
@@ -180,31 +212,7 @@ void set_motion_state(motion_state_t state) {
     }
 }
 
-int HighLevelTaskController(void) {
-    unsigned int t = TMR1; // Timing function
-    /// Measure velocity unicycle
-    VelocityMeasure();
-    /// Odometry unicycle
-    deadReckoning();
-    
-    /// High level task manager
-    if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
-        /// Set led to velocity control
-    } else if (control_state - 1 < counter_task) {
-       set_motion_velocity_ref_unicycle(high_level_task[control_state - 1].loop(&measure, &coordinate));
-    } else {
-        set_motion_state(STATE_CONTROL_HIGH_DISABLE);
-    }
-
-#ifndef MOTION_CONTROL
-    UpdateBlink(3, control_state);
-#endif
-    
-    return TMR1 - t; // Time of execution
-}
-
-/* inline */
-motion_velocity_t get_motion_velocity_ref_unicycle(void) {
+inline motion_velocity_t get_motion_velocity_ref_unicycle(void) {
     return reference;
 }
 
@@ -232,8 +240,7 @@ void set_motion_velocity_ref_unicycle(motion_velocity_t velocity) {
     // <<<<< Saturation on 16 bit values
 }
 
-/* inline */
-motion_velocity_t get_motion_velocity_meas_unicycle(void) {
+inline motion_velocity_t get_motion_velocity_meas_unicycle(void) {
     return measure;
 }
 

@@ -123,7 +123,7 @@ void serial_send(packet_t packet) {
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
 }
 
-void parse_packet(int argc, char *argv) {
+void parse_packet(int argc, char* argv) {
     packet_information_t list_data[BUFFER_LIST_PARSING];
     size_t len = 0;
 

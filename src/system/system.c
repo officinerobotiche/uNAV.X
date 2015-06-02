@@ -55,9 +55,9 @@
 unsigned int reset_count = 0;
 system_parameter_t parameter_system;
 
-process_t default_process[NUM_PROCESS_DEFAULT];
-process_t motor_process[PROCESS_MOTOR_LENGTH];
-process_t motion_process[PROCESS_MOTION_LENGTH];
+//process_t default_process[NUM_PROCESS_DEFAULT];
+//process_t motor_process[PROCESS_MOTOR_LENGTH];
+//process_t motion_process[PROCESS_MOTION_LENGTH];
 
 /******************************************************************************/
 /* NEW Global Variable Declaration                                            */
@@ -94,10 +94,10 @@ hardware_bit_t OC1IF = {&IFS0, 2};
 #define EVENT_PRIORITY_HIGH_P IPC1bits.OC2IP
 hardware_bit_t OC2IF = {&IFS0, 6};
 
-//#define MEASURE_ENABLE IEC1bits.OC3IE
-//#define MEASURE_FLAG IFS1bits.OC3IF
-//#define MEASURE_PRIORITY IPC6bits.OC3IP
-//hardware_bit_t OC3IF = {&IFS1, 9};
+#define EVENT_PRIORITY_VERY_LOW_ENABLE IEC1bits.OC3IE
+#define EVENT_PRIORITY_VERY_LOW_FLAG IFS1bits.OC3IF
+#define EVENT_PRIORITY_VERY_LOW_P IPC6bits.OC3IP
+hardware_bit_t OC3IF = {&IFS1, 9};
 
 /******************************************************************************/
 /* System Level Functions                                                     */
@@ -124,6 +124,11 @@ inline uint16_t get_Frequency(void) {
 
 void InitEvents(void) {
     init_events(&TMR1, &PR1);
+    
+    EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
+    EVENT_PRIORITY_VERY_LOW_P = EVENT_PRIORITY_VERY_LOW_LEVEL;
+    register_interrupt(EVENT_PRIORITY_VERY_LOW, &RTCIF);
+    EVENT_PRIORITY_VERY_LOW_ENABLE = 1;
     
     EVENT_PRIORITY_LOW_ENABLE = 0;
     EVENT_PRIORITY_LOW_P = EVENT_PRIORITY_LOW_LEVEL;
@@ -157,8 +162,8 @@ void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
-    //event_manager(eventPriority priority);
-    IFS1bits.OC3IF = 0;
+    event_manager(EVENT_PRIORITY_VERY_LOW);
+    EVENT_PRIORITY_VERY_LOW_FLAG = 0;
 }
 
 void InitTimer1(void) {
@@ -188,103 +193,103 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 }
 
 void set_process(uint8_t command, system_task_t process_state) {
-    if (process_state.hashmap == HASHMAP_SYSTEM) {
-        switch (command) {
-            case SYSTEM_TASK_TIME:
-                default_process[process_state.number].time = process_state.data;
-                break;
-            case SYSTEM_TASK_PRIORITY:
-                default_process[process_state.number].priority = process_state.data;
-                break;
-            case SYSTEM_TASK_FRQ:
-                default_process[process_state.number].frequency = process_state.data;
-                break;
-        }
-    } else if (process_state.hashmap == HASHMAP_MOTOR) {
-        switch (command) {
-            case SYSTEM_TASK_TIME:
-                motor_process[process_state.number].time = process_state.data;
-                break;
-            case SYSTEM_TASK_PRIORITY:
-                motor_process[process_state.number].priority = process_state.data;
-                break;
-            case SYSTEM_TASK_FRQ:
-                motor_process[process_state.number].frequency = process_state.data;
-                break;
-        }
-    } else if (process_state.hashmap == HASHMAP_MOTION) {
-        switch (command) {
-            case SYSTEM_TASK_TIME:
-                motion_process[process_state.number].time = process_state.data;
-                break;
-            case SYSTEM_TASK_PRIORITY:
-                motion_process[process_state.number].priority = process_state.data;
-                break;
-            case SYSTEM_TASK_FRQ:
-                motion_process[process_state.number].frequency = process_state.data;
-                break;
-        }
-    }
+//    if (process_state.hashmap == HASHMAP_SYSTEM) {
+//        switch (command) {
+//            case SYSTEM_TASK_TIME:
+//                default_process[process_state.number].time = process_state.data;
+//                break;
+//            case SYSTEM_TASK_PRIORITY:
+//                default_process[process_state.number].priority = process_state.data;
+//                break;
+//            case SYSTEM_TASK_FRQ:
+//                default_process[process_state.number].frequency = process_state.data;
+//                break;
+//        }
+//    } else if (process_state.hashmap == HASHMAP_MOTOR) {
+//        switch (command) {
+//            case SYSTEM_TASK_TIME:
+//                motor_process[process_state.number].time = process_state.data;
+//                break;
+//            case SYSTEM_TASK_PRIORITY:
+//                motor_process[process_state.number].priority = process_state.data;
+//                break;
+//            case SYSTEM_TASK_FRQ:
+//                motor_process[process_state.number].frequency = process_state.data;
+//                break;
+//        }
+//    } else if (process_state.hashmap == HASHMAP_MOTION) {
+//        switch (command) {
+//            case SYSTEM_TASK_TIME:
+//                motion_process[process_state.number].time = process_state.data;
+//                break;
+//            case SYSTEM_TASK_PRIORITY:
+//                motion_process[process_state.number].priority = process_state.data;
+//                break;
+//            case SYSTEM_TASK_FRQ:
+//                motion_process[process_state.number].frequency = process_state.data;
+//                break;
+//        }
+//    }
 }
 
 system_task_t get_process(uint8_t command, system_task_t process_state) {
-    if (process_state.hashmap == HASHMAP_SYSTEM) {
-        switch (command) {
-            case SYSTEM_TASK_TIME:
-                process_state.data = default_process[process_state.number].time;
-                break;
-            case SYSTEM_TASK_PRIORITY:
-                process_state.data = default_process[process_state.number].priority;
-                break;
-            case SYSTEM_TASK_FRQ:
-                process_state.data = default_process[process_state.number].frequency;
-                break;
-            case SYSTEM_TASK_NUM:
-                process_state.data = NUM_PROCESS_DEFAULT;
-                break;
-        }
-    } else if (process_state.hashmap == HASHMAP_MOTOR) {
-        switch (command) {
-            case SYSTEM_TASK_TIME:
-                process_state.data = motor_process[process_state.number].time;
-                break;
-            case SYSTEM_TASK_PRIORITY:
-                process_state.data = motor_process[process_state.number].priority;
-                break;
-            case SYSTEM_TASK_FRQ:
-                process_state.data = motor_process[process_state.number].frequency;
-                break;
-            case SYSTEM_TASK_NUM:
-                process_state.data = PROCESS_MOTOR_LENGTH;
-                break;
-        }
-    } else if (process_state.hashmap == HASHMAP_MOTION) {
-        switch (command) {
-            case SYSTEM_TASK_TIME:
-                process_state.data = motion_process[process_state.number].time;
-                break;
-            case SYSTEM_TASK_PRIORITY:
-                process_state.data = motion_process[process_state.number].priority;
-                break;
-            case SYSTEM_TASK_FRQ:
-                process_state.data = motion_process[process_state.number].frequency;
-                break;
-            case SYSTEM_TASK_NUM:
-                process_state.data = PROCESS_MOTION_LENGTH;
-                break;
-        }
-    }
+//    if (process_state.hashmap == HASHMAP_SYSTEM) {
+//        switch (command) {
+//            case SYSTEM_TASK_TIME:
+//                process_state.data = default_process[process_state.number].time;
+//                break;
+//            case SYSTEM_TASK_PRIORITY:
+//                process_state.data = default_process[process_state.number].priority;
+//                break;
+//            case SYSTEM_TASK_FRQ:
+//                process_state.data = default_process[process_state.number].frequency;
+//                break;
+//            case SYSTEM_TASK_NUM:
+//                process_state.data = NUM_PROCESS_DEFAULT;
+//                break;
+//        }
+//    } else if (process_state.hashmap == HASHMAP_MOTOR) {
+//        switch (command) {
+//            case SYSTEM_TASK_TIME:
+//                process_state.data = motor_process[process_state.number].time;
+//                break;
+//            case SYSTEM_TASK_PRIORITY:
+//                process_state.data = motor_process[process_state.number].priority;
+//                break;
+//            case SYSTEM_TASK_FRQ:
+//                process_state.data = motor_process[process_state.number].frequency;
+//                break;
+//            case SYSTEM_TASK_NUM:
+//                process_state.data = PROCESS_MOTOR_LENGTH;
+//                break;
+//        }
+//    } else if (process_state.hashmap == HASHMAP_MOTION) {
+//        switch (command) {
+//            case SYSTEM_TASK_TIME:
+//                process_state.data = motion_process[process_state.number].time;
+//                break;
+//            case SYSTEM_TASK_PRIORITY:
+//                process_state.data = motion_process[process_state.number].priority;
+//                break;
+//            case SYSTEM_TASK_FRQ:
+//                process_state.data = motion_process[process_state.number].frequency;
+//                break;
+//            case SYSTEM_TASK_NUM:
+//                process_state.data = PROCESS_MOTION_LENGTH;
+//                break;
+//        }
+//    }
     return process_state;
 }
 
 system_task_name_t get_process_name(system_task_name_t process_name) {
-    if (process_name.hashmap == HASHMAP_SYSTEM) {
-        strcpy(process_name.data, default_process[process_name.number].name);
-    } else if (process_name.hashmap == HASHMAP_MOTOR) {
-        strcpy(process_name.data, motor_process[process_name.number].name);
-    } else if (process_name.hashmap == HASHMAP_MOTION) {
-        strcpy(process_name.data, motion_process[process_name.number].name);
-    }
+//    if (process_name.hashmap == HASHMAP_SYSTEM) {
+//        strcpy(process_name.data, default_process[process_name.number].name);
+//    } else if (process_name.hashmap == HASHMAP_MOTOR) {
+//        strcpy(process_name.data, motor_process[process_name.number].name);
+//    } else if (process_name.hashmap == HASHMAP_MOTION) {
+//        strcpy(process_name.data, motion_process[process_name.number].name);
+//    }
     return process_name;
 }
 
@@ -295,14 +300,14 @@ system_task_name_t get_process_name(system_task_name_t process_name) {
 //}
 
 unsigned char update_frequency(void) {
-    if (motor_process[LEFT_PROCESS_PID].frequency == 0 || motor_process[RIGHT_PROCESS_PID].frequency == 0) {
-        EVENT_PRIORITY_MEDIUM_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-    } else
-        EVENT_PRIORITY_MEDIUM_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
-    if (motion_process[PROCESS_ODOMETRY].frequency == 0 || motion_process[PROCESS_VELOCITY].frequency == 0) {
-        EVENT_PRIORITY_LOW_ENABLE = 0; // Disable RTC interrupt
-    } else
-        EVENT_PRIORITY_LOW_ENABLE = 1; // Enable RTC interrupt
+//    if (motor_process[LEFT_PROCESS_PID].frequency == 0 || motor_process[RIGHT_PROCESS_PID].frequency == 0) {
+//        EVENT_PRIORITY_MEDIUM_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
+//    } else
+//        EVENT_PRIORITY_MEDIUM_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
+//    if (motion_process[PROCESS_ODOMETRY].frequency == 0 || motion_process[PROCESS_VELOCITY].frequency == 0) {
+//        EVENT_PRIORITY_LOW_ENABLE = 0; // Disable RTC interrupt
+//    } else
+//        EVENT_PRIORITY_LOW_ENABLE = 1; // Enable RTC interrupt
     return PACKET_ACK;
 }
 

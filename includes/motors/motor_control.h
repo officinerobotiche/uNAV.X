@@ -75,7 +75,7 @@ extern "C" {
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
      */
-    void init_motor(short motIdx, hardware_bit_t* enable);
+    void init_motor(const short motIdx, hardware_bit_t* enable);
     
     /**
      * Initialization parameters for motor controller.
@@ -230,7 +230,7 @@ extern "C" {
      */
     inline int MotorPID(short motIdx);
     
-    void controller_velocity(int argc, char *argv);
+    void controller(int argc, char *argv);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors

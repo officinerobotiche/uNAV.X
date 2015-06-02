@@ -39,13 +39,9 @@ extern "C" {
 #define EVENT_PRIORITY_HIGH_LEVEL 4
 #define EVENT_PRIORITY_MEDIUM_LEVEL 3
 #define EVENT_PRIORITY_LOW_LEVEL 2
-//#define MEASURE_LEVEL 4
-//#define CURR_PID_LEVEL 4
-//#define VEL_PID_LEVEL 3
-//#define DEAD_RECK_LEVEL 2
-    
+#define EVENT_PRIORITY_VERY_LOW_LEVEL 1
+
 #define UART_TX_LEVEL 1
-//#define RX_PARSER_LEVEL 1
 
     /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        80000000
@@ -71,16 +67,16 @@ extern "C" {
 #define BRGVAL   ((FCY/BAUDRATE)/16)-1
 
 
-#define NUM_PROCESS_DEFAULT 2
-#define PROCESS_IDLE 0
-#define PROCESS_PARSE 1
+//#define NUM_PROCESS_DEFAULT 2
+//#define PROCESS_IDLE 0
+//#define PROCESS_PARSE 1
 
-    typedef struct process {
-        char name[MAX_BUFF_TASK_NAME];
-        uint8_t time;
-        uint8_t priority;
-        uint8_t frequency;
-    } process_t;
+//    typedef struct process {
+//        char name[MAX_BUFF_TASK_NAME];
+//        uint8_t time;
+//        uint8_t priority;
+//        uint8_t frequency;
+//    } process_t;
 
     /******************************************************************************/
     /* System Function Prototypes                                                 */
