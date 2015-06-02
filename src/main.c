@@ -97,7 +97,6 @@ int16_t main(void) {
     InitEvents();   ///< Initialize processes controller
     task_init();    ///< Initialization task controller
     InitTimer1();   ///< Open Timer1 for clock system
-    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system); ///< Initialize parsing reader
     
     /* Peripherals initialization */
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
@@ -106,6 +105,7 @@ int16_t main(void) {
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
+    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system); ///< Initialize parsing reader
     
     /*** MOTOR INITIALIZATION ***/
     InitPWM();      ///< Open PWM
