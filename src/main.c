@@ -33,8 +33,6 @@
 #include <stdint.h>        /* Includes uint16_t definition                    */
 #include <stdbool.h>       /* Includes true/false definition                  */
 
-#include <system/task_manager.h>
-
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
 #include "system/system_comm.h"
 #include "system/peripherals.h"
@@ -95,7 +93,6 @@ int16_t main(void) {
     InitLEDs();             ///< Initialization LEDs
     
     InitEvents();   ///< Initialize processes controller
-    task_init();    ///< Initialization task controller
     InitTimer1();   ///< Open Timer1 for clock system
     
     /* Peripherals initialization */

@@ -27,7 +27,17 @@ extern "C" {
     /******************************************************************************/
     /* System Level #define Macros                                                */
     /******************************************************************************/
+    
+    /* Microcontroller MIPs (FCY) */
+#define SYS_FREQ        80000000
+#define FCY             SYS_FREQ/2
 
+#define FRTMR1 1000             // Timer1 - Value in herz [Hz]
+#define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
+#define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
+#define FRTMR2 SYS_FREQ
+#define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
+    
     /* Interrupt priority */
     /* Max priority 7 - Min priority 1 */
 #define PWM_TIMER_LEVEL 7
@@ -43,41 +53,6 @@ extern "C" {
 
 #define UART_TX_LEVEL 1
 
-    /* Microcontroller MIPs (FCY) */
-#define SYS_FREQ        80000000
-#define FCY             SYS_FREQ/2
-
-#define FRTMR1 1000             // Timer1 - Value in herz [Hz]
-#define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
-#define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
-#define FRTMR2 SYS_FREQ
-#define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
-
-    //    //Blink LED
-    //    /**
-    //     * BL = 0.5 = 1/2
-    //     * BLINKSW = BL/0.001 = (1/2)/10^-3 = 10^3/2 = 1000/2 = 500
-    //     */
-    //    #define BLINK_LED 0.5 //Value in seconds [s]
-    //    #define BLINKSW (int)(BLINK_LED/TCTMR1)
-
-    //UART
-#define BAUDRATE 115200
-    //#define BAUDRATE 57600
-#define BRGVAL   ((FCY/BAUDRATE)/16)-1
-
-
-//#define NUM_PROCESS_DEFAULT 2
-//#define PROCESS_IDLE 0
-//#define PROCESS_PARSE 1
-
-//    typedef struct process {
-//        char name[MAX_BUFF_TASK_NAME];
-//        uint8_t time;
-//        uint8_t priority;
-//        uint8_t frequency;
-//    } process_t;
-
     /******************************************************************************/
     /* System Function Prototypes                                                 */
     /******************************************************************************/
@@ -91,7 +66,7 @@ extern "C" {
      */
     void ConfigureOscillator(void);
     
-    inline uint16_t get_Frequency(void);
+    inline system_parameter_t get_system_parameters(void);
     
     /**
      * Initialization all system events

@@ -40,28 +40,13 @@
 
 #include "system/peripherals.h"
 #include "system/system.h"   /* variables/params used by system.c             */
-
-///////  TO REMOVE!!
-#include "packet/packet.h"
-#include "packet/frame_motion.h"
 #include "communication/serial.h"
-#include "motors/motor_control.h"
-#include "high_control/manager.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-unsigned int reset_count = 0;
-system_parameter_t parameter_system;
-
-//process_t default_process[NUM_PROCESS_DEFAULT];
-//process_t motor_process[PROCESS_MOTOR_LENGTH];
-//process_t motion_process[PROCESS_MOTION_LENGTH];
-
-/******************************************************************************/
-/* NEW Global Variable Declaration                                            */
-/******************************************************************************/
+system_parameter_t parameter_system = {(frequency_t) SYS_FREQ, (frequency_t) FRTMR1};
 
 unsigned char _VERSION_DATE[] = __DATE__;
 unsigned char _VERSION_TIME[] = __TIME__;
@@ -75,9 +60,6 @@ unsigned char _BOARD_NAME[] = "RoboController";
 #elif MOTION_CONTROL
 unsigned char _BOARD_NAME[] = "Motion Control";
 #endif
-
-
-uint16_t FRQ_CPU = FRTMR1;
 
 #define EVENT_PRIORITY_LOW_ENABLE IEC3bits.RTCIE
 #define EVENT_PRIORITY_LOW_FLAG IFS3bits.RTCIF
@@ -118,8 +100,8 @@ void ConfigureOscillator(void) {
     }; // Wait for PLL to lock
 }
 
-inline uint16_t get_Frequency(void) {
-    return FRQ_CPU;
+inline system_parameter_t get_system_parameters(void) {
+    return parameter_system;
 }
 
 void InitEvents(void) {
@@ -144,6 +126,9 @@ void InitEvents(void) {
     EVENT_PRIORITY_HIGH_P = EVENT_PRIORITY_HIGH_LEVEL;
     register_interrupt(EVENT_PRIORITY_HIGH, &OC2IF);
     EVENT_PRIORITY_HIGH_ENABLE = 1;
+    
+    /// Initialization task controller
+    task_init();    
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
@@ -333,13 +318,9 @@ system_service_t services(system_service_t service) {
             memcpy(service_send.buffer, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
             break;
         case SERVICE_RESET:
-            if (reset_count < 3) {
-                reset_count++;
-            } else {
-                SET_CPU_IPL(7); // disable all user interrupts
-                //DelayN1ms(200);
-                asm("RESET");
-            }
+            SET_CPU_IPL(7);     ///< disable all user interrupts
+            //DelayN1ms(200);
+            asm("RESET");       ///< System reset
             break;
         default:
             break;

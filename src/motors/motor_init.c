@@ -87,7 +87,7 @@ void InitPWM(void) {
     sptime = 0x0;
     // 1:1 postscaler, 1:1 prescale, free running mode
     // PWM time base ON, count up
-    config1 = PWM1_EN & PWM1_IDLE_CON & PWM1_OP_SCALE1 & PWM1_IPCLK_SCALE1 &
+    config1 = PWM1_DIS & PWM1_IDLE_CON & PWM1_OP_SCALE1 & PWM1_IPCLK_SCALE1 &
             PWM1_MOD_FREE;
     // PWM1H e PWM1L enabled in complementar mode
     // dsPICs with 3 pairs of PWM pins have one timer only (A)

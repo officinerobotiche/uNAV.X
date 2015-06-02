@@ -47,6 +47,11 @@
 #define SERIAL "SERIAL"
 string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 
+//UART
+#define BAUDRATE 115200
+//#define BAUDRATE 57600
+#define BRGVAL   ((FCY/BAUDRATE)/16)-1
+
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 hEvent_t parseEvent = INVALID_HANDLE;
