@@ -38,6 +38,7 @@
 #include "system/peripherals.h"
 
 #include "communication/I2c.h"
+#include "communication/eeprom.h"
 
 #include "communication/serial.h"
 
@@ -87,6 +88,21 @@
  * @return type of error
  */
 
+bool ccc = false;
+bool bbb = false;
+boolean aaa = false;
+uint8_t rdBuffer[2] = {100, 205};
+uint16_t address = 1000;
+uint16_t rdSize = 2;
+
+void pCallback(boolean b) {
+    bbb = b;
+}
+
+void wCallback(boolean b) {
+    aaa = b;
+}
+
 int16_t main(void) {
     /** INITIALIZATION Operative System **/
     ConfigureOscillator();  ///< Configure the oscillator for the device
@@ -103,6 +119,8 @@ int16_t main(void) {
     
     /* I2C CONFIGURATION */
     I2C_Init();   ///< Open I2C module
+    nv_memory_init();
+    nv_memory_service_trigger();
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -134,8 +152,28 @@ int16_t main(void) {
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
     
-    while (true) {
 
+    if(udb_nv_memory_read(&rdBuffer[0], address, rdSize, pCallback)) {
+        int a;
+        a= 1;
+    } else {
+        int b;
+        b= 1;
+    }
+    uint8_t wrBuffer[2] = {2, 88};
+    while (true) {
+        if(bbb) {
+            udb_nv_memory_write(wrBuffer, address, 2, wCallback);
+            bbb = false;
+            
+        }
+        if(aaa) {
+            udb_nv_memory_read(&rdBuffer[0], address, rdSize, pCallback);
+            aaa = false;
+        }
+        if(ccc) {
+            nv_memory_service_trigger();
+        }
     }
 
     return true;

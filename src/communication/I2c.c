@@ -178,12 +178,6 @@ bool I2C_Write(unsigned char command, unsigned char* pcommandData, unsigned char
             return I2C_serve_queue();
         }
     }
-
-    /*      while(1)        // STOP HERE ON FAILURE.
-            {
-                    LED_GREEN = LED_ON;
-            }
-     */
     I2C_reset();
     return false;
 }
