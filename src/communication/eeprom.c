@@ -45,6 +45,13 @@ typedef enum _MCP24LC256_STATES {
     MCP24LC256_STATE_FAILED_TRX,
 } MCP24LC256_STATES_T;
 
+typedef union _ee_address {
+    uint8_t commandData[4];
+    uint16_t address;
+} ee_addres_t;
+
+static uint8_t eeprom_address = 0;
+
 static MCP24LC256_STATES_T MCP24LC256_state = MCP24LC256_STATE_STOPPED;
 static hEvent_t nv_memory_service_handle = INVALID_HANDLE;
 
@@ -53,49 +60,15 @@ static NVMemory_callbackFunc pcallerCallback = NULL;
 
 static uint16_t MCP24LC256_write_address;
 static uint16_t MCP24LC256_write_size;
-static uint8_t commandData[4] = {0x00, 0x00};
+static ee_addres_t ee_address;
 static uint8_t* MCP24LC256_pwrBuffer = NULL;
 
 static boolean MCP24LC256_write_chunk(void);
 static void MCP24LC256_callback(boolean I2CtrxOK);
 
-///*********/
-//// TX Buffer
-//struct _WriteBuff
-//{
-//    char EeepromA;   //$$$$$$$$$$ just as an example of char variable
-//    int EeepromB;    //$$$$$$$$$$ just as an example of int variable
-//    float EeepromC;  //$$$$$$$$$$ just as an example of float variable
-//};
-//
-//union __WriteBuff
-//{
-//    struct _WriteBuff I;// to use as integers or chars, little endian LSB first
-//    unsigned char C[I2C_EEPROM_BUFF_SIZE_WRITE];//to use as bytes to send on I2C buffer
-//}I2CEEpromWriteBuff;
-//
-//
-//// RX Buffer
-//struct _ReadBuff
-//{
-//    char EeepromD;   //$$$$$$$$$$ just as an example of char variable
-//    int EeepromE;    //$$$$$$$$$$ just as an example of int variable
-//    float EeepromF;  //$$$$$$$$$$ just as an example of float variable
-//};
-//
-//union __ReadBuff
-//{
-//    struct _ReadBuff I;// to use as integers or chars, little endian LSB first
-//    unsigned char C[I2C_EEPROM_BUFF_SIZE_READ];//to use as bytes to send on I2C buffer
-//}I2CEEpromReadBuff;
-//
-//unsigned char EEpromReadIndex[] = {0x00} ;    // Address of the first register to read
-//unsigned char EEpromWriteIndex[] = {0x00} ;   // Address of the first register to read
-
-/******************************************************************************/
-/* EEPROM Functions                                                           */
-
-/******************************************************************************/
+/*****************************************************************************/
+/* EEPROM Functions                                                          */
+/*****************************************************************************/
 
 void nv_memory_service(int argc, char* argv) {
     switch (MCP24LC256_state) {
@@ -118,26 +91,28 @@ void nv_memory_service_trigger(void) {
     trigger_event(nv_memory_service_handle);
 }
 
-boolean udb_nv_memory_read(uint8_t* rdBuffer, uint16_t address, uint16_t rdSize, NVMemory_callbackFunc pCallback) {
+boolean udb_nv_memory_read(uint8_t eeprom_addr, uint8_t* rdBuffer, uint16_t address, uint16_t rdSize, NVMemory_callbackFunc pCallback) {
     if (MCP24LC256_state != MCP24LC256_STATE_STOPPED) return false;
     MCP24LC256_state = MCP24LC256_STATE_READING;
-
-    commandData[1] = (uint8_t) (address & 0xFF);
-    commandData[0] = (uint8_t) ((address >> 8) & 0xFF);
+    
+    ee_address.address = address;
 
     pcallerCallback = pCallback;
-    if (I2C_Read(MCP24LC256_COMMAND, commandData, 2, rdBuffer, rdSize, &MCP24LC256_callback) == false) {
+    // Get first 3 byte
+    eeprom_addr &= 0x7;
+    if (I2C_Read(MCP24LC256_COMMAND | eeprom_addr, ee_address.commandData, 2, rdBuffer, rdSize, &MCP24LC256_callback) == false) {
         MCP24LC256_state = MCP24LC256_STATE_STOPPED;
         return false;
     }
     return true;
 }
 
-boolean udb_nv_memory_write(uint8_t* wrBuffer, uint16_t address, uint16_t wrSize, NVMemory_callbackFunc pCallback) {
+boolean udb_nv_memory_write(uint8_t eeprom_addr, uint8_t* wrBuffer, uint16_t address, uint16_t wrSize, NVMemory_callbackFunc pCallback) {
     if (MCP24LC256_state != MCP24LC256_STATE_STOPPED) return false;
 
+    // Get first 3 byte
+    eeprom_address = eeprom_addr & 0x7;
     // Check address range.
-    if (address > 0x7FFF) return false;
     if (address > 0x7FFF) return false;
 
     MCP24LC256_pwrBuffer = wrBuffer;
@@ -169,12 +144,11 @@ static boolean MCP24LC256_write_chunk(void) {
 
     if (writeSize > pageRemainaing) writeSize = pageRemainaing;
 
-    commandData[1] = (uint8_t) (MCP24LC256_write_address & 0xFF);
-    commandData[0] = (uint8_t) ((MCP24LC256_write_address >> 8) & 0xFF);
+    ee_address.address = MCP24LC256_write_address;
 
     MCP24LC256_state = MCP24LC256_STATE_WRITING;
 
-    if (I2C_Write(MCP24LC256_COMMAND, commandData, 2, MCP24LC256_pwrBuffer, writeSize, &MCP24LC256_callback) == false) {
+    if (I2C_Write(MCP24LC256_COMMAND | eeprom_address, ee_address.commandData, 2, MCP24LC256_pwrBuffer, writeSize, &MCP24LC256_callback) == false) {
         MCP24LC256_Timer = 0;
         MCP24LC256_state = MCP24LC256_STATE_FAILED_TRX;
         return false;
@@ -219,34 +193,3 @@ static void MCP24LC256_callback(boolean I2CtrxOK) {
             break;
     }
 }
-
-
-///**
-// * Write data to EEprom
-// */
-//void I2C_WriteEEprom(void)
-//{
-//    I2CEEpromWriteBuff.I.EeepromA = 0xFF;   //$$$$$$$$$$ example
-//    I2CEEpromWriteBuff.I.EeepromB = 0xFFFF; //$$$$$$$$$$ example
-//    I2CEEpromWriteBuff.I.EeepromC = 1234,56789;   //$$$$$$$$$$ example
-//    I2C_Write(EEPROM_COMMAND, EEpromWriteIndex, 1, I2CEEpromWriteBuff.C, I2C_EEPROM_BUFF_SIZE_WRITE, &I2C_doneWriteEEpromData);
-//}
-//
-///**
-// * Read data from EEPROM
-// * @param I2CtrxOK
-// */
-//void I2C_readEEprom(boolean I2CtrxOK)
-//{
-//    I2C_Read(EEPROM_COMMAND, EEpromReadIndex, 1, I2CEEpromReadBuff.C, I2C_EEPROM_BUFF_SIZE_READ, &I2C_doneReadEEpromData);
-//}
-//
-//void I2C_doneReadEEpromData( boolean I2CtrxOK )
-//{
-//    return ;
-//}
-//
-//void I2C_doneWriteEEpromData( boolean I2CtrxOK )
-//{
-//    return ;
-//}

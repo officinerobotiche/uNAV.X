@@ -25,35 +25,20 @@ extern "C" {
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
-
-    //add one byte for each char, two for each int, four for each float
-    //#define I2C_EEPROM_BUFF_SIZE_WRITE 7   //$$$$$$$$$$ define buffer size according to variables used
-    //#define I2C_EEPROM_BUFF_SIZE_READ 7    //$$$$$$$$$$ define buffer size according to variables used
     
     typedef void (*NVMemory_callbackFunc)(boolean);
-    
-    #define EEPROM_COMMAND 0xA0//EEPROM address. 0xA0 to 0xAE->8 pages x 256Byte
 
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
     
     void nv_memory_service(int argc, char* argv);
+    
     void nv_memory_init(void);
     void nv_memory_service_trigger(void);
-    boolean udb_nv_memory_read(uint8_t* rdBuffer, uint16_t address, uint16_t rdSize, NVMemory_callbackFunc pCallback);
-    boolean udb_nv_memory_write(uint8_t* wrBuffer, uint16_t address, uint16_t wrSize, NVMemory_callbackFunc pCallback);
+    boolean udb_nv_memory_read(uint8_t eeprom_address, uint8_t* rdBuffer, uint16_t address, uint16_t rdSize, NVMemory_callbackFunc pCallback);
+    boolean udb_nv_memory_write(uint8_t eeprom_address, uint8_t* wrBuffer, uint16_t address, uint16_t wrSize, NVMemory_callbackFunc pCallback);
     
-    //typedef char boolean;
-    //typedef void (*I2C_callbackFunc)(boolean);
-
-    //void I2C_doneReadEEpromData(boolean I2CtrxOK);
-    //void I2C_doneWriteEEpromData(boolean I2CtrxOK);
-    //void I2C_readEEprom(boolean I2CtrxOK); // read from EEPROM
-    //void I2C_WriteEEprom(void); // write to EEPROM
-    //extern boolean I2C_Write(unsigned char command, unsigned char* pcommandData, unsigned char commandDataSize, unsigned char* ptxData, unsigned int txSize, I2C_callbackFunc pCallback);
-    //extern boolean I2C_Read(unsigned char command, unsigned char* pcommandData, unsigned char commandDataSize, unsigned char* prxData, unsigned int rxSize, I2C_callbackFunc pCallback);
-
 #ifdef	__cplusplus
 }
 #endif

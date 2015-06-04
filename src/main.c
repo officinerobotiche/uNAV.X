@@ -153,7 +153,7 @@ int16_t main(void) {
     //add_task(false, &init_cartesian, &loop_cartesian);
     
 
-    if(udb_nv_memory_read(&rdBuffer[0], address, rdSize, pCallback)) {
+    if(udb_nv_memory_read(0, &rdBuffer[0], address, rdSize, pCallback)) {
         int a;
         a= 1;
     } else {
@@ -163,12 +163,12 @@ int16_t main(void) {
     uint8_t wrBuffer[2] = {2, 88};
     while (true) {
         if(bbb) {
-            udb_nv_memory_write(wrBuffer, address, 2, wCallback);
+            udb_nv_memory_write(0, wrBuffer, address, 2, wCallback);
             bbb = false;
             
         }
         if(aaa) {
-            udb_nv_memory_read(&rdBuffer[0], address, rdSize, pCallback);
+            udb_nv_memory_read(0, &rdBuffer[0], address, rdSize, pCallback);
             aaa = false;
         }
         if(ccc) {
