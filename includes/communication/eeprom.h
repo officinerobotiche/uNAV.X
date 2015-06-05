@@ -26,18 +26,46 @@ extern "C" {
 /* System Level #define Macros                                                */
 /******************************************************************************/
     
-    typedef void (*NVMemory_callbackFunc)(boolean);
+    typedef void (*NVMemory_callbackFunc)(bool);
 
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
     
-    void nv_memory_service(int argc, char* argv);
-    
-    void nv_memory_init(void);
-    void nv_memory_service_trigger(void);
-    boolean udb_nv_memory_read(uint8_t eeprom_address, uint8_t* rdBuffer, uint16_t address, uint16_t rdSize, NVMemory_callbackFunc pCallback);
-    boolean udb_nv_memory_write(uint8_t eeprom_address, uint8_t* wrBuffer, uint16_t address, uint16_t wrSize, NVMemory_callbackFunc pCallback);
+    /**
+     * 
+     * @param argc
+     * @param argv
+     */
+    void EEPROM_service(int argc, char* argv);
+    /**
+     * 
+     */
+    void EEPROM_init(void);
+    /**
+     * 
+     */
+    void EEPROM_service_trigger(void);
+    /**
+     * 
+     * @param eeprom_address
+     * @param rdBuffer
+     * @param address
+     * @param rdSize
+     * @param pCallback
+     * @return 
+     */
+    bool EEPROM_read(uint8_t eeprom_address, uint8_t* rdBuffer, uint16_t address, uint16_t rdSize, NVMemory_callbackFunc pCallback);
+    /**
+     * 
+     * @param eeprom_address
+     * @param wrBuffer
+     * @param address
+     * @param wrSize
+     * @param pCallback
+     * @return 
+     */
+    bool EEPROM_write(uint8_t eeprom_address, uint8_t* wrBuffer, uint16_t address, uint16_t wrSize, NVMemory_callbackFunc pCallback);
     
 #ifdef	__cplusplus
 }

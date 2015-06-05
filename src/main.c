@@ -90,16 +90,16 @@
 
 bool ccc = false;
 bool bbb = false;
-boolean aaa = false;
+bool aaa = false;
 uint8_t rdBuffer[2] = {100, 205};
 uint16_t address = 1000;
 uint16_t rdSize = 2;
 
-void pCallback(boolean b) {
+void pCallback(bool b) {
     bbb = b;
 }
 
-void wCallback(boolean b) {
+void wCallback(bool b) {
     aaa = b;
 }
 
@@ -119,8 +119,7 @@ int16_t main(void) {
     
     /* I2C CONFIGURATION */
     I2C_Init();   ///< Open I2C module
-    nv_memory_init();
-    nv_memory_service_trigger();
+    EEPROM_init();
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -153,7 +152,7 @@ int16_t main(void) {
     //add_task(false, &init_cartesian, &loop_cartesian);
     
 
-    if(udb_nv_memory_read(0, &rdBuffer[0], address, rdSize, pCallback)) {
+    if(EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback)) {
         int a;
         a= 1;
     } else {
@@ -163,16 +162,16 @@ int16_t main(void) {
     uint8_t wrBuffer[2] = {2, 88};
     while (true) {
         if(bbb) {
-            udb_nv_memory_write(0, wrBuffer, address, 2, wCallback);
+            EEPROM_write(0, wrBuffer, address, 2, wCallback);
             bbb = false;
             
         }
         if(aaa) {
-            udb_nv_memory_read(0, &rdBuffer[0], address, rdSize, pCallback);
+            EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback);
             aaa = false;
         }
         if(ccc) {
-            nv_memory_service_trigger();
+            EEPROM_service_trigger();
         }
     }
 

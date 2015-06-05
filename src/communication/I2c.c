@@ -61,32 +61,48 @@
 /******************************************************************************/
 
 #define I2C "I2C"
-static string_data_t _MODULE_I2C = {I2C, sizeof(I2C)};
+static string_data_t _MODULE_I2C = {I2C, sizeof (I2C)};
 
-I2C_callbackFunc pI2C_callback = NULL;
+#define I2C_QUEUE_DEPTH     3
 
-int I2C_ERROR = 0;
-int I2CMAXS = 0;
-int I2CMAXQ = 0;
-
-// Port busy flag.  Set true until initialized
-bool I2C_Busy = true;
-
-void (* I2C_state) (void) = &I2C_idle;
+typedef struct tag_I2Cqueue {
+    bool pending;
+    bool rW;
+    unsigned char command;
+    unsigned char* pcommandData;
+    unsigned char commandDataSize;
+    unsigned char* pData;
+    unsigned int Size;
+    I2C_callbackFunc pCallback;
+} I2Cqueue;
 
 I2Cqueue i2c_queue[I2C_QUEUE_DEPTH];
 
-unsigned int I2C_Index = 0; // index into the write buffer
+static hEvent_t I2C_service_handle = INVALID_HANDLE;
+/// Pointer to function
+void (* I2C_state) (void) = &I2C_idle;
+// Port busy flag.  Set true until initialized
+bool I2C_Busy = true;
+/// index into the write buffer
+unsigned int I2C_Index = 0; 
+/// Callback to return
+I2C_callbackFunc pI2C_callback = NULL;
+/// Data size to send or receive a message
+typedef struct _I2C_data_size {
+    unsigned int tx;
+    unsigned int rx;
+} I2C_data_size_t;
+I2C_data_size_t I2C_data_size = {0, 0};
+
+int I2C_ERROR = 0;
+//int I2CMAXS = 0;
+int I2CMAXQ = 0;
 
 unsigned char I2C_CommandByte = 0;
-unsigned int I2C_tx_data_size = 0; // tx data size
-unsigned int I2C_rx_data_size = 0; // rx data size
 unsigned int I2C_command_data_size = 0; // command data size
 
 unsigned char* pI2CBuffer = NULL; // pointer to buffer
 unsigned char* pI2CcommandBuffer = NULL; // pointer to receive  buffer
-
-static hEvent_t I2C_service_handle = INVALID_HANDLE;
 
 /******************************************************************************/
 /* Parsing functions                                                          */
@@ -151,9 +167,9 @@ bool I2C_checkACK(unsigned int command, I2C_callbackFunc pCallback) {
     I2C_command_data_size = 0;
     I2C_CommandByte = command;
     pI2CBuffer = NULL;
-
-    I2C_tx_data_size = 0; // tx data size
-    I2C_rx_data_size = 0; // rx data size
+    
+    I2C_data_size.tx = 0; // tx data size
+    I2C_data_size.rx = 0; // rx data size
 
     // Set ISR callback and trigger the ISR
     I2C_state = &I2C_startWrite;
@@ -210,7 +226,7 @@ bool I2C_serve_queue(void) {
 
     for (queueIndex = 0; queueIndex < I2C_QUEUE_DEPTH; queueIndex++) {
         if (i2c_queue[queueIndex].pending == true) {
-            I2CMAXS = queueIndex;
+            //I2CMAXS = queueIndex;
 
             if (!I2C_CheckAvailable()) {
                 return false;
@@ -223,11 +239,11 @@ bool I2C_serve_queue(void) {
             pI2CBuffer = i2c_queue[queueIndex].pData;
 
             if (i2c_queue[queueIndex].rW == 0) {
-                I2C_tx_data_size = i2c_queue[queueIndex].Size; // tx data size
-                I2C_rx_data_size = 0; // rx data size
+                I2C_data_size.tx = i2c_queue[queueIndex].Size; // tx data size
+                I2C_data_size.rx = 0; // rx data size
             } else {
-                I2C_tx_data_size = 0; // tx data size
-                I2C_rx_data_size = i2c_queue[queueIndex].Size; // rx data size
+                I2C_data_size.tx = 0; // tx data size
+                I2C_data_size.rx = i2c_queue[queueIndex].Size; // rx data size
             }
 
             // Set ISR callback and trigger the ISR
@@ -243,7 +259,7 @@ bool I2C_serve_queue(void) {
 /* inline */
 bool I2C_CheckAvailable(void) {
     if (_I2CEN == 0) return false;
-    if (!I2C_NORMAL) return false;
+    if ((I2CSTAT & 0b0000010011000000) != 0) return false;
 
     if (I2C_Busy == true) return false;
     I2C_Busy = true;
@@ -283,7 +299,7 @@ void I2C_writeCommandData(void) {
     if (I2C_Index >= I2C_command_data_size) {
         I2C_Index = 0; // Reset index into the buffer
 
-        if (I2C_rx_data_size > 0)
+        if (I2C_data_size.rx > 0)
             I2C_state = &I2C_readStart;
         else
             I2C_state = &I2C_writeData;
@@ -318,7 +334,7 @@ void I2C_recen(void) {
 
 void I2C_recstore(void) {
     pI2CBuffer[I2C_Index++] = I2CRCV;
-    if (I2C_Index >= I2C_rx_data_size) {
+    if (I2C_Index >= I2C_data_size.rx) {
         I2C_state = &I2C_stopRead;
         I2CCONbits.ACKDT = 1;
     } else {
@@ -359,8 +375,8 @@ void I2C_writeData(void) {
 
     I2CTRN = pI2CBuffer[I2C_Index++];
 
-    if (I2C_Index >= I2C_tx_data_size) {
-        if (I2C_rx_data_size == 0)
+    if (I2C_Index >= I2C_data_size.tx) {
+        if (I2C_data_size.rx == 0)
             I2C_state = &I2C_writeStop;
         else
             I2C_state = &I2C_readStart;
@@ -397,7 +413,7 @@ void I2C_Failed(void) {
 }
 
 bool I2C_Normal(void) {
-    if (I2C_NORMAL)
+    if ((I2CSTAT & 0b0000010011000000) == 0)
         return true;
     else {
         I2C_ERROR = I2CSTAT;

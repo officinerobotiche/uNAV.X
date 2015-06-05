@@ -32,33 +32,11 @@ extern "C" {
     #define I2C_SDA    _LATB9    //  from _RA3, _RA2, mods per Bill P.
     #define I2C_SCL    _LATB8
     #define _I2CEN  I2C1CONbits.I2CEN
-    #define	NULL	(0)
 
     #define I2CBRGVAL ( (int)(((1/100e3) - 130E-9) * FCY)-2 ) // 392 // 100 Khz
-    // #define I2C2BRGVAL 60   //  **** WIP **** orig. def 60, 200 Khz  mod code [ per latest trunk revision]  **** WIP ****
-
-    #define I2C_NORMAL ( (I2CSTAT & 0b0000010011000000) == 0 )    // There is the queue, it's ok if the module is reading
-
-    #define I2C_QUEUE_DEPTH        3
-    #define INVALID_HANDLE 0xFFFF
-
-
-    typedef char boolean;
 
     // callback type for I2C user
-    typedef void (*I2C_callbackFunc)(boolean);
-
-    typedef struct tag_I2Cqueue
-    {
-            boolean pending;
-            boolean rW;
-            unsigned char command;
-            unsigned char* pcommandData;
-            unsigned char commandDataSize;
-            unsigned char* pData;
-            unsigned int Size;
-            I2C_callbackFunc pCallback;
-    } I2Cqueue;
+    typedef void (*I2C_callbackFunc)(bool);
 
 /******************************************************************************/
 /* System Function Prototypes                                                 */
