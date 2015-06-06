@@ -54,18 +54,17 @@ extern system_parameter_t parameter_system;
 // From communication/serial.c
 extern system_error_serial_t serial_error;
 extern packet_t receive_pkg;
-extern char receive_header;
 
 /******************************************************************************/
 /* Communication Functions                                                    */
 /******************************************************************************/
 
-void serial_send(char header, packet_t packet) {
+void serial_send(packet_t packet) {
     
     //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
     //Build a message to send to serial
-    build_pkg(BufferTx, header, packet);
+    build_pkg(BufferTx, packet);
     
     DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
@@ -81,7 +80,7 @@ int parse_packet() {
         //Build a new message
         packet_t send = encoder(&list_data[0], len);
         // Send a new packet
-        serial_send(receive_header, send);
+        serial_send(send);
     }
     return TMR1 - t; // Time of execution
 }

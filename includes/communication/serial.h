@@ -33,7 +33,7 @@ extern "C" {
      * @param header
      * @param packet
      */
-    void serial_send(char header, packet_t packet);
+    void serial_send(packet_t packet);
     
     /**
      * In a packet we have more messages. A typical data packet

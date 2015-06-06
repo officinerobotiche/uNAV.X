@@ -133,8 +133,8 @@ void init_process(void) {
     motion_process[PROCESS_VELOCITY].priority = VEL_PID_LEVEL;
     motion_process[PROCESS_VELOCITY].frequency = 10;
 
-    parameter_system.step_timer = (int) (TMR1_VALUE);
-    parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
+    //parameter_system.step_timer = (int) (TMR1_VALUE);
+    //parameter_system.int_tm_mill = (int) (TCTMR1 * 1000);
 }
 
 void set_process(uint8_t command, system_task_t process_state) {
