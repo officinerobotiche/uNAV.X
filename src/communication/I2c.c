@@ -333,15 +333,18 @@ void I2C_recen(void) {
 }
 
 void I2C_recstore(void) {
-    pI2CBuffer[I2C_Index++] = I2CRCV;
-    if (I2C_Index >= I2C_data_size.rx) {
-        I2C_state = &I2C_stopRead;
-        I2CCONbits.ACKDT = 1;
-    } else {
-        I2C_state = &I2C_rerecen;
-        I2CCONbits.ACKDT = 0;
+    if(pI2CBuffer != NULL) {
+        pI2CBuffer[I2C_Index++] = I2CRCV;
+        if (I2C_Index >= I2C_data_size.rx) {
+            I2C_state = &I2C_stopRead;
+            I2CCONbits.ACKDT = 1;
+        } else {
+            I2C_state = &I2C_rerecen;
+            I2CCONbits.ACKDT = 0;
+        }
     }
-    I2CCONbits.ACKEN = 1;
+    
+    I2CCONbits.ACKEN = 1; 
     return;
 }
 
@@ -372,14 +375,19 @@ void I2C_writeData(void) {
         I2C_Failed();
         return;
     }
-
-    I2CTRN = pI2CBuffer[I2C_Index++];
-
+   
+    if (I2C_data_size.tx == 0) {
+        I2C_writeStop();
+        return;
+    }
+    if(pI2CBuffer != NULL) {
+        I2CTRN = pI2CBuffer[I2C_Index++];
     if (I2C_Index >= I2C_data_size.tx) {
         if (I2C_data_size.rx == 0)
             I2C_state = &I2C_writeStop;
         else
             I2C_state = &I2C_readStart;
+    }
     }
     return;
 }

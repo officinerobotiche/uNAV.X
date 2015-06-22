@@ -8,6 +8,7 @@
         <itemPath>includes/communication/serial.h</itemPath>
         <itemPath>includes/communication/I2c.h</itemPath>
         <itemPath>includes/communication/eeprom.h</itemPath>
+        <itemPath>includes/communication/led_pcf8574.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="high_control" projectFiles="true">
         <itemPath>includes/high_control/high_comm.h</itemPath>
@@ -50,6 +51,7 @@
         <itemPath>src/communication/serial.c</itemPath>
         <itemPath>src/communication/I2c.c</itemPath>
         <itemPath>src/communication/eeprom.c</itemPath>
+        <itemPath>src/communication/led_pcf8574.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="high_control" projectFiles="true">
         <itemPath>src/high_control/high_comm.c</itemPath>
@@ -92,7 +94,7 @@
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
         <languageToolchainVersion>1.24</languageToolchainVersion>
-        <platform>4</platform>
+        <platform>2</platform>
       </toolsSet>
       <compileType>
         <linkerTool>
@@ -319,6 +321,7 @@
         <property key="UART 1" value="true"/>
         <property key="UART 2" value="true"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>

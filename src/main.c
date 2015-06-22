@@ -39,6 +39,7 @@
 
 #include "communication/I2c.h"
 #include "communication/eeprom.h"
+#include "communication/led_pcf8574.h"
 
 #include "communication/serial.h"
 
@@ -161,7 +162,9 @@ int16_t main(void) {
     }
     uint8_t wrBuffer[2] = {2, 88};
     while (true) {
-        if(bbb) {
+        PCF8574_LED_write(PCF8574_LED1 + PCF8574_LED5);
+        
+        /*if(bbb) {
             EEPROM_write(0, wrBuffer, address, 2, wCallback);
             bbb = false;
             
@@ -172,7 +175,7 @@ int16_t main(void) {
         }
         if(ccc) {
             EEPROM_service_trigger();
-        }
+        }*/
     }
 
     return true;

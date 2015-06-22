@@ -34,10 +34,12 @@
 
 #define PCF8574_LED_COMMAND  0x40
 
-uint8_t wrBuffer[3] = {0, 0, 0};
+uint8_t wrBuffer[3] = {0, 7, 8};
+//uint8_t wrBuffer1[3] = {2, 3, 4};
 bool pcf8574_led_not_busy = true;
 
 static void PCF8574_LED_callback(bool callback_status);
+
 
 
 bool PCF8574_LED_write(unsigned char led) {
@@ -46,7 +48,7 @@ bool PCF8574_LED_write(unsigned char led) {
     wrBuffer[0] = ~led;
 
     if(pcf8574_led_not_busy) {
-        status = I2C_Write(PCF8574_LED_COMMAND, wrBuffer, 1, wrBuffer, 1, &PCF8574_LED_callback);
+        status = I2C_Write(PCF8574_LED_COMMAND, wrBuffer, 1, NULL, 0, &PCF8574_LED_callback);
         pcf8574_led_not_busy = false;
     }
     return true;
