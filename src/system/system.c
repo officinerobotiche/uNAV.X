@@ -177,6 +177,12 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
 }
 
+system_task_t get_task(system_task_t process_state) {
+    hTask_t task = (hTask_t) process_state.number;
+    
+    return process_state;
+}
+
 void set_process(uint8_t command, system_task_t process_state) {
 //    if (process_state.hashmap == HASHMAP_SYSTEM) {
 //        switch (command) {
