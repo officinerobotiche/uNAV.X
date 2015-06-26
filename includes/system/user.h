@@ -177,7 +177,7 @@ extern "C" {
      * Blink control led
      * @param led to control
      */
-    inline void BlinkController(led_control_t *led);
+    inline void LED_blinkController(led_control_t *led);
 
     void blinkflush();
     

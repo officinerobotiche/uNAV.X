@@ -28,12 +28,17 @@ extern "C" {
     //Dimension of list messages to decode in a packet
     #define BUFFER_LIST_PARSING 10
 
+    /** 
+     * Initialization UART1 for communication and
+     * Initialization DMA1 for UART Tx transmition
+     */
+    void SerialComm_Init(void);
+
     /**
      * Send serial message to uart
-     * @param header
      * @param packet
      */
-    void serial_send(char header, packet_t packet);
+    void serial_send(packet_t packet);
     
     /**
      * In a packet we have more messages. A typical data packet
@@ -58,27 +63,7 @@ extern "C" {
      * *This function is a long function*
      * @return time to compute parsing packet
      */
-    int parse_packet();
-    
-    /**
-     * Save for all standard messages the data in tail and save in controller.
-     * Others messages, typical for this board are saved with function
-     * save_other_data in file parsing_other_messages.h
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
-
-    /**
-     * Send for all standard messages the data. The information are saved
-     * in a information_packet_t by functions createPacket and createDataPacket
-     * in tail of this file.
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info);
+    void parse_packet(int argc, char *argv);
 
 #ifdef	__cplusplus
 }

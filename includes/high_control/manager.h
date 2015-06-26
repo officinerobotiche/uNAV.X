@@ -44,9 +44,9 @@ extern "C" {
 
     bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop);
     
-    bool load_all_task(void);
+    void HighControl_Init(void);
     
-    void init_motion(void);
+    void reset_motion(void);
     /**
      * Initialization all parameters for motor controller.
      */
@@ -96,7 +96,7 @@ extern "C" {
      *
      * @return time to compute this function
      */
-    int HighLevelTaskController(void);
+    void HighLevelTaskController(int argc, char *argv);
 
     /**
      * Evaluate linear and angular velocity from unicycle robot.
