@@ -24,7 +24,7 @@
 
 #include <system/events.h>
 
-#include "communication/I2c.h"
+#include <peripherals/i2c.h>
 
 #include "communication/eeprom.h"
 
@@ -48,7 +48,7 @@ bool PCF8574_LED_write(unsigned char led) {
     wrBuffer[0] = ~led;
 
     if(pcf8574_led_not_busy) {
-        status = I2C_Write(PCF8574_LED_COMMAND, wrBuffer, 1, NULL, 0, &PCF8574_LED_callback);
+        status = I2C_Write(PCF8574_LED_COMMAND, wrBuffer, 1, &PCF8574_LED_callback);
         pcf8574_led_not_busy = false;
     }
     return true;

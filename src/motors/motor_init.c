@@ -40,19 +40,19 @@
 
 #ifdef UNAV_V1
 /// ENABLE 1
-hardware_bit_t enable_1 = {&LATA, 7};
+hardware_bit_t enable_1 = REGISTER_INIT(LATA, 7);
 /// ENABLE 2
-hardware_bit_t enable_2 = {&LATA, 10};
+hardware_bit_t enable_2 = REGISTER_INIT(LATA, 10);
 #elif ROBOCONTROLLER_V3
 /// ENABLE 1
-hardware_bit_t enable_1 = {&LATA, 1};
+hardware_bit_t enable_1 = REGISTER_INIT(LATA, 1);
 /// ENABLE 2
-hardware_bit_t enable_2 = {&LATA, 4};
+hardware_bit_t enable_2 = REGISTER_INIT(LATA, 4);
 #elif MOTION_CONTROL
 /// ENABLE 1
-hardware_bit_t enable_1 = {&LATB, 2};
+hardware_bit_t enable_1 = REGISTER_INIT(LATB, 2);
 /// ENABLE 2
-hardware_bit_t enable_2 = {&LATB, 3};
+hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
 #endif
 
 /*****************************************************************************/

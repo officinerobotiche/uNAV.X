@@ -64,22 +64,22 @@ unsigned char _BOARD_NAME[] = "Motion Control";
 #define EVENT_PRIORITY_LOW_ENABLE IEC3bits.RTCIE
 #define EVENT_PRIORITY_LOW_FLAG IFS3bits.RTCIF
 #define EVENT_PRIORITY_LOW_P IPC15bits.RTCIP
-hardware_bit_t RTCIF = {&IFS3, 14};
+hardware_bit_t RTCIF = REGISTER_INIT(IFS3, 14);
 
 #define EVENT_PRIORITY_MEDIUM_ENABLE IEC0bits.OC1IE
 #define EVENT_PRIORITY_MEDIUM_FLAG IFS0bits.OC1IF
 #define EVENT_PRIORITY_MEDIUM_P IPC0bits.OC1IP
-hardware_bit_t OC1IF = {&IFS0, 2};
+hardware_bit_t OC1IF = REGISTER_INIT(IFS0, 2);
 
 #define EVENT_PRIORITY_HIGH_ENABLE IEC0bits.OC2IE
 #define EVENT_PRIORITY_HIGH_FLAG IFS0bits.OC2IF
 #define EVENT_PRIORITY_HIGH_P IPC1bits.OC2IP
-hardware_bit_t OC2IF = {&IFS0, 6};
+hardware_bit_t OC2IF = REGISTER_INIT(IFS0, 6);
 
 #define EVENT_PRIORITY_VERY_LOW_ENABLE IEC1bits.OC3IE
 #define EVENT_PRIORITY_VERY_LOW_FLAG IFS1bits.OC3IF
 #define EVENT_PRIORITY_VERY_LOW_P IPC6bits.OC3IP
-hardware_bit_t OC3IF = {&IFS1, 9};
+hardware_bit_t OC3IF = REGISTER_INIT(IFS1, 9);
 
 /******************************************************************************/
 /* System Level Functions                                                     */

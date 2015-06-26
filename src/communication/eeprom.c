@@ -24,7 +24,7 @@
 
 #include <system/events.h>
 
-#include "communication/I2c.h"
+#include <peripherals/i2c.h>
 
 #include "communication/eeprom.h"
 
@@ -148,7 +148,7 @@ static bool EEPROM_write_chunk(void) {
 
     memory_state = MCP24LC256_STATE_WRITING;
 
-    if (I2C_Write(MCP24LC256_COMMAND | eeprom_address, ee_address.commandData, LNG_EEPROM_ADDRESS, MCP24LC256_pwrBuffer, writeSize, &EEPROM_callback) == false) {
+    if (I2C_Write_data(MCP24LC256_COMMAND | eeprom_address, ee_address.commandData, LNG_EEPROM_ADDRESS, MCP24LC256_pwrBuffer, writeSize, &EEPROM_callback) == false) {
         memory_state = MCP24LC256_STATE_FAILED_TRX;
         return false;
     }

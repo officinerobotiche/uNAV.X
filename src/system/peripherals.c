@@ -48,25 +48,25 @@ ADC AdcBuffer __attribute__((space(dma), aligned(256)));
 /// Number of available LEDs
 #define LED_NUM 4
 /// LED 1 - Green
-hardware_bit_t led_1 = {&LATC, 6};
+hardware_bit_t led_1 = REGISTER_INIT(LATC, 6);
 /// LED 2 - Red
-hardware_bit_t led_2 = {&LATC, 7};
+hardware_bit_t led_2 = REGISTER_INIT(LATC, 7);
 /// LED 3 - Yellow
-hardware_bit_t led_3 = {&LATC, 8};
+hardware_bit_t led_3 = REGISTER_INIT(LATC, 8);
 /// LED 4 - Blue
-hardware_bit_t led_4 = {&LATC, 9};
+hardware_bit_t led_4 = REGISTER_INIT(LATC, 9);
 #elif ROBOCONTROLLER_V3
 /// Number of available LEDs
 #define LED_NUM 2
 /// LED 1 - Green
-hardware_bit_t led_1 = {&LATA, 8};
+hardware_bit_t led_1 = REGISTER_INIT(LATA, 8);
 /// LED 2 - Green
-hardware_bit_t led_2 = {&LATA, 9};
+hardware_bit_t led_2 = REGISTER_INIT(LATA, 9);
 #elif MOTION_CONTROL
 /// Number of available LEDs
 #define LED_NUM 1
 /// LED 1 - Green
-hardware_bit_t led_1 = {&LATA, 4};
+hardware_bit_t led_1 = REGISTER_INIT(LATA, 4);
 #endif
 
 led_control_t led_controller[LED_NUM];
@@ -226,13 +226,13 @@ void Peripherals_Init(void) {
 }
 
 void InitLEDs(void) {
-    led_controller[0].pin.pin = &led_1;
+    led_controller[0].pin = &led_1;
 #if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-    led_controller[1].pin.pin = &led_2;
+    led_controller[1].pin = &led_2;
 #endif
 #if defined(UNAV_V1)
-    led_controller[2].pin.pin = &led_3;
-    led_controller[3].pin.pin = &led_4;
+    led_controller[2].pin = &led_3;
+    led_controller[3].pin = &led_4;
 #endif
     LED_Init(get_system_parameters().FREQ_SYSTEM, &led_controller[0], LED_NUM);
 }

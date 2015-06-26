@@ -119,7 +119,7 @@ int16_t main(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
     /* I2C CONFIGURATION */
-    I2C_Init();   ///< Open I2C module
+    Init_I2C();   ///< Open I2C module
     EEPROM_init();
     
     /** SERIAL CONFIGURATION **/
