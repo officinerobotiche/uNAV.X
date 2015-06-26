@@ -21,19 +21,10 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-#include "system/system.h"
-#include <system/events.h>
     
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
-    
-    #define I2C_SDA    _LATB9    //  from _RA3, _RA2, mods per Bill P.
-    #define I2C_SCL    _LATB8
-    #define _I2CEN  I2C1CONbits.I2CEN
-
-    #define I2CBRGVAL ( (int)(((1/100e3) - 130E-9) * FCY)-2 ) // 392 // 100 Khz
 
 /******************************************************************************/
 /* System Function Prototypes                                                 */

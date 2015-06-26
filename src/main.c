@@ -38,8 +38,7 @@
 #include "system/peripherals.h"
 
 #include "communication/I2c.h"
-#include "communication/eeprom.h"
-#include "communication/led_pcf8574.h"
+#include <peripherals/i2c/i2c.h>
 
 #include "communication/serial.h"
 
