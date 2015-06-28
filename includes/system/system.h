@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Officine Robotiche
+ * Copyright (C) 2014-2015 Officine Robotiche
  * Author: Raffaello Bonghi
  * email:  raffaello.bonghi@officinerobotiche.it
  * Permission is granted to copy, distribute, and/or modify this program
@@ -24,9 +24,9 @@ extern "C" {
 
 #include <packet/packet.h>
 
-    /******************************************************************************/
-    /* System Level #define Macros                                                */
-    /******************************************************************************/
+/******************************************************************************/
+/* System Level #define Macros                                                */
+/******************************************************************************/
     
     /* Microcontroller MIPs (FCY) */
 #define SYS_FREQ        80000000

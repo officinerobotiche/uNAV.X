@@ -38,7 +38,6 @@
 #include <system/events.h>
 #include <system/task_manager.h>
 
-#include "system/peripherals.h"
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "communication/serial.h"
 
@@ -108,6 +107,7 @@ inline system_parameter_t get_system_parameters(void) {
 }
 
 void InitEvents(void) {
+    /// Register event controller
     init_events(&TMR1, &PR1);
     
     EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
@@ -131,7 +131,7 @@ void InitEvents(void) {
     EVENT_PRIORITY_HIGH_ENABLE = 1;
     
     /// Initialization task controller
-    task_init();    
+    task_init(FRTMR1);
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
@@ -191,9 +191,13 @@ void InitTimer3(void) {
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     /// Execution task manager
     task_manager();
-    /// Blink controller for all LEDs
-    ControllerBlink();
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
+}
+
+system_task_t get_task(system_task_t process_state) {
+    hTask_t task = (hTask_t) process_state.number;
+    
+    return process_state;
 }
 
 void set_process(uint8_t command, system_task_t process_state) {
