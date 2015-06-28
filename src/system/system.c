@@ -105,6 +105,7 @@ inline system_parameter_t get_system_parameters(void) {
 }
 
 void InitEvents(void) {
+    /// Register event controller
     init_events(&TMR1, &PR1);
     
     EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
@@ -128,7 +129,7 @@ void InitEvents(void) {
     EVENT_PRIORITY_HIGH_ENABLE = 1;
     
     /// Initialization task controller
-    task_init();    
+    task_init(FRTMR1);
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {

@@ -54,7 +54,7 @@ string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
-hEvent_t parseEvent = INVALID_HANDLE;
+hEvent_t parseEvent = INVALID_EVENT_HANDLE;
 
 /******************************************************************************/
 /* Communication Functions                                                    */
@@ -111,9 +111,10 @@ void SerialComm_Init(void) {
     
     init_hashmap_packet();          ///< Initialize hash map packet
     init_buff_serial_error();       ///< Initialize buffer serial error
-    
+    /// Register module
+    hModule_t serial_module = register_module(&_MODULE_SERIAL);
     /// Register event
-    parseEvent = register_event_p(&parse_packet, &_MODULE_SERIAL, EVENT_PRIORITY_LOW);
+    parseEvent = register_event_p(serial_module, &parse_packet, EVENT_PRIORITY_LOW);
 }
 
 void serial_send(packet_t packet) {

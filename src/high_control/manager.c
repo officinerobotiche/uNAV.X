@@ -126,8 +126,8 @@ bool load_all_task(void) {
 void HighControl_Init(void) {
     reset_motion();
     
-    HighControlTask = task_load_data(register_event_p(&MotorTaskController, &_MODULE_HIGH_CONTROL, EVENT_PRIORITY_LOW), 10, 0, NULL);
-    task_status(HighControlTask, load_all_task());
+    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &MotorTaskController, EVENT_PRIORITY_LOW), 10, 0, NULL);
+    task_set(HighControlTask, load_all_task());
 }
 
 void HighLevelTaskController(int argc, char *argv) {
