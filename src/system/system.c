@@ -38,7 +38,6 @@
 #include <system/events.h>
 #include <system/task_manager.h>
 
-#include "system/peripherals.h"
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "communication/serial.h"
 
@@ -173,8 +172,6 @@ void InitTimer1(void) {
 void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     /// Execution task manager
     task_manager();
-    /// Blink controller for all LEDs
-    ControllerBlink();
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
 }
 

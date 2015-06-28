@@ -130,7 +130,7 @@ void HighControl_Init(void) {
     task_set(HighControlTask, load_all_task());
 }
 
-void HighLevelTaskController(int argc, char *argv) {
+void HighLevelTaskController(int argc, int *argv) {
     /// Measure velocity unicycle
     VelocityMeasure();
     /// Odometry unicycle

@@ -104,6 +104,40 @@ void InitDMA1(void) {
     IFS0bits.DMA1IF = 0; // Clear DMA Interrupt Flag
     IEC0bits.DMA1IE = 1; // Enable DMA interrupt
 }
+/**
+ * In a packet we have more messages. A typical data packet
+ * have this structure:
+ * -------------------------- ---------------------------- -----------------------
+ * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
+ * -------------------------- ---------------------------- -----------------------
+ *    1        2 -> length    length+1 length+2 length+3   ...
+ * It is possible to have different type of messages:
+ * * Message with data (D)
+ * * Message with state information:
+ *      * (R) request data
+ *      * (A) ack
+ *      * (N) nack
+ * We have three parts to elaborate and send a new packet (if required)
+ * 1. [SAVING] The first part of this function split packets in a
+ * list of messages to compute.
+ * 2. [COMPUTE] If message have a data in tail, start compute and return a
+ * new ACK or NACK message to append in a new packet. If is a request
+ * message (R), the new message have in tail the data required.
+ * 3. [SEND] Encoding de messages and transform in a packet to send.
+ * *This function is a long function*
+ * @return time to compute parsing packet
+ */
+void parse_packet(int argc, int* argv) {
+    packet_information_t list_data[BUFFER_LIST_PARSING];
+    size_t len = 0;
+
+    if(parser(&list_data[0], &len) && len != 0) {
+        //Build a new message
+        packet_t send = encoder(&list_data[0], len);
+        // Send a new packet
+        serial_send(send);
+    }
+}
 
 void SerialComm_Init(void) {
     InitUART1();
@@ -127,18 +161,6 @@ void serial_send(packet_t packet) {
     DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
-}
-
-void parse_packet(int argc, char* argv) {
-    packet_information_t list_data[BUFFER_LIST_PARSING];
-    size_t len = 0;
-
-    if(parser(&list_data[0], &len) && len != 0) {
-        //Build a new message
-        packet_t send = encoder(&list_data[0], len);
-        // Send a new packet
-        serial_send(send);
-    }
 }
 
 unsigned int ReadUART1(void) {

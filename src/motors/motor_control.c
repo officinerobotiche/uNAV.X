@@ -365,7 +365,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
 #endif
 }
 
-void MotorTaskController(int argc, char *argv) {
+void MotorTaskController(int argc, int *argv) {
     
     short motIdx = (short) argv[0];
     /// Add new task controller
@@ -433,7 +433,7 @@ int measureVelocity(short motIdx) {
     return TMR1 - t; // Time of execution
 }
 
-void controller(int argc, char *argv) {
+void controller(int argc, int *argv) {
     
     short motIdx = (short) argv[0];
    // PWM output
@@ -459,7 +459,7 @@ inline int MotorPID(short motIdx) {
     return motors[motIdx].parameter_motor.rotation * (motors[motIdx].PIDstruct.controlOutput >> 4);
 }
 
-void Emergency(int argc, char *argv) {
+void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].reference.velocity != 0) {
         motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / (int16_t) (motors[motIdx].emergency_step + 0.5f);

@@ -65,7 +65,6 @@ typedef int ADC[ADC_CHANNELS][ADC_BUFF];
      * I/O and Peripheral Initialization
      */
     void Peripherals_Init(void);
-    
     /**
      * Initialization led blink
      */
@@ -76,9 +75,6 @@ typedef int ADC[ADC_CHANNELS][ADC_BUFF];
      * @param blink number of blinks
      */
     inline void UpdateBlink(short num, short blink);
-    
-    inline void ControllerBlink(void);
-    
     /** 
      * Initialization DMA0 for ADC current
      */

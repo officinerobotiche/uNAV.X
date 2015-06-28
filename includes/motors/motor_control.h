@@ -200,7 +200,7 @@ extern "C" {
      *  - Torque control (move to desired torque)
      * @return Time to Compute task control reference
      */
-    void MotorTaskController(int argc, char *argv);
+    void MotorTaskController(int argc, int *argv);
 
     /**
      * Measure velocity from Input Capture and QEI
@@ -230,14 +230,14 @@ extern "C" {
      */
     inline int MotorPID(short motIdx);
     
-    void controller(int argc, char *argv);
+    void controller(int argc, int *argv);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
      * @param motIdx Number motor
      * @return start emergency mode or not.
      */
-    void Emergency(int argc, char *argv);
+    void Emergency(int argc, int *argv);
 
     /**
      * Mean value for current measure motors
