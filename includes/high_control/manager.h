@@ -96,7 +96,7 @@ extern "C" {
      *
      * @return time to compute this function
      */
-    void HighLevelTaskController(int argc, char *argv);
+    void HighLevelTaskController(int argc, int *argv);
 
     /**
      * Evaluate linear and angular velocity from unicycle robot.

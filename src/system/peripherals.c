@@ -241,11 +241,6 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
-inline void ControllerBlink(void) {
-    /// Blink controller for all LEDs
-    LED_blinkController(&led_controller[0], LED_NUM);
-}
-
 void InitDMA0(void) {
     DMA0CNT = TOT_ADC_BUFF - 1; // 64 DMA request
     DMA0REQ = 13; // Select ADC1 as DMA Request source

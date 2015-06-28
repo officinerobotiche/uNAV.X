@@ -162,16 +162,16 @@ void init_motor(const short motIdx, hardware_bit_t* enable) {
     motors[motIdx].k_mul = 1;
     
     /// Register event and add in task controller
-    motors[motIdx].task_manager = task_load_data(register_event_p(&MotorTaskController, &_MODULE_MOTOR, EVENT_PRIORITY_MEDIUM), 1, 1, (char) motIdx);
+    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 1, 1, (char) motIdx);
     /// Run task controller
-    task_status(motors[motIdx].task_manager, RUN);
+    task_set(motors[motIdx].task_manager, RUN);
     /// Load controller EMERGENCY
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = 1;
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(&Emergency, &_MODULE_MOTOR, EVENT_PRIORITY_HIGH),
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency, 1, (char) motIdx);
     /// Load controllers VELOCITY
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = 1;
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(&controller, &_MODULE_MOTOR, EVENT_PRIORITY_MEDIUM),
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &controller, EVENT_PRIORITY_MEDIUM),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency, 1, (char) motIdx);
 }
 
@@ -365,20 +365,20 @@ void set_motor_state(short motIdx, motor_state_t state) {
 #endif
 }
 
-void MotorTaskController(int argc, char *argv) {
+void MotorTaskController(int argc, int *argv) {
     
     short motIdx = (short) argv[0];
     /// Add new task controller
     if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
         if(motors[motIdx].measure.state != CONTROL_DISABLE) {
             /// Stop old controller
-            task_status(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].measure.state)].task, STOP);
+            task_set(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].measure.state)].task, STOP);
         }
         if(motors[motIdx].reference.state != CONTROL_DISABLE) {
             /// Load new controller
             if(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].reference.state)].task != NULL) {
                 /// Run controller in task manager
-                task_status(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].reference.state)].task, RUN);
+                task_set(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].reference.state)].task, RUN);
             }
         } else if (motors[motIdx].reference.state == CONTROL_DISABLE) {
             /// Set PWM 0
@@ -433,7 +433,7 @@ int measureVelocity(short motIdx) {
     return TMR1 - t; // Time of execution
 }
 
-void controller(int argc, char *argv) {
+void controller(int argc, int *argv) {
     
     short motIdx = (short) argv[0];
    // PWM output
@@ -459,7 +459,7 @@ inline int MotorPID(short motIdx) {
     return motors[motIdx].parameter_motor.rotation * (motors[motIdx].PIDstruct.controlOutput >> 4);
 }
 
-void Emergency(int argc, char *argv) {
+void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].reference.velocity != 0) {
         motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / (int16_t) (motors[motIdx].emergency_step + 0.5f);
