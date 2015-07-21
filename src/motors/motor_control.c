@@ -161,16 +161,16 @@ void init_motor(const short motIdx, hardware_bit_t* enable) {
     
     motors[motIdx].k_mul = 1;
     
-    /// Register event and add in task controller
-    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 1, 1, (char) motIdx);
+    /// Register event and add in task controller - Working at 1KHz
+    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 1000, 1, (char) motIdx);
     /// Run task controller
     task_set(motors[motIdx].task_manager, RUN);
-    /// Load controller EMERGENCY
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = 1;
+    /// Load controller EMERGENCY - Working at 1KHz
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = 1000;
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency, 1, (char) motIdx);
-    /// Load controllers VELOCITY
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = 1;
+    /// Load controllers VELOCITY - Working at 1KHz
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = 1000;
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &controller, EVENT_PRIORITY_MEDIUM),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency, 1, (char) motIdx);
 }
