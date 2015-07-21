@@ -52,6 +52,7 @@ mkdir uNAV
 cd uNAV
 git clone https://github.com/officinerobotiche/or_bus_c.X.git
 git clone https://github.com/officinerobotiche/or_common_c.X.git
+git clone https://github.com/officinerobotiche/or_kernel_c.X.git
 git clone https://github.com/officinerobotiche/uNAV.X.git
 cd uNAV.X
 git checkout develop

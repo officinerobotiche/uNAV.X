@@ -107,10 +107,10 @@ int16_t main(void) {
     /** INITIALIZATION Operative System **/
     ConfigureOscillator();  ///< Configure the oscillator for the device
     Peripherals_Init();     ///< Initialize IO ports and peripherals
-    InitLEDs();             ///< Initialization LEDs
-    
     InitEvents();   ///< Initialize processes controller
     InitTimer1();   ///< Open Timer1 for clock system
+    
+    InitLEDs();             ///< Initialization LEDs
     
     /* Peripherals initialization */
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
