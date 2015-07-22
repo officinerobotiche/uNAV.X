@@ -38,6 +38,23 @@
 #include "system/system.h"
 #include "motors/motor_control.h"
 
+#ifdef UNAV_V1
+/// ENABLE 1
+hardware_bit_t enable_1 = REGISTER_INIT(LATA, 7);
+/// ENABLE 2
+hardware_bit_t enable_2 = REGISTER_INIT(LATA, 10);
+#elif ROBOCONTROLLER_V3
+/// ENABLE 1
+hardware_bit_t enable_1 = REGISTER_INIT(LATA, 1);
+/// ENABLE 2
+hardware_bit_t enable_2 = REGISTER_INIT(LATA, 4);
+#elif MOTION_CONTROL
+/// ENABLE 1
+hardware_bit_t enable_1 = REGISTER_INIT(LATB, 2);
+/// ENABLE 2
+hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
+#endif
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -70,7 +87,7 @@ void InitPWM(void) {
     sptime = 0x0;
     // 1:1 postscaler, 1:1 prescale, free running mode
     // PWM time base ON, count up
-    config1 = PWM1_EN & PWM1_IDLE_CON & PWM1_OP_SCALE1 & PWM1_IPCLK_SCALE1 &
+    config1 = PWM1_DIS & PWM1_IDLE_CON & PWM1_OP_SCALE1 & PWM1_IPCLK_SCALE1 &
             PWM1_MOD_FREE;
     // PWM1H e PWM1L enabled in complementar mode
     // dsPICs with 3 pairs of PWM pins have one timer only (A)
@@ -131,19 +148,6 @@ void InitQEI(short motIdx) {
     }
 }
 
-void SwitchIcPrescaler(int mode, int motIdx) {
-    // here is the assignment of the ICx module to the correct wheel
-    if (motIdx == 0) {
-        IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC1CONbits.ICM = IcMode[mode];
-        _IC1IF = 0; // interrupt flag reset
-    } else {
-        IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC2CONbits.ICM = IcMode[mode];
-        _IC2IF = 0; // interrupt flag reset
-    }
-}
-
 void InitIC(short motIdx) {
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -170,6 +174,53 @@ void InitIC(short motIdx) {
             IFS0bits.IC2IF = 0; // Clear IC2 Interrupt Status Flag
             IEC0bits.IC2IE = 1; // Enable IC2 interrupt
             break;
+    }
+}
+
+void InitTimer2(void) {
+    //T2CON = 10100000 00000000
+    T2CONbits.TON = 0; // Disable Timer
+    T2CONbits.TSIDL = 1; // Stop in Idle Mode bit
+    T2CONbits.TGATE = 0; // Disable Gated Timer mode
+    T2CONbits.TCKPS = 0b00; // Select 1:1 Prescaler
+    T2CONbits.TCS = 0; // Select internal clock source
+    TMR2 = 0x00; // Clear timer register
+    PR2 = TMR2_VALUE; // Load the period value
+
+    IPC1bits.T2IP = PWM_TIMER_LEVEL; // Set Timer 1 Interrupt Priority Level
+    IFS0bits.T2IF = 0; // Clear Timer 1 Interrupt Flag
+    IEC0bits.T2IE = 1; // Enable Timer1 interrupt
+
+    T2CONbits.TON = 1; // Start Timer
+}
+
+void Motor_Init(short motIdx) {
+    /* Open QEI */
+    InitQEI(motIdx);
+    /* Open Input Capture */
+    InitIC(motIdx);
+    /* Initialize variables for motors */
+    switch(motIdx) {
+        case MOTOR_ZERO:
+            init_motor(motIdx, &enable_1);
+            break;
+        case MOTOR_ONE:
+            init_motor(motIdx, &enable_2);
+            break;
+    }
+    
+}
+
+void SwitchIcPrescaler(int mode, int motIdx) {
+    // here is the assignment of the ICx module to the correct wheel
+    if (motIdx == 0) {
+        IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
+        IC1CONbits.ICM = IcMode[mode];
+        _IC1IF = 0; // interrupt flag reset
+    } else {
+        IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
+        IC2CONbits.ICM = IcMode[mode];
+        _IC2IF = 0; // interrupt flag reset
     }
 }
 

@@ -50,19 +50,14 @@ This repository follow **[Git flow](https://www.atlassian.com/git/tutorials/comp
 ## Develop working
 To start with uNAV.X you should go on your terminal and write
 ```bash
-$ mkdir uNAV
-$ cd uNAV 
-$ git clone https://github.com/officinerobotiche/or_bus_c.X.git 
-$ cd or_bus_c.X 
-$ git checkout develop 
-$ cd ..
-$ git clone https://github.com/officinerobotiche/or_common_c.X.git 
-$ cd or_common_c.X 
-$ git checkout develop 
-$ cd ..
-$ git clone https://github.com/officinerobotiche/uNAV.X.git 
-$ cd uNAV.X 
-$ git checkout develop
+mkdir uNAV
+cd uNAV
+git clone https://github.com/officinerobotiche/or_bus_c.X.git
+git clone https://github.com/officinerobotiche/or_common_c.X.git
+git clone https://github.com/officinerobotiche/or_kernel_c.X.git
+git clone https://github.com/officinerobotiche/uNAV.X.git
+cd uNAV.X
+git checkout develop
 ```
 
 ## Communication libraries
