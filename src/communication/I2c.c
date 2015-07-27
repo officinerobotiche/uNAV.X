@@ -91,7 +91,7 @@ void Init_I2C(void) {
     /// Open I2C module
     I2C_Init(&MI2C1IF, &I2CCON, &I2CSTAT, &I2CTRN, &I2CRCV, &reset_I2C);
     
-    _MI2C1IP = 5; // I2C at priority 5
+    _MI2C1IP = 6; // I2C at priority 5
     _MI2C1IF = 0; // clear the I2C master interrupt
     _MI2C1IE = 1; // enable the interrupt
 }
