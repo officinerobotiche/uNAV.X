@@ -90,18 +90,19 @@
  */
 
 bool ccc = false;
-bool bbb = false;
+bool bbb = true;
 bool aaa = false;
 uint8_t rdBuffer[2] = {100, 205};
 uint16_t address = 1000;
 uint16_t rdSize = 2;
 
-void pCallback(bool b) {
-    bbb = b;
-}
+//void pCallback(bool b) {
+//    bbb = b;
+//}
 
 void wCallback(bool b) {
-    aaa = b;
+//    aaa = b;
+    bbb = true;
 }
 
 int16_t main(void) {
@@ -155,29 +156,29 @@ int16_t main(void) {
     /* LOAD high level task */
     add_task(false, &init_linefollower, &loop_linefollower);
 
-    if(EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback)) {
-        int a;
-        a= 1;
-    } else {
-        int b;
-        b= 1;
-    }
+//    if(EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback)) {
+//        int a;
+//        a= 1;
+//    } else {
+//        int b;
+//        b= 1;
+//    }
     uint8_t wrBuffer[2] = {2, 88};
 
     while (true) {
         PCF8574_LED_write(PCF8574_LED1 + PCF8574_LED5);
         
-        /*if(bbb) {
+        if(bbb) {
             EEPROM_write(0, wrBuffer, address, 2, wCallback);
             bbb = false;
         }
-        if(aaa) {
-            EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback);
-            aaa = false;
-        }
-        if(ccc) {
-            EEPROM_service_trigger();
-        }*/
+//        if(aaa) {
+//            EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback);
+//            aaa = false;
+//        }
+//        if(ccc) {
+//            EEPROM_service_trigger();
+//        }
     }
 
     return true;
