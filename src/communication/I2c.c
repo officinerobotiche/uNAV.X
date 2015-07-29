@@ -97,7 +97,6 @@ void Init_I2C(void) {
 }
 
 void __attribute__((__interrupt__, __no_auto_psv__)) _MI2C1Interrupt(void) {
-    
-    I2C_manager();
     _MI2C1IF = 0; // clear the interrupt
+    I2C_manager();
 }
