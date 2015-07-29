@@ -45,7 +45,7 @@
 /******************************************************************************/
 
 #define SERIAL "SERIAL"
-string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
+static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 
 //UART
 #define BAUDRATE 115200

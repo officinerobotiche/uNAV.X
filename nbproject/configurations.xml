@@ -6,6 +6,7 @@
                    projectFiles="true">
       <logicalFolder name="f2" displayName="communication" projectFiles="true">
         <itemPath>includes/communication/serial.h</itemPath>
+        <itemPath>includes/communication/I2c.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="high_control" projectFiles="true">
         <itemPath>includes/high_control/high_comm.h</itemPath>
@@ -46,6 +47,7 @@
                    projectFiles="true">
       <logicalFolder name="f1" displayName="communication" projectFiles="true">
         <itemPath>src/communication/serial.c</itemPath>
+        <itemPath>src/communication/I2c.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="high_control" projectFiles="true">
         <itemPath>src/high_control/high_comm.c</itemPath>
@@ -73,6 +75,10 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
+  <sourceRootList>
+    <Elem>src/communication</Elem>
+    <Elem>includes/communication</Elem>
+  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="uNAV_V1" type="2">

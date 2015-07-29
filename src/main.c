@@ -37,6 +37,8 @@
 #include "system/system_comm.h"
 #include "system/peripherals.h"
 
+#include "communication/I2c.h"
+#include <peripherals/i2c/i2c.h>
 
 #include "communication/serial.h"
 
@@ -66,7 +68,7 @@
  * Some interrupts are managed directly by the hardware peripherals or through
  * the DMA, other are used as "soft interrupts" triggered by the code.
  * In this way it's possible to define the priority for each function, even
- * dinamically, optimizing the resources at most. A slow procedure can be
+ * dynamically, optimizing the resources at most. A slow procedure can be
  * interrupted by time-critical one performing a true real-time behavior.
  *
  * Let's analyzing in detail the ISRs
@@ -85,7 +87,6 @@
  * - RTC triggers the dead-reckoning procedures.
  * @return type of error
  */
-
 int16_t main(void) {
     /** INITIALIZATION Operative System **/
     ConfigureOscillator();  ///< Configure the oscillator for the device
@@ -99,6 +100,10 @@ int16_t main(void) {
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
     InitADC();    ///< Open ADC for measure current motors
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
+    
+    /* I2C CONFIGURATION */
+    Init_I2C();     ///< Open I2C module
+    EEPROM_init();  ///< Launch the EEPROM controller
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -129,9 +134,9 @@ int16_t main(void) {
     
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
-    
+        
     while (true) {
-
+        
     }
 
     return true;

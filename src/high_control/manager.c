@@ -46,10 +46,10 @@
 #include "communication/serial.h"
 
 #define HIGH_CONTROL "HIGH_CONTROL"
-string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)};
+static string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)};
 
 
-hTask_t HighControlTask = NULL;
+static hTask_t HighControlTask = NULL;
 
 //State controller
 volatile motion_state_t control_state = 0;
