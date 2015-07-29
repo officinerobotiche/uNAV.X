@@ -46,10 +46,10 @@
 #include "communication/serial.h"
 
 #define HIGH_CONTROL "HIGH_CONTROL"
-string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)};
+static string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)};
 
 
-hTask_t HighControlTask = NULL;
+static hTask_t HighControlTask = NULL;
 
 //State controller
 volatile motion_state_t control_state = 0;
@@ -126,7 +126,8 @@ bool load_all_task(void) {
 void HighControl_Init(void) {
     reset_motion();
     
-    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &MotorTaskController, EVENT_PRIORITY_LOW), 10, 0, NULL);
+    //Set High level control to run at 100Hz
+    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &MotorTaskController, EVENT_PRIORITY_LOW), 100, 0, NULL);
     task_set(HighControlTask, load_all_task());
 }
 
