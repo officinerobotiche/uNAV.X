@@ -110,6 +110,8 @@ extern "C" {
      */
     void InitTimer1(void);
 
+    void InitTimer3(void);
+    
 #ifdef	__cplusplus
 }
 #endif

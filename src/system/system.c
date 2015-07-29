@@ -195,7 +195,7 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 }
 
 system_task_t get_task(system_task_t process_state) {
-    hTask_t task = (hTask_t) process_state.number;
+    //hTask_t task = (hTask_t) process_state.number;
     
     return process_state;
 }

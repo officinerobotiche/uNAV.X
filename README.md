@@ -1,4 +1,6 @@
-# ![Officine Robotiche][Logo] - µNAV
+# ![Officine Robotiche][Logo] - µNAV [![Stories in Ready](https://badge.waffle.io/officinerobotiche/uNAV.X.png?label=ready&title=Ready)](http://waffle.io/officinerobotiche/uNAV.X)
+
+[![Join the chat at https://gitter.im/officinerobotiche/uNAV.X](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/officinerobotiche/uNAV.X?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 This is a project in development by [Officine Robotiche] to control motors.
 
 ### **The [uNAV board](https://github.com/officinerobotiche/uNAVPCB) is HERE!**
@@ -52,6 +54,7 @@ mkdir uNAV
 cd uNAV
 git clone https://github.com/officinerobotiche/or_bus_c.X.git
 git clone https://github.com/officinerobotiche/or_common_c.X.git
+git clone https://github.com/officinerobotiche/or_kernel_c.X.git
 git clone https://github.com/officinerobotiche/uNAV.X.git
 cd uNAV.X
 git checkout develop

@@ -69,7 +69,7 @@
  * Some interrupts are managed directly by the hardware peripherals or through
  * the DMA, other are used as "soft interrupts" triggered by the code.
  * In this way it's possible to define the priority for each function, even
- * dinamically, optimizing the resources at most. A slow procedure can be
+ * dynamically, optimizing the resources at most. A slow procedure can be
  * interrupted by time-critical one performing a true real-time behavior.
  *
  * Let's analyzing in detail the ISRs
@@ -108,10 +108,10 @@ int16_t main(void) {
     /** INITIALIZATION Operative System **/
     ConfigureOscillator();  ///< Configure the oscillator for the device
     Peripherals_Init();     ///< Initialize IO ports and peripherals
-    InitLEDs();             ///< Initialization LEDs
-    
     InitEvents();   ///< Initialize processes controller
     InitTimer1();   ///< Open Timer1 for clock system
+    
+    InitLEDs();             ///< Initialization LEDs
     
     /* Peripherals initialization */
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
@@ -119,8 +119,8 @@ int16_t main(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
     /* I2C CONFIGURATION */
-    Init_I2C();   ///< Open I2C module
-    EEPROM_init();
+    Init_I2C();     ///< Open I2C module
+    EEPROM_init();  ///< Launch the EEPROM controller
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -130,12 +130,12 @@ int16_t main(void) {
     InitPWM();      ///< Open PWM
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
-        Motor_Init(i);                              ///< Initialization Motor peripherals
-        update_motor_parameters(i, init_motor_parameters()); ///< Initialize parameters for motors
-        update_motor_pid(i, init_motor_pid());      ///< Initialize PID controllers
-        update_motor_emergency(i, init_motor_emergency()); ///< Initialize emergency procedure to stop
-        update_motor_constraints(i, init_motor_constraints()); ///< Initialize constraints motor
-        set_motor_state(i, STATE_CONTROL_DISABLE); ///< Initialize state controller
+        Motor_Init(i);                                          ///< Initialization Motor peripherals
+        update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints());  ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE);              ///< Initialize state controller
     }
     set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);  ///< Initialize communication
     
@@ -163,13 +163,13 @@ int16_t main(void) {
         b= 1;
     }
     uint8_t wrBuffer[2] = {2, 88};
+
     while (true) {
         PCF8574_LED_write(PCF8574_LED1 + PCF8574_LED5);
         
         /*if(bbb) {
             EEPROM_write(0, wrBuffer, address, 2, wCallback);
             bbb = false;
-            
         }
         if(aaa) {
             EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback);
