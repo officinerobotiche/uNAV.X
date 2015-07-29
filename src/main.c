@@ -68,7 +68,7 @@
  * Some interrupts are managed directly by the hardware peripherals or through
  * the DMA, other are used as "soft interrupts" triggered by the code.
  * In this way it's possible to define the priority for each function, even
- * dinamically, optimizing the resources at most. A slow procedure can be
+ * dynamically, optimizing the resources at most. A slow procedure can be
  * interrupted by time-critical one performing a true real-time behavior.
  *
  * Let's analyzing in detail the ISRs
@@ -87,22 +87,6 @@
  * - RTC triggers the dead-reckoning procedures.
  * @return type of error
  */
-
-bool ccc = false;
-bool bbb = false;
-bool aaa = false;
-uint8_t rdBuffer[2] = {100, 205};
-uint16_t address = 1000;
-uint16_t rdSize = 2;
-
-void pCallback(bool b) {
-    bbb = b;
-}
-
-void wCallback(bool b) {
-    aaa = b;
-}
-
 int16_t main(void) {
     /** INITIALIZATION Operative System **/
     ConfigureOscillator();  ///< Configure the oscillator for the device
@@ -118,8 +102,8 @@ int16_t main(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
     /* I2C CONFIGURATION */
-    Init_I2C();   ///< Open I2C module
-    EEPROM_init();
+    Init_I2C();     ///< Open I2C module
+    EEPROM_init();  ///< Launch the EEPROM controller
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -150,31 +134,9 @@ int16_t main(void) {
     
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
-    
-
-    if(EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback)) {
-        int a;
-        a= 1;
-    } else {
-        int b;
-        b= 1;
-    }
-    uint8_t wrBuffer[2] = {2, 88};
-    while (true) {
-        PCF8574_LED_write(PCF8574_LED1 + PCF8574_LED5);
         
-        /*if(bbb) {
-            EEPROM_write(0, wrBuffer, address, 2, wCallback);
-            bbb = false;
-            
-        }
-        if(aaa) {
-            EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback);
-            aaa = false;
-        }
-        if(ccc) {
-            EEPROM_service_trigger();
-        }*/
+    while (true) {
+        
     }
 
     return true;
