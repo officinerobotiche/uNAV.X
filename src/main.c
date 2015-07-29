@@ -108,12 +108,12 @@ int16_t main(void) {
     InitPWM();      ///< Open PWM
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
-        Motor_Init(i);                              ///< Initialization Motor peripherals
-        update_motor_parameters(i, init_motor_parameters()); ///< Initialize parameters for motors
-        update_motor_pid(i, init_motor_pid());      ///< Initialize PID controllers
-        update_motor_emergency(i, init_motor_emergency()); ///< Initialize emergency procedure to stop
-        update_motor_constraints(i, init_motor_constraints()); ///< Initialize constraints motor
-        set_motor_state(i, STATE_CONTROL_DISABLE); ///< Initialize state controller
+        Motor_Init(i);                                          ///< Initialization Motor peripherals
+        update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints());  ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE);              ///< Initialize state controller
     }
     set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);  ///< Initialize communication
     
