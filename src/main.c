@@ -103,7 +103,7 @@ int16_t main(void) {
     
     /* I2C CONFIGURATION */
     Init_I2C();     ///< Open I2C module
-    EEPROM_init();  ///< Launch the EEPROM controller
+    EEPROM_init(20);  ///< Launch the EEPROM controller
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -134,7 +134,7 @@ int16_t main(void) {
     
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
-        
+    
     while (true) {
         
     }
