@@ -49,9 +49,10 @@ static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 
 //UART
 #define BAUDRATE 115200
-//#define BAUDRATE 57600
 #define BRGVAL   ((FCY/BAUDRATE)/16)-1
 
+// Packet
+packet_t receive;
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 hEvent_t parseEvent = INVALID_EVENT_HANDLE;
@@ -131,7 +132,7 @@ void parse_packet(int argc, int* argv) {
     packet_information_t list_data[BUFFER_LIST_PARSING];
     size_t len = 0;
 
-    if(parser(&list_data[0], &len) && len != 0) {
+    if(parser(&receive, &list_data[0], &len) && len != 0) {
         //Build a new message
         packet_t send = encoder(&list_data[0], len);
         // Send a new packet
@@ -143,8 +144,8 @@ void SerialComm_Init(void) {
     InitUART1();
     InitDMA1();
     
-    init_hashmap_packet();          ///< Initialize hash map packet
-    init_buff_serial_error();       ///< Initialize buffer serial error
+    ORB_Message_Init(&receive);           ///< Initialize buffer serial error
+    init_hashmap_packet();                ///< Initialize hash map packet
     /// Register module
     hModule_t serial_module = register_module(&_MODULE_SERIAL);
     /// Register event
@@ -158,7 +159,7 @@ void serial_send(packet_t packet) {
     //Build a message to send to serial
     build_pkg(BufferTx, packet);
     
-    DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
+    DMA1CNT = (LNG_PACKET_HEADER + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
 }
