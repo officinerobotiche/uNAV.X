@@ -197,10 +197,10 @@ void Motor_Init(short motIdx) {
     /* Initialize variables for motors */
     switch(motIdx) {
         case MOTOR_ZERO:
-            init_motor(motIdx, &enable_1);
+            init_motor(motIdx, &IC1CON, &enable_1);
             break;
         case MOTOR_ONE:
-            init_motor(motIdx, &enable_2);
+            init_motor(motIdx, &IC2CON, &enable_2);
             break;
     }
     

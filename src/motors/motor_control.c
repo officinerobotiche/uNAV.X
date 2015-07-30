@@ -19,16 +19,6 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
 
 #include <stdint.h>          /* For uint16_t definition                      */
 #include <stdbool.h>         /* For true/false definition                    */
@@ -157,7 +147,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, hardware_bit_t* enable) {
+void init_motor(const short motIdx, REGISTER input_capture, hardware_bit_t* enable) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -168,14 +158,8 @@ void init_motor(const short motIdx, hardware_bit_t* enable) {
     ICinfo[motIdx].SIG_VEL = 0;
     ICinfo[motIdx].overTmr = 0;
     ICinfo[motIdx].timePeriod = 0;
-    switch (motIdx) {
-        case MOTOR_ZERO:
-            motors[motIdx].icm = &IC1CON;
-            break;
-        case MOTOR_ONE:
-            motors[motIdx].icm = &IC2CON;
-            break;
-    }
+    // Register input capture
+    motors[motIdx].icm = input_capture;
     /// Setup bit enable
     motors[motIdx].pin_enable = enable;
     motors[motIdx].k_mul = 1;
@@ -478,7 +462,7 @@ int measureVelocity(short motIdx) {
         int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
         motors[motIdx].measure.velocity = vel;
     }
-    // Set Input Capture Prescaler
+    // Set Input Capture Pre scaler
     SelectIcPrescaler(motIdx, motors[motIdx].measure.velocity * SIG_VELtmp);
 
     //Evaluate position
