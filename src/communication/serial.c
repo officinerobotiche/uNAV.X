@@ -30,10 +30,6 @@
 #endif
 #endif
 
-//#include <stdint.h>        /* Includes uint16_t definition   */
-//#include <stdbool.h>       /* Includes true/false definition */
-//#include <string.h>
-
 #include <system/events.h>
 
 #include "communication/serial.h"
@@ -144,8 +140,8 @@ void SerialComm_Init(void) {
     InitUART1();
     InitDMA1();
     
-    ORB_Message_Init(&receive);           ///< Initialize buffer serial error
-    init_hashmap_packet();                ///< Initialize hash map packet
+    orb_message_init(&receive);           ///< Initialize buffer serial error
+    orb_frame_init();                     ///< Initialize hash map packet
     /// Register module
     hModule_t serial_module = register_module(&_MODULE_SERIAL);
     /// Register event
