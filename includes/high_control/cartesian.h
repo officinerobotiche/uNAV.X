@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Officine Robotiche
+ * Copyright (C) 2015 Officine Robotiche
  * Author: Raffaello Bonghi
  * email:  raffaello.bonghi@officinerobotiche.it
  * Permission is granted to copy, distribute, and/or modify this program
@@ -13,36 +13,23 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
-#ifndef SERIAL_H
-#define	SERIAL_H
+#ifndef CARTESIAN_H
+#define	CARTESIAN_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    #include <serial/or_message.h>
-    #include <serial/or_frame.h>
-    
-    //Dimension of list messages to decode in a packet
-    #define BUFFER_LIST_PARSING 10
+void init_cartesian (motor_state_t* state);
 
-    /** 
-     * Initialization UART1 for communication and
-     * Initialization DMA1 for UART Tx transmition
-     */
-    void SerialComm_Init(void);
+motion_velocity_t loop_cartesian (motion_velocity_t* measure, motion_coordinate_t* coordinate);
 
-    /**
-     * Send serial message to uart
-     * @param packet
-     */
-    void serial_send(packet_t packet);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* SERIAL_H */
+#endif	/* CARTESIAN_H */
 

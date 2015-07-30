@@ -22,6 +22,14 @@
 extern "C" {
 #endif
 
+    #include <stdint.h>
+    #include <stdbool.h>
+    #include <string.h>
+    
+    #include <peripherals/gpio.h>
+
+    #include "system/peripherals.h"
+    
     /**************************************************************************/
     /* System Level #define Macros                                            */
     /**************************************************************************/
@@ -44,6 +52,15 @@ extern "C" {
 #define RIGHT_PROCESS_MEASURE 4
 #define RIGHT_PROCESS_MEASURE_STRING "Right/Meas"
     
+    typedef enum {
+        CONTROL_EMERGENCY = -1,     ///< Motors slow down to zero speed, then the bridge is turned off
+        CONTROL_DISABLE = 0,        ///< Motors disabled
+        CONTROL_POSITION = 1,       ///< Motors controlled in position
+        CONTROL_VELOCITY = 2,       ///< Motors controlled in velocity
+        CONTROL_TORQUE = 3,         ///< Motors controller in torque
+        CONTROL_DIRECT = 4,         ///< Motors controlled using direct PWM signals
+    } enum_state_t;
+    
     typedef struct _ICdata {
         volatile unsigned int overTmr; //Overflow timer
         volatile unsigned long timePeriod; //Time period from Input Capture
@@ -58,7 +75,7 @@ extern "C" {
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
      */
-    void init_motor(short motIdx);
+    void init_motor(const short motIdx, hardware_bit_t* enable);
     
     /**
      * Initialization parameters for motor controller.
@@ -159,7 +176,7 @@ extern "C" {
      * @param reference reference of velocity
      * @return Time to compute this function
      */
-    int set_motor_velocity(short motIdx, motor_control_t reference);
+    int set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference);
 
     /**
      * Return state of motor
@@ -183,7 +200,7 @@ extern "C" {
      *  - Torque control (move to desired torque)
      * @return Time to Compute task control reference
      */
-    int MotorTaskController(void);
+    void MotorTaskController(int argc, int *argv);
     
      /**
      * Select the correct Input Capture prescaler		
@@ -198,6 +215,8 @@ extern "C" {
      * @return Time to Compute task control reference
      */
     int measureVelocity(short motIdx);
+    
+    inline void Motor_PWM(short motIdx, int pwm_control);
     
     /**
      * Execution velocity PID for left motor
@@ -214,21 +233,23 @@ extern "C" {
      * 2. Load data (reference, measure) and execution PID control and get value
      * 3. Conversion PID value for PWM controller
      * @param motIdx Number motor
-     * @return time to compute parsing packet
+     * @return control evaluation
      */
-    int MotorPID(short motIdx);
+    inline int MotorPID(short motIdx);
+    
+    void controller(int argc, int *argv);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
      * @param motIdx Number motor
      * @return start emergency mode or not.
      */
-    bool Emergency(short motIdx);
+    void Emergency(int argc, int *argv);
 
     /**
      * Mean value for current measure motors
      */
-    void adc_motors_current(void);
+    inline void adc_motors_current(ADC* AdcBuffer, size_t len);
 
 #ifdef	__cplusplus
 }

@@ -36,19 +36,38 @@
 #include <string.h>
 #include <float.h>
 
+#include "system/system.h"
+
+#include <peripherals/gpio.h>
+#include <system/task_manager.h>
+
 #include "high_control/manager.h"
 #include "motors/motor_control.h"
 #include "communication/serial.h"
-#include "system/user.h"
-#include "system/system.h"
+
+#define HIGH_CONTROL "HIGH_CONTROL"
+static string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)};
+
+
+static hTask_t HighControlTask = NULL;
 
 //State controller
-volatile state_controller_t control_state = 0;
+volatile motion_state_t control_state = 0;
+
+#define MAX_HIGH_TASK 3
+
+typedef unsigned short hHighControlTask_t;
+typedef struct _control_task {
+    bool autostart;
+    motor_state_t state;
+    control_task_init_t init;
+    control_task_loop_t loop;
+} control_task_manager_t;
+
+control_task_manager_t high_level_task[MAX_HIGH_TASK];
+unsigned short counter_task = 0;
 
 unsigned int counter_odo = 0;
-coordinate_t coordinate;
-unsigned int counter_delta = 0;
-bool autosend_delta_odometry = false;
 
 float sinTh_old = 0, cosTh_old = 1;
 float wheel_m;
@@ -61,95 +80,188 @@ typedef struct parameter_unicycle_int {
 } parameter_unicycle_int_t;
 parameter_unicycle_int_t parameter_unicycle_int;
 
-velocity_t vel_rif, vel_mis;
-
-volatile parameter_unicycle_t parameter_unicycle;
-
-//From system.c
-extern process_t motion_process[PROCESS_MOTION_LENGTH];
+motion_velocity_t reference, measure;
+motion_parameter_unicycle_t parameter_unicycle;
+motion_coordinate_t coordinate;
 
 /*****************************************************************************/
 /* Dead Reckoning functions                                                  */
 /*****************************************************************************/
 
-void init_parameter_unicycle(void) {
-    parameter_unicycle.radius_l = 0.04; //Radius left wheel
-    parameter_unicycle.radius_r = 0.04; //Radius right wheel
-    parameter_unicycle.wheelbase = 0.20; //Wheelbase
-    parameter_unicycle.sp_min = 0.0001; // FLT_MIN
-    update_parameter_unicycle();
-
-    vel_mis.v = 0;
-    vel_mis.w = 0;
+void reset_motion(void) {
+    reference.v = 0;
+    reference.w = 0;
+    measure.v = 0;
+    measure.w = 0;
 }
 
-void update_parameter_unicycle(void) {
+bool add_task(bool autostart, control_task_init_t init, control_task_loop_t loop) {
+    if(counter_task < MAX_HIGH_TASK) {
+        high_level_task[counter_task].autostart = autostart;
+        high_level_task[counter_task].init = init;
+        high_level_task[counter_task].loop = loop;
+        counter_task++;
+        return true;
+    } else
+        return false;
+}
+
+bool load_all_task(void) {
+    hHighControlTask_t hControl;
+    /// Initialize all high level task
+    if(counter_task > 0) {
+        for(hControl = 0; hControl < MAX_HIGH_TASK; ++hControl) {
+            /// Start function to initialize high level task
+            high_level_task[hControl].init(&high_level_task[hControl].state);
+            /// Set autostart to selected task
+            if(high_level_task[hControl].autostart) {
+                set_motion_state(hControl + 1);
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+void HighControl_Init(void) {
+    reset_motion();
+    
+    //Set High level control to run at 100Hz
+    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &MotorTaskController, EVENT_PRIORITY_LOW), 100, 0, NULL);
+    task_set(HighControlTask, load_all_task());
+}
+
+void HighLevelTaskController(int argc, int *argv) {
+    /// Measure velocity unicycle
+    VelocityMeasure();
+    /// Odometry unicycle
+    deadReckoning();
+    
+    /// High level task manager
+    if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
+        /// Set led to velocity control
+    } else if (control_state - 1 < counter_task) {
+       set_motion_velocity_ref_unicycle(high_level_task[control_state - 1].loop(&measure, &coordinate));
+    } else {
+        set_motion_state(STATE_CONTROL_HIGH_DISABLE);
+    }
+
+#ifndef MOTION_CONTROL
+    UpdateBlink(3, control_state);
+#endif
+}
+
+motion_parameter_unicycle_t init_motion_parameter_unicycle(void) {
+    motion_parameter_unicycle_t parameter_unicycle;
+    parameter_unicycle.radius_l = 0.1;
+    parameter_unicycle.radius_r = 0.1;
+    parameter_unicycle.wheelbase = 0.1;
+    return parameter_unicycle;
+}
+
+/* inline */ 
+motion_parameter_unicycle_t get_motion_parameter_unicycle(void) {
+    return parameter_unicycle;
+}
+
+void update_motion_parameter_unicycle(motion_parameter_unicycle_t parameter) {
+    parameter_unicycle = parameter;
     parameter_unicycle_int.radius_l = ((int) (parameter_unicycle.radius_l * 1000.0));
     parameter_unicycle_int.radius_r = ((int) (parameter_unicycle.radius_r * 1000.0));
     parameter_unicycle_int.wheelbase = ((int) (parameter_unicycle.wheelbase * 1000.0));
     wheel_m = parameter_unicycle.wheelbase / 2;
 }
 
-void init_coordinate(void) {
+motion_coordinate_t init_motion_coordinate(void) {
+    motion_coordinate_t coordinate;
     coordinate.x = 0;
     coordinate.y = 0;
     coordinate.theta = 0;
     coordinate.space = 0;
+    return coordinate;
 }
 
-void update_coord(void) {
+inline motion_coordinate_t get_motion_coordinate(void) {
+    return coordinate;
+}
+
+void update_motion_coordinate(motion_coordinate_t coord) {
+    coordinate = coord;
     sinTh_old = sinf(coordinate.theta);
     cosTh_old = cosf(coordinate.theta);
 }
 
-void UpdateHighStateController(int state) {
+/* inline */
+motion_state_t get_motion_state(void) {
+    return control_state;
+}
+
+void set_motion_state(motion_state_t state) {
     if (state != control_state) {
         control_state = state;
-        switch (control_state) {
-            case STATE_CONTROL_HIGH_DISABLE:
-                set_motor_state(-1, STATE_CONTROL_DISABLE);
-                break;
-            default:
-                set_motor_state(-1, STATE_CONTROL_VELOCITY);
-                break;
+        if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
+            set_motor_state(MOTOR_LEFT, STATE_CONTROL_VELOCITY);
+            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_VELOCITY);
+        } else if(control_state - 1 < counter_task) {
+            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
+            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
+        } else {
+            control_state = STATE_CONTROL_HIGH_DISABLE;
+            set_motor_state(MOTOR_LEFT, STATE_CONTROL_EMERGENCY);
+            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_EMERGENCY);
         }
     }
 }
 
-int HighLevelTaskController(void) {
-    unsigned int t = TMR1; // Timing function
+inline motion_velocity_t get_motion_velocity_ref_unicycle(void) {
+    return reference;
+}
 
-    switch (control_state) {
-        case STATE_CONTROL_HIGH_VELOCITY:
-            /**
-             * Measure linear and angular velocity for unicycle robot
-             */
-            VelocityMeasure();
-            if (counter_odo >= motion_process[PROCESS_ODOMETRY].frequency) {
-                motion_process[PROCESS_ODOMETRY].time = deadReckoning();
-                counter_odo = 0;
-            }
-            counter_odo++;
-            break;
-        case STATE_CONTROL_HIGH_CONFIGURATION:
-            break;
-        default:
-            set_motor_velocity(MOTOR_ZERO, 0);
-            set_motor_velocity(MOTOR_ONE, 0);
-            break;
+void set_motion_velocity_ref_unicycle(motion_velocity_t velocity) {
+    reference = velocity;
+    // >>>>> Second part: references calculation
+    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(velocity.v - (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
+    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(velocity.v + (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
+
+    // >>>>> Saturation on 16 bit values
+    if(motor_left_refer > INT16_MAX) {
+        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MAX);
+    } else if (motor_left_refer < INT16_MIN) {
+        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MIN);
+    } else {
+        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, motor_left_refer);
     }
+    if(motor_right_refer > INT16_MIN) {
+        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
+    } else if (motor_right_refer < INT16_MIN) {
+        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
+    } else {
+        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, motor_right_refer);
+    }
+    // <<<<< Saturation on 16 bit values
+}
+
+inline motion_velocity_t get_motion_velocity_meas_unicycle(void) {
+    return measure;
+}
+
+int VelocityMeasure(void) {
+    unsigned int t = TMR1; // Timing function
+    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / 2;
+    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
+    measure.v = ((float) vel_v / 1000000);
+    measure.w = ((float) vel_w / 1000);
+
     return TMR1 - t; // Time of execution
 }
 
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
-    volatile coordinate_t delta;
+    volatile motion_coordinate_t delta;
     float WheelSpL = parameter_unicycle.radius_l * get_motor_measures(MOTOR_ZERO).position;
     float WheelSpR = parameter_unicycle.radius_r * get_motor_measures(MOTOR_ONE).position;
     float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote
     float DifSp = WheelSpR - WheelSpL; // Calcolo della differenza degli spostamenti delle ruote
-    //PulsEncL = 0; // Flush variabile
-    //PulsEncR = 0; // Flush variabile
 
     if (fabs(DifSp) <= parameter_unicycle.sp_min) {
         delta.theta = 0;
@@ -179,57 +291,9 @@ int deadReckoning(void) {
     }
 
     // Calculate odometry
-    odometry(delta);
-
-    return TMR1 - t; // Time of execution
-}
-
-int odometry(coordinate_t delta) {
-    unsigned int t = TMR1; // Timing function
-
     coordinate.space += delta.space;
     coordinate.x += delta.x;
     coordinate.y += delta.y;
-
-    return TMR1 - t; // Time of esecution
-}
-
-int set_high_velocity(velocity_t velocity) {
-    unsigned int t = TMR1; // Timing function
-    // >>>>> Second part: references calculation
-    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(vel_rif.v - (0.5f*parameter_unicycle.wheelbase * (vel_rif.w)))*1000);
-    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(vel_rif.v + (0.5f*parameter_unicycle.wheelbase * (vel_rif.w)))*1000);
-
-    // >>>>> Saturation on 16 bit values
-    if(motor_left_refer > INT16_MAX) {
-        set_motor_velocity(MOTOR_ZERO, INT16_MAX);
-    } else if (motor_left_refer < INT16_MIN) {
-        set_motor_velocity(MOTOR_ZERO, INT16_MIN);
-    } else {
-        set_motor_velocity(MOTOR_ZERO, motor_left_refer);
-    }
-    if(motor_right_refer > INT16_MIN) {
-        set_motor_velocity(MOTOR_ONE, INT16_MIN);
-    } else if (motor_right_refer < INT16_MIN) {
-        set_motor_velocity(MOTOR_ONE, INT16_MIN);
-    } else {
-        set_motor_velocity(MOTOR_ONE, motor_right_refer);
-    }
-    // <<<<< Saturation on 16 bit values
-
-    return TMR1 - t; // Time of execution
-}
-
-/* inline */ velocity_t get_high_velocity_ref(void) {
-    return vel_rif;
-}
-
-int VelocityMeasure(void) {
-    unsigned int t = TMR1; // Timing function
-    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
-    vel_mis.v = ((float) vel_v / 1000000);
-    vel_mis.w = ((float) vel_w / 1000);
 
     return TMR1 - t; // Time of execution
 }

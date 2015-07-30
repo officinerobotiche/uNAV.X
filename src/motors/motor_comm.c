@@ -45,9 +45,6 @@
 //Split motor and command
 motor_command_map_t motor;
 
-// From high level control
-extern state_controller_t control_state;
-
 /******************************************************************************/
 /* Parsing functions                                                          */
 /******************************************************************************/
@@ -56,37 +53,35 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
     motor.command_message = info->command;
     switch (motor.bitset.command) {
         case MOTOR_VEL_PID:
-            update_motor_pid((short) motor.bitset.motor, info->message.motor_pid);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            update_motor_pid((short) motor.bitset.motor, info->message.motor.pid);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_PARAMETER:
-            update_motor_parameters((short) motor.bitset.motor, info->message.motor_parameter);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            update_motor_parameters((short) motor.bitset.motor, info->message.motor.parameter);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_CONSTRAINT:
-            update_motor_constraints((short) motor.bitset.motor, info->message.motor);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            update_motor_constraints((short) motor.bitset.motor, info->message.motor.motor);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_VEL_REF:
-            set_motor_velocity((short) motor.bitset.motor, info->message.motor_control);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, info->message.motor.reference);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_STATE:
-            set_motor_state((short) motor.bitset.motor, info->message.motor_state);
-            control_state = STATE_CONTROL_HIGH_DISABLE; //TODO CORRECT
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            set_motor_state((short) motor.bitset.motor, info->message.motor.state);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_POS_RESET:
-            reset_motor_position_measure((short) motor.bitset.motor, info->message.motor_control);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            reset_motor_position_measure((short) motor.bitset.motor, info->message.motor.reference);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_EMERGENCY:
-            update_motor_emergency((short) motor.bitset.motor, info->message.motor_emergency);
-            list_send[(*len)++] = createPacket(info->command, PACKET_ACK, info->type, NULL);
+            update_motor_emergency((short) motor.bitset.motor, info->message.motor.emergency);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
-        case MOTOR:
         default:
-            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
             break;
     }
 }
@@ -96,35 +91,35 @@ void send_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
     motor.command_message = info->command;
     switch (motor.bitset.command) {
         case MOTOR_PARAMETER:
-            send.motor_parameter = get_motor_parameters((short) motor.bitset.motor);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            send.motor.parameter = get_motor_parameters((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_VEL_PID:
-            send.motor_pid = get_motor_pid((short) motor.bitset.motor);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_VEL_REF:
-            send.motor_control = get_motor_reference((short) motor.bitset.motor).velocity;
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            send.motor.reference = get_motor_reference((short) motor.bitset.motor).velocity;
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_STATE:
-            send.motor_state = get_motor_state((short) motor.bitset.motor);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            send.motor.state = get_motor_state((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
-        case MOTOR:
-            send.motor = get_motor_measures((short) motor.bitset.motor);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+        case MOTOR_MEASURE:
+            send.motor.motor = get_motor_measures((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_CONSTRAINT:
-            send.motor = get_motor_constraints((short) motor.bitset.motor);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            send.motor.motor = get_motor_constraints((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_EMERGENCY:
-            send.motor_emergency = get_motor_emergency((short) motor.bitset.motor);
-            list_send[(*len)++] = createDataPacket(info->command, info->type, &send);
+            send.motor.emergency = get_motor_emergency((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:
-            list_send[(*len)++] = createPacket(info->command, PACKET_NACK, info->type, NULL);
+            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
             break;
     }
 }

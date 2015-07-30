@@ -13,7 +13,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
 /******************************************************************************/
 /* Files to Include                                                           */
@@ -30,36 +30,36 @@
 #endif
 #endif
 
-#include <stdint.h>        /* Includes uint16_t definition   */
-#include <stdbool.h>       /* Includes true/false definition */
-#include <string.h>
+#include "system/system_comm.h"
 
-#include "high_control/high_comm.h"
+#include "system/system.h"
 
-#include "communication/serial.h"
-#include <serial/or_frame.h>
-#include "high_control/manager.h"
+#include <system/events.h>
 
 /*****************************************************************************/
-/* Parsing functions                                                         */
+/* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-void save_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+/** GLOBAL VARIBLES */
+// From system/system.c
+extern system_parameter_t parameter_system;
+// From communication/serial.c
+extern system_error_serial_t serial_error;
+
+/*****************************************************************************/
+/* User Functions                                                            */
+/*****************************************************************************/
+
+void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+    message_abstract_u send;
     switch (info->command) {
-        case MOTION_COORDINATE:
-            update_motion_coordinate(info->message.motion.coordinate);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+        case SYSTEM_SERVICE:
+            send.system.service = services(info->message.system.service);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
-        case MOTION_PARAMETER_UNICYCLE:
-            update_motion_parameter_unicycle(info->message.motion.parameter_unicycle);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
-            break;
-        case MOTION_VEL_REF:
-            set_motion_velocity_ref_unicycle(info->message.motion.velocity);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
-            break;
-        case MOTION_STATE:
-            set_motion_state(info->message.motion.state);
+        case SYSTEM_TASK_PRIORITY:
+        case SYSTEM_TASK_FRQ:
+            set_process(info->command, info->message.system.task);
             list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         default:
@@ -68,27 +68,32 @@ void save_frame_motion(packet_information_t* list_send, size_t* len, packet_info
     }
 }
 
-void send_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
     message_abstract_u send;
     switch (info->command) {
-        case MOTION_COORDINATE:
-            send.motion.coordinate = get_motion_coordinate();
+        case SYSTEM_SERVICE:
+            send.system.service = services(info->message.system.service);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
-        case MOTION_VEL_REF:
-            send.motion.velocity = get_motion_velocity_ref_unicycle();
+        case SYSTEM_TASK_PRIORITY:
+        case SYSTEM_TASK_FRQ:
+        case SYSTEM_TASK_TIME:
+            
+            break;
+        case SYSTEM_TASK_NUM:
+            send.system.task = get_process(info->command, info->message.system.task);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
-        case MOTION_VEL:
-            send.motion.velocity = get_motion_velocity_meas_unicycle();
+        case SYSTEM_TASK_NAME:
+            send.system.task_name = get_process_name(info->message.system.task_name);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
-        case MOTION_STATE:
-            send.motion.state = get_motion_state();
+        case SYSTEM_PARAMETER:
+            send.system.parameter = parameter_system;
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
-        case MOTION_PARAMETER_UNICYCLE:
-            send.motion.parameter_unicycle = get_motion_parameter_unicycle();
+        case SYSTEM_SERIAL_ERROR:
+            send.system.error_serial = serial_error;
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:
