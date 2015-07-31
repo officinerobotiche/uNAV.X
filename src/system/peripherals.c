@@ -55,6 +55,8 @@ hardware_bit_t led_2 = REGISTER_INIT(LATC, 7);
 hardware_bit_t led_3 = REGISTER_INIT(LATC, 8);
 /// LED 4 - Blue
 hardware_bit_t led_4 = REGISTER_INIT(LATC, 9);
+/// GPIO 0
+gpio_t gpio_0 = GPIO_INIT(C, 0, GPIO_READ);
 #elif ROBOCONTROLLER_V3
 /// Number of available LEDs
 #define LED_NUM 2
