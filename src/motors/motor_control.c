@@ -342,9 +342,9 @@ void set_motor_state(short motIdx, motor_state_t state) {
     /// Set enable or disable motors
     motors[motIdx].reference.state = state;
     if(enable ^ motors[motIdx].parameter_motor.bridge.enable)
-        bit_high(motors[motIdx].pin_enable);
+        REGISTER_MASK_SET_HIGH(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     else
-        bit_low(motors[motIdx].pin_enable);
+        REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     
     if (state == CONTROL_EMERGENCY) {
         motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
