@@ -22,6 +22,7 @@
         <itemPath>includes/system/system.h</itemPath>
         <itemPath>includes/system/peripherals.h</itemPath>
         <itemPath>includes/system/system_comm.h</itemPath>
+        <itemPath>includes/system/peripherals_comm.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="LibraryFiles"
@@ -65,6 +66,7 @@
         <itemPath>src/system/interrupts.c</itemPath>
         <itemPath>src/system/peripherals.c</itemPath>
         <itemPath>src/system/system_comm.c</itemPath>
+        <itemPath>src/system/peripherals_comm.c</itemPath>
       </logicalFolder>
       <itemPath>src/main.c</itemPath>
       <itemPath>src/configuration_bits.c</itemPath>
