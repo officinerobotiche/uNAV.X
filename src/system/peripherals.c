@@ -47,31 +47,23 @@ ADC AdcBuffer __attribute__((space(dma), aligned(256)));
 #ifdef UNAV_V1
 /// Number of available LEDs
 #define LED_NUM 4
-/// LED 1 - Green
-hardware_bit_t led_1 = REGISTER_INIT(LATC, 6);
-/// LED 2 - Red
-hardware_bit_t led_2 = REGISTER_INIT(LATC, 7);
-/// LED 3 - Yellow
-hardware_bit_t led_3 = REGISTER_INIT(LATC, 8);
-/// LED 4 - Blue
-hardware_bit_t led_4 = REGISTER_INIT(LATC, 9);
-/// GPIO 0
-gpio_t gpio_0 = GPIO_INIT(C, 0, GPIO_READ);
+/// Number of available GPIOs
+#define NUM_GPIO 8
 #elif ROBOCONTROLLER_V3
 /// Number of available LEDs
 #define LED_NUM 2
-/// LED 1 - Green
-hardware_bit_t led_1 = REGISTER_INIT(LATA, 8);
-/// LED 2 - Green
-hardware_bit_t led_2 = REGISTER_INIT(LATA, 9);
+/// Number of available GPIOs
+#define NUM_GPIO 2
 #elif MOTION_CONTROL
 /// Number of available LEDs
 #define LED_NUM 1
-/// LED 1 - Green
-hardware_bit_t led_1 = REGISTER_INIT(LATA, 4);
 #endif
 
 led_control_t led_controller[LED_NUM];
+
+#ifdef NUM_GPIO
+gpio_t gpio[NUM_GPIO];
+#endif
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -155,53 +147,25 @@ void Peripherals_Init(void) {
     CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
 
 #ifdef UNAV_V1
-    // LED
-    _TRISC6 = 0; // LED 1 Green
-    _TRISC7 = 0; // LED 2 Green
-    _TRISC8 = 0; // LED 3 Yellow
-    _TRISC9 = 0; // LED 4 Red
-    // Encoders
-    _TRISB10 = 1;
-    _TRISB11 = 1;
-    _TRISB6 = 1;
-    _TRISB5 = 1;
-    // H bridge
-    _TRISA7 = 0; //Enable - Motor 1
-    _TRISA10 = 0; //Enable - Motor 2
-    _TRISB12 = 0; // PWM1 +
-    _TRISB12 = 0; // PWM1 -
-    _TRISB12 = 0; // PWM2 +
-    _TRISB12 = 0; // PWM2 -
     // GPIO
-    _TRISC0 = 1; // GPIO1
-    _TRISC1 = 1; // GPIO2
-    _TRISC2 = 1; // GPIO3
-    _TRISC3 = 1; // GPIO4
-    _TRISA4 = 1; // GPIO5
-    _TRISB4 = 1; // GPIO6
-    _TRISB7 = 1; // GPIO7
-    _TRISA8 = 1; // GPIO8
-    _TRISA9 = 1; // HALT
+    GPIO_INIT(gpio[0], C, 0); // GPIO1
+    GPIO_INIT(gpio[1], C, 1); // GPIO2
+    GPIO_INIT(gpio[2], C, 2); // GPIO3
+    GPIO_INIT(gpio[3], C, 3); // GPIO4
+    GPIO_INIT(gpio[4], A, 4); // GPIO5
+    GPIO_INIT(gpio[5], B, 4); // GPIO6
+    GPIO_INIT(gpio[6], B, 7); // GPIO7
+    GPIO_INIT(gpio[8], A, 8); // GPIO8
+    GPIO_INIT(gpio[9], A, 9); // HALT
     // ADC
     _TRISA0 = 1; // CH1
     _TRISA1 = 1; // CH2
     _TRISB0 = 1; // CH3
     _TRISB1 = 1; // CH4
 #elif ROBOCONTROLLER_V3
-    // LED
-    _TRISA8 = 0; // LED1
-    _TRISA9 = 0; // LED2
-    // Encodes
-    _TRISC6 = 1; // QEA_1
-    _TRISC7 = 1; // QEB_1
-    _TRISC8 = 1; // QEA_2
-    _TRISC9 = 1; // QEB_2
-    // H-Bridge
-    _TRISA1 = 0; // MOTOR_EN1
-    _TRISA4 = 0; // MOTOR_EN2
     // GPIO
-    _TRISA7 = 0; // AUX1
-    _TRISA10 = 0; // AUX2
+    GPIO_INIT(gpio[0], A, 7); // GPIO1
+    GPIO_INIT(gpio[1], A, 10); // GPIO2
     // ADC
     _TRISB2 = 1; // CH1
     _TRISB3 = 1; // CH2
@@ -215,9 +179,6 @@ void Peripherals_Init(void) {
     _TRISC2 = 0; // OUT Float
     _TRISC3 = 0; // DIR RS485 UART1
 #elif MOTION_CONTROL
-    _TRISA4 = 0; //Led
-    _TRISB2 = 0; //Enable - Motor 1
-    _TRISB3 = 0; //Enable - Motor 2
     _TRISB5 = 1;
     _TRISB6 = 1;
     _TRISB10 = 1;
@@ -225,16 +186,23 @@ void Peripherals_Init(void) {
 #else
 #error Configuration error. Does not selected a board!
 #endif
+    
+#ifdef NUM_GPIO
+    gpio_init(gpio, NUM_GPIO);
+#endif
 }
 
 void InitLEDs(void) {
-    led_controller[0].pin = &led_1;
-#if defined(UNAV_V1) || defined(ROBOCONTROLLER_V3)
-    led_controller[1].pin = &led_2;
-#endif
-#if defined(UNAV_V1)
-    led_controller[2].pin = &led_3;
-    led_controller[3].pin = &led_4;
+#ifdef UNAV_V1
+    GPIO_INIT_TYPE(led_controller[0].gpio, C, 6, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[1].gpio, C, 7, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[2].gpio, C, 8, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[3].gpio, C, 9, GPIO_WRITE);
+#elif ROBOCONTROLLER_V3
+    GPIO_INIT_TYPE(led_controller[0].gpio, A, 8, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[1].gpio, A, 9, GPIO_WRITE);
+#elif MOTION_CONTROL
+    GPIO_INIT_TYPE(led_controller[0].gpio, A, 4, GPIO_WRITE);
 #endif
     LED_Init(get_system_parameters().FREQ_SYSTEM, &led_controller[0], LED_NUM);
 }

@@ -30,7 +30,7 @@ extern "C" {
     /**
      * Initialiazion motor
      */
-    void Motor_Init(short motIdx);
+    void Motor_Init();
     
     /** 
      * Safely switch to the new Input Capture prescaler

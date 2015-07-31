@@ -87,7 +87,7 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 typedef struct _motor_firmware {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
-    hardware_bit_t* pin_enable;
+    gpio_t* pin_enable;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -145,7 +145,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, hardware_bit_t* enable) {
+void init_motor(const short motIdx, gpio_t* enable) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -158,6 +158,7 @@ void init_motor(const short motIdx, hardware_bit_t* enable) {
     ICinfo[motIdx].timePeriod = 0;
     /// Setup bit enable
     motors[motIdx].pin_enable = enable;
+    gpio_register(motors[motIdx].pin_enable);
     
     motors[motIdx].k_mul = 1;
     

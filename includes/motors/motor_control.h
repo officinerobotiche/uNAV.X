@@ -75,7 +75,7 @@ extern "C" {
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
      */
-    void init_motor(const short motIdx, hardware_bit_t* enable);
+    void init_motor(const short motIdx, gpio_t* enable);
     
     /**
      * Initialization parameters for motor controller.

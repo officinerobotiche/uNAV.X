@@ -55,6 +55,8 @@ hardware_bit_t enable_1 = REGISTER_INIT(LATB, 2);
 hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
 #endif
 
+gpio_t enable[2];
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -194,21 +196,49 @@ void InitTimer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
-void Motor_Init(short motIdx) {
-    /* Open QEI */
-    InitQEI(motIdx);
-    /* Open Input Capture */
-    InitIC(motIdx);
-    /* Initialize variables for motors */
-    switch(motIdx) {
-        case MOTOR_ZERO:
-            init_motor(motIdx, &enable_1);
-            break;
-        case MOTOR_ONE:
-            init_motor(motIdx, &enable_2);
-            break;
+void Motor_Init() {
+    InitPWM();      ///< Open PWM
+    int i;
+#ifdef UNAV_V1
+    /// ENABLE 1
+    GPIO_INIT_TYPE(enable[0], A, 7, GPIO_WRITE);
+    /// ENABLE 2
+    GPIO_INIT_TYPE(enable[1], A, 10, GPIO_WRITE);
+    // Encoders
+    _TRISB10 = 1;
+    _TRISB11 = 1;
+    _TRISB6 = 1;
+    _TRISB5 = 1;
+    _TRISB12 = 0; // PWM1 +
+    _TRISB12 = 0; // PWM1 -
+    _TRISB12 = 0; // PWM2 +
+    _TRISB12 = 0; // PWM2 -
+#elif ROBOCONTROLLER_V3
+    /// ENABLE 1
+    GPIO_INIT_TYPE(enable[0], A, 1, GPIO_WRITE);
+    /// ENABLE 2
+    GPIO_INIT_TYPE(enable[1], A, 4, GPIO_WRITE);
+    // Encodes
+    _TRISC6 = 1; // QEA_1
+    _TRISC7 = 1; // QEB_1
+    _TRISC8 = 1; // QEA_2
+    _TRISC9 = 1; // QEB_2
+#elif MOTION_CONTROL
+    /// ENABLE 1
+    GPIO_INIT_TYPE(enable[0], B, 2, GPIO_WRITE);
+    /// ENABLE 2
+    GPIO_INIT_TYPE(enable[0], B, 3, GPIO_WRITE);
+#endif
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        InitQEI(i);                                             ///< Open QEI
+        InitIC(i);                                              ///< Open Input Capture
+        init_motor(i, &enable[i]);                              ///< Initialize variables for motors
+        update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints());  ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE);              ///< Initialize state controller
     }
-    
 }
 
 void SwitchIcPrescaler(int mode, int motIdx) {
