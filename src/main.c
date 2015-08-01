@@ -98,8 +98,6 @@ int16_t main(void) {
     
     /* Peripherals initialization */
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
-    InitADC();    ///< Open ADC for measure current motors
-    InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
     /* I2C CONFIGURATION */
     Init_I2C();     ///< Open I2C module

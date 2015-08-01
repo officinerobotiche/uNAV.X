@@ -75,15 +75,6 @@ typedef int ADC[ADC_CHANNELS][ADC_BUFF];
      * @param blink number of blinks
      */
     inline void UpdateBlink(short num, short blink);
-    /** 
-     * Initialization DMA0 for ADC current
-     */
-    void InitDMA0(void);
-
-    /** 
-     * Initialization ADC for measure current motors
-     */
-    void InitADC(void);
 
 
 #ifdef	__cplusplus
