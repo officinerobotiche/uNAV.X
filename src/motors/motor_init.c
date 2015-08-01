@@ -201,9 +201,9 @@ void Motor_Init() {
     int i;
 #ifdef UNAV_V1
     /// ENABLE 1
-    GPIO_INIT_TYPE(enable[0], A, 7, GPIO_WRITE);
+    GPIO_INIT_TYPE(enable[0], A, 7, GPIO_OUTPUT);
     /// ENABLE 2
-    GPIO_INIT_TYPE(enable[1], A, 10, GPIO_WRITE);
+    GPIO_INIT_TYPE(enable[1], A, 10, GPIO_OUTPUT);
     // Encoders
     _TRISB10 = 1;
     _TRISB11 = 1;
@@ -215,9 +215,9 @@ void Motor_Init() {
     _TRISB12 = 0; // PWM2 -
 #elif ROBOCONTROLLER_V3
     /// ENABLE 1
-    GPIO_INIT_TYPE(enable[0], A, 1, GPIO_WRITE);
+    GPIO_INIT_TYPE(enable[0], A, 1, GPIO_OUTPUT);
     /// ENABLE 2
-    GPIO_INIT_TYPE(enable[1], A, 4, GPIO_WRITE);
+    GPIO_INIT_TYPE(enable[1], A, 4, GPIO_OUTPUT);
     // Encodes
     _TRISC6 = 1; // QEA_1
     _TRISC7 = 1; // QEB_1
@@ -225,9 +225,9 @@ void Motor_Init() {
     _TRISC9 = 1; // QEB_2
 #elif MOTION_CONTROL
     /// ENABLE 1
-    GPIO_INIT_TYPE(enable[0], B, 2, GPIO_WRITE);
+    GPIO_INIT_TYPE(enable[0], B, 2, GPIO_OUTPUT);
     /// ENABLE 2
-    GPIO_INIT_TYPE(enable[0], B, 3, GPIO_WRITE);
+    GPIO_INIT_TYPE(enable[0], B, 3, GPIO_OUTPUT);
 #endif
     for (i = 0; i < NUM_MOTORS; ++i) {
         InitQEI(i);                                             ///< Open QEI

@@ -258,15 +258,15 @@ void Peripherals_Init(void) {
 
 void InitLEDs(void) {
 #ifdef UNAV_V1
-    GPIO_INIT_TYPE(led_controller[0].gpio, C, 6, GPIO_WRITE);
-    GPIO_INIT_TYPE(led_controller[1].gpio, C, 7, GPIO_WRITE);
-    GPIO_INIT_TYPE(led_controller[2].gpio, C, 8, GPIO_WRITE);
-    GPIO_INIT_TYPE(led_controller[3].gpio, C, 9, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[0].gpio, C, 6, GPIO_OUTPUT);
+    GPIO_INIT_TYPE(led_controller[1].gpio, C, 7, GPIO_OUTPUT);
+    GPIO_INIT_TYPE(led_controller[2].gpio, C, 8, GPIO_OUTPUT);
+    GPIO_INIT_TYPE(led_controller[3].gpio, C, 9, GPIO_OUTPUT);
 #elif ROBOCONTROLLER_V3
-    GPIO_INIT_TYPE(led_controller[0].gpio, A, 8, GPIO_WRITE);
-    GPIO_INIT_TYPE(led_controller[1].gpio, A, 9, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[0].gpio, A, 8, GPIO_OUTPUT);
+    GPIO_INIT_TYPE(led_controller[1].gpio, A, 9, GPIO_OUTPUT);
 #elif MOTION_CONTROL
-    GPIO_INIT_TYPE(led_controller[0].gpio, A, 4, GPIO_WRITE);
+    GPIO_INIT_TYPE(led_controller[0].gpio, A, 4, GPIO_OUTPUT);
 #endif
     LED_Init(get_system_parameters().FREQ_SYSTEM, &led_controller[0], LED_NUM);
 }
