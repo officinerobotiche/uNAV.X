@@ -62,8 +62,10 @@ ADC AdcBuffer __attribute__((space(dma), aligned(256)));
 led_control_t led_controller[LED_NUM];
 
 #ifdef NUM_GPIO
-gp_peripherals_t gpio[NUM_GPIO];
+gp_peripheral_t gpio[NUM_GPIO];
 #endif
+
+gp_analog_t adc_gpio_data[3];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -210,9 +212,12 @@ void Peripherals_Init(void) {
 #ifdef UNAV_V1
     // GPIO
     GPIO_INIT(gpio[0], A, 9); // GPIO0 - HALT //< TO BE DEFINE
-    GPIO_INIT_ANALOG(gpio[1], C, 0, 6); // GPIO1
-    GPIO_INIT_ANALOG(gpio[2], C, 1, 7); // GPIO2
-    GPIO_INIT_ANALOG(gpio[3], C, 2, 8); // GPIO3
+    GPIO_ANALOG_CONF(adc_gpio_data[0], 6);
+    GPIO_INIT_ANALOG(gpio[1], C, 0, &adc_gpio_data[0]); // GPIO1
+    GPIO_ANALOG_CONF(adc_gpio_data[1], 7);
+    GPIO_INIT_ANALOG(gpio[2], C, 1, &adc_gpio_data[1]); // GPIO2
+    GPIO_ANALOG_CONF(adc_gpio_data[2], 8);
+    GPIO_INIT_ANALOG(gpio[3], C, 2, &adc_gpio_data[2]); // GPIO3
     GPIO_INIT(gpio[4], C, 3); // GPIO4
     GPIO_INIT(gpio[5], A, 4); // GPIO5
     GPIO_INIT(gpio[7], B, 4); // GPIO6

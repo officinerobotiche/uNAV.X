@@ -60,6 +60,9 @@
 #define DEFAULT_KP 0.6
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
+#define DEFAULT_FREQ_MOTOR_MANAGER 1000 // In Herts
+#define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000 // In Herts
+#define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000 // In Herts
 
 #define NUMBER_CONTROL_FROM_ENUM(x) ( (x) + 1 )
 #define NUMBER_CONTROL_FROM_ARRAY(x) ( (x) - 1 )
@@ -88,6 +91,8 @@ typedef struct _motor_firmware {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
+    gp_peripheral_t* pin_current;
+    gp_peripheral_t* pin_temperature;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -145,7 +150,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, gpio_t* enable) {
+void init_motor(const short motIdx, gpio_t* enable, gp_peripheral_t* current, gp_peripheral_t* temperature) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -159,19 +164,27 @@ void init_motor(const short motIdx, gpio_t* enable) {
     /// Setup bit enable
     motors[motIdx].pin_enable = enable;
     gpio_register(motors[motIdx].pin_enable);
+    /// Setup ADC current and temperature
+    motors[motIdx].pin_current = current;
+    motors[motIdx].pin_current->gpio.type = GPIO_ANALOG;
+    gpio_register_peripheral(motors[motIdx].pin_current);
+    motors[motIdx].pin_temperature = temperature;
+    motors[motIdx].pin_temperature->gpio.type = GPIO_ANALOG;
+    gpio_register_peripheral(motors[motIdx].pin_temperature);
     
     motors[motIdx].k_mul = 1;
     
     /// Register event and add in task controller - Working at 1KHz
-    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 1000, 1, (char) motIdx);
+    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 
+                                    DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
     /// Run task controller
     task_set(motors[motIdx].task_manager, RUN);
     /// Load controller EMERGENCY - Working at 1KHz
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = 1000;
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY;
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency, 1, (char) motIdx);
     /// Load controllers VELOCITY - Working at 1KHz
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = 1000;
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY;
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &controller, EVENT_PRIORITY_MEDIUM),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency, 1, (char) motIdx);
 }
