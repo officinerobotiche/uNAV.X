@@ -62,7 +62,7 @@ ADC AdcBuffer __attribute__((space(dma), aligned(256)));
 led_control_t led_controller[LED_NUM];
 
 #ifdef NUM_GPIO
-gpio_t gpio[NUM_GPIO];
+gp_peripherals_t gpio[NUM_GPIO];
 #endif
 
 /*****************************************************************************/
@@ -209,15 +209,15 @@ void Peripherals_Init(void) {
 
 #ifdef UNAV_V1
     // GPIO
-    GPIO_INIT(gpio[0], C, 0); // GPIO1
-    GPIO_INIT(gpio[1], C, 1); // GPIO2
-    GPIO_INIT(gpio[2], C, 2); // GPIO3
-    GPIO_INIT(gpio[3], C, 3); // GPIO4
-    GPIO_INIT(gpio[4], A, 4); // GPIO5
-    GPIO_INIT(gpio[5], B, 4); // GPIO6
-    GPIO_INIT(gpio[6], B, 7); // GPIO7
-    GPIO_INIT(gpio[7], A, 8); // GPIO8
-    GPIO_INIT(gpio[8], A, 9); // HALT
+    GPIO_INIT(gpio[0], A, 9); // GPIO0 - HALT //< TO BE DEFINE
+    GPIO_INIT_ANALOG(gpio[1], C, 0, 6); // GPIO1
+    GPIO_INIT_ANALOG(gpio[2], C, 1, 7); // GPIO2
+    GPIO_INIT_ANALOG(gpio[3], C, 2, 8); // GPIO3
+    GPIO_INIT(gpio[4], C, 3); // GPIO4
+    GPIO_INIT(gpio[5], A, 4); // GPIO5
+    GPIO_INIT(gpio[7], B, 4); // GPIO6
+    GPIO_INIT(gpio[8], B, 7); // GPIO7
+    GPIO_INIT(gpio[8], A, 8); // GPIO8
     // ADC
     _TRISA0 = 1; // CH1
     _TRISA1 = 1; // CH2
