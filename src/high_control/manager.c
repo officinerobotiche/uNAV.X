@@ -127,7 +127,7 @@ void HighControl_Init(void) {
     reset_motion();
     
     //Set High level control to run at 100Hz
-    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &MotorTaskController, EVENT_PRIORITY_LOW), 100, 0, NULL);
+    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &HighLevelTaskController, EVENT_PRIORITY_LOW), 100, 0, NULL);
     task_set(HighControlTask, load_all_task());
 }
 
