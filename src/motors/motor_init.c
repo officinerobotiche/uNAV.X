@@ -233,6 +233,11 @@ void Motor_Init() {
     GPIO_INIT_TYPE(enable[0], A, 1, GPIO_OUTPUT);
     /// ENABLE 2
     GPIO_INIT_TYPE(enable[1], A, 4, GPIO_OUTPUT);
+    // ADC
+    _TRISB2 = 1; // CH1
+    _TRISB3 = 1; // CH2
+    _TRISC0 = 1; // CH3
+    _TRISC1 = 1; // CH4
     // Encodes
     _TRISC6 = 1; // QEA_1
     _TRISC7 = 1; // QEB_1

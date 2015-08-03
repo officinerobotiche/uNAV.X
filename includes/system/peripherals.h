@@ -23,12 +23,6 @@ extern "C" {
 #endif
 
         // Current ADC buffer dimension
-#define ADC_CHANNELS 2
-#define ADC_BUFF 64
-#define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
-
-typedef int ADC[ADC_CHANNELS][ADC_BUFF];
-
 #ifdef UNAV_V1
 /// Number of available LEDs
 #define LED_NUM 4

@@ -245,7 +245,7 @@ extern "C" {
     /**
      * Mean value for current measure motors
      */
-    inline void adc_motors_current(ADC* AdcBuffer, size_t len);
+    //inline void adc_motors_current(ADC* AdcBuffer, size_t len);
 
 #ifdef	__cplusplus
 }

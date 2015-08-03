@@ -491,15 +491,15 @@ void Emergency(int argc, int *argv) {
     }
 }
 
-inline void adc_motors_current(ADC* AdcBuffer, size_t len) {
-    int AdcCount = 0; //Counter
-    long ADCValueTmp[NUM_MOTORS] = {0, 0}; //Array to filter ADC data
-
-    for (AdcCount = 0; AdcCount < len; ++AdcCount) // Evaluate mean value
-    {
-        ADCValueTmp[MOTOR_ZERO] += (*AdcBuffer)[MOTOR_ZERO][AdcCount]; //Sum for AN0
-        ADCValueTmp[MOTOR_ONE] += (*AdcBuffer)[MOTOR_ONE][AdcCount]; //Sum for AN1
-    }
-    motors[MOTOR_ZERO].diagnostic.current = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
-    motors[MOTOR_ONE].diagnostic.current = ADCValueTmp[MOTOR_ONE] >> 6; //Shift
-}
+//inline void adc_motors_current(ADC* AdcBuffer, size_t len) {
+//    int AdcCount = 0; //Counter
+//    long ADCValueTmp[NUM_MOTORS] = {0, 0}; //Array to filter ADC data
+//
+//    for (AdcCount = 0; AdcCount < len; ++AdcCount) // Evaluate mean value
+//    {
+//        ADCValueTmp[MOTOR_ZERO] += (*AdcBuffer)[MOTOR_ZERO][AdcCount]; //Sum for AN0
+//        ADCValueTmp[MOTOR_ONE] += (*AdcBuffer)[MOTOR_ONE][AdcCount]; //Sum for AN1
+//    }
+//    motors[MOTOR_ZERO].diagnostic.current = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
+//    motors[MOTOR_ONE].diagnostic.current = ADCValueTmp[MOTOR_ONE] >> 6; //Shift
+//}

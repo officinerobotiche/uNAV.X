@@ -41,8 +41,14 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-// ADC buffer, 2 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
-ADC AdcBuffer __attribute__((space(dma), aligned(256)));
+#define ADC_CHANNELS 4
+#define ADC_BUFF 64
+#define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
+
+typedef int ADC[ADC_CHANNELS][ADC_BUFF];
+
+// ADC buffer, 4 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
+int AdcBuffer[TOT_ADC_BUFF] __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
 
 #ifdef UNAV_V1
 /// Number of available LEDs
@@ -133,7 +139,7 @@ void InitDMA0(void) {
 }
 
 void Peripherals_Init(void) {
-
+    
     // Peripheral PIN remapping
     //*************************************************************
     // Unlock Registers
@@ -223,27 +229,14 @@ void Peripherals_Init(void) {
     GPIO_INIT(gpio[7], B, 4); // GPIO6
     GPIO_INIT(gpio[8], B, 7); // GPIO7
     GPIO_INIT(gpio[8], A, 8); // GPIO8
-    // ADC
-    _TRISA0 = 1; // CH1
-    _TRISA1 = 1; // CH2
-    _TRISB0 = 1; // CH3
-    _TRISB1 = 1; // CH4
 #elif ROBOCONTROLLER_V3
     // GPIO
     GPIO_INIT(gpio[0], A, 7); // GPIO1
     GPIO_INIT(gpio[1], A, 10); // GPIO2
-    // ADC
-    _TRISB2 = 1; // CH1
-    _TRISB3 = 1; // CH2
-    _TRISC0 = 1; // CH3
-    _TRISC1 = 1; // CH4
-    // Others
-    _TRISB7 = 0; // DIR RS485 UART2
-    _TRISB8 = 0; // SDA = Out : Connettore IC2 pin 6
-    _TRISB9 = 0; // SCL = Out : Connettore IC2 pin 5
     _TRISB4 = 0; // RB4 = Out : Connettore IC2 pin 4
     _TRISC2 = 0; // OUT Float
     _TRISC3 = 0; // DIR RS485 UART1
+    _TRISB7 = 0; // DIR RS485 UART2
 #elif MOTION_CONTROL
     _TRISB5 = 1;
     _TRISB6 = 1;
@@ -252,7 +245,7 @@ void Peripherals_Init(void) {
 #else
 #error Configuration error. Does not selected a board!
 #endif
-
+    
     InitADC();    ///< Open ADC for measure current motors
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
@@ -282,5 +275,5 @@ inline void UpdateBlink(short num, short blink) {
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
-    adc_motors_current(&AdcBuffer, ADC_BUFF); // Execution mean value for current motors
+    //adc_motors_current(&AdcBuffer, ADC_BUFF); // Execution mean value for current motors
 }
