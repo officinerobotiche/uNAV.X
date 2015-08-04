@@ -141,7 +141,8 @@ void InitDMA0(void) {
     DMA0CONbits.CHEN = 1; // Enable DMA
 }
 
-void adc_config(int value) {
+bool adc_config(void) {
+    bool state = false;
     /// Get all ADC configured
     int numadc = NumberOfSetBits((int) (~AD1PCFGL & 0b0000000111111111));
     if(AD1PCFGL == 0b0000000111111100) {
@@ -150,27 +151,32 @@ void adc_config(int value) {
         AD1CON2bits.CHPS = 1; // Convert CH0 and CH1
         AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
         AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1
+        state = true;
     } else if(AD1PCFGL == 0b0000000111110000) {
         AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
         AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 0b11; // Convert CH0, CH1, CH2 and CH3
         AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
         AD1CHS0bits.CH0SA = 3; // CH0 pos -> AN3
-    } else if(numadc > 4){
+        state = true;
+    } else if(AD1PCFGL != 0b0000000111111111) {
         AD1CON1bits.SIMSAM = 0; // CH0 sampled
         AD1CON2bits.CSCNA = 1; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 0; // Convert CH0
         AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
         AD1CHS0bits.CH0SA = 0; // CH0 pos -> AN0
+        /// Setup scanning mode
+        AD1CSSL = AD1PCFGL;
     }
     //Enable or disable the module
-    if(numadc > 2) {
+    if(numadc > 2 && state == true) {
         AD1CON1bits.ADON = 1; // module on
         DMA0CONbits.CHEN = 1; // Enable DMA
     } else {
         AD1CON1bits.ADON = 0; // module off
         DMA0CONbits.CHEN = 0; // Disable DMA
     }
+    return state;
 }
 
 void Peripherals_Init(void) {
