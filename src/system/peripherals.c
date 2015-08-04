@@ -30,6 +30,7 @@
 #endif
 #endif
 
+#include <or_math/math.h>
 #include <peripherals/led.h>
 
 #include "system/peripherals.h"
@@ -48,7 +49,8 @@
 typedef int ADC[ADC_CHANNELS][ADC_BUFF];
 
 // ADC buffer, 4 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
-int AdcBuffer[TOT_ADC_BUFF] __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
+unsigned int AdcBufferA[TOT_ADC_BUFF] __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
+unsigned int AdcBufferB[TOT_ADC_BUFF] __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
 
 #ifdef UNAV_V1
 /// Number of available LEDs
@@ -109,11 +111,11 @@ void InitADC(void) {
     AD1CHS0bits.CH0NB = 0; // don't care -> sample B
     AD1CHS0bits.CH0SB = 0; // don't care -> sample B
     AD1CHS0bits.CH0NA = 0; // CH0 neg -> Vrefl
-    AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1
+    AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1    //< TODO SET TO AN3
 
     AD1PCFGL = 0xFFFF; // set all Analog ports as digital
-    AD1PCFGLbits.PCFG0 = 0; // AN0
-    AD1PCFGLbits.PCFG1 = 0; // AN1
+    //AD1PCFGLbits.PCFG0 = 0; // AN0
+    //AD1PCFGLbits.PCFG1 = 0; // AN1
 
     IFS0bits.AD1IF = 0; // Clear the A/D interrupt flag bit
     IEC0bits.AD1IE = 0; // Do Not Enable A/D interrupt
@@ -127,15 +129,45 @@ void InitDMA0(void) {
     DMA0REQ = 13; // Select ADC1 as DMA Request source
 
     DMA0CONbits.AMODE = 2; // Peripheral Indirect Addressing mode
-    DMA0CONbits.MODE = 0; // Continuous
+    DMA0CONbits.MODE = 2; // Ping pong
 
-    DMA0STA = __builtin_dmaoffset(AdcBuffer);
+    DMA0STA = __builtin_dmaoffset(AdcBufferA);
+    DMA0STB = __builtin_dmaoffset(AdcBufferB);
     DMA0PAD = (volatile unsigned int) &ADC1BUF0; // Point DMA to ADC1BUF0
 
     IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
     IPC1bits.DMA0IP = ADC_DMA_LEVEL; // Set DMA Interrupt Priority Level
     IEC0bits.DMA0IE = 1; // Enable DMA interrupt
     DMA0CONbits.CHEN = 1; // Enable DMA
+}
+
+void adc_config(int value) {
+    int numadc = NumberOfSetBits(((int) &AD1PCFGL));
+    if(numadc == 2) {
+        AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
+        AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
+        AD1CON2bits.CHPS = 1; // Convert CH0 and CH1
+        AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
+        AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1
+    } else if(numadc == 4) {
+        AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
+        AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
+        AD1CON2bits.CHPS = 0b11; // Convert CH0, CH1, CH2 and CH3
+        AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
+        AD1CHS0bits.CH0SA = 3; // CH0 pos -> AN3
+    } else if(numadc > 4){
+        AD1CON1bits.SIMSAM = 0; // CH0 sampled
+        AD1CON2bits.CSCNA = 1; // Input scan: Do not scan inputs
+        AD1CON2bits.CHPS = 0; // Convert CH0
+        AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
+        AD1CHS0bits.CH0SA = 0; // CH0 pos -> AN0
+    }
+    //Enable or disable the module
+    if(numadc > 2) {
+        AD1CON1bits.ADON = 1; // module on
+    } else {
+        AD1CON1bits.ADON = 0; // module off
+    }
 }
 
 void Peripherals_Init(void) {
@@ -250,7 +282,7 @@ void Peripherals_Init(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
 #ifdef NUM_GPIO
-    gpio_init(&AD1PCFGL, gpio, NUM_GPIO);
+    gpio_init(&AD1PCFGL, gpio, NUM_GPIO, &adc_config);
 #endif
 }
 
@@ -274,6 +306,13 @@ inline void UpdateBlink(short num, short blink) {
 }
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
+    static unsigned short DmaBuffer = 0;
+    if(DmaBuffer) {
+        gpio_ProcessADCSamples(AdcBufferA, TOT_ADC_BUFF);
+    } else {
+        gpio_ProcessADCSamples(AdcBufferB, TOT_ADC_BUFF);
+    }
+    DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
     //adc_motors_current(&AdcBuffer, ADC_BUFF); // Execution mean value for current motors
 }
