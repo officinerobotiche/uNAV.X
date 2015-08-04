@@ -111,15 +111,12 @@ void InitADC(void) {
     AD1CHS0bits.CH0NB = 0; // don't care -> sample B
     AD1CHS0bits.CH0SB = 0; // don't care -> sample B
     AD1CHS0bits.CH0NA = 0; // CH0 neg -> Vrefl
-    AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1    //< TODO SET TO AN3
+    AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1
 
     AD1PCFGL = 0xFFFF; // set all Analog ports as digital
-    //AD1PCFGLbits.PCFG0 = 0; // AN0
-    //AD1PCFGLbits.PCFG1 = 0; // AN1
 
     IFS0bits.AD1IF = 0; // Clear the A/D interrupt flag bit
     IEC0bits.AD1IE = 0; // Do Not Enable A/D interrupt
-    AD1CON1bits.ADON = 1; // module on
 }
 /** 
  * Initialization DMA0 for ADC current
@@ -138,7 +135,6 @@ void InitDMA0(void) {
     IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
     IPC1bits.DMA0IP = ADC_DMA_LEVEL; // Set DMA Interrupt Priority Level
     IEC0bits.DMA0IE = 1; // Enable DMA interrupt
-    DMA0CONbits.CHEN = 1; // Enable DMA
 }
 
 bool adc_config(void) {
@@ -272,12 +268,12 @@ void Peripherals_Init(void) {
     GPIO_INIT(gpio[8], A, 8); // GPIO8
 #elif ROBOCONTROLLER_V3
     // GPIO
-    GPIO_INIT(gpio[0], A, 7); // GPIO1
-    GPIO_INIT(gpio[1], A, 10); // GPIO2
-    _TRISB4 = 0; // RB4 = Out : Connettore IC2 pin 4
-    _TRISC2 = 0; // OUT Float
-    _TRISC3 = 0; // DIR RS485 UART1
-    _TRISB7 = 0; // DIR RS485 UART2
+    GPIO_INIT(gpio[0], A, 7); // GPIO0
+    GPIO_INIT(gpio[1], A, 10); // GPIO1
+    GPIO_INIT(gpio[2], B, 4); // GPIO2
+    GPIO_INIT(gpio[3], C, 2); // GPIO3
+    GPIO_INIT(gpio[4], C, 3); // GPIO4
+    GPIO_INIT(gpio[5], B, 7); // GPIO5
 #elif MOTION_CONTROL
     _TRISB5 = 1;
     _TRISB6 = 1;
