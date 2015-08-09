@@ -46,8 +46,6 @@
 #define ADC_BUFF 64
 #define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
 
-typedef int ADC[ADC_CHANNELS][ADC_BUFF];
-
 typedef enum _type_conf {
     ADC_SIM_2,
     ADC_SIM_4,

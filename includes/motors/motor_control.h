@@ -242,11 +242,6 @@ extern "C" {
      */
     void Emergency(int argc, int *argv);
 
-    /**
-     * Mean value for current measure motors
-     */
-    //inline void adc_motors_current(ADC* AdcBuffer, size_t len);
-
 #ifdef	__cplusplus
 }
 #endif
