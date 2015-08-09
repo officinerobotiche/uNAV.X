@@ -92,7 +92,7 @@ typedef struct _motor_firmware {
     //ICdata ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
     gp_peripheral_t* pin_current;
-    gp_peripheral_t* pin_temperature;
+    gp_peripheral_t* pin_voltage;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -150,7 +150,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, gpio_t* enable, gp_peripheral_t* current, gp_peripheral_t* temperature) {
+void init_motor(const short motIdx, gpio_t* enable, gp_peripheral_t* current, gp_peripheral_t* voltage) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -168,9 +168,9 @@ void init_motor(const short motIdx, gpio_t* enable, gp_peripheral_t* current, gp
     motors[motIdx].pin_current = current;
     motors[motIdx].pin_current->gpio.type = GPIO_ANALOG;
     gpio_register_peripheral(motors[motIdx].pin_current);
-    motors[motIdx].pin_temperature = temperature;
-    motors[motIdx].pin_temperature->gpio.type = GPIO_ANALOG;
-    gpio_register_peripheral(motors[motIdx].pin_temperature);
+    motors[motIdx].pin_voltage = voltage;
+    motors[motIdx].pin_voltage->gpio.type = GPIO_ANALOG;
+    gpio_register_peripheral(motors[motIdx].pin_voltage);
     
     motors[motIdx].k_mul = 1;
     
