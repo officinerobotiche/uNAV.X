@@ -48,9 +48,28 @@
 
 typedef int ADC[ADC_CHANNELS][ADC_BUFF];
 
-// ADC buffer, 4 channels (AN0, AN1), 32 bytes each, 2 x 32 = 64 bytes
-unsigned int AdcBufferA[TOT_ADC_BUFF] __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
-unsigned int AdcBufferB[TOT_ADC_BUFF] __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
+typedef enum _type_conf {
+    ADC_SIM_2,
+    ADC_SIM_4,
+    ADC_SCAN
+} type_conf_t;
+
+typedef struct _adc_channels {
+    unsigned int ch0[ADC_BUFF];
+    unsigned int ch1[ADC_BUFF];
+    unsigned int ch2[ADC_BUFF];
+    unsigned int ch3[ADC_BUFF];
+} adc_channels_t;
+
+typedef union _adc_buffer {
+    adc_channels_t channels;
+    unsigned int buffer[TOT_ADC_BUFF];
+} adc_buffer_t;
+
+// ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 2 x 32 = 64 bytes
+adc_buffer_t AdcBufferA __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
+adc_buffer_t AdcBufferB __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
+type_conf_t adc_conf = ADC_SCAN;
 
 #ifdef UNAV_V1
 /// Number of available LEDs
@@ -128,8 +147,8 @@ void InitDMA0(void) {
     DMA0CONbits.AMODE = 2; // Peripheral Indirect Addressing mode
     DMA0CONbits.MODE = 2; // Ping pong
 
-    DMA0STA = __builtin_dmaoffset(AdcBufferA);
-    DMA0STB = __builtin_dmaoffset(AdcBufferB);
+    DMA0STA = __builtin_dmaoffset(&AdcBufferA);
+    DMA0STB = __builtin_dmaoffset(&AdcBufferB);
     DMA0PAD = (volatile unsigned int) &ADC1BUF0; // Point DMA to ADC1BUF0
 
     IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
@@ -140,22 +159,36 @@ void InitDMA0(void) {
 bool adc_config(void) {
     bool state = false;
     /// Get all ADC configured
-    int numadc = NumberOfSetBits((int) (~AD1PCFGL & 0b0000000111111111));
+    int numadc = 0;
     if(AD1PCFGL == 0b0000000111111100) {
+        numadc = 2;
+        adc_conf = ADC_SIM_2;
         AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
         AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 1; // Convert CH0 and CH1
-        AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
+        AD1CON2bits.SMPI = 1; // number of DMA buffers -1
         AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1
+        /// DMA Configuration
+        DMA0CNT = 2 * ADC_BUFF - 1; // 64 DMA request
+        
+        /// Complete configuration
         state = true;
     } else if(AD1PCFGL == 0b0000000111110000) {
+        numadc = 4;
+        adc_conf = ADC_SIM_4;
         AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
         AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 0b11; // Convert CH0, CH1, CH2 and CH3
-        AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
+        AD1CON2bits.SMPI = 3; // number of DMA buffers -1
         AD1CHS0bits.CH0SA = 3; // CH0 pos -> AN3
+        /// DMA Configuration
+        DMA0CNT = 4 * ADC_BUFF - 1; // 64 DMA request
+        
+        /// Complete configuration
         state = true;
     } else if(AD1PCFGL != 0b0000000111111111) {
+        numadc = NumberOfSetBits((int) (~AD1PCFGL & 0b0000000111111111));
+        adc_conf = ADC_SCAN;
         AD1CON1bits.SIMSAM = 0; // CH0 sampled
         AD1CON2bits.CSCNA = 1; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 0; // Convert CH0
@@ -163,6 +196,7 @@ bool adc_config(void) {
         AD1CHS0bits.CH0SA = 0; // CH0 pos -> AN0
         /// Setup scanning mode
         AD1CSSL = AD1PCFGL;
+        /// DMA Configuration
     }
     //Enable or disable the module
     if(numadc > 2 && state == true) {
@@ -269,7 +303,7 @@ void Peripherals_Init(void) {
 #elif ROBOCONTROLLER_V3
     // GPIO
     GPIO_INIT(gpio[0], A, 7); // GPIO0
-    GPIO_INIT(gpio[1], A, 10); // GPIO1
+    GPIO_INIT(gpio[1], A, 10);// GPIO1
     GPIO_INIT(gpio[2], B, 4); // GPIO2
     GPIO_INIT(gpio[3], C, 2); // GPIO3
     GPIO_INIT(gpio[4], C, 3); // GPIO4
@@ -310,12 +344,29 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
+inline void ProcessADCSamples(adc_buffer_t AdcBuffer) {
+    switch(adc_conf) {
+        case ADC_SIM_2:
+            gpio_ProcessADCSamples(0, AdcBuffer.channels.ch0, ADC_BUFF);
+            gpio_ProcessADCSamples(1, AdcBuffer.channels.ch1, ADC_BUFF);
+            break;
+        case ADC_SIM_4:
+            gpio_ProcessADCSamples(3, AdcBuffer.channels.ch0, ADC_BUFF);
+            gpio_ProcessADCSamples(0, AdcBuffer.channels.ch1, ADC_BUFF);
+            gpio_ProcessADCSamples(1, AdcBuffer.channels.ch2, ADC_BUFF);
+            gpio_ProcessADCSamples(2, AdcBuffer.channels.ch3, ADC_BUFF);
+            break;
+        case ADC_SCAN:
+            break;
+    }
+}
+
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     static unsigned short DmaBuffer = 0;
     if(DmaBuffer) {
-        gpio_ProcessADCSamples(AdcBufferA, TOT_ADC_BUFF);
+        ProcessADCSamples(AdcBufferA);
     } else {
-        gpio_ProcessADCSamples(AdcBufferB, TOT_ADC_BUFF);
+        ProcessADCSamples(AdcBufferB);
     }
     DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
