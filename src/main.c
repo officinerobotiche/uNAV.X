@@ -90,11 +90,11 @@
 int16_t main(void) {
     /** INITIALIZATION Operative System **/
     ConfigureOscillator();  ///< Configure the oscillator for the device
+    InitEvents();           ///< Initialize processes controller
+    InitTimer1();           ///< Open Timer1 for clock system
+    
     Peripherals_Init();     ///< Initialize IO ports and peripherals
     InitLEDs();             ///< Initialization LEDs
-
-    InitEvents();   ///< Initialize processes controller
-    InitTimer1();   ///< Open Timer1 for clock system
     
     /* Peripherals initialization */
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
