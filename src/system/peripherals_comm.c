@@ -47,7 +47,7 @@ void save_frame_gpio(packet_information_t* list_send, size_t* len, packet_inform
             
             break;
         case PERIPHERALS_GPIO_ALL:
-            gpio_set(info->message.gpio.port);
+            gpio_set(1, info->message.gpio.port);
             list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         default:

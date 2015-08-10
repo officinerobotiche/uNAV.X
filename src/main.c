@@ -124,9 +124,12 @@ int16_t main(void) {
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
     
-    while (true) {
-        
-    }
+  gpio_setup(1, 0b1111111, GPIO_OUTPUT); // io0 ... io6
+           
+   while (true) {
+       gpio_set(1, 0b10101010);
+       gpio_set(1, 0b01010101);
+   }
 
     return 0;
 }

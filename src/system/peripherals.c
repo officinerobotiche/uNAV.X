@@ -84,13 +84,15 @@ type_conf_t adc_conf = ADC_SCAN;
 #define LED_NUM 1
 #endif
 
+gp_analog_t adc_gpio_data[7];
+gp_port_def_t portA;
+gp_peripheral_t port_A_gpio[4];
 led_control_t led_controller[LED_NUM];
 
 #ifdef NUM_GPIO
-gp_peripheral_t gpio[NUM_GPIO];
+gp_port_def_t portB;
+gp_peripheral_t port_B_gpio[NUM_GPIO];
 #endif
-
-gp_analog_t adc_gpio_data[3];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -181,7 +183,6 @@ bool adc_config(void) {
         AD1CHS0bits.CH0SA = 3; // CH0 pos -> AN3
         /// DMA Configuration
         DMA0CNT = 4 * ADC_BUFF - 1; // 64 DMA request
-        
         /// Complete configuration
         state = true;
     } else if(AD1PCFGL != 0b0000000111111111) {
@@ -195,9 +196,12 @@ bool adc_config(void) {
         /// Setup scanning mode
         AD1CSSL = AD1PCFGL;
         /// DMA Configuration
+        DMA0CNT = numadc * ADC_BUFF - 1;
+        /// Complete configuration
+        state = true;
     }
     //Enable or disable the module
-    if(numadc > 2 && state == true) {
+    if(numadc > 0 && state == true) {
         AD1CON1bits.ADON = 1; // module on
         DMA0CONbits.CHEN = 1; // Enable DMA
     } else {
@@ -285,28 +289,39 @@ void Peripherals_Init(void) {
     CNPU1 = 0xffff;
     CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
 
+    GPIO_PORT_INIT(portA, &port_A_gpio[0], 4);
+    /// CURRENT 1
+    GPIO_ANALOG_CONF(adc_gpio_data[0], 0);
+    GPIO_INIT_ANALOG(port_A_gpio[0], A, 0, &adc_gpio_data[0]);
+    GPIO_ANALOG_CONF(adc_gpio_data[1], 1);
+    GPIO_INIT_ANALOG(port_A_gpio[1], A, 1, &adc_gpio_data[1]);
+    GPIO_ANALOG_CONF(adc_gpio_data[2], 2);
+    GPIO_INIT_ANALOG(port_A_gpio[2], B, 0, &adc_gpio_data[2]);
+    GPIO_ANALOG_CONF(adc_gpio_data[3], 3);
+    GPIO_INIT_ANALOG(port_A_gpio[3], B, 1, &adc_gpio_data[3]);
 #ifdef UNAV_V1
+    GPIO_PORT_INIT(portB, &port_B_gpio[0], NUM_GPIO);
     // GPIO
-    GPIO_INIT(gpio[0], A, 9); // GPIO0 - HALT //< TO BE DEFINE
-    GPIO_ANALOG_CONF(adc_gpio_data[0], 6);
-    GPIO_INIT_ANALOG(gpio[1], C, 0, &adc_gpio_data[0]); // GPIO1
-    GPIO_ANALOG_CONF(adc_gpio_data[1], 7);
-    GPIO_INIT_ANALOG(gpio[2], C, 1, &adc_gpio_data[1]); // GPIO2
-    GPIO_ANALOG_CONF(adc_gpio_data[2], 8);
-    GPIO_INIT_ANALOG(gpio[3], C, 2, &adc_gpio_data[2]); // GPIO3
-    GPIO_INIT(gpio[4], C, 3); // GPIO4
-    GPIO_INIT(gpio[5], A, 4); // GPIO5
-    GPIO_INIT(gpio[6], B, 4); // GPIO6
-    GPIO_INIT(gpio[7], B, 7); // GPIO7
-    GPIO_INIT(gpio[8], A, 8); // GPIO8
+    GPIO_INIT(port_B_gpio[0], A, 9); // GP0 - HALT //< TO BE DEFINE
+    GPIO_ANALOG_CONF(adc_gpio_data[4], 6);
+    GPIO_INIT_ANALOG(port_B_gpio[1], C, 0, &adc_gpio_data[4]); // GP1
+    GPIO_ANALOG_CONF(adc_gpio_data[5], 7);
+    GPIO_INIT_ANALOG(port_B_gpio[2], C, 1, &adc_gpio_data[5]); // GP2
+    GPIO_ANALOG_CONF(adc_gpio_data[6], 8);
+    GPIO_INIT_ANALOG(port_B_gpio[3], C, 2, &adc_gpio_data[6]); // GP3
+    GPIO_INIT(port_B_gpio[4], C, 3); // GP4
+    GPIO_INIT(port_B_gpio[5], A, 4); // GP5
+    GPIO_INIT(port_B_gpio[6], B, 4); // GP6
+    GPIO_INIT(port_B_gpio[7], B, 7); // GP7
+    GPIO_INIT(port_B_gpio[8], A, 8); // GP8
 #elif ROBOCONTROLLER_V3
     // GPIO
-    GPIO_INIT(gpio[0], A, 7); // GPIO0
-    GPIO_INIT(gpio[1], A, 10);// GPIO1
-    GPIO_INIT(gpio[2], B, 4); // GPIO2
-    GPIO_INIT(gpio[3], C, 2); // GPIO3
-    GPIO_INIT(gpio[4], C, 3); // GPIO4
-    GPIO_INIT(gpio[5], B, 7); // GPIO5
+    GPIO_INIT(port_B_gpio[0], A, 7); // GP0
+    GPIO_INIT(port_B_gpio[1], A, 10);// GP1
+    GPIO_INIT(port_B_gpio[2], B, 4); // GP2
+    GPIO_INIT(port_B_gpio[3], C, 2); // GP3
+    GPIO_INIT(port_B_gpio[4], C, 3); // GP4
+    GPIO_INIT(port_B_gpio[5], B, 7); // GP5
 #elif MOTION_CONTROL
     _TRISB5 = 1;
     _TRISB6 = 1;
@@ -320,7 +335,7 @@ void Peripherals_Init(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
 #ifdef NUM_GPIO
-    gpio_init(&AD1PCFGL, gpio, NUM_GPIO, &adc_config);
+    gpio_init(&AD1PCFGL, &adc_config, 2, portA, portB);
 #endif
 }
 
