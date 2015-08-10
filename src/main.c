@@ -96,6 +96,8 @@ uint8_t rdBuffer[2] = {100, 205};
 uint16_t address = 1000;
 uint16_t rdSize = 2;
 
+extern linesensor_t line_sensor;
+
 //void pCallback(bool b) {
 //    bbb = b;
 //}
@@ -121,7 +123,7 @@ int16_t main(void) {
     
     /* I2C CONFIGURATION */
     Init_I2C();     ///< Open I2C module
-    EEPROM_init();  ///< Launch the EEPROM controller
+    EEPROM_init(20);  ///< Launch the EEPROM controller
     
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
@@ -166,19 +168,14 @@ int16_t main(void) {
     uint8_t wrBuffer[2] = {2, 88};
 
     while (true) {
-        PCF8574_LED_write(PCF8574_LED1 + PCF8574_LED5);
+        PCF8574_LED_write(line_sensor.raw_line_value); //PCF8574_LED1 + PCF8574_LED5);
         
-        if(bbb) {
-            EEPROM_write(0, wrBuffer, address, 2, wCallback);
-            bbb = false;
-        }
-//        if(aaa) {
-//            EEPROM_read(0, &rdBuffer[0], address, rdSize, pCallback);
-//            aaa = false;
+//        if(bbb) {
+//            EEPROM_write(0, wrBuffer, address, 2, wCallback);
+//            bbb = false;
 //        }
-//        if(ccc) {
-//            EEPROM_service_trigger();
-//        }
+
+        
     }
 
     return true;

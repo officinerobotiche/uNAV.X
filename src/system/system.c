@@ -80,7 +80,8 @@ hardware_bit_t OC2IF = REGISTER_INIT(IFS0, 6);
 #define EVENT_PRIORITY_VERY_LOW_P IPC6bits.OC3IP
 hardware_bit_t OC3IF = REGISTER_INIT(IFS1, 9);
 
-#define TMR3_VALUE 2000       // Timer3 - 50uSec Overflow
+//#define TMR3_VALUE 2000       // Timer3 - 50uSec Overflow
+#define TMR3_VALUE 400       // Timer3 - 10uSec Overflow
 #define TIMER3_PRIORITY_LEVEL 1
 
 /******************************************************************************/

@@ -24,6 +24,39 @@
 extern "C" {
 #endif
 
+    
+    #define NUM_LINE_SENSOR     7
+    #define BIT_LEN 7
+
+    
+    /*****************************************************************************/
+    /* LineFollower structure                                                    */
+    /*****************************************************************************/
+    /**
+     * Data structure used to manage linefollower sensor
+     * - fsm_state  : state of "Finited State Machine" : Charge, discharge, Measure...
+     * - timebase : Configured during init, uSec time base if main function... used to calculate reading time.
+     * - sensor_time[NUM_LINE_SENSOR] : Measure time of each sensor
+     * 
+     * - data: a single byte with a rapresentation of line respect at sensor.
+     *          127 : Line on last sensor ( IR7 )
+     *          0 : Line centered to sensor
+     *          -127: Line on first sensor ( IR0 )
+     * 
+     */
+
+    typedef struct linesensor {
+        int8_t fsm_state;
+        int16_t counter;
+        int16_t weight[NUM_LINE_SENSOR];
+        int16_t sensor_count[NUM_LINE_SENSOR];
+        int16_t raw_line_value;
+        float line_position;
+    } linesensor_t;
+    
+    #define LNG_LINESENSOR sizeof(linesensor_t)    
+
+
     /**************************************************************************/
     /* System Function Prototypes                                             */
     /**************************************************************************/
