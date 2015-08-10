@@ -236,6 +236,7 @@ void Peripherals_Init(void) {
     RPINR19bits.U2RXR = 3; // U2RX To Pin RP3, CTS tied Vss
     RPINR19bits.U2CTSR = 0x1f;
     RPOR1bits.RP2R = 5; // U2Tx To Pin RP2
+       
 #elif ROBOCONTROLLER_V3
     // Input capture
     RPINR7bits.IC1R = 22; // IC1 To Pin RP22
@@ -295,8 +296,8 @@ void Peripherals_Init(void) {
     GPIO_INIT_ANALOG(gpio[3], C, 2, &adc_gpio_data[2]); // GPIO3
     GPIO_INIT(gpio[4], C, 3); // GPIO4
     GPIO_INIT(gpio[5], A, 4); // GPIO5
-    GPIO_INIT(gpio[7], B, 4); // GPIO6
-    GPIO_INIT(gpio[8], B, 7); // GPIO7
+    GPIO_INIT(gpio[6], B, 4); // GPIO6
+    GPIO_INIT(gpio[7], B, 7); // GPIO7
     GPIO_INIT(gpio[8], A, 8); // GPIO8
 #elif ROBOCONTROLLER_V3
     // GPIO
