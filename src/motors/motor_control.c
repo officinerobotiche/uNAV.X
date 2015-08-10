@@ -91,8 +91,6 @@ typedef struct _motor_firmware {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
-    gp_peripheral_t* pin_current;
-    gp_peripheral_t* pin_voltage;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -150,7 +148,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, gpio_t* enable, gp_peripheral_t* current, gp_peripheral_t* voltage) {
+void init_motor(const short motIdx, gpio_t* enable) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -165,12 +163,6 @@ void init_motor(const short motIdx, gpio_t* enable, gp_peripheral_t* current, gp
     motors[motIdx].pin_enable = enable;
     gpio_register(motors[motIdx].pin_enable);
     /// Setup ADC current and temperature
-    motors[motIdx].pin_current = current;
-    motors[motIdx].pin_current->gpio.type = GPIO_ANALOG;
-    gpio_register_peripheral(motors[motIdx].pin_current);
-    motors[motIdx].pin_voltage = voltage;
-    motors[motIdx].pin_voltage->gpio.type = GPIO_ANALOG;
-    gpio_register_peripheral(motors[motIdx].pin_voltage);
     
     motors[motIdx].k_mul = 1;
     
@@ -412,7 +404,7 @@ void MotorTaskController(int argc, int *argv) {
             motors[motIdx].counter_alive++;
     }
     // Update current value;
-    motors[motIdx].diagnostic.current = motors[motIdx].pin_current->common.analog->value;
+    motors[motIdx].diagnostic.current = gpio_get_analog(0, motIdx);
 }
 
 int measureVelocity(short motIdx) {

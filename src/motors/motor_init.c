@@ -56,9 +56,6 @@ hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
 #endif
 
 gpio_t enable[2];
-gp_peripheral_t current[2];
-gp_analog_t adc_data[4];
-gp_peripheral_t voltage[2];
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
@@ -203,20 +200,8 @@ void Motor_Init() {
 #ifdef UNAV_V1
     /// ENABLE 1
     GPIO_INIT_TYPE(enable[0], A, 7, GPIO_OUTPUT);
-    /// CURRENT 1
-    GPIO_ANALOG_CONF(adc_data[0], 0);
-    GPIO_INIT_ANALOG(current[0], A, 0, &adc_data[0]);
-    /// TEMPERATURE 1
-    GPIO_ANALOG_CONF(adc_data[2], 2);
-    GPIO_INIT_ANALOG(voltage[0], B, 0, &adc_data[2]);
     /// ENABLE 2
     GPIO_INIT_TYPE(enable[1], A, 10, GPIO_OUTPUT);
-    /// CURRENT 2
-    GPIO_ANALOG_CONF(adc_data[1], 1);
-    GPIO_INIT_ANALOG(current[1], A, 1, &adc_data[1]);
-    /// TEMPERATURE 2
-    GPIO_ANALOG_CONF(adc_data[3], 3);
-    GPIO_INIT_ANALOG(voltage[1], B, 1, &adc_data[3]);
     // Encoders
     _TRISB10 = 1;
     _TRISB11 = 1;
@@ -252,7 +237,7 @@ void Motor_Init() {
     for (i = 0; i < NUM_MOTORS; ++i) {
         InitQEI(i);                                             ///< Open QEI
         InitIC(i);                                              ///< Open Input Capture
-        init_motor(i, &enable[i], &current[i], &voltage[i]);///< Initialize variables for motors
+        init_motor(i, &enable[i]);                              ///< Initialize variables for motors
         update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
         update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
         update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
