@@ -335,7 +335,7 @@ void Peripherals_Init(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
 #ifdef NUM_GPIO
-    gpio_init(&AD1PCFGL, &adc_config, 2, portA, portB);
+    gpio_init(&AD1PCFGL, &adc_config, 2, &portA, &portB);
 #endif
 }
 
