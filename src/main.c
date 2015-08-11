@@ -35,7 +35,9 @@
 
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
 #include "system/system_comm.h"
+
 #include "system/peripherals.h"
+#include "system/peripherals_comm.h"
 
 #include "communication/I2c.h"
 #include <peripherals/i2c/i2c.h>
@@ -106,6 +108,7 @@ int16_t main(void) {
     /** SERIAL CONFIGURATION **/
     SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
     set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system); ///< Initialize parsing reader
+    set_frame_reader(HASHMAP_PERIPHERALS, &send_frame_gpio, &save_frame_gpio); ///< Initialize parsing reader
     
     /*** MOTOR INITIALIZATION ***/
     Motor_Init();

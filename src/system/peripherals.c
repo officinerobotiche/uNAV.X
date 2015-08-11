@@ -102,12 +102,12 @@ gp_peripheral_t port_B_gpio[NUM_GPIO];
  * Initialization ADC for measure current motors
  */
 void InitADC(void) {
-    AD1CON1bits.FORM = 0; // Data Output Format: Integer
-    AD1CON1bits.SSRC = 0b111; // Sample Clock Source: Internal counter sampling and starts convertions (auto-convert)
-    AD1CON1bits.ASAM = 1; // ADC Sample Control: Sampling begins immediately after conversion
-    AD1CON1bits.AD12B = 0; // 10-bit ADC operation
-    AD1CON1bits.ADSIDL = 1; // stop in idle
-    AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
+    AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
+    AD1CON1bits.SSRC = 0b111;   //< Sample Clock Source: Internal counter sampling and starts convertions (auto-convert)
+    AD1CON1bits.ASAM = 1;       //< ADC Sample Control: Sampling begins immediately after conversion
+    AD1CON1bits.AD12B = 0;      //< 10-bit ADC operation
+    AD1CON1bits.ADSIDL = 1;     //< stop in idle
+    AD1CON1bits.SIMSAM = 1;     //< CH0 CH1 sampled simultaneously
 
     AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
     AD1CON2bits.CHPS = 1; // Convert CH0 and CH1
