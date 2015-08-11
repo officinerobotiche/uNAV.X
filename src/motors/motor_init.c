@@ -119,7 +119,7 @@ void InitQEI(short motIdx) {
             //QEI1CONbits.CNTERR= 0; // No position count error has occurred
             QEI1CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
             QEI1CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-            QEI1CONbits.SWPAB = (get_motor_parameters(MOTOR_ZERO).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI1CONbits.SWPAB = (get_motor_parameters(motIdx).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             QEI1CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
             //QEI1CONbits.TQGATE= 0  // Timer gated time accumulation disabled
             //QEI1CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -135,7 +135,7 @@ void InitQEI(short motIdx) {
             //QEI2CONbits.CNTERR= 0; // No position count error has occurred
             QEI2CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
             QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-            QEI2CONbits.SWPAB = (get_motor_parameters(MOTOR_ONE).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI2CONbits.SWPAB = (get_motor_parameters(motIdx).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             QEI2CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
             //QEI2CONbits.TQGATE= 0  // Timer gated time accumulation disabled
             //QEI2CONbits.TQCKPS = 0b00	// 1:1 prescale value

@@ -64,7 +64,7 @@ typedef union _adc_buffer {
     unsigned int buffer[TOT_ADC_BUFF];
 } adc_buffer_t;
 
-// ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 2 x 32 = 64 bytes
+ // ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 4 x 32 = 64 bytes
 adc_buffer_t AdcBufferA __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
 adc_buffer_t AdcBufferB __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
 type_conf_t adc_conf = ADC_SCAN;
@@ -88,7 +88,8 @@ gp_analog_t adc_gpio_data[7];
 gp_port_def_t portA;
 gp_peripheral_t port_A_gpio[4];
 led_control_t led_controller[LED_NUM];
-
+int numadc = 0;
+    
 #ifdef NUM_GPIO
 gp_port_def_t portB;
 gp_peripheral_t port_B_gpio[NUM_GPIO];
@@ -102,7 +103,7 @@ gp_peripheral_t port_B_gpio[NUM_GPIO];
  */
 void InitADC(void) {
     AD1CON1bits.FORM = 0; // Data Output Format: Integer
-    AD1CON1bits.SSRC = 3; // Sample Clock Source: Internal counter sampling and starts conversions (auto-convert)
+    AD1CON1bits.SSRC = 0b111; // Sample Clock Source: Internal counter sampling and starts convertions (auto-convert)
     AD1CON1bits.ASAM = 1; // ADC Sample Control: Sampling begins immediately after conversion
     AD1CON1bits.AD12B = 0; // 10-bit ADC operation
     AD1CON1bits.ADSIDL = 1; // stop in idle
@@ -141,7 +142,6 @@ void InitADC(void) {
  * Initialization DMA0 for ADC current
  */
 void InitDMA0(void) {
-    DMA0CNT = TOT_ADC_BUFF - 1; // 64 DMA request
     DMA0REQ = 13; // Select ADC1 as DMA Request source
 
     DMA0CONbits.AMODE = 2; // Peripheral Indirect Addressing mode
@@ -159,7 +159,9 @@ void InitDMA0(void) {
 bool adc_config(void) {
     bool state = false;
     /// Get all ADC configured
-    int numadc = 0;
+    AD1CON1bits.ADON = 0; // module off
+    DMA0CONbits.CHEN = 0; // Disable DMA
+    IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
     if(AD1PCFGL == 0b0000000111111100) {
         numadc = 2;
         adc_conf = ADC_SIM_2;
@@ -196,7 +198,7 @@ bool adc_config(void) {
         /// Setup scanning mode
         AD1CSSL = AD1PCFGL;
         /// DMA Configuration
-        DMA0CNT = numadc * ADC_BUFF - 1;
+        DMA0CNT = (TOT_ADC_BUFF / numadc) - 1;
         /// Complete configuration
         state = true;
     }
@@ -204,9 +206,6 @@ bool adc_config(void) {
     if(numadc > 0 && state == true) {
         AD1CON1bits.ADON = 1; // module on
         DMA0CONbits.CHEN = 1; // Enable DMA
-    } else {
-        AD1CON1bits.ADON = 0; // module off
-        DMA0CONbits.CHEN = 0; // Disable DMA
     }
     return state;
 }
@@ -358,29 +357,37 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
-inline void ProcessADCSamples(adc_buffer_t AdcBuffer) {
+inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
+    static int i, counter;
     switch(adc_conf) {
         case ADC_SIM_2:
-            gpio_ProcessADCSamples(0, AdcBuffer.channels.ch0, ADC_BUFF);
-            gpio_ProcessADCSamples(1, AdcBuffer.channels.ch1, ADC_BUFF);
+            gpio_ProcessADCSamples(0, AdcBuffer->channels.ch0, ADC_BUFF);
+            gpio_ProcessADCSamples(1, AdcBuffer->channels.ch1, ADC_BUFF);
             break;
         case ADC_SIM_4:
-            gpio_ProcessADCSamples(3, AdcBuffer.channels.ch0, ADC_BUFF);
-            gpio_ProcessADCSamples(0, AdcBuffer.channels.ch1, ADC_BUFF);
-            gpio_ProcessADCSamples(1, AdcBuffer.channels.ch2, ADC_BUFF);
-            gpio_ProcessADCSamples(2, AdcBuffer.channels.ch3, ADC_BUFF);
+            gpio_ProcessADCSamples(3, AdcBuffer->channels.ch0, ADC_BUFF);
+            gpio_ProcessADCSamples(0, AdcBuffer->channels.ch1, ADC_BUFF);
+            gpio_ProcessADCSamples(1, AdcBuffer->channels.ch2, ADC_BUFF);
+            gpio_ProcessADCSamples(2, AdcBuffer->channels.ch3, ADC_BUFF);
             break;
         case ADC_SCAN:
+            counter = 0;
+            for(i = 0; counter == numadc; ++i) {
+                if(REGISTER_MASK_READ(&AD1PCFGL, BIT_MASK(i))) {
+                    gpio_ProcessADCSamples_start(i, AdcBuffer->buffer, counter*DMA0CNT, DMA0CNT + 1);
+                    counter++;
+                }
+            }
             break;
     }
 }
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     static unsigned short DmaBuffer = 0;
-    if(DmaBuffer) {
-        ProcessADCSamples(AdcBufferA);
+    if(DmaBuffer == 0) {
+        ProcessADCSamples(&AdcBufferA);
     } else {
-        ProcessADCSamples(AdcBufferB);
+        ProcessADCSamples(&AdcBufferB);
     }
     DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
