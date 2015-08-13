@@ -69,6 +69,9 @@ typedef struct _adc_buff_info {
     int size;
 } adc_buff_info_t;
 
+hardware_bit_t ana_en = REGISTER_INIT(AD1CON1, 15);
+hardware_bit_t dma_en = REGISTER_INIT(DMA0CON, 15);
+
  // ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 4 x 32 = 64 bytes
 adc_buffer_t AdcBufferA __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
 adc_buffer_t AdcBufferB __attribute__((space(dma), aligned(TOT_ADC_BUFF)));
@@ -160,12 +163,8 @@ void InitDMA0(void) {
 
 bool adc_config(void) {
     bool state = false;
-    /// Get all ADC configured
-    AD1CON1bits.ADON = 0; // module off
-    DMA0CONbits.CHEN = 0; // Disable DMA
     IFS0bits.AD1IF = 0; // Clear the A/D interrupt flag bit
     IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
-    Nop();
     if(AD1PCFGL == 0b0000000111111100) {
         info_buffer.numadc = 2;
         info_buffer.adc_conf = ADC_SIM_2;
@@ -190,7 +189,7 @@ bool adc_config(void) {
         AD1CON2bits.CSCNA = 1; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 0; // Convert CH0
         AD1CON2bits.SMPI = info_buffer.numadc - 1; // number of DMA buffers -1
-        AD1CON3bits.SAMC = 0b11111; // 0 Tad auto sample time
+        AD1CON3bits.SAMC = 0b11111; // 31 Tad auto sample time
         AD1CHS0bits.CH0SA = 0; // CH0 pos -> AN0
         /// Setup scanning mode
         AD1CSSL = (~AD1PCFGL & 0b0000000111111111);
@@ -223,11 +222,6 @@ bool adc_config(void) {
                 break;
         }
         /// Complete configuration
-    }
-    //Enable or disable the module
-    if(info_buffer.numadc > 0 && state == true) {
-        AD1CON1bits.ADON = 1; // module on
-        DMA0CONbits.CHEN = 1; // Enable DMA
     }
     return state;
 }
@@ -356,7 +350,7 @@ void Peripherals_Init(void) {
     InitDMA0();   ///< Open DMA0 for buffering measures ADC
     
 #ifdef NUM_GPIO
-    gpio_init(&AD1PCFGL, &adc_config, 2, &portA, &portB);
+    gpio_init(&ana_en, &dma_en, &AD1PCFGL, &adc_config, 2, &portA, &portB);
 #endif
 }
 
