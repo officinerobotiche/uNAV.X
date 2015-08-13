@@ -66,6 +66,7 @@ typedef struct _adc_buff_info {
     type_conf_t adc_conf;
     int numadc;
     math_buffer_size_t buff_size;
+    int size;
 } adc_buff_info_t;
 
  // ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 4 x 32 = 64 bytes
@@ -162,11 +163,14 @@ bool adc_config(void) {
     /// Get all ADC configured
     AD1CON1bits.ADON = 0; // module off
     DMA0CONbits.CHEN = 0; // Disable DMA
+    IFS0bits.AD1IF = 0; // Clear the A/D interrupt flag bit
     IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
+    Nop();
     if(AD1PCFGL == 0b0000000111111100) {
         info_buffer.numadc = 2;
         info_buffer.adc_conf = ADC_SIM_2;
         info_buffer.buff_size = MATH_BUFF_64;
+        info_buffer.size = 64;
         AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
         AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 1; // Convert CH0 and CH1
@@ -197,12 +201,14 @@ bool adc_config(void) {
                 DMA0CNT = TOT_ADC_BUFF - 1;
                 AD1CON4bits.DMABL = 0b111;
                 info_buffer.buff_size = MATH_BUFF_128;
+                info_buffer.size = 128;
                 break;
             case 3:
             case 4:
                 DMA0CNT = 32 * info_buffer.numadc - 1;
                 AD1CON4bits.DMABL = 0b101;
                 info_buffer.buff_size = MATH_BUFF_32;
+                info_buffer.size = 32;
                 break;
             case 5:
             case 6:
@@ -210,6 +216,7 @@ bool adc_config(void) {
                 DMA0CNT = 16 * info_buffer.numadc - 1;
                 AD1CON4bits.DMABL = 0b100;
                 info_buffer.buff_size = MATH_BUFF_16;
+                info_buffer.size = 16;
                 break;
             default:
                 state = false;
@@ -376,15 +383,15 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     static int i, counter, adc;
     switch(info_buffer.adc_conf) {
         case ADC_SIM_2:
-            gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->channels.ch0, 0, info_buffer.buff_size));
-            gpio_ProcessADCSamples(1, statistic_buff_mean(AdcBuffer->channels.ch1, 0, info_buffer.buff_size));
+            gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->channels.ch0, 0, info_buffer.size));
+            gpio_ProcessADCSamples(1, statistic_buff_mean(AdcBuffer->channels.ch1, 0, info_buffer.size));
             break;
         case ADC_SCAN:
             counter = 0;
             adc = (~AD1PCFGL & 0b0000000111111111);
             for(i = 0; counter < info_buffer.numadc; ++i) {
                 if(REGISTER_MASK_READ(&adc, BIT_MASK(i))) {
-                    gpio_ProcessADCSamples(i, statistic_buff_mean(AdcBuffer->buffer, counter*info_buffer.buff_size, info_buffer.buff_size));
+                    gpio_ProcessADCSamples(i, statistic_buff_mean(AdcBuffer->buffer, counter*info_buffer.size, info_buffer.buff_size));
                     counter++;
                 }
             }
@@ -395,7 +402,7 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     static unsigned short DmaBuffer = 0;
     if(DmaBuffer == 0) {
-        ProcessADCSamples(&AdcBufferA);
+//        ProcessADCSamples(&AdcBufferA);
     } else {
         ProcessADCSamples(&AdcBufferB);
     }
