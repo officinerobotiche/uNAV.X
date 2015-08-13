@@ -42,21 +42,18 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-#define ADC_CHANNELS 4
+#define ADC_CHANNELS 2
 #define ADC_BUFF 64
 #define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
 
 typedef enum _type_conf {
     ADC_SIM_2,
-    ADC_SIM_4,
     ADC_SCAN
 } type_conf_t;
 
 typedef struct _adc_channels {
     unsigned int ch0[ADC_BUFF];
     unsigned int ch1[ADC_BUFF];
-    unsigned int ch2[ADC_BUFF];
-    unsigned int ch3[ADC_BUFF];
 } adc_channels_t;
 
 typedef union _adc_buffer {
@@ -120,9 +117,7 @@ void InitADC(void) {
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
 
     AD1CON1bits.ADDMABM = 0; // DMA buffers are built in scatter/gather mode
-    AD1CON2bits.SMPI = 0b0001; // number of DMA buffers -1
-    AD1CON4bits.DMABL = 0b110; // 64 word DMA buffer for each analog input
-
+    
     AD1CHS123bits.CH123NB = 0; // don't care -> sample B
     AD1CHS123bits.CH123SB = 0; // don't care -> sample B
     AD1CHS123bits.CH123NA = 0; // CH1,2,3 negative input = Vrefl
@@ -169,22 +164,12 @@ bool adc_config(void) {
         AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 1; // Convert CH0 and CH1
         AD1CON2bits.SMPI = 1; // number of DMA buffers -1
+        AD1CON3bits.SAMC = 0b11111; // 31 Tad auto sample time
         AD1CHS0bits.CH0SA = 1; // CH0 pos -> AN1
+        AD1CON4bits.DMABL = 0b110; // 64 word DMA buffer for each analog input
         /// DMA Configuration
         DMA0CNT = 2 * ADC_BUFF - 1; // 64 DMA request
-        
-        /// Complete configuration
-        state = true;
-    } else if(AD1PCFGL == 0b0000000111110000) {
-        numadc = 4;
-        adc_conf = ADC_SIM_4;
-        AD1CON1bits.SIMSAM = 1; // CH0 CH1 sampled simultaneously
-        AD1CON2bits.CSCNA = 0; // Input scan: Do not scan inputs
-        AD1CON2bits.CHPS = 0b11; // Convert CH0, CH1, CH2 and CH3
-        AD1CON2bits.SMPI = 3; // number of DMA buffers -1
-        AD1CHS0bits.CH0SA = 3; // CH0 pos -> AN3
-        /// DMA Configuration
-        DMA0CNT = 4 * ADC_BUFF - 1; // 64 DMA request
+        AD1CSSL = 0;
         /// Complete configuration
         state = true;
     } else if(AD1PCFGL != 0b0000000111111111) {
@@ -194,13 +179,33 @@ bool adc_config(void) {
         AD1CON2bits.CSCNA = 1; // Input scan: Do not scan inputs
         AD1CON2bits.CHPS = 0; // Convert CH0
         AD1CON2bits.SMPI = numadc - 1; // number of DMA buffers -1
+        AD1CON3bits.SAMC = 0b11111; // 0 Tad auto sample time
         AD1CHS0bits.CH0SA = 0; // CH0 pos -> AN0
         /// Setup scanning mode
-        AD1CSSL = AD1PCFGL;
+        AD1CSSL = (~AD1PCFGL & 0b0000000111111111);
         /// DMA Configuration
-        DMA0CNT = (TOT_ADC_BUFF / numadc) - 1;
-        /// Complete configuration
         state = true;
+        switch(numadc) {
+            case 1:
+                DMA0CNT = TOT_ADC_BUFF - 1;
+                AD1CON4bits.DMABL = 0b111;
+                break;
+            case 3:
+            case 4:
+                DMA0CNT = 32 * numadc - 1;
+                AD1CON4bits.DMABL = 0b101;
+                break;
+            case 5:
+            case 6:
+            case 7: 
+                DMA0CNT = 16 * numadc - 1;
+                AD1CON4bits.DMABL = 0b100;
+                break;
+            default:
+                state = false;
+                break;
+        }
+        /// Complete configuration
     }
     //Enable or disable the module
     if(numadc > 0 && state == true) {
@@ -364,15 +369,9 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
             gpio_ProcessADCSamples(0, AdcBuffer->channels.ch0, ADC_BUFF);
             gpio_ProcessADCSamples(1, AdcBuffer->channels.ch1, ADC_BUFF);
             break;
-        case ADC_SIM_4:
-            gpio_ProcessADCSamples(3, AdcBuffer->channels.ch0, ADC_BUFF);
-            gpio_ProcessADCSamples(0, AdcBuffer->channels.ch1, ADC_BUFF);
-            gpio_ProcessADCSamples(1, AdcBuffer->channels.ch2, ADC_BUFF);
-            gpio_ProcessADCSamples(2, AdcBuffer->channels.ch3, ADC_BUFF);
-            break;
         case ADC_SCAN:
             counter = 0;
-            for(i = 0; counter == numadc; ++i) {
+            for(i = 0; counter < numadc; ++i) {
                 if(REGISTER_MASK_READ(&AD1PCFGL, BIT_MASK(i))) {
                     gpio_ProcessADCSamples_start(i, AdcBuffer->buffer, counter*DMA0CNT, DMA0CNT + 1);
                     counter++;
