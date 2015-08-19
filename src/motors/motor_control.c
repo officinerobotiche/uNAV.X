@@ -60,6 +60,9 @@
 #define DEFAULT_KP 0.6
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
+#define DEFAULT_FREQ_MOTOR_MANAGER 1000 // In Herts
+#define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000 // In Herts
+#define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000 // In Herts
 
 #define NUMBER_CONTROL_FROM_ENUM(x) ( (x) + 1 )
 #define NUMBER_CONTROL_FROM_ARRAY(x) ( (x) - 1 )
@@ -87,7 +90,7 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 typedef struct _motor_firmware {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
-    hardware_bit_t* pin_enable;
+    gpio_t* pin_enable;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -145,7 +148,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, hardware_bit_t* enable) {
+void init_motor(const short motIdx, gpio_t* enable) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -158,19 +161,22 @@ void init_motor(const short motIdx, hardware_bit_t* enable) {
     ICinfo[motIdx].timePeriod = 0;
     /// Setup bit enable
     motors[motIdx].pin_enable = enable;
+    gpio_register(motors[motIdx].pin_enable);
+    /// Setup ADC current and temperature
     
     motors[motIdx].k_mul = 1;
     
     /// Register event and add in task controller - Working at 1KHz
-    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 1000, 1, (char) motIdx);
+    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 
+                                    DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
     /// Run task controller
     task_set(motors[motIdx].task_manager, RUN);
     /// Load controller EMERGENCY - Working at 1KHz
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = 1000;
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY;
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency, 1, (char) motIdx);
     /// Load controllers VELOCITY - Working at 1KHz
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = 1000;
+    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY;
     motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &controller, EVENT_PRIORITY_MEDIUM),
             motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency, 1, (char) motIdx);
 }
@@ -342,9 +348,9 @@ void set_motor_state(short motIdx, motor_state_t state) {
     /// Set enable or disable motors
     motors[motIdx].reference.state = state;
     if(enable ^ motors[motIdx].parameter_motor.bridge.enable)
-        bit_high(motors[motIdx].pin_enable);
+        REGISTER_MASK_SET_HIGH(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     else
-        bit_low(motors[motIdx].pin_enable);
+        REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     
     if (state == CONTROL_EMERGENCY) {
         motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
@@ -397,6 +403,8 @@ void MotorTaskController(int argc, int *argv) {
         } else
             motors[motIdx].counter_alive++;
     }
+    // Update current value;
+    motors[motIdx].diagnostic.current = gpio_get_analog(0, motIdx);
 }
 
 int measureVelocity(short motIdx) {
@@ -475,17 +483,4 @@ void Emergency(int argc, int *argv) {
         } else
             motors[motIdx].counter_stop++;
     }
-}
-
-inline void adc_motors_current(ADC* AdcBuffer, size_t len) {
-    int AdcCount = 0; //Counter
-    long ADCValueTmp[NUM_MOTORS] = {0, 0}; //Array to filter ADC data
-
-    for (AdcCount = 0; AdcCount < len; ++AdcCount) // Evaluate mean value
-    {
-        ADCValueTmp[MOTOR_ZERO] += (*AdcBuffer)[MOTOR_ZERO][AdcCount]; //Sum for AN0
-        ADCValueTmp[MOTOR_ONE] += (*AdcBuffer)[MOTOR_ONE][AdcCount]; //Sum for AN1
-    }
-    motors[MOTOR_ZERO].diagnostic.current = ADCValueTmp[MOTOR_ZERO] >> 6; //Shift
-    motors[MOTOR_ONE].diagnostic.current = ADCValueTmp[MOTOR_ONE] >> 6; //Shift
 }
