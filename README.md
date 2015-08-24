@@ -28,7 +28,7 @@ This is a project in development by [Officine Robotiche] to control motors.
 - **I2C** Communication (To be implemented)
 
 ## Boards compliant
-- [uNAV](https://github.com/officinerobotiche/uNAVPCB)
+- [uNAV](http://unav.officinerobotiche.it/)
 - [RoboController](http://tuttoelettronica.net/archives/455)
 - [Motion Control](http://raffaello.officinerobotiche.it/schede-elettroniche/motion-control/)
 
