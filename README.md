@@ -1,9 +1,9 @@
-# ![Officine Robotiche][Logo] - µNAV [![Stories in Ready](https://badge.waffle.io/officinerobotiche/uNAV.X.png?label=ready&title=Ready)](http://waffle.io/officinerobotiche/uNAV.X)
+# ![Officine Robotiche][Logo] - µNav [![Stories in Ready](https://badge.waffle.io/officinerobotiche/uNAV.X.png?label=ready&title=Ready)](http://waffle.io/officinerobotiche/uNAV.X)
 
 [![Join the chat at https://gitter.im/officinerobotiche/uNAV.X](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/officinerobotiche/uNAV.X?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 This is a project in development by [Officine Robotiche] to control motors.
 
-### **The [uNAV board](https://github.com/officinerobotiche/uNAVPCB) is HERE!**
+### **The [µNav board](https://github.com/officinerobotiche/uNAVPCB) is HERE!**
 
 # Release
 - [**Download last stable release**](https://github.com/officinerobotiche/uNAV.X/releases)
@@ -28,7 +28,7 @@ This is a project in development by [Officine Robotiche] to control motors.
 - **I2C** Communication (To be implemented)
 
 ## Boards compliant
-- [uNAV](http://unav.officinerobotiche.it/)
+- [µNav](http://unav.officinerobotiche.it/)
 - [RoboController](http://tuttoelettronica.net/archives/455)
 - [Motion Control](http://raffaello.officinerobotiche.it/schede-elettroniche/motion-control/)
 
@@ -66,9 +66,9 @@ git checkout develop
 - [ROS (Robotic Operative System)](https://github.com/officinerobotiche/ros_serial_bridge)
  
 ## Software
-- [PID tuning](https://github.com/officinerobotiche/uNav_PID_Tuner)
+- [PID Tuning](https://github.com/officinerobotiche/uNav_PID_Tuner)
 - [Robot Param Calculator](https://github.com/officinerobotiche/RobotParamCalculator)
-- [Simple unav Console](https://github.com/officinerobotiche/simple_unav_console)
+- [Simple µNav Console](https://github.com/officinerobotiche/simple_unav_console)
 
 [wiki]:http://wiki.officinerobotiche.it/
 [Officine Robotiche]:http://www.officinerobotiche.it/
