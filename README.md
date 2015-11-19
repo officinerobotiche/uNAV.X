@@ -8,6 +8,7 @@ This is a project in development by [Officine Robotiche] to control motors.
 # Release
 - [**Download last stable release**](https://github.com/officinerobotiche/uNAV.X/releases)
 - [wiki] with all detailed information about firmware
+- Feel free to ask for help, submit suggestions, satisfy your curiosity on our [**Users Group**](https://groups.google.com/forum/?hl=it#!forum/unav-users)
 
 # Firmware features
 - High speed DC motor control **1KHz**
