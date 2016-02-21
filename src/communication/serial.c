@@ -64,7 +64,7 @@ void InitUART1(short idx) {
     U1MODEbits.ABAUD = 0; // Auto-Baud Disabled
     U1MODEbits.BRGH = 0; // Low Speed mode
 
-    U1BRG = serial_config[idx].baud; // BAUD Rate Setting on System.h
+    U1BRG = ((FCY/serial_config[idx].baud)/16)-1; // BAUD Rate Setting on System.h
 
     U1STAbits.UTXISEL0 = 0; // Interrupt after one Tx character is transmitted
     U1STAbits.UTXISEL1 = 0;
@@ -184,7 +184,6 @@ unsigned int ReadUART1(void) {
 
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
     IFS0bits.U1RXIF = 0; // clear RX interrupt flag
-
     /* get the data */
     if (U1STAbits.URXDA == 1) {
         if (decode_pkgs(ReadUART1())) {

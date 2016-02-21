@@ -12,9 +12,9 @@
             <sourceEncoding>ISO-8859-1</sourceEncoding>
             <asminc-extensions/>
             <make-dep-projects>
-                <make-dep-project>../or_bus_c.X</make-dep-project>
                 <make-dep-project>../or_common_c.X</make-dep-project>
-                <make-dep-project>../or_kernel_c.X</make-dep-project>
+                <make-dep-project>../or_kernel_c.x</make-dep-project>
+                <make-dep-project>../or_bus_c.X</make-dep-project>
             </make-dep-projects>
         </data>
     </configuration>
