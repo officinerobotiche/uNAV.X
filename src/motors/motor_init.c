@@ -208,9 +208,9 @@ void Motor_Init() {
     _TRISB6 = 1;
     _TRISB5 = 1;
     _TRISB12 = 0; // PWM1 +
-    _TRISB12 = 0; // PWM1 -
-    _TRISB12 = 0; // PWM2 +
-    _TRISB12 = 0; // PWM2 -
+    _TRISB13 = 0; // PWM1 -
+    _TRISB14 = 0; // PWM2 +
+    _TRISB15 = 0; // PWM2 -
 #elif ROBOCONTROLLER_V3
     /// ENABLE 1
     GPIO_INIT_TYPE(enable[0], A, 1, GPIO_OUTPUT);
