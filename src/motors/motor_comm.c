@@ -109,6 +109,10 @@ void send_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             send.motor.emergency = get_motor_emergency((short) motor.bitset.motor);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
+        case MOTOR_DIAGNOSTIC:
+            send.motor.diagnostic = get_motor_diagnostic((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            break;
         default:
             list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
             break;

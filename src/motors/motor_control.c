@@ -305,6 +305,10 @@ inline motor_t get_motor_measures(short motIdx) {
     return motors[motIdx].measure;
 }
 
+inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
+    return motors[motIdx].diagnostic;
+}
+
 inline motor_t get_motor_reference(short motIdx) {
     return motors[motIdx].reference;
 }

@@ -161,6 +161,12 @@ extern "C" {
      */
     inline motor_t get_motor_measures(short motIdx);
     /**
+     * Return information about diagnostic, current, temperature, etc etc.
+     * @param motIdx number of motor
+     * @return return diagnostic information about motor
+     */
+    inline motor_diagnostic_t get_motor_diagnostic(short motIdx);
+    /**
      * Return information about motor reference of control.
      * @param motIdx number of motor
      * @return return information about motor
