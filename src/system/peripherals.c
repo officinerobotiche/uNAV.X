@@ -368,8 +368,8 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     static int i, counter, adc;
     switch(info_buffer.adc_conf) {
         case ADC_SIM_2:
-            gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->channels.ch0, 0, info_buffer.size));
-            gpio_ProcessADCSamples(1, statistic_buff_mean(AdcBuffer->channels.ch1, 0, info_buffer.size));
+            gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->channels.ch0, 0, info_buffer.buff_size));
+            gpio_ProcessADCSamples(1, statistic_buff_mean(AdcBuffer->channels.ch1, 0, info_buffer.buff_size));
             break;
         case ADC_SCAN:
             counter = 0;
