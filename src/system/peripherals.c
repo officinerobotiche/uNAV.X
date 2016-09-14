@@ -34,9 +34,7 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-#define ADC_CHANNELS 2
-#define ADC_BUFF 64
-#define TOT_ADC_BUFF ADC_CHANNELS * ADC_BUFF
+#define ADC_BUFF 128
 
 typedef enum _type_conf {
     ADC_SIM_2,
@@ -45,21 +43,21 @@ typedef enum _type_conf {
 } type_conf_t;
 
 typedef struct adc_sim_2_channels {
-    unsigned int ch0[ADC_BUFF];
-    unsigned int ch1[ADC_BUFF];
+    unsigned int ch0[ADC_BUFF/2];
+    unsigned int ch1[ADC_BUFF/2];
 } adc_sim_2_channels_t;
 
 typedef struct adc_sim_4_channels {
-    unsigned int ch0[ADC_BUFF/2];
-    unsigned int ch1[ADC_BUFF/2];
-    unsigned int ch2[ADC_BUFF/2];
-    unsigned int ch3[ADC_BUFF/2];
+    unsigned int ch0[ADC_BUFF/4];
+    unsigned int ch1[ADC_BUFF/4];
+    unsigned int ch2[ADC_BUFF/4];
+    unsigned int ch3[ADC_BUFF/4];
 } adc_sim_4_channels_t;
 
 typedef union _adc_buffer {
     adc_sim_2_channels_t sim_2_channels;
     adc_sim_4_channels_t sim_4_channels;
-    unsigned int buffer[TOT_ADC_BUFF];
+    unsigned int buffer[ADC_BUFF];
 } adc_buffer_t;
 
 typedef struct _adc_buff_info {
@@ -73,8 +71,8 @@ hardware_bit_t ana_en = REGISTER_INIT(AD1CON1, 15);
 hardware_bit_t dma_en = REGISTER_INIT(DMA0CON, 15);
 
  // ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 4 x 32 = 64 bytes
-adc_buffer_t AdcBufferA __attribute__((space(dma), aligned(TOT_ADC_BUFF*2)));
-//adc_buffer_t AdcBufferB __attribute__((space(dma), aligned(TOT_ADC_BUFF*2)));
+adc_buffer_t AdcBufferA __attribute__((space(dma), aligned(ADC_BUFF*2)));
+adc_buffer_t AdcBufferB __attribute__((space(dma), aligned(ADC_BUFF*2)));
 adc_buff_info_t info_buffer;
 
 #ifdef UNAV_V1
@@ -114,22 +112,22 @@ void InitDMA0(void) {
     DMA0REQ = 13; // Select ADC1 as DMA Request source
 
     DMA0CONbits.AMODE = 2;
-    DMA0CONbits.MODE = 0;
+    DMA0CONbits.MODE = 2;
 
     DMA0STA = __builtin_dmaoffset(&AdcBufferA);
-    //DMA0STB = __builtin_dmaoffset(&AdcBufferB);
+    DMA0STB = __builtin_dmaoffset(&AdcBufferB);
     DMA0PAD = (volatile unsigned int) &ADC1BUF0; // Point DMA to ADC1BUF0
 
     IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
     IPC1bits.DMA0IP = ADC_DMA_LEVEL; // Set DMA Interrupt Priority Level
     IEC0bits.DMA0IE = 1; // Enable DMA interrupt
     
-    DMA0CNT = TOT_ADC_BUFF - 1;//TOT_ADC_BUFF - 1; // 64 DMA request
+    DMA0CNT = ADC_BUFF - 1; // DMA request
 }
 /** 
  * Initialization ADC with read CH0, CH1 simultaneously 
  */
-void InitADC_2Sim(void) {
+void InitADC_2Sim(adc_buff_info_t info_buffer) {
     // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
@@ -150,7 +148,7 @@ void InitADC_2Sim(void) {
     AD1CON3bits.SAMC = 0b11111; //< 31 Tad auto sample time
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = ADC_BUFF - 1;
+    AD1CON3bits.ADCS = info_buffer.size - 1;
 
     AD1CON4bits.DMABL = 0b110; // Allocates 64 words of buffer to each analog input
     
@@ -172,7 +170,7 @@ void InitADC_2Sim(void) {
 /**
  * Initialization ADC with read CH0, CH1, CH2, CH3 simultaneously 
  */
-void InitADC_4Sim(void) {
+void InitADC_4Sim(adc_buff_info_t info_buffer) {
     // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
@@ -187,13 +185,13 @@ void InitADC_4Sim(void) {
     AD1CON2bits.CHPS = 0b11;    //< Convert CH0, CH1, CH2 and CH3
     AD1CON2bits.BUFM = 0;       //< filling buffer from start address
     AD1CON2bits.ALTS = 0;       //< ONLY sample A
-    AD1CON2bits.SMPI = 0b0011;  //< number of DMA buffers -1
+    AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
     AD1CON3bits.SAMC = 0b11111; //< 31 Tad auto sample time
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = (ADC_BUFF/2) - 1;
+    AD1CON3bits.ADCS = info_buffer.size - 1;
 
     AD1CON4bits.DMABL = 0b101; // Allocates 32 words of buffer to each analog input
     
@@ -225,14 +223,14 @@ bool adc_config(void) {
         case 2:
             info_buffer.adc_conf = ADC_SIM_2;
             info_buffer.size_base_2 = MATH_BUFF_64;
-            info_buffer.size = ADC_BUFF;
-            InitADC_2Sim();
+            info_buffer.size = ADC_BUFF/2;
+            InitADC_2Sim(info_buffer);
             break;
         case 4:
             info_buffer.adc_conf = ADC_SIM_4;
             info_buffer.size_base_2 = MATH_BUFF_32;
-            info_buffer.size = ADC_BUFF/2;
-            InitADC_4Sim();
+            info_buffer.size = ADC_BUFF/4;
+            InitADC_4Sim(info_buffer);
             break;
         default:
             info_buffer.adc_conf = ADC_SCAN;
@@ -318,10 +316,12 @@ void Peripherals_Init(void) {
                 "bset OSCCON, #6");
     // *********************************** Peripheral PIN selection
 
-    /* Setup port direction */
-    // weak pullups enable
-    CNPU1 = 0xffff;
-    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
+//    /* Setup port direction */
+//    // weak pullups enable
+//    CNPU1 = 0xffff;
+//    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
+//    Removed for ADC ... now Works better without this pullups enable.
+//    REMOVE after CHECK the code for RoboController and Motion Control
 
     GPIO_PORT_INIT(portA, &port_A_gpio[0], 4);
     /// CURRENT 1
@@ -400,10 +400,10 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
             gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->sim_2_channels.ch1, 0, info_buffer.size_base_2));
             break;
         case ADC_SIM_4:
-            gpio_ProcessADCSamples(3, statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2));
-            gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2));
-            gpio_ProcessADCSamples(1, statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2));
-            gpio_ProcessADCSamples(2, statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2));
+            gpio_ProcessADCSamples(0, statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2));
+            gpio_ProcessADCSamples(1, statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2));
+            gpio_ProcessADCSamples(2, statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2));
+            gpio_ProcessADCSamples(3, statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2));
             break;
         case ADC_SCAN:
 //            counter = 0;
@@ -420,11 +420,11 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     static unsigned short DmaBuffer = 0;
-//    if(DmaBuffer == 0) {
+    if(DmaBuffer == 0) {
         ProcessADCSamples(&AdcBufferA);
-//    } else {
-//        ProcessADCSamples(&AdcBufferB);
-//    }
+    } else {
+        ProcessADCSamples(&AdcBufferB);
+    }
     DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }
