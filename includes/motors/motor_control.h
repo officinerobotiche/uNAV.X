@@ -78,7 +78,7 @@ extern "C" {
      * @param current Analog GPIO for current
      * @param temperature Analog GPIO for temperature
      */
-    void init_motor(const short motIdx, gpio_t* enable);
+    void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.

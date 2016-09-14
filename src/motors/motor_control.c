@@ -82,6 +82,7 @@ typedef struct _motor_firmware {
     //Use ONLY in firmware
     //ICdata ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
+    int pin_current, pin_voltage;
     uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
@@ -139,7 +140,7 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, gpio_t* enable) {
+void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
@@ -151,9 +152,11 @@ void init_motor(const short motIdx, gpio_t* enable) {
     ICinfo[motIdx].overTmr = 0;
     ICinfo[motIdx].timePeriod = 0;
     /// Setup bit enable
-    motors[motIdx].pin_enable = enable;
+    motors[motIdx].pin_enable = enable_;
     gpio_register(motors[motIdx].pin_enable);
     /// Setup ADC current and temperature
+    motors[motIdx].pin_current = current_;
+    motors[motIdx].pin_voltage = voltage_;
     
     motors[motIdx].k_mul = 1;
     
@@ -367,7 +370,6 @@ void set_motor_state(short motIdx, motor_state_t state) {
 }
 
 void MotorTaskController(int argc, int *argv) {
-    
     short motIdx = (short) argv[0];
     /// Add new task controller
     if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
@@ -399,7 +401,9 @@ void MotorTaskController(int argc, int *argv) {
             motors[motIdx].counter_alive++;
     }
     // Update current value;
-    motors[motIdx].diagnostic.current = gpio_get_analog(0, motIdx);
+    motors[motIdx].diagnostic.current = gpio_get_analog(0, motors[motIdx].pin_current);
+    // Temp Only for TEST
+    motors[motIdx].diagnostic.temperature = gpio_get_analog(0, motors[motIdx].pin_voltage);
 }
 
 int measureVelocity(short motIdx) {

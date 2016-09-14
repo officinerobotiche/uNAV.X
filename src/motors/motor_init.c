@@ -223,13 +223,13 @@ void Motor_Init() {
     /// ENABLE 2
     GPIO_INIT_TYPE(enable[0], B, 3, GPIO_OUTPUT);
 #endif
-    gpio_setup(0, 0b0011, GPIO_ANALOG);                         ///< Open Analog ports
+    gpio_setup(0, 0b1111, GPIO_ANALOG);                         ///< Open Analog ports
     InitPWM();                                                  ///< Open PWM
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
         InitQEI(i);                                             ///< Open QEI
         InitIC(i);                                              ///< Open Input Capture
-        init_motor(i, &enable[i]);                              ///< Initialize variables for motors
+        init_motor(i, &enable[i], (i << 1), (i << 1)+1);        ///< Initialize variables for motors
         update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
         update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
         update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
