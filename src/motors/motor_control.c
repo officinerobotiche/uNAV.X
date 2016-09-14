@@ -400,6 +400,8 @@ void MotorTaskController(int argc, int *argv) {
         } else
             motors[motIdx].counter_alive++;
     }
+    //Measure velocity
+    measureVelocity(motIdx);
     // Update current value;
     motors[motIdx].diagnostic.current = gpio_get_analog(0, motors[motIdx].pin_current);
     // Temp Only for TEST
@@ -441,9 +443,9 @@ int measureVelocity(short motIdx) {
 }
 
 void controller(int argc, int *argv) {
-    
+
     short motIdx = (short) argv[0];
-   // PWM output
+    // PWM output
     Motor_PWM(motIdx, MotorPID(motIdx));
 }
 
@@ -454,8 +456,6 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 }
 
 inline int MotorPID(short motIdx) {
-    //Measure velocity
-    measureVelocity(motIdx);
     // Setpoint
     motors[motIdx].PIDstruct.controlReference =  Q15(((float) motors[motIdx].reference.velocity) / motors[motIdx].constraint.velocity);
     // Measure
