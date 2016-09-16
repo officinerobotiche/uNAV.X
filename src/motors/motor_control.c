@@ -39,10 +39,12 @@
 /**
  * Default value for motor parameters
  */
-#define DEFAULT_VOLT_BRIDGE 12000
+#define DEFAULT_VOLT_BRIDGE 0
 #define DEFAULT_CPR 300
 #define DEFAULT_RATIO 30
-#define DEFAULT_ENC_POSITION MOTOR_GEAR_ENC_BEFORE
+#define DEFAULT_ENC_POSITION MOTOR_ENC_AFTER_GEAR
+#define DEFAULT_ENC_CHANNELS MOTOR_ENC_CHANNEL_TWO
+#define DEFAULT_ENC_Z_INDEX MOTOR_ENC_Z_INDEX_NO
 #define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
 #define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
 /**
@@ -77,6 +79,7 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 /** */
 
 #define NUM_CONTROLLERS 4
+#define DEFAULT_PWM_OFFSET 2048
 
 typedef struct _motor_firmware {
     //Use ONLY in firmware
@@ -87,6 +90,7 @@ typedef struct _motor_firmware {
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
+    int pwm;
     /// event register
     hEvent_t task_manager;
     task_t controllers[NUM_CONTROLLERS];
@@ -128,7 +132,7 @@ void reset_motor_data(motor_t* motor) {
     motor->position = 0;
     motor->velocity = 0;
     motor->torque = 0;
-    motor->volt = 0;
+    motor->pwm = 0;
     motor->state = CONTROL_DISABLE;
 }
 
@@ -177,13 +181,18 @@ void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_)
 
 motor_parameter_t init_motor_parameters() {
     motor_parameter_t parameter;
-    parameter.bridge.volt = DEFAULT_VOLT_BRIDGE;
-    parameter.bridge.enable = DEFAULT_MOTOR_ENABLE;
-    parameter.encoder.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
-    parameter.encoder.position = DEFAULT_ENC_POSITION;
-    parameter.rotation = DEFAULT_VERSUS_ROTATION;
     parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
-
+    parameter.rotation = DEFAULT_VERSUS_ROTATION;
+    parameter.bridge.enable = DEFAULT_MOTOR_ENABLE;
+    parameter.bridge.pwm_dead_zone = 0;
+    parameter.bridge.pwm_frequency = 0;
+    parameter.bridge.volt_gain = DEFAULT_VOLT_BRIDGE;
+    parameter.bridge.current_offset = 0;
+    parameter.bridge.current_gain = 1;
+    parameter.encoder.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
+    parameter.encoder.type.position = DEFAULT_ENC_POSITION;
+    parameter.encoder.type.channels = DEFAULT_ENC_CHANNELS;
+    parameter.encoder.type.z_index = DEFAULT_ENC_Z_INDEX;
     return parameter;
 }
 
@@ -198,7 +207,7 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //    ThC = CPR * RATIO   
     // else
     //    ThC = RATIO
-    if(motors[motIdx].parameter_motor.encoder.position) {
+    if(motors[motIdx].parameter_motor.encoder.type.position) {
         motors[motIdx].angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * ((uint32_t) 1000 * motors[motIdx].parameter_motor.ratio);
     } else {
         motors[motIdx].angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
@@ -225,7 +234,7 @@ motor_t init_motor_constraints() {
     constraint.state = 0;
     constraint.position = -1;
     constraint.torque = -1;
-    constraint.volt = -1;
+    constraint.pwm = -1;
     constraint.velocity = 25000;
     return constraint;
 }
@@ -302,7 +311,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
-    motors[motIdx].measure.volt = motors[motIdx].reference.volt / motors[motIdx].parameter_motor.bridge.volt;
+    //motors[motIdx].measure.pwm = motors[motIdx].reference.volt / motors[motIdx].parameter_motor.bridge.volt;
     motors[motIdx].measure.torque = motors[motIdx].diagnostic.current; //TODO Add a coefficient conversion
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
@@ -402,10 +411,9 @@ void MotorTaskController(int argc, int *argv) {
     }
     //Measure velocity
     measureVelocity(motIdx);
-    // Update current value;
+    // Update current and volt values;
     motors[motIdx].diagnostic.current = gpio_get_analog(0, motors[motIdx].pin_current);
-    // Temp Only for TEST
-    motors[motIdx].diagnostic.temperature = gpio_get_analog(0, motors[motIdx].pin_voltage);
+    motors[motIdx].diagnostic.volt = gpio_get_analog(0, motors[motIdx].pin_voltage);
 }
 
 int measureVelocity(short motIdx) {
@@ -451,8 +459,8 @@ void controller(int argc, int *argv) {
 
 inline void Motor_PWM(short motIdx, int pwm_control) {
    // PWM output
-    motors[motIdx].reference.volt = pwm_control;
-    SetDCMCPWM1(motIdx + 1, pwm_control + 2048, 0);
+    motors[motIdx].pwm = pwm_control;
+    SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
 }
 
 inline int MotorPID(short motIdx) {
