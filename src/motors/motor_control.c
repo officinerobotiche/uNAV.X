@@ -248,9 +248,14 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     motors[motIdx].current.k = (-motors[motIdx].parameter_motor.rotation) * GAIN_KILO * ((float) GAIN_ADC) / motors[motIdx].parameter_motor.bridge.current_gain;
     motors[motIdx].current.offset = ((int)(motors[motIdx].parameter_motor.bridge.current_offset / ((float) GAIN_ADC)));
     // Convert gain volt in [mV]
-    motors[motIdx].volt.k = motors[motIdx].parameter_motor.bridge.volt_gain * GAIN_ADC;
-    motors[motIdx].volt.offset = (int)(motors[motIdx].parameter_motor.bridge.volt_offset / motors[motIdx].volt.k);
-    motors[motIdx].volt.k *= GAIN_KILO;
+    if(motors[motIdx].parameter_motor.bridge.volt_gain == 0) {
+        motors[motIdx].volt.offset = (int)(GAIN_KILO*motors[motIdx].parameter_motor.bridge.volt_offset);
+        motors[motIdx].volt.k = 1;
+    } else {
+        motors[motIdx].volt.k = motors[motIdx].parameter_motor.bridge.volt_gain * GAIN_ADC;
+        motors[motIdx].volt.offset = (int)(motors[motIdx].parameter_motor.bridge.volt_offset / motors[motIdx].volt.k);
+        motors[motIdx].volt.k *= GAIN_KILO;
+    }
 }
 
 motor_t init_motor_constraints() {
