@@ -19,16 +19,7 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>              /* Device header file */
 
 #include <stdint.h>          /* For uint16_t definition                       */
 #include <stdbool.h>         /* For true/false definition                     */
@@ -127,7 +118,7 @@ void HighControl_Init(void) {
     reset_motion();
     
     //Set High level control to run at 100Hz
-    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &MotorTaskController, EVENT_PRIORITY_LOW), 100, 0, NULL);
+    HighControlTask = task_load_data(register_event_p(register_module(&_MODULE_HIGH_CONTROL), &HighLevelTaskController, EVENT_PRIORITY_LOW), 100, 0, NULL);
     task_set(HighControlTask, load_all_task());
 }
 

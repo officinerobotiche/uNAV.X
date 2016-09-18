@@ -19,16 +19,7 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>              /* Device header file */
 
 #include <stdint.h>          /* For uint16_t definition                       */
 #include <stdbool.h>         /* For true/false definition                     */
@@ -56,6 +47,8 @@ hardware_bit_t enable_1 = REGISTER_INIT(LATB, 2);
 hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
 #endif
 
+gpio_t enable[2];
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -75,7 +68,7 @@ void InitPWM(void) {
     unsigned int config1;
     // Holds the value be loaded into PWMCON1 register
     unsigned int config2;
-    // Holds the value to config the special event trigger postscale and dutycycle
+    // Holds the value to config the special event trigger postscale and duty cycle
     unsigned int config3;
     // Config PWM
     period = 2048; // PWM F=19,340Hz counting UP 12bit resolution @ Fcy=39.628 MHz
@@ -99,7 +92,7 @@ void InitPWM(void) {
     P1DTCON2bits.DTS2I = 0;
     // Dead time 100ns = 0.2% of PWM period
     SetMCPWM1DeadTimeGeneration(PWM1_DTA4 & PWM1_DTAPS1);
-    // dutycyclereg=1, dutycycle=50% (motore fermo in LAP mode , updatedisable=0
+    // duty cycle reg=1, duty cycle=50% (motore fermo in LAP mode , update disable=0
     SetDCMCPWM1(1, 2048, 0);
     SetDCMCPWM1(2, 2048, 0);
 
@@ -112,7 +105,7 @@ void InitQEI(short motIdx) {
             //QEI1CONbits.CNTERR= 0; // No position count error has occurred
             QEI1CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
             QEI1CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-            QEI1CONbits.SWPAB = (get_motor_parameters(MOTOR_ZERO).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI1CONbits.SWPAB = (get_motor_parameters(motIdx).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             QEI1CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
             //QEI1CONbits.TQGATE= 0  // Timer gated time accumulation disabled
             //QEI1CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -128,7 +121,7 @@ void InitQEI(short motIdx) {
             //QEI2CONbits.CNTERR= 0; // No position count error has occurred
             QEI2CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
             QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-            QEI2CONbits.SWPAB = (get_motor_parameters(MOTOR_ONE).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI2CONbits.SWPAB = (get_motor_parameters(motIdx).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             QEI2CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
             //QEI2CONbits.TQGATE= 0  // Timer gated time accumulation disabled
             //QEI2CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -189,21 +182,55 @@ void InitTimer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
-void Motor_Init(short motIdx) {
-    /* Open QEI */
-    InitQEI(motIdx);
-    /* Open Input Capture */
-    InitIC(motIdx);
-    /* Initialize variables for motors */
-    switch(motIdx) {
-        case MOTOR_ZERO:
-            init_motor(motIdx, &IC1CON, &enable_1);
-            break;
-        case MOTOR_ONE:
-            init_motor(motIdx, &IC2CON, &enable_2);
-            break;
+void Motor_Init() {
+#ifdef UNAV_V1
+    /// ENABLE 1
+    GPIO_INIT_TYPE(enable[0], A, 7, GPIO_OUTPUT);
+    /// ENABLE 2
+    GPIO_INIT_TYPE(enable[1], A, 10, GPIO_OUTPUT);
+    // Encoders
+    _TRISB10 = 1;
+    _TRISB11 = 1;
+    _TRISB6 = 1;
+    _TRISB5 = 1;
+    _TRISB12 = 0; // PWM1 +
+    _TRISB13 = 0; // PWM1 -
+    _TRISB14 = 0; // PWM2 +
+    _TRISB15 = 0; // PWM2 -
+#elif ROBOCONTROLLER_V3
+    /// ENABLE 1
+    GPIO_INIT_TYPE(enable[0], A, 1, GPIO_OUTPUT);
+    /// ENABLE 2
+    GPIO_INIT_TYPE(enable[1], A, 4, GPIO_OUTPUT);
+    // ADC
+    _TRISB2 = 1; // CH1
+    _TRISB3 = 1; // CH2
+    _TRISC0 = 1; // CH3
+    _TRISC1 = 1; // CH4
+    // Encodes
+    _TRISC6 = 1; // QEA_1
+    _TRISC7 = 1; // QEB_1
+    _TRISC8 = 1; // QEA_2
+    _TRISC9 = 1; // QEB_2
+#elif MOTION_CONTROL
+    /// ENABLE 1
+    GPIO_INIT_TYPE(enable[0], B, 2, GPIO_OUTPUT);
+    /// ENABLE 2
+    GPIO_INIT_TYPE(enable[0], B, 3, GPIO_OUTPUT);
+#endif
+    gpio_setup(0, 0b1111, GPIO_ANALOG);                         ///< Open Analog ports
+    InitPWM();                                                  ///< Open PWM
+    int i;
+    for (i = 0; i < NUM_MOTORS; ++i) {
+        InitQEI(i);                                             ///< Open QEI
+        InitIC(i);                                              ///< Open Input Capture
+        init_motor(i, &enable[i], (i << 1), (i << 1)+1);        ///< Initialize variables for motors
+        update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints());  ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE);              ///< Initialize state controller
     }
-    
 }
 
 void SwitchIcPrescaler(int mode, int motIdx) {

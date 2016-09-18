@@ -19,16 +19,7 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>            /* Device header file */
 
 #include <stdint.h>        /* Includes uint16_t definition   */
 #include <stdbool.h>       /* Includes true/false definition */
@@ -124,7 +115,7 @@ ICdata ICinfo[NUM_MOTORS];
 /* Interrupt Routines                                                         */
 /******************************************************************************/
 
-void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
+void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     unsigned int t1, t2;
     t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
@@ -137,7 +128,7 @@ void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
     IFS0bits.IC1IF = 0;
 }
 
-void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
+void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     unsigned int t1, t2;
     t2 = IC2BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC2BUF;

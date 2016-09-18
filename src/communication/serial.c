@@ -19,16 +19,7 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>                 /* Device header file */
 
 #include <system/events.h>
 
@@ -47,6 +38,7 @@ static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 #define BAUDRATE 115200
 #define BRGVAL   ((FCY/BAUDRATE)/16)-1
 
+peripherals_serial_t serial_config[2];
 // Packet
 packet_t receive;
 /*! Array for DMA UART buffer */
@@ -57,13 +49,13 @@ hEvent_t parseEvent = INVALID_EVENT_HANDLE;
 /* Communication Functions                                                    */
 /******************************************************************************/
 
-void InitUART1(void) {
+void InitUART1(short idx) {
     U1MODEbits.STSEL = 0; // 1-stop bit
-    U1MODEbits.PDSEL = 0; // No Parity, 8-data bits
+    U1MODEbits.PDSEL = serial_config[idx].byte_conf; // No Parity, 8-data bits
     U1MODEbits.ABAUD = 0; // Auto-Baud Disabled
     U1MODEbits.BRGH = 0; // Low Speed mode
 
-    U1BRG = BRGVAL; // BAUD Rate Setting on System.h
+    U1BRG = ((FCY/serial_config[idx].baud)/16)-1; // BAUD Rate Setting on System.h
 
     U1STAbits.UTXISEL0 = 0; // Interrupt after one Tx character is transmitted
     U1STAbits.UTXISEL1 = 0;
@@ -137,7 +129,12 @@ void parse_packet(int argc, int* argv) {
 }
 
 void SerialComm_Init(void) {
-    InitUART1();
+    
+    serial_config[0].number = 0;
+    serial_config[0].baud = BAUDRATE;
+    serial_config[0].byte_conf = 0;
+    
+    InitUART1(0);
     InitDMA1();
     
     orb_message_init(&receive);           ///< Initialize buffer serial error
@@ -146,6 +143,15 @@ void SerialComm_Init(void) {
     hModule_t serial_module = register_module(&_MODULE_SERIAL);
     /// Register event
     parseEvent = register_event_p(serial_module, &parse_packet, EVENT_PRIORITY_LOW);
+}
+
+bool Serial_set(peripherals_serial_t serial) {
+    serial_config[serial.number] = serial;
+    return true;
+}
+
+peripherals_serial_t Serial_get(short idx) {
+    return serial_config[idx];
 }
 
 void serial_send(packet_t packet) {
@@ -169,7 +175,6 @@ unsigned int ReadUART1(void) {
 
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
     IFS0bits.U1RXIF = 0; // clear RX interrupt flag
-
     /* get the data */
     if (U1STAbits.URXDA == 1) {
         if (decode_pkgs(ReadUART1())) {

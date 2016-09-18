@@ -74,8 +74,11 @@ extern "C" {
     /**
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
+     * @param enable GPIO for enable
+     * @param current Analog GPIO for current
+     * @param temperature Analog GPIO for temperature
      */
-    void init_motor(const short motIdx, REGISTER input_capture, hardware_bit_t* enable);
+    void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.
@@ -157,6 +160,12 @@ extern "C" {
      * @return return information about motor
      */
     inline motor_t get_motor_measures(short motIdx);
+    /**
+     * Return information about diagnostic, current, temperature, etc etc.
+     * @param motIdx number of motor
+     * @return return diagnostic information about motor
+     */
+    inline motor_diagnostic_t get_motor_diagnostic(short motIdx);
     /**
      * Return information about motor reference of control.
      * @param motIdx number of motor
@@ -245,11 +254,6 @@ extern "C" {
      * @return start emergency mode or not.
      */
     void Emergency(int argc, int *argv);
-
-    /**
-     * Mean value for current measure motors
-     */
-    inline void adc_motors_current(ADC* AdcBuffer, size_t len);
 
 #ifdef	__cplusplus
 }

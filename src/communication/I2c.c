@@ -39,18 +39,9 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>             /* Device header file */
 
-#include <stdbool.h>       /* Includes true/false definition */
+#include <stdbool.h>        /* Includes true/false definition */
 
 #include <system/events.h>
 #include <peripherals/i2c_controller.h>
@@ -63,9 +54,18 @@
 /******************************************************************************/
 
 #define I2CBRGVAL ( (int)(((1/100e3) - 130E-9) * FCY)-2 ) // 392 // 100 Khz
+
+#ifdef UNAV_V1
 #define I2C_SDA    _LATB9    //  from _RA3, _RA2, mods per Bill P.
 #define I2C_SCL    _LATB8
+#elif ROBOCONTROLLER_V3
+#define I2C_SDA    _LATB9
+#define I2C_SCL    _LATB8
+    _TRISB8 = 0; // SDA = Out : Connettore IC2 pin 6
+    _TRISB9 = 0; // SCL = Out : Connettore IC2 pin 5
+#elif MOTION_CONTROL
 
+#endif
 hardware_bit_t MI2C1IF = REGISTER_INIT(IFS1, 1);
 
 /******************************************************************************/

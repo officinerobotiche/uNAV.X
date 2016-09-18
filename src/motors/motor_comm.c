@@ -19,16 +19,7 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>            /* Device header file */
 
 #include <stdint.h>        /* Includes uint16_t definition   */
 #include <stdbool.h>       /* Includes true/false definition */
@@ -116,6 +107,10 @@ void send_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             break;
         case MOTOR_EMERGENCY:
             send.motor.emergency = get_motor_emergency((short) motor.bitset.motor);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            break;
+        case MOTOR_DIAGNOSTIC:
+            send.motor.diagnostic = get_motor_diagnostic((short) motor.bitset.motor);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:

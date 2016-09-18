@@ -39,6 +39,17 @@ extern "C" {
      * @param packet
      */
     void serial_send(packet_t packet);
+    /**
+     * 
+     * @param serial
+     * @return 
+     */
+    bool Serial_set(peripherals_serial_t serial);
+    /**
+     * 
+     * @return 
+     */
+    peripherals_serial_t Serial_get(short idx);
 
 #ifdef	__cplusplus
 }
