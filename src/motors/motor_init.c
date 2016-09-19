@@ -49,11 +49,21 @@ hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
 
 gpio_t enable[2];
 
+// >>>>> Speed zones in millirad/sec		
+#define MIN1 1600  // about 15 RPM		
+#define MAX1 2600  // about 25 RPM		
+#define MIN2 5500  // about 50 RPM		
+#define MAX2 6500  // about 60 RPM		
+#define MIN3 20000 // about 190 RPM		
+#define MAX3 22000 // about 210 RPM		
+// <<<<< Speed zones in millirad/sec
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
 const int IcMode[4] = {IC_MODE0, IC_MODE1, IC_MODE2, IC_MODE3};
+ICdata ICinfo[NUM_MOTORS];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -222,15 +232,26 @@ void Motor_Init() {
     InitPWM();                                                  ///< Open PWM
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
-        InitQEI(i);                                             ///< Open QEI
-        InitIC(i);                                              ///< Open Input Capture
-        init_motor(i, &enable[i], (i << 1), (i << 1)+1);        ///< Initialize variables for motors
-        update_motor_parameters(i, init_motor_parameters());    ///< Initialize parameters for motors
-        update_motor_pid(i, init_motor_pid());                  ///< Initialize PID controllers
-        update_motor_emergency(i, init_motor_emergency());      ///< Initialize emergency procedure to stop
-        update_motor_constraints(i, init_motor_constraints());  ///< Initialize constraints motor
-        set_motor_state(i, STATE_CONTROL_DISABLE);              ///< Initialize state controller
+        // Init Input Capture
+        //InitICinfo(i);
+        // End
+        InitQEI(i);                                                 ///< Open QEI
+        InitIC(i);                                                  ///< Open Input Capture
+        init_motor(i, &enable[i], &ICinfo[i], (i << 1), (i << 1)+1);   ///< Initialize variables for motors
+        update_motor_parameters(i, init_motor_parameters());        ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());                      ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency());          ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints());      ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE);                  ///< Initialize state controller
     }
+}
+
+void InitICinfo(int motIdx) {
+    //Input capture information
+    ICinfo[motIdx].k_mul = 1;
+    ICinfo[motIdx].SIG_VEL = 0;
+    ICinfo[motIdx].overTmr = 0;
+    ICinfo[motIdx].timePeriod = 0;
 }
 
 void SwitchIcPrescaler(int mode, int motIdx) {
@@ -246,3 +267,48 @@ void SwitchIcPrescaler(int mode, int motIdx) {
     }
 }
 
+void SelectIcPrescaler(int motIdx, motor_control_t abs_vel) {
+
+    // Take the first 3 BITS (Input Capture Mode Select bits)
+    unsigned int icm = 0;//((unsigned int) motors[motIdx].icm) & 7;
+    switch (icm) {
+        case IC_MODE0:
+            if (abs_vel >= MAX1) {
+                ICinfo[motIdx].k_mul = 2;
+                SwitchIcPrescaler(1, motIdx);
+            }
+            break;
+
+        case IC_MODE1:
+            if (abs_vel < MIN1) {
+                ICinfo[motIdx].k_mul = 1;
+                SwitchIcPrescaler(0, motIdx);
+            } else if (abs_vel >= MAX2) {
+                ICinfo[motIdx].k_mul = 8;
+                SwitchIcPrescaler(2, motIdx);
+            }
+            break;
+
+        case IC_MODE2:
+            if (abs_vel < MIN2) {
+                ICinfo[motIdx].k_mul = 2;
+                SwitchIcPrescaler(1, motIdx);
+            } else if (abs_vel >= MAX3) {
+                ICinfo[motIdx].k_mul = 32;
+                SwitchIcPrescaler(3, motIdx);
+            }
+            break;
+
+        case IC_MODE3:
+            if (abs_vel < MIN3) {
+                ICinfo[motIdx].k_mul = 8;
+                SwitchIcPrescaler(2, motIdx);
+            }
+            break;
+
+        default:
+            ICinfo[motIdx].k_mul = 1;
+            SwitchIcPrescaler(0, motIdx);
+            break;
+    }
+}

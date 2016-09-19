@@ -62,9 +62,10 @@ extern "C" {
     } enum_state_t;
     
     typedef struct _ICdata {
-        volatile unsigned int overTmr; //Overflow timer
-        volatile unsigned long timePeriod; //Time period from Input Capture
-        volatile int SIG_VEL; //Sign of versus rotation motor
+        volatile unsigned int k_mul;        // k_vel multiplier according to IC scale
+        volatile unsigned int overTmr;      //Overflow timer
+        volatile unsigned long timePeriod;  //Time period from Input Capture
+        volatile int SIG_VEL;               //Sign of versus rotation motor
     } ICdata;
 
     /******************************************************************************/
@@ -74,11 +75,12 @@ extern "C" {
     /**
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
-     * @param enable GPIO for enable
-     * @param current Analog GPIO for current
-     * @param temperature Analog GPIO for temperature
+     * @param enable_ GPIO for enable
+     * @param ICinfo_ Input capture information
+     * @param current_ Analog pin number for current
+     * @param voltage_ Analog pin number for temperature
      */
-    void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_);
+    void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.
@@ -210,13 +212,6 @@ extern "C" {
      * @return Time to Compute task control reference
      */
     void MotorTaskController(int argc, int *argv);
-    
-     /**
-     * Select the correct Input Capture prescaler		
-     * @param motIdx number motor		
-     * @param vel absolute velocity		
-     */		
-    void SelectIcPrescaler(int motIdx, motor_control_t abs_vel);
 
     /**
      * Measure velocity from Input Capture and QEI

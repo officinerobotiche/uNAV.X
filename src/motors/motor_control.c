@@ -32,7 +32,6 @@
 #include <or_math/math.h>
 
 #include "high_control/manager.h"
-#include "motors/motor_init.h"
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
 
 #include "system/system.h"
@@ -95,10 +94,9 @@ typedef struct _analog_convert {
 
 typedef struct _motor_firmware {
     //Use ONLY in firmware
-    //ICdata ICinfo; //Information for Input Capture
+    ICdata* ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
     int pin_current, pin_voltage;
-    uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
@@ -134,19 +132,6 @@ typedef struct _motor_firmware {
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
 
-/**/
-// From interrupt
-extern ICdata ICinfo[NUM_MOTORS];
-
-// >>>>> Speed zones in millirad/sec		
-#define MIN1 1600  // about 15 RPM		
-#define MAX1 2600  // about 25 RPM		
-#define MIN2 5500  // about 50 RPM		
-#define MAX2 6500  // about 60 RPM		
-#define MIN3 20000 // about 190 RPM		
-#define MAX3 22000 // about 210 RPM		
-// <<<<< Speed zones in millirad/sec
-
 /*****************************************************************************/
 /* User Functions                                                            */
 /*****************************************************************************/
@@ -168,17 +153,15 @@ void init_controllers(task_t* controllers) {
     }
 }
 
-void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_) {
+void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     init_controllers(motors[motIdx].controllers);
     //Setup diagnostic
     motors[motIdx].diagnostic.current = 0;
     motors[motIdx].diagnostic.temperature = 0;
-    //Input capture information
-    ICinfo[motIdx].SIG_VEL = 0;
-    ICinfo[motIdx].overTmr = 0;
-    ICinfo[motIdx].timePeriod = 0;
+    // Register input capture
+    motors[motIdx].ICinfo = ICinfo_;
     // Initialization direction of rotation
     motors[motIdx].rotation = 1;
     /// Setup bit enable
@@ -187,8 +170,6 @@ void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_)
     /// Setup ADC current and temperature
     motors[motIdx].pin_current = current_;
     motors[motIdx].pin_voltage = voltage_;
-    
-    motors[motIdx].k_mul = 1;
     
     /// Register event and add in task controller - Working at 1KHz
     motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 
@@ -461,69 +442,21 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
 }
 
-void SelectIcPrescaler(int motIdx, motor_control_t abs_vel) {
-
-    // Take the first 3 BITS (Input Capture Mode Select bits)
-    unsigned int icm = 0;//((unsigned int) motors[motIdx].icm) & 7;
-    switch (icm) {
-        case IC_MODE0:
-            if (abs_vel >= MAX1) {
-                motors[motIdx].k_mul = 2;
-                SwitchIcPrescaler(1, motIdx);
-            }
-            break;
-
-        case IC_MODE1:
-            if (abs_vel < MIN1) {
-                motors[motIdx].k_mul = 1;
-                SwitchIcPrescaler(0, motIdx);
-            } else if (abs_vel >= MAX2) {
-                motors[motIdx].k_mul = 8;
-                SwitchIcPrescaler(2, motIdx);
-            }
-            break;
-
-        case IC_MODE2:
-            if (abs_vel < MIN2) {
-                motors[motIdx].k_mul = 2;
-                SwitchIcPrescaler(1, motIdx);
-            } else if (abs_vel >= MAX3) {
-                motors[motIdx].k_mul = 32;
-                SwitchIcPrescaler(3, motIdx);
-            }
-            break;
-
-        case IC_MODE3:
-            if (abs_vel < MIN3) {
-                motors[motIdx].k_mul = 8;
-                SwitchIcPrescaler(2, motIdx);
-            }
-            break;
-
-        default:
-            motors[motIdx].k_mul = 1;
-            SwitchIcPrescaler(0, motIdx);
-            break;
-    }
-}
-
 int measureVelocity(short motIdx) {
     unsigned int t = TMR1; // Timing function
     unsigned long timePeriodtmp;
     int SIG_VELtmp;
     motors[motIdx].measure.velocity = 0;
-    timePeriodtmp = ICinfo[motIdx].timePeriod;
-    ICinfo[motIdx].timePeriod = 0;
-    SIG_VELtmp = ICinfo[motIdx].SIG_VEL;
-    ICinfo[motIdx].SIG_VEL = 0;
+    timePeriodtmp = motors[motIdx].ICinfo->timePeriod;
+    motors[motIdx].ICinfo->timePeriod = 0;
+    SIG_VELtmp = motors[motIdx].ICinfo->SIG_VEL;
+    motors[motIdx].ICinfo->SIG_VEL = 0;
     // Evaluate velocity
     if (SIG_VELtmp) {
         motors[motIdx].rotation = ((SIG_VELtmp >= 0) ? 1 : -1);
         int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
         motors[motIdx].measure.velocity = vel;
     }
-    // Set Input Capture Pre scaler
-    SelectIcPrescaler(motIdx, motors[motIdx].measure.velocity * SIG_VELtmp);
 
     //Evaluate position
     switch (motIdx) {
