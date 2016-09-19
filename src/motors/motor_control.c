@@ -267,9 +267,9 @@ inline motor_t get_motor_constraints(short motIdx) {
     return motors[motIdx].constraint;
 }
 
-void update_motor_constraints(short motIdx, motor_t contraints) {
+void update_motor_constraints(short motIdx, motor_t constraints) {
     //Update parameter constraints
-    motors[motIdx].constraint = contraints;
+    motors[motIdx].constraint = constraints;
 }
 
 motor_pid_t init_motor_pid() {
@@ -453,13 +453,14 @@ void measureVelocity(short motIdx) {
     // Store value
     temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
     motors[motIdx].ICinfo->timePeriod = 0;
+    motors[motIdx].ICinfo->overTmr = 0;
     temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
     motors[motIdx].ICinfo->SIG_VEL = 0;
     temp.k_mul = motors[motIdx].ICinfo->k_mul;
     // Evaluate velocity
     if (temp.SIG_VEL) {
         motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
-        int16_t vel = temp.SIG_VEL * (temp.k_mul * motors[motIdx].k_vel / temp.timePeriod);
+        int16_t vel = temp.SIG_VEL * temp.k_mul * ( motors[motIdx].k_vel / temp.timePeriod );
         motors[motIdx].measure.velocity = vel;
     }
 

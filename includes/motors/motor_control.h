@@ -66,7 +66,7 @@ extern "C" {
         volatile unsigned int overTmr;      //Overflow timer
         volatile unsigned long timePeriod;  //Time period from Input Capture
         volatile int SIG_VEL;               //Sign of versus rotation motor
-        volatile unsigned short mode;       //Mode of Input Capture
+        volatile unsigned short number;       //Mode of Input Capture
     } ICdata;
 
     /******************************************************************************/

@@ -49,17 +49,16 @@ extern "C" {
     
     /**
      * Select the correct Input Capture prescaler		
-     * @param motIdx number motor		
-     * @param timePeriod Time period		
+     * @param motIdx number motor				
      */		
-    inline void SelectIcPrescaler(int motIdx, unsigned long timePeriod);
+    inline void SelectIcPrescaler(int motIdx);
     
     /** 
      * Safely switch to the new Input Capture prescaler
-     * @param mode
      * @param motIdx number motor
+     * @param mode
      */
-    inline void SwitchIcPrescaler(int mode, int motIdx);
+    inline void SwitchIcPrescaler(int motIdx, int mode);
 
 
 #ifdef	__cplusplus

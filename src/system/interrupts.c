@@ -130,7 +130,7 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     /// ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
     
     /// Dynamic change the Prescaler
-    SelectIcPrescaler(MOTOR_ZERO, ICinfo[MOTOR_ZERO].timePeriod);
+    SelectIcPrescaler(MOTOR_ZERO);
     
     IFS0bits.IC1IF = 0;
 }
@@ -149,7 +149,7 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     /// ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
     
     /// Dynamic change the Prescaler
-    SelectIcPrescaler(MOTOR_ONE, ICinfo[MOTOR_ONE].timePeriod);
+    SelectIcPrescaler(MOTOR_ONE);
     
     IFS0bits.IC2IF = 0;
 }

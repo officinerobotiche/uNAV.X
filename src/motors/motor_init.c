@@ -33,26 +33,23 @@
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
-// Dynamic Interrupt Capture
-#define IC_MODE0    0b001 // 2X mode (default)
-#define IC_MODE1    0b011 // 1X mode
-#define IC_MODE2    0b100 // 1/4X mode
-#define IC_MODE3    0b101 // 1/16X mode
-#define IC_DISABLE  0b000
-
 typedef struct _icMode {
     short mode;
     short k;
 } ICMode_t;
 
+// Dynamic Interrupt Capture
 const ICMode_t ICMode[4] = {
-    {IC_MODE0, 1},
-    {IC_MODE1, 2},
-    {IC_MODE2, 8},
-    {IC_MODE3, 32}
+    {0b001, 1}, // 2X mode (default)
+    {0b011, 2}, // 1X mode
+    {0b100, 8}, // 1/4X mode
+    {0b101, 32} // 1/16X mode
 };
+#define IC_DISABLE  0b000
 
-//const int IcMode[4] = {IC_MODE0, IC_MODE1, IC_MODE2, IC_MODE3};
+#define ICMODE_DEFAULT 0
+#define IC_TIMEPERIOD_TH_MAX 8192
+#define IC_TIMEPERIOD_TH_MIN 1024
 
 ICdata ICinfo[NUM_MOTORS];
 gpio_t enable[NUM_MOTORS];
@@ -144,8 +141,8 @@ void InitIC(short motIdx) {
             // Initialize Capture Module
             IC1CONbits.ICM = IC_DISABLE; // Disable Input Capture 1 module
             IC1CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
-            IC1CONbits.ICI = 0b01; // Interrupt on every second capture event
-            IC1CONbits.ICM = ICMode[0].mode; // Generate capture event on every Rising edge
+            IC1CONbits.ICI = 0b00; // Interrupt on every second capture event
+            IC1CONbits.ICM = ICMode[ICMODE_DEFAULT].mode; // Generate capture event on every Rising edge
 
             // Enable Capture Interrupt And Timer2
             IPC0bits.IC1IP = INPUT_CAPTURE_LEVEL; // Setup IC1 interrupt priority level
@@ -156,8 +153,8 @@ void InitIC(short motIdx) {
             // Initialize Capture Module
             IC2CONbits.ICM = IC_DISABLE; // Disable Input Capture 2 module
             IC2CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
-            IC2CONbits.ICI = 0b01; // Interrupt on every second capture event
-            IC2CONbits.ICM = ICMode[0].mode; // Generate capture event on every Rising edge
+            IC2CONbits.ICI = 0b00; // Interrupt on every second capture event
+            IC2CONbits.ICM = ICMode[ICMODE_DEFAULT].mode; // Generate capture event on every Rising edge
 
             // Enable Capture Interrupt And Timer2
             IPC1bits.IC2IP = INPUT_CAPTURE_LEVEL; // Setup IC2 interrupt priority level
@@ -186,11 +183,11 @@ void InitTimer2(void) {
 
 void InitICinfo(int motIdx) {
     //Input capture information
-    ICinfo[motIdx].k_mul = 1;
+    ICinfo[motIdx].k_mul = ICMode[ICMODE_DEFAULT].k;
+    ICinfo[motIdx].number = ICMODE_DEFAULT;
     ICinfo[motIdx].SIG_VEL = 0;
     ICinfo[motIdx].overTmr = 0;
     ICinfo[motIdx].timePeriod = 0;
-    ICinfo[motIdx].mode = 0;
 }
 
 void Motor_Init() {
@@ -247,7 +244,7 @@ void Motor_Init() {
     }
 }
 
-inline void SwitchIcPrescaler(int mode, int motIdx) {
+inline void SwitchIcPrescaler(int motIdx, int mode) {
     // here is the assignment of the ICx module to the correct motor
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -261,18 +258,27 @@ inline void SwitchIcPrescaler(int mode, int motIdx) {
     }
 }
 
-inline void SelectIcPrescaler(int motIdx, unsigned long timePeriod) {
-    int mode = ICinfo[motIdx].mode;
-    
-    if(timePeriod < 32) {
-        if(ICinfo[motIdx].mode > 0) {
-            ICinfo[motIdx].k_mul = ICMode[mode - 1].k;
-            SwitchIcPrescaler(ICinfo[motIdx].mode - 1, motIdx);
+inline void SelectIcPrescaler(int motIdx) {
+    /** 
+     * V = Kvel / timePeriod
+     * is equal to:
+     * timePeriod = Kvel / V = # Adimensional value
+     * 
+     * V -> inf , timePeriod -> 0   , ICmode -> 3 decrease pulses
+     * V -> 0   , timePeriod -> inf , ICmode -> 0 increase pulses
+     * 
+     */
+    if(ICinfo[motIdx].timePeriod > IC_TIMEPERIOD_TH_MAX) {
+        if(ICinfo[motIdx].number > 0) {
+            ICinfo[motIdx].number--;
+            ICinfo[motIdx].k_mul = ICMode[ICinfo[motIdx].number].k;
+            SwitchIcPrescaler(ICinfo[motIdx].number, motIdx);
         }
-    } else if(timePeriod > 4096) {
-        if(ICinfo[motIdx].mode < 3) {
-            ICinfo[motIdx].k_mul = ICMode[mode + 1].k;
-            SwitchIcPrescaler(ICinfo[motIdx].mode + 1, motIdx);
+    } else if(ICinfo[motIdx].timePeriod < IC_TIMEPERIOD_TH_MIN) {
+        if(ICinfo[motIdx].number < 3) {
+            ICinfo[motIdx].number++;
+            ICinfo[motIdx].k_mul = ICMode[ICinfo[motIdx].number].k;
+            SwitchIcPrescaler(ICinfo[motIdx].number, motIdx);
         }
     }
 }
