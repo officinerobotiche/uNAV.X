@@ -446,19 +446,20 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
 }
 
-int measureVelocity(short motIdx) {
-    unsigned int t = TMR1; // Timing function
-    unsigned long timePeriodtmp;
-    int SIG_VELtmp;
+void measureVelocity(short motIdx) {
+    ICdata temp;
+    // Reset velocity
     motors[motIdx].measure.velocity = 0;
-    timePeriodtmp = motors[motIdx].ICinfo->timePeriod;
+    // Store value
+    temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
     motors[motIdx].ICinfo->timePeriod = 0;
-    SIG_VELtmp = motors[motIdx].ICinfo->SIG_VEL;
+    temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
     motors[motIdx].ICinfo->SIG_VEL = 0;
+    temp.k_mul = motors[motIdx].ICinfo->k_mul;
     // Evaluate velocity
-    if (SIG_VELtmp) {
-        motors[motIdx].rotation = ((SIG_VELtmp >= 0) ? 1 : -1);
-        int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
+    if (temp.SIG_VEL) {
+        motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
+        int16_t vel = temp.SIG_VEL * (temp.k_mul * motors[motIdx].k_vel / temp.timePeriod);
         motors[motIdx].measure.velocity = vel;
     }
 
@@ -479,7 +480,6 @@ int measureVelocity(short motIdx) {
     if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;
     }
-    return TMR1 - t; // Time of execution
 }
 
 void controller(int argc, int *argv) {

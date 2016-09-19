@@ -30,40 +30,32 @@
 #include "motors/motor_control.h"
 #include "motors/motor_init.h"
 
-#ifdef UNAV_V1
-/// ENABLE 1
-hardware_bit_t enable_1 = REGISTER_INIT(LATA, 7);
-/// ENABLE 2
-hardware_bit_t enable_2 = REGISTER_INIT(LATA, 10);
-#elif ROBOCONTROLLER_V3
-/// ENABLE 1
-hardware_bit_t enable_1 = REGISTER_INIT(LATA, 1);
-/// ENABLE 2
-hardware_bit_t enable_2 = REGISTER_INIT(LATA, 4);
-#elif MOTION_CONTROL
-/// ENABLE 1
-hardware_bit_t enable_1 = REGISTER_INIT(LATB, 2);
-/// ENABLE 2
-hardware_bit_t enable_2 = REGISTER_INIT(LATB, 3);
-#endif
-
-gpio_t enable[2];
-
-// >>>>> Speed zones in millirad/sec		
-#define MIN1 1600  // about 15 RPM		
-#define MAX1 2600  // about 25 RPM		
-#define MIN2 5500  // about 50 RPM		
-#define MAX2 6500  // about 60 RPM		
-#define MIN3 20000 // about 190 RPM		
-#define MAX3 22000 // about 210 RPM		
-// <<<<< Speed zones in millirad/sec
-
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
+// Dynamic Interrupt Capture
+#define IC_MODE0    0b001 // 2X mode (default)
+#define IC_MODE1    0b011 // 1X mode
+#define IC_MODE2    0b100 // 1/4X mode
+#define IC_MODE3    0b101 // 1/16X mode
+#define IC_DISABLE  0b000
 
-const int IcMode[4] = {IC_MODE0, IC_MODE1, IC_MODE2, IC_MODE3};
+typedef struct _icMode {
+    short mode;
+    short k;
+} ICMode_t;
+
+const ICMode_t ICMode[4] = {
+    {IC_MODE0, 1},
+    {IC_MODE1, 2},
+    {IC_MODE2, 8},
+    {IC_MODE3, 32}
+};
+
+//const int IcMode[4] = {IC_MODE0, IC_MODE1, IC_MODE2, IC_MODE3};
+
 ICdata ICinfo[NUM_MOTORS];
+gpio_t enable[NUM_MOTORS];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -153,7 +145,7 @@ void InitIC(short motIdx) {
             IC1CONbits.ICM = IC_DISABLE; // Disable Input Capture 1 module
             IC1CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
             IC1CONbits.ICI = 0b01; // Interrupt on every second capture event
-            IC1CONbits.ICM = IcMode[0]; // Generate capture event on every Rising edge
+            IC1CONbits.ICM = ICMode[0].mode; // Generate capture event on every Rising edge
 
             // Enable Capture Interrupt And Timer2
             IPC0bits.IC1IP = INPUT_CAPTURE_LEVEL; // Setup IC1 interrupt priority level
@@ -165,7 +157,7 @@ void InitIC(short motIdx) {
             IC2CONbits.ICM = IC_DISABLE; // Disable Input Capture 2 module
             IC2CONbits.ICTMR = 1; // Select Timer2 as the IC1 Time base
             IC2CONbits.ICI = 0b01; // Interrupt on every second capture event
-            IC2CONbits.ICM = IcMode[0]; // Generate capture event on every Rising edge
+            IC2CONbits.ICM = ICMode[0].mode; // Generate capture event on every Rising edge
 
             // Enable Capture Interrupt And Timer2
             IPC1bits.IC2IP = INPUT_CAPTURE_LEVEL; // Setup IC2 interrupt priority level
@@ -190,6 +182,15 @@ void InitTimer2(void) {
     IEC0bits.T2IE = 1; // Enable Timer1 interrupt
 
     T2CONbits.TON = 1; // Start Timer
+}
+
+void InitICinfo(int motIdx) {
+    //Input capture information
+    ICinfo[motIdx].k_mul = 1;
+    ICinfo[motIdx].SIG_VEL = 0;
+    ICinfo[motIdx].overTmr = 0;
+    ICinfo[motIdx].timePeriod = 0;
+    ICinfo[motIdx].mode = 0;
 }
 
 void Motor_Init() {
@@ -233,82 +234,45 @@ void Motor_Init() {
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
         // Init Input Capture
-        //InitICinfo(i);
+        InitICinfo(i);
         // End
-        InitQEI(i);                                                 ///< Open QEI
-        InitIC(i);                                                  ///< Open Input Capture
-        init_motor(i, &enable[i], &ICinfo[i], (i << 1), (i << 1)+1);   ///< Initialize variables for motors
-        update_motor_parameters(i, init_motor_parameters());        ///< Initialize parameters for motors
-        update_motor_pid(i, init_motor_pid());                      ///< Initialize PID controllers
-        update_motor_emergency(i, init_motor_emergency());          ///< Initialize emergency procedure to stop
-        update_motor_constraints(i, init_motor_constraints());      ///< Initialize constraints motor
-        set_motor_state(i, STATE_CONTROL_DISABLE);                  ///< Initialize state controller
+        InitQEI(i);                                                     ///< Open QEI
+        InitIC(i);                                                      ///< Open Input Capture
+        init_motor(i, &enable[i], &ICinfo[i], (i << 1), (i << 1)+1);    ///< Initialize variables for motors
+        update_motor_parameters(i, init_motor_parameters());            ///< Initialize parameters for motors
+        update_motor_pid(i, init_motor_pid());                          ///< Initialize PID controllers
+        update_motor_emergency(i, init_motor_emergency());              ///< Initialize emergency procedure to stop
+        update_motor_constraints(i, init_motor_constraints());          ///< Initialize constraints motor
+        set_motor_state(i, STATE_CONTROL_DISABLE);                      ///< Initialize state controller
     }
 }
 
-void InitICinfo(int motIdx) {
-    //Input capture information
-    ICinfo[motIdx].k_mul = 1;
-    ICinfo[motIdx].SIG_VEL = 0;
-    ICinfo[motIdx].overTmr = 0;
-    ICinfo[motIdx].timePeriod = 0;
-}
-
-void SwitchIcPrescaler(int mode, int motIdx) {
-    // here is the assignment of the ICx module to the correct wheel
-    if (motIdx == 0) {
-        IC1CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC1CONbits.ICM = IcMode[mode];
-        _IC1IF = 0; // interrupt flag reset
-    } else {
-        IC2CONbits.ICM = IC_DISABLE; // turn off prescaler
-        IC2CONbits.ICM = IcMode[mode];
-        _IC2IF = 0; // interrupt flag reset
+inline void SwitchIcPrescaler(int mode, int motIdx) {
+    // here is the assignment of the ICx module to the correct motor
+    switch (motIdx) {
+        case MOTOR_ZERO:
+            IC1CONbits.ICM = IC_DISABLE;    // turn off prescaler
+            IC1CONbits.ICM = ICMode[mode].mode;  // Set new value for the Input Capture
+            break;
+        case MOTOR_ONE:
+            IC2CONbits.ICM = IC_DISABLE;         // turn off prescaler
+            IC2CONbits.ICM = ICMode[mode].mode;  // Set new value for the Input Capture
+            break;
     }
 }
 
-void SelectIcPrescaler(int motIdx, motor_control_t abs_vel) {
-
-    // Take the first 3 BITS (Input Capture Mode Select bits)
-    unsigned int icm = 0;//((unsigned int) motors[motIdx].icm) & 7;
-    switch (icm) {
-        case IC_MODE0:
-            if (abs_vel >= MAX1) {
-                ICinfo[motIdx].k_mul = 2;
-                SwitchIcPrescaler(1, motIdx);
-            }
-            break;
-
-        case IC_MODE1:
-            if (abs_vel < MIN1) {
-                ICinfo[motIdx].k_mul = 1;
-                SwitchIcPrescaler(0, motIdx);
-            } else if (abs_vel >= MAX2) {
-                ICinfo[motIdx].k_mul = 8;
-                SwitchIcPrescaler(2, motIdx);
-            }
-            break;
-
-        case IC_MODE2:
-            if (abs_vel < MIN2) {
-                ICinfo[motIdx].k_mul = 2;
-                SwitchIcPrescaler(1, motIdx);
-            } else if (abs_vel >= MAX3) {
-                ICinfo[motIdx].k_mul = 32;
-                SwitchIcPrescaler(3, motIdx);
-            }
-            break;
-
-        case IC_MODE3:
-            if (abs_vel < MIN3) {
-                ICinfo[motIdx].k_mul = 8;
-                SwitchIcPrescaler(2, motIdx);
-            }
-            break;
-
-        default:
-            ICinfo[motIdx].k_mul = 1;
-            SwitchIcPrescaler(0, motIdx);
-            break;
+inline void SelectIcPrescaler(int motIdx, unsigned long timePeriod) {
+    int mode = ICinfo[motIdx].mode;
+    
+    if(timePeriod < 32) {
+        if(ICinfo[motIdx].mode > 0) {
+            ICinfo[motIdx].k_mul = ICMode[mode - 1].k;
+            SwitchIcPrescaler(ICinfo[motIdx].mode - 1, motIdx);
+        }
+    } else if(timePeriod > 4096) {
+        if(ICinfo[motIdx].mode < 3) {
+            ICinfo[motIdx].k_mul = ICMode[mode + 1].k;
+            SwitchIcPrescaler(ICinfo[motIdx].mode + 1, motIdx);
+        }
     }
 }

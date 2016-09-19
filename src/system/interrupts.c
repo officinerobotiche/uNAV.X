@@ -30,7 +30,7 @@
 #include <serial/or_frame.h>
 #include "communication/serial.h"
 
-#include "motors/motor_control.h"
+#include "motors/motor_init.h"
 #include "high_control/manager.h"
 
 /******************************************************************************/
@@ -120,11 +120,18 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
     t1 = IC1BUF;
 
-    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    /// PR2 is 0xFFFF
+    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1;
     ICinfo[MOTOR_ZERO].overTmr = 0;
 
-    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); //Save sign Vel motor 0
-//    ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+    /// Save sign Vel motor 0
+    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); 
+    /// Old type to select the velocity sign
+    /// ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+    
+    /// Dynamic change the Prescaler
+    SelectIcPrescaler(MOTOR_ZERO, ICinfo[MOTOR_ZERO].timePeriod);
+    
     IFS0bits.IC1IF = 0;
 }
 
@@ -136,8 +143,14 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
     ICinfo[MOTOR_ONE].overTmr = 0;
     
-    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); //Save sign Vel motor 1
-//    ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    /// Save sign Vel motor 1
+    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); 
+    /// Old type to select the velocity sign
+    /// ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    
+    /// Dynamic change the Prescaler
+    SelectIcPrescaler(MOTOR_ONE, ICinfo[MOTOR_ONE].timePeriod);
+    
     IFS0bits.IC2IF = 0;
 }
 

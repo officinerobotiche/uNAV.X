@@ -22,13 +22,6 @@
 extern "C" {
 #endif
 
-    // Dynamic Interrupt Capture
-#define IC_MODE0    0b001 // 2X mode (default)
-#define IC_MODE1    0b011 // 1X mode
-#define IC_MODE2    0b100 // 1/4X mode
-#define IC_MODE3    0b101 // 1/16X mode
-#define IC_DISABLE  0b000
-    
     /** 
      * Initialization PWM for all motors
      */
@@ -57,16 +50,16 @@ extern "C" {
     /**
      * Select the correct Input Capture prescaler		
      * @param motIdx number motor		
-     * @param vel absolute velocity		
+     * @param timePeriod Time period		
      */		
-    void SelectIcPrescaler(int motIdx, motor_control_t abs_vel);
+    inline void SelectIcPrescaler(int motIdx, unsigned long timePeriod);
     
     /** 
      * Safely switch to the new Input Capture prescaler
      * @param mode
      * @param motIdx number motor
      */
-    void SwitchIcPrescaler(int mode, int motIdx);
+    inline void SwitchIcPrescaler(int mode, int motIdx);
 
 
 #ifdef	__cplusplus

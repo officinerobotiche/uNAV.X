@@ -66,6 +66,7 @@ extern "C" {
         volatile unsigned int overTmr;      //Overflow timer
         volatile unsigned long timePeriod;  //Time period from Input Capture
         volatile int SIG_VEL;               //Sign of versus rotation motor
+        volatile unsigned short mode;       //Mode of Input Capture
     } ICdata;
 
     /******************************************************************************/
@@ -209,16 +210,14 @@ extern "C" {
      *  - Position control (move to desired angle)
      *  - Velocity control (move to desired angular velocity)
      *  - Torque control (move to desired torque)
-     * @return Time to Compute task control reference
      */
     void MotorTaskController(int argc, int *argv);
 
     /**
      * Measure velocity from Input Capture and QEI
      * @param motIdx Number motor
-     * @return Time to Compute task control reference
      */
-    int measureVelocity(short motIdx);
+    void measureVelocity(short motIdx);
     
     inline void Motor_PWM(short motIdx, int pwm_control);
     
