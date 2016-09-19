@@ -105,6 +105,7 @@ typedef struct _motor_firmware {
     hEvent_t task_manager;
     task_t controllers[NUM_CONTROLLERS];
     /// Motor position
+    uint32_t angle_limit;
     uint32_t angle_ratio;
     volatile int PulsEnc;
     volatile int32_t enc_angle;
@@ -221,6 +222,8 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     } else {
         motors[motIdx].angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
     }
+    // Evaluate angle limit
+    motors[motIdx].angle_limit = (motors[motIdx].angle_ratio * 4) / 1000;
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
     motors[motIdx].k_vel = (float) 1000000.0f * FRTMR2 * 2 * PI / (motors[motIdx].angle_ratio * 2);
@@ -332,7 +335,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
-    //motors[motIdx].measure.pwm = motors[motIdx].reference.volt / motors[motIdx].parameter_motor.bridge.volt;
+    motors[motIdx].measure.pwm = motors[motIdx].pwm;
     motors[motIdx].measure.torque = motors[motIdx].diagnostic.current; //TODO Add a coefficient conversion
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
@@ -351,6 +354,7 @@ inline motor_t get_motor_reference(short motIdx) {
 }
              
 inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
+    motors[motIdx].enc_angle = (int)(((float)motors[motIdx].k_ang) / ((float)motors[motIdx].enc_angle));
     motors[motIdx].measure.position = (float) value;  
 }
              
@@ -472,7 +476,7 @@ int measureVelocity(short motIdx) {
             break;
     }
     // Evaluate angle position
-    if (abs(motors[motIdx].enc_angle) > motors[motIdx].angle_ratio) {
+    if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;
     }
     return TMR1 - t; // Time of execution
@@ -482,12 +486,13 @@ void controller(int argc, int *argv) {
 
     short motIdx = (short) argv[0];
     // PWM output
-    Motor_PWM(motIdx, MotorPID(motIdx));
+    motors[motIdx].pwm = MotorPID(motIdx);
+    Motor_PWM(motIdx, motors[motIdx].pwm);
 }
 
 inline void Motor_PWM(short motIdx, int pwm_control) {
-   // PWM output
-    motors[motIdx].pwm = pwm_control;
+    // PWM output
+    pwm_control = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
     SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
 }
 
@@ -499,7 +504,7 @@ inline int MotorPID(short motIdx) {
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Control value calculation
-    return motors[motIdx].parameter_motor.rotation * (motors[motIdx].PIDstruct.controlOutput >> 4);
+    return motors[motIdx].PIDstruct.controlOutput;
 }
 
 void Emergency(int argc, int *argv) {
