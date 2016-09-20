@@ -452,10 +452,12 @@ void MotorTaskController(int argc, int *argv) {
 
 void measureVelocity(short motIdx) {
     ICdata temp;
+    int QEICNTtmp;
+    int64_t vel_qei;
+    int32_t Veltmp = 0;
     // Store value
     temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
     motors[motIdx].ICinfo->timePeriod = 0;
-    motors[motIdx].ICinfo->overTmr = 0;
     temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
     motors[motIdx].ICinfo->SIG_VEL = 0;
     temp.k_mul = motors[motIdx].ICinfo->k_mul;
@@ -463,25 +465,29 @@ void measureVelocity(short motIdx) {
     if (temp.SIG_VEL) {
         motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
         float temp_f = ((float) temp.k_mul) * motors[motIdx].k_vel ;
-        int32_t vel = ((int32_t) temp.SIG_VEL) * ( temp_f / temp.timePeriod );
-        motors[motIdx].measure.velocity = (int16_t) update_statistic(&motors[motIdx].mean_vel, vel);
-    } else {
-        motors[motIdx].measure.velocity = (int16_t) update_statistic(&motors[motIdx].mean_vel, 0);
+        Veltmp = ((int32_t) temp.SIG_VEL) * ( temp_f / temp.timePeriod );
     }
-    
     //Evaluate position
     switch (motIdx) {
         case MOTOR_ZERO:
-            motors[motIdx].PulsEnc += (int) POS1CNT;
-            motors[motIdx].enc_angle += (int) POS1CNT;
+            QEICNTtmp = (int) POS1CNT;
             POS1CNT = 0;
             break;
         case MOTOR_ONE:
-            motors[motIdx].PulsEnc += (int) POS2CNT;
-            motors[motIdx].enc_angle += (int) POS2CNT;
+            QEICNTtmp = (int) POS2CNT;
             POS2CNT = 0;
             break;
     }
+    motors[motIdx].PulsEnc += QEICNTtmp;
+    motors[motIdx].enc_angle += QEICNTtmp;
+    //Measure velocity from QEI
+    // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
+    vel_qei = ((int64_t) QEICNTtmp) * (motors[motIdx].k_ang * 1000000.0f);
+    // Mean velocity between IC and QEI estimation
+    int64_t tmp_sum = ((int64_t) Veltmp) + vel_qei;
+    Veltmp = tmp_sum / 2;
+    // Store velocity
+    motors[motIdx].measure.velocity = (int16_t) update_statistic(&motors[motIdx].mean_vel, Veltmp);
     // Evaluate angle position
     if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;
