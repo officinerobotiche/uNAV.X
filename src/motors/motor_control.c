@@ -30,6 +30,7 @@
 #include <system/task_manager.h>
 
 #include <or_math/math.h>
+#include <or_math/statistics.h>
 
 #include "high_control/manager.h"
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
@@ -117,6 +118,8 @@ typedef struct _motor_firmware {
     //gain motor
     float k_vel;
     float k_ang;
+    // Velocity mean
+    statistic_buffer mean_vel;
     //Internal value volt and current
     analog_convert_t volt, current;
     //Common
@@ -171,7 +174,8 @@ void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, int curren
     /// Setup ADC current and temperature
     motors[motIdx].pin_current = current_;
     motors[motIdx].pin_voltage = voltage_;
-    
+    // Init mean buffer
+    init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
     motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 
                                     DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
@@ -448,8 +452,6 @@ void MotorTaskController(int argc, int *argv) {
 
 void measureVelocity(short motIdx) {
     ICdata temp;
-    // Reset velocity
-    motors[motIdx].measure.velocity = 0;
     // Store value
     temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
     motors[motIdx].ICinfo->timePeriod = 0;
@@ -460,10 +462,13 @@ void measureVelocity(short motIdx) {
     // Evaluate velocity
     if (temp.SIG_VEL) {
         motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
-        int16_t vel = temp.SIG_VEL * temp.k_mul * ( motors[motIdx].k_vel / temp.timePeriod );
-        motors[motIdx].measure.velocity = vel;
+        float temp_f = ((float) temp.k_mul) * motors[motIdx].k_vel ;
+        int32_t vel = ((int32_t) temp.SIG_VEL) * ( temp_f / temp.timePeriod );
+        motors[motIdx].measure.velocity = (int16_t) update_statistic(&motors[motIdx].mean_vel, vel);
+    } else {
+        motors[motIdx].measure.velocity = (int16_t) update_statistic(&motors[motIdx].mean_vel, 0);
     }
-
+    
     //Evaluate position
     switch (motIdx) {
         case MOTOR_ZERO:
