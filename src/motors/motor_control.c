@@ -130,6 +130,7 @@ typedef struct _motor_firmware {
     motor_pid_t pid;
     tPID PIDstruct;
     fractional kCoeffs[3]; //Coefficients KP, KI, KD
+    event_prescaler_t prescaler_callback;
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
 
@@ -146,9 +147,11 @@ void reset_motor_data(motor_t* motor) {
     motor->state = CONTROL_DISABLE;
 }
 
-void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, int current_, int voltage_) {
+void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
+    
+    motors[motIdx].prescaler_callback = prescaler_event;
     //Setup diagnostic
     motors[motIdx].diagnostic.current = 0;
     motors[motIdx].diagnostic.temperature = 0;
@@ -453,12 +456,14 @@ void measureVelocity(short motIdx) {
     //Measure velocity from QEI
     int32_t vel_qei =  QEICNTtmp * motors[motIdx].k_vel_qei;
 
+    // Store timePeriod
+    temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
+    motors[motIdx].ICinfo->timePeriod = 0;
     // Store value
     temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
     motors[motIdx].ICinfo->SIG_VEL = 0;
     if (temp.SIG_VEL) {
-        temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
-        motors[motIdx].ICinfo->timePeriod = 0;
+
         temp.k_mul = motors[motIdx].ICinfo->k_mul;
         // Evaluate velocity
         int32_t temp_f = temp.k_mul * motors[motIdx].k_vel_ic;
@@ -478,7 +483,8 @@ void measureVelocity(short motIdx) {
     }
     // Store velocity
     motors[motIdx].measure.velocity = (motor_control_t) update_statistic(&motors[motIdx].mean_vel, vel_mean);
-    
+    //Select Prescaler
+    motors[motIdx].prescaler_callback(motIdx);
     // Evaluate angle position
     if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;

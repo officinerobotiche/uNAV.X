@@ -48,8 +48,8 @@ const ICMode_t ICMode[4] = {
 #define IC_DISABLE  0b000
 
 #define ICMODE_DEFAULT 0
-#define IC_TIMEPERIOD_TH_MAX 0xFFFF
-#define IC_TIMEPERIOD_TH_MIN 4000
+#define IC_TIMEPERIOD_TH_MAX 0x8000
+#define IC_TIMEPERIOD_TH_MIN 200
 
 ICdata ICinfo[NUM_MOTORS];
 gpio_t enable[NUM_MOTORS];
@@ -236,7 +236,7 @@ void Motor_Init() {
         // End
         InitQEI(i);                                                     ///< Open QEI
         InitIC(i);                                                      ///< Open Input Capture
-        init_motor(i, &enable[i], &ICinfo[i], (i << 1), (i << 1)+1);    ///< Initialize variables for motors
+        init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);    ///< Initialize variables for motors
         update_motor_parameters(i, init_motor_parameters());            ///< Initialize parameters for motors
         update_motor_pid(i, init_motor_pid());                          ///< Initialize PID controllers
         update_motor_emergency(i, init_motor_emergency());              ///< Initialize emergency procedure to stop
@@ -270,20 +270,18 @@ inline void SelectIcPrescaler(int motIdx) {
      * 
      */
     int temp_number = 0;
-    unsigned long long doubletimePeriod = ICinfo[motIdx].delta;
+    unsigned long doubletimePeriod = ICinfo[motIdx].delta;
     unsigned long halfPeriod = ICinfo[motIdx].delta;
     do {
         doubletimePeriod = doubletimePeriod * ICMode[temp_number].k;
         halfPeriod = halfPeriod / ICMode[temp_number].k;
         if (doubletimePeriod > IC_TIMEPERIOD_TH_MIN) {
-            ICinfo[motIdx].k_mul = ICMode[temp_number].k;
             if (halfPeriod < IC_TIMEPERIOD_TH_MAX) {
+                ICinfo[motIdx].k_mul = ICMode[temp_number].k;
                 return;
             }
         }
-        
+        ICinfo[motIdx].k_mul = ICMode[temp_number].k;
         temp_number++;
-        
-    }while(temp_number < (3-1));
-
+    }while(temp_number <= 3);
 }

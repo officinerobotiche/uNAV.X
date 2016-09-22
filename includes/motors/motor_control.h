@@ -71,6 +71,8 @@ extern "C" {
         volatile int SIG_VEL;               //Sign of versus rotation motor
         volatile unsigned short number;       //Mode of Input Capture
     } ICdata;
+    
+    typedef void (*event_prescaler_t)(int motIdx);
 
     /******************************************************************************/
     /* System Function Prototypes                                                 */
@@ -84,7 +86,7 @@ extern "C" {
      * @param current_ Analog pin number for current
      * @param voltage_ Analog pin number for temperature
      */
-    void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, int current_, int voltage_);
+    void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.
