@@ -25,6 +25,7 @@ extern "C" {
     #include <stdint.h>
     #include <stdbool.h>
     #include <string.h>
+    #include <dsp.h>
     
     #include <peripherals/gpio.h>
 
@@ -239,9 +240,7 @@ extern "C" {
      * @param motIdx Number motor
      * @return control evaluation
      */
-    inline int MotorPID(short motIdx);
-    
-    void controller(int argc, int *argv);
+    inline fractional MotorPID(short motIdx, tPID *pid);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
