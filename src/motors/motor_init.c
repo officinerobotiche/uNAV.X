@@ -49,7 +49,7 @@ const ICMode_t ICMode[4] = {
 
 #define ICMODE_DEFAULT 0
 #define IC_TIMEPERIOD_TH_MAX 0x8000
-#define IC_TIMEPERIOD_TH_MIN 200
+#define IC_TIMEPERIOD_TH_MIN 4000
 
 ICdata ICinfo[NUM_MOTORS];
 gpio_t enable[NUM_MOTORS];
