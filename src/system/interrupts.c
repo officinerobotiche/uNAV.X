@@ -123,8 +123,9 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
         ICinfo[MOTOR_ZERO].delta = newTime - ICinfo[MOTOR_ZERO].oldTime;
         ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
     } else {
-        ICinfo[MOTOR_ZERO].delta = newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime);
-        ICinfo[MOTOR_ZERO].timePeriod += (ICinfo[MOTOR_ZERO].delta + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
+        ICinfo[MOTOR_ZERO].delta = (newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
+        ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
         ICinfo[MOTOR_ZERO].overTmr = 0;
     }
     // Store old time period
@@ -144,8 +145,9 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
         ICinfo[MOTOR_ONE].delta = newTime - ICinfo[MOTOR_ONE].oldTime;
         ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
     } else {
-        ICinfo[MOTOR_ONE].delta = newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime);
-        ICinfo[MOTOR_ONE].timePeriod += (ICinfo[MOTOR_ONE].delta + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
+        ICinfo[MOTOR_ONE].delta = (newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
+        ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
         ICinfo[MOTOR_ONE].overTmr = 0;
     }
     // Store old time period
