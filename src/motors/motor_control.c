@@ -113,7 +113,7 @@ typedef struct _motor_firmware {
     float emergency_stop;
     bool save_velocity;
     //gain motor
-    float k_vel;
+    int32_t k_vel_ic, k_vel_qei;
     float k_ang;
     // Velocity mean
     statistic_buffer mean_vel;
@@ -214,10 +214,13 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     motors[motIdx].angle_limit = (angle_ratio * 4) / 1000;
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-    motors[motIdx].k_vel = (float) 1000000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
+    motors[motIdx].k_vel_ic = 1000000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
     motors[motIdx].k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
+    // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
+    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000000.0f);
+    
     //Update encoder swap
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -433,20 +436,7 @@ void MotorTaskController(int argc, int *argv) {
 void measureVelocity(short motIdx) {
     ICdata temp;
     int QEICNTtmp;
-    int64_t vel_qei;
-    int32_t Veltmp = 0;
-    // Store value
-    temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
-    motors[motIdx].ICinfo->timePeriod = 0;
-    temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
-    motors[motIdx].ICinfo->SIG_VEL = 0;
-    temp.k_mul = motors[motIdx].ICinfo->k_mul;
-    // Evaluate velocity
-    if (temp.SIG_VEL) {
-        motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
-        float temp_f = ((float) temp.k_mul) * motors[motIdx].k_vel ;
-        Veltmp = ((int32_t) temp.SIG_VEL) * ( temp_f / temp.timePeriod );
-    }
+    int32_t vel_mean = 0;
     //Evaluate position
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -461,13 +451,34 @@ void measureVelocity(short motIdx) {
     motors[motIdx].PulsEnc += QEICNTtmp;
     motors[motIdx].enc_angle += QEICNTtmp;
     //Measure velocity from QEI
-    // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
-    vel_qei = ((int64_t) QEICNTtmp) * (motors[motIdx].k_ang * 1000000.0f);
-    // Mean velocity between IC and QEI estimation
-    int64_t tmp_sum = ((int64_t) Veltmp) + vel_qei;
-    Veltmp = tmp_sum / 2;
+    int32_t vel_qei =  QEICNTtmp * motors[motIdx].k_vel_qei;
+
+    // Store value
+    temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
+    motors[motIdx].ICinfo->SIG_VEL = 0;
+    if (temp.SIG_VEL) {
+        temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
+        motors[motIdx].ICinfo->timePeriod = 0;
+        temp.k_mul = motors[motIdx].ICinfo->k_mul;
+        // Evaluate velocity
+        int32_t temp_f = temp.k_mul * motors[motIdx].k_vel_ic;
+        temp_f = temp_f / temp.timePeriod;
+        int32_t vel_ic = temp.SIG_VEL * temp_f;
+
+        motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
+
+        if (labs(vel_qei - vel_ic) < 2000) {
+            // Mean velocity between IC and QEI estimation
+            vel_mean = (vel_ic + vel_qei) / 2;
+        } else {
+            vel_mean = vel_qei;
+        }
+    } else {
+        vel_mean = vel_qei;
+    }
     // Store velocity
-    motors[motIdx].measure.velocity = (int16_t) update_statistic(&motors[motIdx].mean_vel, Veltmp);
+    motors[motIdx].measure.velocity = (motor_control_t) update_statistic(&motors[motIdx].mean_vel, vel_mean);
+    
     // Evaluate angle position
     if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;

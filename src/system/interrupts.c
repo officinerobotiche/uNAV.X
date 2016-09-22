@@ -117,20 +117,18 @@ extern ICdata ICinfo[NUM_MOTORS];
 
 void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     unsigned int newTime = IC1BUF; // Reading IC1BUF every interrupt
-
-    // Evaluated The time Period
-    unsigned long extra_time;
-    unsigned long delta;
-    // Evaluate the time Period
-    if(ICinfo[MOTOR_ZERO].overTmr > 0) {
-        extra_time = ((unsigned long) ICinfo[MOTOR_ZERO].overTmr) * PR2;
-        delta = (extra_time - ICinfo[MOTOR_ZERO].oldTime) + newTime;
+    
+    // Detail in Microchip Application Note: AN545
+    if(ICinfo[MOTOR_ZERO].overTmr == 0) {
+        ICinfo[MOTOR_ZERO].timePeriod += newTime - ICinfo[MOTOR_ZERO].oldTime;
     } else {
-        delta = newTime - ICinfo[MOTOR_ZERO].oldTime;
+        ICinfo[MOTOR_ZERO].timePeriod += (newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
+        ICinfo[MOTOR_ZERO].overTmr = 0;
     }
-    ICinfo[MOTOR_ZERO].timePeriod += delta;
-    ICinfo[MOTOR_ZERO].overTmr = 0;
-
+    // Store old time period
+    ICinfo[MOTOR_ZERO].oldTime = newTime;
+    
     /// Save sign Vel motor 0
     (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); 
     /// Old type to select the velocity sign
@@ -139,26 +137,22 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     /// Dynamic change the Prescaler
     SelectIcPrescaler(MOTOR_ZERO);
     
-    // Store old time period
-    ICinfo[MOTOR_ZERO].oldTime = newTime;
     IFS0bits.IC1IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     unsigned int newTime = IC2BUF; // Reading IC1BUF every interrupt
 
-    // Evaluated The time Period
-    unsigned long extra_time;
-    unsigned long delta;
-    // Evaluate the time Period
-    if(ICinfo[MOTOR_ONE].overTmr > 0) {
-        extra_time = ((unsigned long) ICinfo[MOTOR_ONE].overTmr) * PR2;
-        delta = (extra_time - ICinfo[MOTOR_ONE].oldTime) + newTime;
+    // Detail in Microchip Application Note: AN545
+    if(ICinfo[MOTOR_ONE].overTmr == 0) {
+        ICinfo[MOTOR_ONE].timePeriod += newTime - ICinfo[MOTOR_ONE].oldTime;
     } else {
-        delta = newTime - ICinfo[MOTOR_ONE].oldTime;
+        ICinfo[MOTOR_ONE].timePeriod += (newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
+        ICinfo[MOTOR_ONE].overTmr = 0;
     }
-    ICinfo[MOTOR_ONE].timePeriod += delta;
-    ICinfo[MOTOR_ONE].overTmr = 0;
+    // Store old time period
+    ICinfo[MOTOR_ONE].oldTime = newTime;
     
     /// Save sign Vel motor 1
     (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); 
@@ -168,15 +162,11 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     /// Dynamic change the Prescaler
     SelectIcPrescaler(MOTOR_ONE);
     
-    // Store old time period
-    ICinfo[MOTOR_ONE].oldTime = newTime;
     IFS0bits.IC2IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    if (ICinfo[MOTOR_ZERO].timePeriod)
-        ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for Left engines
-    if (ICinfo[MOTOR_ONE].timePeriod)
-        ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for Right engines
+    ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for first motor
+    ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for second motor
 }

@@ -49,7 +49,7 @@ const ICMode_t ICMode[4] = {
 
 #define ICMODE_DEFAULT 0
 #define IC_TIMEPERIOD_TH_MAX 8192
-#define IC_TIMEPERIOD_TH_MIN 1024
+#define IC_TIMEPERIOD_TH_MIN 128
 
 ICdata ICinfo[NUM_MOTORS];
 gpio_t enable[NUM_MOTORS];
@@ -269,6 +269,22 @@ inline void SelectIcPrescaler(int motIdx) {
      * V -> 0   , timePeriod -> inf , ICmode -> 0 increase pulses
      * 
      */
+    unsigned long current_th = IC_TIMEPERIOD_TH_MIN;
+    int temp_number = ICMODE_DEFAULT;
+    /**
+     * 1
+     * 2
+     * 8
+     * 32 
+     *
+     */
+    
+    if(ICinfo[motIdx].timePeriod*ICMode[temp_number + 1].k > current_th) {
+        temp_number++;
+        ICinfo[motIdx].k_mul = ICMode[temp_number].k;
+    }
+    
+    
     if(ICinfo[motIdx].timePeriod > IC_TIMEPERIOD_TH_MAX) {
         if(ICinfo[motIdx].number > 0) {
             ICinfo[motIdx].number--;
