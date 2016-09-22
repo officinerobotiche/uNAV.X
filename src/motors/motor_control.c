@@ -105,7 +105,6 @@ typedef struct _motor_firmware {
     hEvent_t task_emergency;
     /// Motor position
     uint32_t angle_limit;
-    uint32_t angle_ratio;
     volatile int PulsEnc;
     volatile int32_t enc_angle;
     int rotation; //Check if required in future
@@ -205,19 +204,20 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //    ThC = CPR * RATIO   
     // else
     //    ThC = RATIO
+    uint32_t angle_ratio;
     if(motors[motIdx].parameter_motor.encoder.type.position) {
-        motors[motIdx].angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * ((uint32_t) 1000 * motors[motIdx].parameter_motor.ratio);
+        angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * ((uint32_t) 1000 * motors[motIdx].parameter_motor.ratio);
     } else {
-        motors[motIdx].angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
+        angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
     }
     // Evaluate angle limit
-    motors[motIdx].angle_limit = (motors[motIdx].angle_ratio * 4) / 1000;
+    motors[motIdx].angle_limit = (angle_ratio * 4) / 1000;
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-    motors[motIdx].k_vel = (float) 1000000.0f * FRTMR2 * 2 * PI / (motors[motIdx].angle_ratio * 2);
+    motors[motIdx].k_vel = (float) 1000000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-    motors[motIdx].k_ang = (float) 2000.0f *PI / (motors[motIdx].angle_ratio * 4);
+    motors[motIdx].k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
     //Update encoder swap
     switch (motIdx) {
         case MOTOR_ZERO:
