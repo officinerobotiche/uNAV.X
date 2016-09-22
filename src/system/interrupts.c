@@ -30,14 +30,14 @@
 #include <serial/or_frame.h>
 #include "communication/serial.h"
 
-#include "motors/motor_control.h"
+#include "motors/motor_init.h"
 #include "high_control/manager.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-ICdata ICinfo[NUM_MOTORS];
+extern ICdata ICinfo[NUM_MOTORS];
 
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
@@ -116,37 +116,51 @@ ICdata ICinfo[NUM_MOTORS];
 /******************************************************************************/
 
 void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
-    unsigned int t1, t2;
-    t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
-    t1 = IC1BUF;
-
-    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
-    ICinfo[MOTOR_ZERO].overTmr = 0;
-
-    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); //Save sign Vel motor 0
-//    ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+    unsigned int newTime = IC1BUF; // Reading IC1BUF every interrupt
+    
+    // Detail in Microchip Application Note: AN545
+    if(ICinfo[MOTOR_ZERO].overTmr == 0) {
+        ICinfo[MOTOR_ZERO].delta = newTime - ICinfo[MOTOR_ZERO].oldTime;
+        ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
+    } else {
+        ICinfo[MOTOR_ZERO].delta = (newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
+        ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
+        ICinfo[MOTOR_ZERO].overTmr = 0;
+    }
+    // Store old time period
+    ICinfo[MOTOR_ZERO].oldTime = newTime;
+    
+    /// Save sign Vel motor 0
+    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); 
+    
     IFS0bits.IC1IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
-    unsigned int t1, t2;
-    t2 = IC2BUF; // IC1BUF is a FIFO, each reading is a POP
-    t1 = IC2BUF;
+    unsigned int newTime = IC2BUF; // Reading IC1BUF every interrupt
 
-    ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
-    ICinfo[MOTOR_ONE].overTmr = 0;
+    // Detail in Microchip Application Note: AN545
+    if(ICinfo[MOTOR_ONE].overTmr == 0) {
+        ICinfo[MOTOR_ONE].delta = newTime - ICinfo[MOTOR_ONE].oldTime;
+        ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
+    } else {
+        ICinfo[MOTOR_ONE].delta = (newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
+        ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
+        ICinfo[MOTOR_ONE].overTmr = 0;
+    }
+    // Store old time period
+    ICinfo[MOTOR_ONE].oldTime = newTime;
     
-    //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
-    //	else SIG_VELR--;
-    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); //Save sign Vel motor 1
-//    ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    /// Save sign Vel motor 1
+    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); 
+    
     IFS0bits.IC2IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    if (ICinfo[MOTOR_ZERO].timePeriod)
-        ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for Left engines
-    if (ICinfo[MOTOR_ONE].timePeriod)
-        ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for Right engines
+    ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for first motor
+    ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for second motor
 }

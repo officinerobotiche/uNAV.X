@@ -27,18 +27,6 @@ extern "C" {
      */
     void InitPWM(void);
 
-    /**
-     * Initialiazion motor
-     */
-    void Motor_Init();
-    
-    /** 
-     * Safely switch to the new Input Capture prescaler
-     * @param mode
-     * @param motIdx number motor
-     */
-    void SwitchIcPrescaler(int mode, int motIdx);
-
     /** 
      * Initialization QEI motors
      * @param motIdx number motor
@@ -53,6 +41,24 @@ extern "C" {
      * Initialization Timer 2 for IC (Input Capture)
      */
     void InitTimer2(void);
+
+    /**
+     * Initialization motor
+     */
+    void Motor_Init();
+    
+    /**
+     * Select the correct Input Capture prescaler		
+     * @param motIdx number motor				
+     */		
+    inline void SelectIcPrescaler(int motIdx);
+    
+    /** 
+     * Safely switch to the new Input Capture prescaler
+     * @param motIdx number motor
+     * @param mode
+     */
+    inline void SwitchIcPrescaler(int motIdx, int mode);
 
 
 #ifdef	__cplusplus

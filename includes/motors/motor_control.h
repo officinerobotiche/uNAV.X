@@ -25,6 +25,7 @@ extern "C" {
     #include <stdint.h>
     #include <stdbool.h>
     #include <string.h>
+    #include <dsp.h>
     
     #include <peripherals/gpio.h>
 
@@ -62,10 +63,16 @@ extern "C" {
     } enum_state_t;
     
     typedef struct _ICdata {
-        volatile unsigned int overTmr; //Overflow timer
-        volatile unsigned long timePeriod; //Time period from Input Capture
-        volatile int SIG_VEL; //Sign of versus rotation motor
+        volatile unsigned int delta;
+        volatile unsigned int k_mul;        // k_vel multiplier according to IC scale
+        volatile unsigned int overTmr;      //Overflow timer
+        volatile unsigned int oldTime;      //Old time stored
+        volatile unsigned long timePeriod;  //Time period from Input Capture
+        volatile int SIG_VEL;               //Sign of versus rotation motor
+        volatile unsigned short number;       //Mode of Input Capture
     } ICdata;
+    
+    typedef void (*event_prescaler_t)(int motIdx);
 
     /******************************************************************************/
     /* System Function Prototypes                                                 */
@@ -74,11 +81,12 @@ extern "C" {
     /**
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
-     * @param enable GPIO for enable
-     * @param current Analog GPIO for current
-     * @param temperature Analog GPIO for temperature
+     * @param enable_ GPIO for enable
+     * @param ICinfo_ Input capture information
+     * @param current_ Analog pin number for current
+     * @param voltage_ Analog pin number for temperature
      */
-    void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_);
+    void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.
@@ -207,16 +215,14 @@ extern "C" {
      *  - Position control (move to desired angle)
      *  - Velocity control (move to desired angular velocity)
      *  - Torque control (move to desired torque)
-     * @return Time to Compute task control reference
      */
     void MotorTaskController(int argc, int *argv);
 
     /**
      * Measure velocity from Input Capture and QEI
      * @param motIdx Number motor
-     * @return Time to Compute task control reference
      */
-    int measureVelocity(short motIdx);
+    void measureVelocity(short motIdx);
     
     inline void Motor_PWM(short motIdx, int pwm_control);
     
@@ -237,9 +243,7 @@ extern "C" {
      * @param motIdx Number motor
      * @return control evaluation
      */
-    inline int MotorPID(short motIdx);
-    
-    void controller(int argc, int *argv);
+    inline fractional MotorPID(short motIdx, tPID *pid);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors

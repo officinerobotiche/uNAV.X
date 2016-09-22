@@ -30,9 +30,11 @@
 #include <system/task_manager.h>
 
 #include <or_math/math.h>
+#include <or_math/statistics.h>
 
 #include "high_control/manager.h"
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
+
 #include "system/system.h"
 #include "packet/packet.h"
 
@@ -61,9 +63,6 @@
 #define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000 // In Herts
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000 // In Herts
 
-#define NUMBER_CONTROL_FROM_ENUM(x) ( (x) + 1 )
-#define NUMBER_CONTROL_FROM_ARRAY(x) ( (x) - 1 )
-
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -82,8 +81,10 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 
 /** */
 
-#define NUM_CONTROLLERS 4
 #define DEFAULT_PWM_OFFSET 2048
+
+#define NEWQ15(X) \
+   ((X < 0.0) ? (int)((X) - 1) : (int)((X) + 1)) 
 
 typedef struct _analog_convert {
     float k;
@@ -93,19 +94,17 @@ typedef struct _analog_convert {
 
 typedef struct _motor_firmware {
     //Use ONLY in firmware
-    //ICdata ICinfo; //Information for Input Capture
+    ICdata* ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
     int pin_current, pin_voltage;
-    uint8_t k_mul; // k_vel multiplier according to IC scale
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
-    int pwm;
     /// event register
     hEvent_t task_manager;
-    task_t controllers[NUM_CONTROLLERS];
+    hEvent_t task_emergency;
     /// Motor position
-    uint32_t angle_ratio;
+    uint32_t angle_limit;
     volatile int PulsEnc;
     volatile int32_t enc_angle;
     int rotation; //Check if required in future
@@ -114,8 +113,10 @@ typedef struct _motor_firmware {
     float emergency_stop;
     bool save_velocity;
     //gain motor
-    float k_vel;
+    int32_t k_vel_ic, k_vel_qei;
     float k_ang;
+    // Velocity mean
+    statistic_buffer mean_vel;
     //Internal value volt and current
     analog_convert_t volt, current;
     //Common
@@ -129,12 +130,9 @@ typedef struct _motor_firmware {
     motor_pid_t pid;
     tPID PIDstruct;
     fractional kCoeffs[3]; //Coefficients KP, KI, KD
+    event_prescaler_t prescaler_callback;
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
-
-/**/
-// From interrupt
-extern ICdata ICinfo[NUM_MOTORS];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -149,25 +147,16 @@ void reset_motor_data(motor_t* motor) {
     motor->state = CONTROL_DISABLE;
 }
 
-void init_controllers(task_t* controllers) {
-    int i;
-    for(i = 0; i < NUM_CONTROLLERS; ++i) {
-        controllers[i].task = NULL;
-        controllers[i].frequency = 1;
-    }
-}
-
-void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_) {
+void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
-    init_controllers(motors[motIdx].controllers);
+    
+    motors[motIdx].prescaler_callback = prescaler_event;
     //Setup diagnostic
     motors[motIdx].diagnostic.current = 0;
     motors[motIdx].diagnostic.temperature = 0;
-    //Input capture information
-    ICinfo[motIdx].SIG_VEL = 0;
-    ICinfo[motIdx].overTmr = 0;
-    ICinfo[motIdx].timePeriod = 0;
+    // Register input capture
+    motors[motIdx].ICinfo = ICinfo_;
     // Initialization direction of rotation
     motors[motIdx].rotation = 1;
     /// Setup bit enable
@@ -176,22 +165,16 @@ void init_motor(const short motIdx, gpio_t* enable_, int current_, int voltage_)
     /// Setup ADC current and temperature
     motors[motIdx].pin_current = current_;
     motors[motIdx].pin_voltage = voltage_;
-    
-    motors[motIdx].k_mul = 1;
-    
+    // Init mean buffer
+    init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
     motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 
                                     DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
     /// Run task controller
     task_set(motors[motIdx].task_manager, RUN);
     /// Load controller EMERGENCY - Working at 1KHz
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency = DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY;
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH),
-            motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_EMERGENCY)].frequency, 1, (char) motIdx);
-    /// Load controllers VELOCITY - Working at 1KHz
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency = DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY;
-    motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].task = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &controller, EVENT_PRIORITY_MEDIUM),
-            motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(CONTROL_VELOCITY)].frequency, 1, (char) motIdx);
+    motors[motIdx].task_emergency = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH), 
+                                    DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY, 1, (char) motIdx);
 }
 
 motor_parameter_t init_motor_parameters() {
@@ -224,17 +207,23 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //    ThC = CPR * RATIO   
     // else
     //    ThC = RATIO
+    uint32_t angle_ratio;
     if(motors[motIdx].parameter_motor.encoder.type.position) {
-        motors[motIdx].angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * ((uint32_t) 1000 * motors[motIdx].parameter_motor.ratio);
+        angle_ratio = motors[motIdx].parameter_motor.encoder.cpr * ((uint32_t) 1000 * motors[motIdx].parameter_motor.ratio);
     } else {
-        motors[motIdx].angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
+        angle_ratio = (uint32_t) 1000 * motors[motIdx].parameter_motor.encoder.cpr;
     }
+    // Evaluate angle limit
+    motors[motIdx].angle_limit = (angle_ratio * 4) / 1000;
     //Start define with fixed K_vel conversion velocity
     // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
-    motors[motIdx].k_vel = (float) 1000000.0f * FRTMR2 * 2 * PI / (motors[motIdx].angle_ratio * 2);
+    motors[motIdx].k_vel_ic = 1000000.0f * FRTMR2 * 2 * PI / (angle_ratio * 2);
     //Start define with fixed K_ang conversion angular
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
-    motors[motIdx].k_ang = (float) 2000.0f *PI / (motors[motIdx].angle_ratio * 4);
+    motors[motIdx].k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
+    // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
+    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000000.0f);
+    
     //Update encoder swap
     switch (motIdx) {
         case MOTOR_ZERO:
@@ -272,9 +261,9 @@ inline motor_t get_motor_constraints(short motIdx) {
     return motors[motIdx].constraint;
 }
 
-void update_motor_constraints(short motIdx, motor_t contraints) {
+void update_motor_constraints(short motIdx, motor_t constraints) {
     //Update parameter constraints
-    motors[motIdx].constraint = contraints;
+    motors[motIdx].constraint = constraints;
 }
 
 motor_pid_t init_motor_pid() {
@@ -340,7 +329,6 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
-    //motors[motIdx].measure.pwm = motors[motIdx].reference.volt / motors[motIdx].parameter_motor.bridge.volt;
     motors[motIdx].measure.torque = motors[motIdx].diagnostic.current; //TODO Add a coefficient conversion
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
@@ -359,6 +347,7 @@ inline motor_t get_motor_reference(short motIdx) {
 }
              
 inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
+    motors[motIdx].enc_angle = (int)(((float)motors[motIdx].k_ang) / ((float)motors[motIdx].enc_angle));
     motors[motIdx].measure.position = (float) value;  
 }
              
@@ -415,19 +404,10 @@ void MotorTaskController(int argc, int *argv) {
     short motIdx = (short) argv[0];
     /// Add new task controller
     if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
-        if(motors[motIdx].measure.state != CONTROL_DISABLE) {
-            /// Stop old controller
-            task_set(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].measure.state)].task, STOP);
-        }
-        if(motors[motIdx].reference.state != CONTROL_DISABLE) {
-            /// Load new controller
-            if(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].reference.state)].task != NULL) {
-                /// Run controller in task manager
-                task_set(motors[motIdx].controllers[NUMBER_CONTROL_FROM_ENUM(motors[motIdx].reference.state)].task, RUN);
-            }
-        } else if (motors[motIdx].reference.state == CONTROL_DISABLE) {
-            /// Set PWM 0
-            Motor_PWM(motIdx, 0);
+        if(motors[motIdx].reference.state == CONTROL_EMERGENCY) {
+            task_set(motors[motIdx].task_emergency, RUN);
+        } else {
+            task_set(motors[motIdx].task_emergency, STOP);
         }
         /// Save new state controller
         motors[motIdx].measure.state = motors[motIdx].reference.state;
@@ -448,65 +428,86 @@ void MotorTaskController(int argc, int *argv) {
     // The current is evaluated with sign of motor rotation
     motors[motIdx].current.value = motors[motIdx].rotation * (gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
     motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
+    
+    
+    fractional control_output = MotorPID(motIdx, &motors[motIdx].PIDstruct);
+    
+    // Send to motor the value of control
+    Motor_PWM(motIdx, control_output);
 }
 
-int measureVelocity(short motIdx) {
-    unsigned int t = TMR1; // Timing function
-    unsigned long timePeriodtmp;
-    int SIG_VELtmp;
-    motors[motIdx].measure.velocity = 0;
-    timePeriodtmp = ICinfo[motIdx].timePeriod;
-    ICinfo[motIdx].timePeriod = 0;
-    SIG_VELtmp = ICinfo[motIdx].SIG_VEL;
-    ICinfo[motIdx].SIG_VEL = 0;
-    // Evaluate velocity
-    if (SIG_VELtmp) {
-        motors[motIdx].rotation = ((SIG_VELtmp >= 0) ? 1 : -1);
-        int16_t vel = SIG_VELtmp * (motors[motIdx].k_vel / timePeriodtmp);
-        motors[motIdx].measure.velocity = vel;
-    }
+void measureVelocity(short motIdx) {
+    volatile ICdata temp;
+    int QEICNTtmp;
+    int32_t vel_mean = 0;
     //Evaluate position
     switch (motIdx) {
         case MOTOR_ZERO:
-            motors[motIdx].PulsEnc += (int) POS1CNT;
-            motors[motIdx].enc_angle += (int) POS1CNT;
+            QEICNTtmp = (int) POS1CNT;
             POS1CNT = 0;
             break;
         case MOTOR_ONE:
-            motors[motIdx].PulsEnc += (int) POS2CNT;
-            motors[motIdx].enc_angle +=  (int) POS2CNT;
+            QEICNTtmp = (int) POS2CNT;
             POS2CNT = 0;
             break;
     }
+    motors[motIdx].PulsEnc += QEICNTtmp;
+    motors[motIdx].enc_angle += QEICNTtmp;
+    //Measure velocity from QEI
+    int32_t vel_qei =  QEICNTtmp * motors[motIdx].k_vel_qei;
+
+    // Store timePeriod
+    temp.timePeriod = motors[motIdx].ICinfo->timePeriod;
+    motors[motIdx].ICinfo->timePeriod = 0;
+    // Store value
+    temp.SIG_VEL = motors[motIdx].ICinfo->SIG_VEL;
+    motors[motIdx].ICinfo->SIG_VEL = 0;
+    if (temp.SIG_VEL) {
+
+        temp.k_mul = motors[motIdx].ICinfo->k_mul;
+        // Evaluate velocity
+        int32_t temp_f = temp.k_mul * motors[motIdx].k_vel_ic;
+        temp_f = temp_f / temp.timePeriod;
+        int32_t vel_ic = temp.SIG_VEL * temp_f;
+
+        motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
+
+        if (labs(vel_qei - vel_ic) < 2000) {
+            // Mean velocity between IC and QEI estimation
+            vel_mean = (vel_ic + vel_qei) / 2;
+        } else {
+            vel_mean = vel_qei;
+        }
+    } else {
+        vel_mean = vel_qei;
+    }
+    // Store velocity
+    motors[motIdx].measure.velocity = (motor_control_t) update_statistic(&motors[motIdx].mean_vel, vel_mean);
+    //Select Prescaler
+    motors[motIdx].prescaler_callback(motIdx);
     // Evaluate angle position
-    if(abs(motors[motIdx].enc_angle) > motors[motIdx].angle_ratio ) {
+    if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;
     }
-    return TMR1 - t; // Time of execution
-}
-
-void controller(int argc, int *argv) {
-
-    short motIdx = (short) argv[0];
-    // PWM output
-    Motor_PWM(motIdx, MotorPID(motIdx));
 }
 
 inline void Motor_PWM(short motIdx, int pwm_control) {
-   // PWM output
-    motors[motIdx].pwm = pwm_control;
+    // Save pwm value
+    motors[motIdx].measure.pwm = pwm_control;
+    // PWM output
+    pwm_control = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
     SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
 }
 
-inline int MotorPID(short motIdx) {
+inline fractional MotorPID(short motIdx, tPID *pid) {
     // Setpoint
-    motors[motIdx].PIDstruct.controlReference =  Q15(((float) motors[motIdx].reference.velocity) / motors[motIdx].constraint.velocity);
+    pid->controlReference = NEWQ15(motors[motIdx].reference.velocity);
     // Measure
-    motors[motIdx].PIDstruct.measuredOutput = Q15(((float) motors[motIdx].measure.velocity) / motors[motIdx].constraint.velocity);
+    pid->measuredOutput = NEWQ15(motors[motIdx].measure.velocity);
     // PID execution
-    PID(&motors[motIdx].PIDstruct);
+    PID(pid);
     // Control value calculation
-    return motors[motIdx].parameter_motor.rotation * (motors[motIdx].PIDstruct.controlOutput >> 4);
+    return pid->controlOutput;
 }
 
 void Emergency(int argc, int *argv) {
@@ -516,8 +517,6 @@ void Emergency(int argc, int *argv) {
         if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference.velocity < 0) {
             motors[motIdx].reference.velocity = 0;
         }
-        // Velocity control output
-        Motor_PWM(motIdx, MotorPID(motIdx));
     } else if (motors[motIdx].reference.velocity == 0) {
         if ((motors[motIdx].counter_stop + 1) >= motors[motIdx].emergency_stop) {
             set_motor_state(motIdx, CONTROL_DISABLE);
