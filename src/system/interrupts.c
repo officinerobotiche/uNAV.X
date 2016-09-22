@@ -116,12 +116,19 @@ extern ICdata ICinfo[NUM_MOTORS];
 /******************************************************************************/
 
 void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
-    unsigned int t1, t2;
-    t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
-    t1 = IC1BUF;
+    unsigned int newTime = IC1BUF; // Reading IC1BUF every interrupt
 
-    /// PR2 is 0xFFFF
-    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1;
+    // Evaluated The time Period
+    unsigned long extra_time;
+    unsigned long delta;
+    // Evaluate the time Period
+    if(ICinfo[MOTOR_ZERO].overTmr > 0) {
+        extra_time = ((unsigned long) ICinfo[MOTOR_ZERO].overTmr) * PR2;
+        delta = (extra_time - ICinfo[MOTOR_ZERO].oldTime) + newTime;
+    } else {
+        delta = newTime - ICinfo[MOTOR_ZERO].oldTime;
+    }
+    ICinfo[MOTOR_ZERO].timePeriod += delta;
     ICinfo[MOTOR_ZERO].overTmr = 0;
 
     /// Save sign Vel motor 0
@@ -132,15 +139,25 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     /// Dynamic change the Prescaler
     SelectIcPrescaler(MOTOR_ZERO);
     
+    // Store old time period
+    ICinfo[MOTOR_ZERO].oldTime = newTime;
     IFS0bits.IC1IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
-    unsigned int t1, t2;
-    t2 = IC2BUF; // IC1BUF is a FIFO, each reading is a POP
-    t1 = IC2BUF;
+    unsigned int newTime = IC2BUF; // Reading IC1BUF every interrupt
 
-    ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
+    // Evaluated The time Period
+    unsigned long extra_time;
+    unsigned long delta;
+    // Evaluate the time Period
+    if(ICinfo[MOTOR_ONE].overTmr > 0) {
+        extra_time = ((unsigned long) ICinfo[MOTOR_ONE].overTmr) * PR2;
+        delta = (extra_time - ICinfo[MOTOR_ONE].oldTime) + newTime;
+    } else {
+        delta = newTime - ICinfo[MOTOR_ONE].oldTime;
+    }
+    ICinfo[MOTOR_ONE].timePeriod += delta;
     ICinfo[MOTOR_ONE].overTmr = 0;
     
     /// Save sign Vel motor 1
@@ -151,6 +168,8 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     /// Dynamic change the Prescaler
     SelectIcPrescaler(MOTOR_ONE);
     
+    // Store old time period
+    ICinfo[MOTOR_ONE].oldTime = newTime;
     IFS0bits.IC2IF = 0;
 }
 

@@ -187,6 +187,7 @@ void InitICinfo(int motIdx) {
     ICinfo[motIdx].number = ICMODE_DEFAULT;
     ICinfo[motIdx].SIG_VEL = 0;
     ICinfo[motIdx].overTmr = 0;
+    ICinfo[motIdx].oldTime = 0;
     ICinfo[motIdx].timePeriod = 0;
 }
 

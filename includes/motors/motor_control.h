@@ -64,6 +64,7 @@ extern "C" {
     typedef struct _ICdata {
         volatile unsigned int k_mul;        // k_vel multiplier according to IC scale
         volatile unsigned int overTmr;      //Overflow timer
+        volatile unsigned int oldTime;      //Old time stored
         volatile unsigned long timePeriod;  //Time period from Input Capture
         volatile int SIG_VEL;               //Sign of versus rotation motor
         volatile unsigned short number;       //Mode of Input Capture
