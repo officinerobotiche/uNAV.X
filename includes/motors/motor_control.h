@@ -63,6 +63,7 @@ extern "C" {
     } enum_state_t;
     
     typedef struct _ICdata {
+        volatile unsigned int delta;
         volatile unsigned int k_mul;        // k_vel multiplier according to IC scale
         volatile unsigned int overTmr;      //Overflow timer
         volatile unsigned int oldTime;      //Old time stored

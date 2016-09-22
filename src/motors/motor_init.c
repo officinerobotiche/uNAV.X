@@ -48,8 +48,8 @@ const ICMode_t ICMode[4] = {
 #define IC_DISABLE  0b000
 
 #define ICMODE_DEFAULT 0
-#define IC_TIMEPERIOD_TH_MAX 8192
-#define IC_TIMEPERIOD_TH_MIN 128
+#define IC_TIMEPERIOD_TH_MAX 0xFFFF
+#define IC_TIMEPERIOD_TH_MIN 4000
 
 ICdata ICinfo[NUM_MOTORS];
 gpio_t enable[NUM_MOTORS];
@@ -269,33 +269,21 @@ inline void SelectIcPrescaler(int motIdx) {
      * V -> 0   , timePeriod -> inf , ICmode -> 0 increase pulses
      * 
      */
-    unsigned long current_th = IC_TIMEPERIOD_TH_MIN;
-    int temp_number = ICMODE_DEFAULT;
-    /**
-     * 1
-     * 2
-     * 8
-     * 32 
-     *
-     */
-    
-    if(ICinfo[motIdx].timePeriod*ICMode[temp_number + 1].k > current_th) {
+    int temp_number = 0;
+    unsigned long long doubletimePeriod = ICinfo[motIdx].delta;
+    unsigned long halfPeriod = ICinfo[motIdx].delta;
+    do {
+        doubletimePeriod = doubletimePeriod * ICMode[temp_number].k;
+        halfPeriod = halfPeriod / ICMode[temp_number].k;
+        if (doubletimePeriod > IC_TIMEPERIOD_TH_MIN) {
+            ICinfo[motIdx].k_mul = ICMode[temp_number].k;
+            if (halfPeriod < IC_TIMEPERIOD_TH_MAX) {
+                return;
+            }
+        }
+        
         temp_number++;
-        ICinfo[motIdx].k_mul = ICMode[temp_number].k;
-    }
-    
-    
-    if(ICinfo[motIdx].timePeriod > IC_TIMEPERIOD_TH_MAX) {
-        if(ICinfo[motIdx].number > 0) {
-            ICinfo[motIdx].number--;
-            ICinfo[motIdx].k_mul = ICMode[ICinfo[motIdx].number].k;
-            SwitchIcPrescaler(ICinfo[motIdx].number, motIdx);
-        }
-    } else if(ICinfo[motIdx].timePeriod < IC_TIMEPERIOD_TH_MIN) {
-        if(ICinfo[motIdx].number < 3) {
-            ICinfo[motIdx].number++;
-            ICinfo[motIdx].k_mul = ICMode[ICinfo[motIdx].number].k;
-            SwitchIcPrescaler(ICinfo[motIdx].number, motIdx);
-        }
-    }
+        
+    }while(temp_number < (3-1));
+
 }

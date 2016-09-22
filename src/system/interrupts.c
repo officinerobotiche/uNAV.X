@@ -120,10 +120,11 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     
     // Detail in Microchip Application Note: AN545
     if(ICinfo[MOTOR_ZERO].overTmr == 0) {
-        ICinfo[MOTOR_ZERO].timePeriod += newTime - ICinfo[MOTOR_ZERO].oldTime;
+        ICinfo[MOTOR_ZERO].delta = newTime - ICinfo[MOTOR_ZERO].oldTime;
+        ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
     } else {
-        ICinfo[MOTOR_ZERO].timePeriod += (newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime)
-                + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
+        ICinfo[MOTOR_ZERO].delta = newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime);
+        ICinfo[MOTOR_ZERO].timePeriod += (ICinfo[MOTOR_ZERO].delta + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
         ICinfo[MOTOR_ZERO].overTmr = 0;
     }
     // Store old time period
@@ -135,7 +136,7 @@ void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
     /// ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
     
     /// Dynamic change the Prescaler
-    SelectIcPrescaler(MOTOR_ZERO);
+    //SelectIcPrescaler(MOTOR_ZERO);
     
     IFS0bits.IC1IF = 0;
 }
@@ -145,10 +146,11 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
 
     // Detail in Microchip Application Note: AN545
     if(ICinfo[MOTOR_ONE].overTmr == 0) {
-        ICinfo[MOTOR_ONE].timePeriod += newTime - ICinfo[MOTOR_ONE].oldTime;
+        ICinfo[MOTOR_ONE].delta = newTime - ICinfo[MOTOR_ONE].oldTime;
+        ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
     } else {
-        ICinfo[MOTOR_ONE].timePeriod += (newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime)
-                + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
+        ICinfo[MOTOR_ONE].delta = newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime);
+        ICinfo[MOTOR_ONE].timePeriod += (ICinfo[MOTOR_ONE].delta + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
         ICinfo[MOTOR_ONE].overTmr = 0;
     }
     // Store old time period
@@ -160,7 +162,7 @@ void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
     /// ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
     
     /// Dynamic change the Prescaler
-    SelectIcPrescaler(MOTOR_ONE);
+    //SelectIcPrescaler(MOTOR_ONE);
     
     IFS0bits.IC2IF = 0;
 }

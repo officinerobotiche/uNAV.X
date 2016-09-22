@@ -434,7 +434,7 @@ void MotorTaskController(int argc, int *argv) {
 }
 
 void measureVelocity(short motIdx) {
-    ICdata temp;
+    volatile ICdata temp;
     int QEICNTtmp;
     int32_t vel_mean = 0;
     //Evaluate position
