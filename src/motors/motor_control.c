@@ -83,9 +83,6 @@ fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
 
 #define DEFAULT_PWM_OFFSET 2048
 
-#define NEWQ15(X) \
-   ((X < 0.0) ? (int)((X) - 1) : (int)((X) + 1)) 
-
 typedef struct _analog_convert {
     float k;
     int offset;
@@ -501,9 +498,9 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 
 inline fractional MotorPID(short motIdx, tPID *pid) {
     // Setpoint
-    pid->controlReference = NEWQ15(motors[motIdx].reference.velocity);
+    pid->controlReference = motors[motIdx].reference.velocity;
     // Measure
-    pid->measuredOutput = NEWQ15(motors[motIdx].measure.velocity);
+    pid->measuredOutput = motors[motIdx].measure.velocity;
     // PID execution
     PID(pid);
     // Control value calculation
