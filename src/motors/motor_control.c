@@ -329,19 +329,19 @@ motor_pid_t init_motor_pid() {
 }
 
 inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type) {
-    return motors[motIdx].controller[type].pid;
+    return motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid;
 }
 
 bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid) {
     // Update value of pid
-    motors[motIdx].controller[type].pid = pid;
-    motors[motIdx].controller[type].kCoeffs[0] = Q15(motors[motIdx].controller[type].pid.kp);
-    motors[motIdx].controller[type].kCoeffs[1] = Q15(motors[motIdx].controller[type].pid.ki);
-    motors[motIdx].controller[type].kCoeffs[2] = Q15(motors[motIdx].controller[type].pid.kd);
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid = pid;
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[0] = Q15(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kp);
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[1] = Q15(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.ki);
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[2] = Q15(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kd);
     
     // TODO Add stop of all Interrupt during the time of this function
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
-    PIDCoeffCalc(&motors[motIdx].controller[type].kCoeffs[0], &motors[motIdx].controller[type].PIDstruct);
+    PIDCoeffCalc(&motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[0], &motors[motIdx].controller[GET_CONTROLLER_NUM(type)].PIDstruct);
     // TODO add check gains value
     // | Kp + ki + kd | < 1
     // | -(Kp + 2*Kd) | < 1
