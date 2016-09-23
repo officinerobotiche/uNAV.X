@@ -18,10 +18,12 @@ addons:
 
 before_install: 
  - chmod +x travis-install-dependencies.sh
+ - chmod +x travis-install-dependencies-unav.sh
 
 # Install needed IDE and compiler
 install:
  - ./travis-install-dependencies.sh
+ - ./travis-install-dependencies-unav.sh
 
 # Generate Makefiles and make
 script:
