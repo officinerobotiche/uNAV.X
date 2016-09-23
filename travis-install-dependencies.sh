@@ -69,6 +69,26 @@ echo "- Installation of MPLAB XC16 Compiler v1.25 finished... -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
 echo 
 
+### Compiler
+# Install MPLAB XC16 Peripheral libraries for pic24 and dspic v2.00
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo "- Downloading MPLAB XC16 Peripheral libraries for pic24 and dspic v2.00 -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+wget "http://ww1.microchip.com/downloads/en/DeviceDoc/peripheral-libraries-for-pic24-and-dspic-v2.00-linux-installer.run"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo "- Download finished...        -"
+echo "- Adding excecution rights... -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+chmod +x "peripheral-libraries-for-pic24-and-dspic-v2.00-linux-installer.run"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo "- Installing MPLAB XC16 Peripheral libraries for pic24 and dspic v2.00  -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+sudo ./"peripheral-libraries-for-pic24-and-dspic-v2.00-linux-installer.run" --mode unattended --prefix "/opt/microchip/xc16/v1.25"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo "- Installation MPLAB XC16 Peripheral libraries for pic24 and dspic v2.00... -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo 
+
 # Return to the saved working directory
 popd
 
