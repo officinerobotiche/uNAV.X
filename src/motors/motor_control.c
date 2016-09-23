@@ -81,10 +81,8 @@ static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
 // Get the number in controller array from enum_state_t
 #define GET_CONTROLLER_NUM(X) ((X) - 1)
 
-fractional abcCoefficient1[NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory1[NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
-fractional abcCoefficient2[NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory2[NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
+fractional abcCoefficient[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
+fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
 
 /** */
 
@@ -175,22 +173,11 @@ void reset_motor_data(motor_t* motor) {
 void init_controllers(short motIdx) {
     int i;
     for(i = 0; i < NUM_CONTROLLERS; i++) {
-        switch (motIdx) {
-            case MOTOR_ZERO:
-                //Initialize the PID data structure: PIDstruct
-                //Set up pointer to derived coefficients
-                motors[motIdx].controller[i].PIDstruct.abcCoefficients = &abcCoefficient1[i][0];
-                //Set up pointer to controller history samples
-                motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory1[i][0];
-                break;
-            case MOTOR_ONE:
-                //Initialize the PID data structure: PIDstruct
-                //Set up pointer to derived coefficients
-                motors[motIdx].controller[i].PIDstruct.abcCoefficients = &abcCoefficient2[i][0];
-                //Set up pointer to controller history samples
-                motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory2[i][0];
-                break;
-        }
+        //Initialize the PID data structure: PIDstruct
+        //Set up pointer to derived coefficients
+        motors[motIdx].controller[i].PIDstruct.abcCoefficients = &abcCoefficient[motIdx][i][0];
+        //Set up pointer to controller history samples
+        motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory[motIdx][i][0];
         // Clear the controller history and the controller output
         PIDInit(&motors[motIdx].controller[i].PIDstruct);
         // reset timers
