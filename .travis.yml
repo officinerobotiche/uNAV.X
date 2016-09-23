@@ -1,0 +1,30 @@
+language: c
+
+# whitelist
+branches:
+  only:
+    - master
+
+sudo: true
+
+addons:
+  apt:
+    packages:
+    - libc6:i386
+    - libx11-6:i386
+    - libxext6:i386
+    - libstdc++6:i386
+    - libexpat1:i386
+
+before_install: 
+ - chmod +x travis-install-dependencies.sh
+
+# Install needed IDE and compiler
+install:
+ - ./travis-install-dependencies.sh
+
+# Generate Makefiles and make
+script:
+ - pwd
+ - /opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+ - make
