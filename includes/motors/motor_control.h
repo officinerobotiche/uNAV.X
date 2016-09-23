@@ -133,18 +133,19 @@ extern "C" {
     /**
      * Return value of PID controller
      * @param motIdx number of motor
+     * @param type type of controller (position, velocity, current)
      * @return value PID
      */
-    inline motor_pid_t get_motor_pid(short motIdx);
+    inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type);
     /**
      * Transform float value received from gain for PID right in Q15 value
      * for dsp controller.
      * @param motIdx Number motor
-     * @param pid update pid for:
-     *        PID data structure: PIDstruct for PID 1 (Motor left)
-     *        PID data structure: PIDstruct for PID 1 (Motor right)
+     * @param type type of controller (position, velocity, current)
+     * @param pid update data for PID controller 
+     * @return return true if the PID gains are correctly stored
      */
-    void update_motor_pid(short motIdx, motor_pid_t pid);
+    bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid);
 
     /**
      * Initialization standard value for emergency configuration motor

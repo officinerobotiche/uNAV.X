@@ -62,7 +62,7 @@
 
 #define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000    // In Herts
 
-#define DEFAULT_FREQ_MOTOR_MANAGER 1000            // Task Manager 1Khz
+#define DEFAULT_FREQ_MOTOR_MANAGER 10000            // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
 
 /*****************************************************************************/
@@ -76,10 +76,15 @@ static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
  */
-fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
-fractional abcCoefficient2[3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
+
+#define NUM_CONTROLLERS 3
+// Get the number in controller array from enum_state_t
+#define GET_CONTROLLER_NUM(X) ((X) - 1)
+
+fractional abcCoefficient1[NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
+fractional controlHistory1[NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
+fractional abcCoefficient2[NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
+fractional controlHistory2[NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
 
 /** */
 
@@ -91,17 +96,39 @@ typedef struct _analog_convert {
     int value;
 } analog_convert_t;
 
+/**
+ * Definition of PID ecosystem
+ */
+typedef struct _pid_control {
+    // Message information about value of PID
+    motor_pid_t pid;
+    // Struct of PID from dsp library
+    tPID PIDstruct;
+    // Coefficients KP, KI, KD
+    fractional kCoeffs[3];
+    // time to launch PID controller
+    unsigned int time;
+    // internal time counter
+    unsigned int counter;
+} pid_controller_t;
+
+/**
+ * Use ONLY in firmware
+ */
 typedef struct _motor_firmware {
-    //Use ONLY in firmware
-    ICdata* ICinfo; //Information for Input Capture
+    // Information for Input Capture
+    ICdata* ICinfo;
+    // Enable pin for H-bridge
     gpio_t* pin_enable;
     int pin_current, pin_voltage;
-    motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
     /// Task register
     hTask_t task_manager;
+    // Task manager for emergency control
     hTask_t task_emergency;
+    // Last reference saved before emergency mode
+    motor_control_t last_reference;
     /// Motor position
     uint32_t angle_limit;
     volatile int PulsEnc;
@@ -122,13 +149,12 @@ typedef struct _motor_firmware {
     motor_diagnostic_t diagnostic;
     motor_emergency_t emergency;
     motor_parameter_t parameter_motor;
+    
+    pid_controller_t controller[NUM_CONTROLLERS];
+    motor_t controlOutput;
     motor_t constraint;
     motor_t reference;
     motor_t measure;
-    //PID
-    motor_pid_t pid;
-    tPID PIDstruct;
-    fractional kCoeffs[3]; //Coefficients KP, KI, KD
     event_prescaler_t prescaler_callback;
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
@@ -146,10 +172,37 @@ void reset_motor_data(motor_t* motor) {
     motor->state = CONTROL_DISABLE;
 }
 
+void init_controllers(short motIdx) {
+    int i;
+    for(i = 0; i < NUM_CONTROLLERS; i++) {
+        switch (motIdx) {
+            case MOTOR_ZERO:
+                //Initialize the PID data structure: PIDstruct
+                //Set up pointer to derived coefficients
+                motors[motIdx].controller[i].PIDstruct.abcCoefficients = &abcCoefficient1[i][0];
+                //Set up pointer to controller history samples
+                motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory1[i][0];
+                break;
+            case MOTOR_ONE:
+                //Initialize the PID data structure: PIDstruct
+                //Set up pointer to derived coefficients
+                motors[motIdx].controller[i].PIDstruct.abcCoefficients = &abcCoefficient2[i][0];
+                //Set up pointer to controller history samples
+                motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory2[i][0];
+                break;
+        }
+        // Clear the controller history and the controller output
+        PIDInit(&motors[motIdx].controller[i].PIDstruct);
+        // reset timers
+        motors[motIdx].controller[i].counter = 0;
+        motors[motIdx].controller[i].time = 0;
+    }
+}
+
 hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
-    
+    init_controllers(motIdx);
     motors[motIdx].prescaler_callback = prescaler_event;
     //Setup diagnostic
     motors[motIdx].diagnostic.current = 0;
@@ -275,36 +328,25 @@ motor_pid_t init_motor_pid() {
     return pid;
 }
 
-inline motor_pid_t get_motor_pid(short motIdx) {
-    return motors[motIdx].pid;
+inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type) {
+    return motors[motIdx].controller[type].pid;
 }
 
-void update_motor_pid(short motIdx, motor_pid_t pid) {
+bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid) {
     // Update value of pid
-    motors[motIdx].pid = pid;
-    motors[motIdx].kCoeffs[0] = Q15(motors[motIdx].pid.kp);
-    motors[motIdx].kCoeffs[1] = Q15(motors[motIdx].pid.ki);
-    motors[motIdx].kCoeffs[2] = Q15(motors[motIdx].pid.kd);
-    switch (motIdx) {
-        case MOTOR_ZERO:
-            //Initialize the PID data structure: PIDstruct
-            //Set up pointer to derived coefficients
-            motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient1[0];
-            //Set up pointer to controller history samples
-            motors[motIdx].PIDstruct.controlHistory = &controlHistory1[0];
-            break;
-        case MOTOR_ONE:
-            //Initialize the PID data structure: PIDstruct
-            //Set up pointer to derived coefficients
-            motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient2[0];
-            //Set up pointer to controller history samples
-            motors[motIdx].PIDstruct.controlHistory = &controlHistory2[0];
-            break;
-    }
-    // Clear the controller history and the controller output
-    PIDInit(&motors[motIdx].PIDstruct);
+    motors[motIdx].controller[type].pid = pid;
+    motors[motIdx].controller[type].kCoeffs[0] = Q15(motors[motIdx].controller[type].pid.kp);
+    motors[motIdx].controller[type].kCoeffs[1] = Q15(motors[motIdx].controller[type].pid.ki);
+    motors[motIdx].controller[type].kCoeffs[2] = Q15(motors[motIdx].controller[type].pid.kd);
+    
+    // TODO Add stop of all Interrupt during the time of this function
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
-    PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
+    PIDCoeffCalc(&motors[motIdx].controller[type].kCoeffs[0], &motors[motIdx].controller[type].PIDstruct);
+    // TODO add check gains value
+    // | Kp + ki + kd | < 1
+    // | -(Kp + 2*Kd) | < 1
+    // | Kd | < 1
+    return true;
 }
              
 motor_emergency_t init_motor_emergency() {
@@ -383,7 +425,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
         REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     
     if (state == CONTROL_EMERGENCY) {
-        motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
+        motors[motIdx].last_reference = motors[motIdx].reference.velocity;
     }
     /// Disable PWM generator
     if (enable) {
@@ -431,7 +473,7 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
     
     
-    fractional control_output = MotorPID(motIdx, &motors[motIdx].PIDstruct);
+    fractional control_output = MotorPID(motIdx, &motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].PIDstruct);
     
     // Send to motor the value of control
     Motor_PWM(motIdx, control_output);
@@ -514,8 +556,8 @@ inline fractional MotorPID(short motIdx, tPID *pid) {
 void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].reference.velocity != 0) {
-        motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / (int16_t) (motors[motIdx].emergency_step + 0.5f);
-        if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference.velocity < 0) {
+        motors[motIdx].reference.velocity -= motors[motIdx].last_reference / (int16_t) (motors[motIdx].emergency_step + 0.5f);
+        if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference < 0) {
             motors[motIdx].reference.velocity = 0;
         }
     } else if (motors[motIdx].reference.velocity == 0) {

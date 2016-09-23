@@ -44,7 +44,7 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
     motor.command_message = info->command;
     switch (motor.bitset.command) {
         case MOTOR_VEL_PID:
-            update_motor_pid((short) motor.bitset.motor, info->message.motor.pid);
+            update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, info->message.motor.pid);
             list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_PARAMETER:
@@ -86,7 +86,7 @@ void send_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_VEL_PID:
-            send.motor.pid = get_motor_pid((short) motor.bitset.motor);
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_VEL_REF:
