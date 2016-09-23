@@ -24,6 +24,10 @@
 # Save the current working directory
 pushd .
 
+# Create a folder for the unav libraries.
+mkdir ../unav-libraries
+cd ../unav-libraries
+
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Downloading or_bus_c.X library     -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
