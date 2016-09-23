@@ -32,13 +32,28 @@ echo "- Downloading or_bus_c.X library     -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 git clone https://github.com/officinerobotiche/or_bus_c.X
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+echo "- Build or_bus_c.X library           -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+/opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+make
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Downloading or_kernel_c.X library  -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 git clone https://github.com/officinerobotiche/or_kernel_c.X
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+echo "- Build or_kernel_c.X library        -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+/opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+make
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Downloading or_common_c.X library  -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 git clone https://github.com/officinerobotiche/or_common_c.X
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+echo "- Build or_commont_c.X library       -"
+echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+/opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+make
 
 # Return to the saved working directory
 popd

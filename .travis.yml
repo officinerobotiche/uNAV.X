@@ -28,18 +28,5 @@ install:
 # Generate Makefiles and make
 script:
  - pwd
- - cd ../or_bus_c.X
- - pwd
- - /opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
- - make
- - cd ../or_kernel_c.X
- - pwd
- - /opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
- - make
- - cd ../or_common_c.X
- - pwd
- - /opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
- - make
- - cd ../uNAV.X
  - /opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
  - make
