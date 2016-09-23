@@ -1,10 +1,5 @@
 language: c
 
-# whitelist
-branches:
-  only:
-    - feature/travis-CI_integration
-
 sudo: true
 
 addons:
@@ -28,5 +23,5 @@ install:
 # Generate Makefiles and make
 script:
  - pwd
- - /opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+ - /opt/microchip/mplabx/v3.40/mplab_ide/bin/prjMakefilesGenerator.sh .
  - make
