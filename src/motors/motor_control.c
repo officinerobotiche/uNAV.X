@@ -62,7 +62,7 @@
 
 #define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000    // In Herts
 
-#define DEFAULT_FREQ_MOTOR_MANAGER 10000            // Task Manager 10Khz
+#define DEFAULT_FREQ_MOTOR_MANAGER 1000            // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
 
 /*****************************************************************************/
@@ -363,8 +363,8 @@ inline motor_emergency_t get_motor_emergency(short motIdx) {
 
 void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     motors[motIdx].emergency = emergency_data;
-    motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * FRTMR1;
-    motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * FRTMR1;
+    motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * DEFAULT_FREQ_MOTOR_MANAGER;
+    motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * DEFAULT_FREQ_MOTOR_MANAGER;
     motors[motIdx].counter_alive = 0;
     motors[motIdx].counter_stop = 0;
 }
