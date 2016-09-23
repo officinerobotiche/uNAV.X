@@ -3,7 +3,7 @@ language: c
 # whitelist
 branches:
   only:
-    - master
+    - feature/travis-CI_integration
 
 sudo: true
 
