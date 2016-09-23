@@ -21,19 +21,25 @@
 #  MPLAB® XC16 Compiler: v1.25
 #
 
+# Save the current working directory
+pushd .
+
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
-echo "- Downloading or_bus_c.X library     +"
+echo "- Downloading or_bus_c.X library     -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 git clone https://github.com/officinerobotiche/or_bus_c.X
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
-echo "- Downloading or_kernel_c.X library  +"
+echo "- Downloading or_kernel_c.X library  -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 git clone https://github.com/officinerobotiche/or_kernel_c.X
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
-echo "- Downloading or_common_c.X library  +"
+echo "- Downloading or_common_c.X library  -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 git clone https://github.com/officinerobotiche/or_common_c.X
 
+# Return to the saved working directory
+popd
+
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
-echo "- All libraries are downloaded       +"
+echo "- All libraries are downloaded       -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
