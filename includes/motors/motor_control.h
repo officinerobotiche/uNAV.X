@@ -26,7 +26,8 @@ extern "C" {
     #include <stdbool.h>
     #include <string.h>
     #include <dsp.h>
-    
+
+    #include <system/task_manager.h>
     #include <peripherals/gpio.h>
 
     #include "system/peripherals.h"
@@ -85,8 +86,9 @@ extern "C" {
      * @param ICinfo_ Input capture information
      * @param current_ Analog pin number for current
      * @param voltage_ Analog pin number for temperature
+     * @return task to run the MotorControlManager
      */
-    void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
+    hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.

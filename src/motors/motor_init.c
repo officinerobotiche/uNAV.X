@@ -236,12 +236,14 @@ void Motor_Init() {
         // End
         InitQEI(i);                                                     ///< Open QEI
         InitIC(i);                                                      ///< Open Input Capture
-        init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);    ///< Initialize variables for motors
+        hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);    ///< Initialize variables for motors
         update_motor_parameters(i, init_motor_parameters());            ///< Initialize parameters for motors
         update_motor_pid(i, init_motor_pid());                          ///< Initialize PID controllers
         update_motor_emergency(i, init_motor_emergency());              ///< Initialize emergency procedure to stop
         update_motor_constraints(i, init_motor_constraints());          ///< Initialize constraints motor
         set_motor_state(i, STATE_CONTROL_DISABLE);                      ///< Initialize state controller
+        /// Run task controller
+        task_set(motor_manager, RUN);
     }
 }
 

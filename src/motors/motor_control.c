@@ -59,9 +59,11 @@
 #define DEFAULT_KP 0.6
 #define DEFAULT_KI 0.15
 #define DEFAULT_KD 0.2
-#define DEFAULT_FREQ_MOTOR_MANAGER 1000 // In Herts
-#define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000 // In Herts
-#define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000 // In Herts
+
+#define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000    // In Herts
+
+#define DEFAULT_FREQ_MOTOR_MANAGER 1000            // Task Manager 1Khz
+#define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
@@ -97,9 +99,9 @@ typedef struct _motor_firmware {
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
-    /// event register
-    hEvent_t task_manager;
-    hEvent_t task_emergency;
+    /// Task register
+    hTask_t task_manager;
+    hTask_t task_emergency;
     /// Motor position
     uint32_t angle_limit;
     volatile int PulsEnc;
@@ -144,7 +146,7 @@ void reset_motor_data(motor_t* motor) {
     motor->state = CONTROL_DISABLE;
 }
 
-void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
+hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     
@@ -165,13 +167,15 @@ void init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_pres
     // Init mean buffer
     init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
-    motors[motIdx].task_manager = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &MotorTaskController, EVENT_PRIORITY_MEDIUM), 
-                                    DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
-    /// Run task controller
-    task_set(motors[motIdx].task_manager, RUN);
+    hModule_t motor_manager_module = register_module(&_MODULE_MOTOR);
+    hEvent_t motor_manager_task = register_event_p(motor_manager_module, &MotorTaskController, EVENT_PRIORITY_MEDIUM);
+    motors[motIdx].task_manager = task_load_data(motor_manager_task, DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
     /// Load controller EMERGENCY - Working at 1KHz
-    motors[motIdx].task_emergency = task_load_data(register_event_p(register_module(&_MODULE_MOTOR), &Emergency, EVENT_PRIORITY_HIGH), 
-                                    DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY, 1, (char) motIdx);
+    hModule_t emegency_module = register_module(&_MODULE_MOTOR);
+    hEvent_t emergency_event = register_event_p(emegency_module, &Emergency, EVENT_PRIORITY_HIGH);
+    motors[motIdx].task_emergency = task_load_data(emergency_event, DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY, 1, (char) motIdx);
+    // Return Task manager
+    return motors[motIdx].task_manager;
 }
 
 motor_parameter_t init_motor_parameters() {
@@ -299,7 +303,7 @@ void update_motor_pid(short motIdx, motor_pid_t pid) {
     }
     // Clear the controller history and the controller output
     PIDInit(&motors[motIdx].PIDstruct);
-    //Derive the a,b, & c coefficients from the Kp, Ki & Kd
+    // Derive the a, b and c coefficients from the Kp, Ki & Kd
     PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
 }
              

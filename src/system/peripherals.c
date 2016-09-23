@@ -385,7 +385,7 @@ void InitLEDs(void) {
 #elif MOTION_CONTROL
     GPIO_INIT_TYPE(led_controller[0].gpio, A, 4, GPIO_OUTPUT);
 #endif
-    LED_Init(get_system_parameters().FREQ_SYSTEM, &led_controller[0], LED_NUM);
+    LED_Init(1000, &led_controller[0], LED_NUM);
 }
 
 inline void UpdateBlink(short num, short blink) {

@@ -96,7 +96,7 @@ inline system_parameter_t get_system_parameters(void) {
 
 void InitEvents(void) {
     /// Register event controller
-    init_events(&TMR1, &PR1);
+    init_events(&TMR1, &PR1, SYS_FREQ);
     
     EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
     EVENT_PRIORITY_VERY_LOW_P = EVENT_PRIORITY_VERY_LOW_LEVEL;
