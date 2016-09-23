@@ -24,7 +24,7 @@
 # Save the current working directory
 pushd .
 
-# Create a folder for the unav libraries.
+# Go to the home folder for the unav libraries.
 cd ../
 
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
