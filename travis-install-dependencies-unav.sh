@@ -17,8 +17,9 @@
 # of the project directory. Than extracts and installs them.
 # 
 # Versions:
-#  MPLAB® X IDE:         v3.15
-#  MPLAB® XC16 Compiler: v1.25
+#  MPLAB® X IDE:            v3.40
+#  MPLAB® XC16 Compiler:    v1.26
+#  MPLAB® Pheriperhal Lib:  v2.00
 #
 
 # Save the current working directory
@@ -27,8 +28,8 @@ pushd .
 # Go to the home folder for the unav libraries.
 cd ../
 
-export MPLABVER=v1.25
-echo "- MPLAB VER: &MPLABVER -"
+export MPLABVER=v3.40
+echo "- MPLAB X IDE VERSION: $MPLABVER -"
 
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Downloading or_bus_c.X library     -"
@@ -38,7 +39,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_bus_c.X library           -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_bus_c.X/
-/opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+/opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
@@ -49,7 +50,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_kernel_c.X library        -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_kernel_c.X/
-/opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+/opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
@@ -60,7 +61,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_commont_c.X library       -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_common_c.X/
-/opt/microchip/mplabx/v3.15/mplab_ide/bin/prjMakefilesGenerator.sh .
+/opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../
 
