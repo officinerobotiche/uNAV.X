@@ -25,8 +25,7 @@
 pushd .
 
 # Create a folder for the unav libraries.
-mkdir ../unav-libraries
-cd ../unav-libraries
+cd ../
 
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Downloading or_bus_c.X library     -"
