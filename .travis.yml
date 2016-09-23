@@ -1,3 +1,10 @@
+notifications:
+  email:
+    recipients:
+      - raffaello.bonghi@officinerobotiche.it
+    on_success: change #[always|never|change] # default: change
+    on_failure: always #[always|never|change] # default: always
+
 language: c
 
 sudo: true
