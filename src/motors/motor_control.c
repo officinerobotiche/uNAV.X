@@ -225,6 +225,10 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     return motors[motIdx].manager_task;
 }
 
+void set_currentControlInside(short motIdx, bool value) {
+    motors[motIdx].currentControlInside = value;
+}
+
 motor_parameter_t init_motor_parameters() {
     motor_parameter_t parameter;
     parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
@@ -499,26 +503,31 @@ void MotorTaskController(int argc, int *argv) {
                 break;
             }
         case CONTROL_VELOCITY:
-            if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter >= motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].time) {
-                // Run Velocity PID control
-                motors[motIdx].controlOutput.velocity =
-                        MotorPID(motIdx, CONTROL_VELOCITY,
-                        motors[motIdx].reference.velocity,
-                        motors[motIdx].measure.velocity);
-                // Reset counter
-                motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter = 0;
+            if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].pid.enable) {
+                if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter >= motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].time) {
+                    // Run Velocity PID control
+                    motors[motIdx].controlOutput.velocity =
+                            MotorPID(motIdx, CONTROL_VELOCITY,
+                            motors[motIdx].reference.velocity,
+                            motors[motIdx].measure.velocity);
+                    // Reset counter
+                    motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter = 0;
+                } else {
+                    // Increase the counter
+                    motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter++;
+                }
+                // Check if the CONTROL_CURRENT is enabled
+                if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].pid.enable) {
+                    // Save the control controlOtput velocity in current reference
+                    motors[motIdx].reference.current = motors[motIdx].controlOutput.velocity;
+                } else {
+                    // Send to motor the value of control
+                    Motor_PWM(motIdx, motors[motIdx].controlOutput.velocity);
+                    break;
+                }
             } else {
-                // Increase the counter
-                motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter++;
-            }
-            // Check if the CONTROL_CURRENT is enabled
-            if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].pid.enable) {
-                // Save the control controlOtput velocity in current reference
-                motors[motIdx].reference.current = motors[motIdx].controlOutput.velocity;
-            } else {
-                // Send to motor the value of control
-                Motor_PWM(motIdx, motors[motIdx].controlOutput.velocity);
-                break;
+                motors[motIdx].controlOutput.velocity = 0;
+                Motor_PWM(motIdx, 0);
             }
         case CONTROL_CURRENT:
             if(motors[motIdx].currentControlInside) {
