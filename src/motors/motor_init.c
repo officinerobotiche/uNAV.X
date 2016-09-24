@@ -233,16 +233,25 @@ void Motor_Init() {
     for (i = 0; i < NUM_MOTORS; ++i) {
         // Init Input Capture
         InitICinfo(i);
-        // End
-        InitQEI(i);                                                     ///< Open QEI
-        InitIC(i);                                                      ///< Open Input Capture
-        hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);    ///< Initialize variables for motors
-        update_motor_parameters(i, init_motor_parameters());            ///< Initialize parameters for motors
-        update_motor_pid(i, CONTROL_VELOCITY, init_motor_pid());                          ///< Initialize PID controllers
-        update_motor_emergency(i, init_motor_emergency());              ///< Initialize emergency procedure to stop
-        update_motor_constraints(i, init_motor_constraints());          ///< Initialize constraints motor
-        set_motor_state(i, STATE_CONTROL_DISABLE);                      ///< Initialize state controller
-        /// Run task controller
+        // Open QEI
+        InitQEI(i);                                                     
+        ///< Open Input Capture
+        InitIC(i);                                                      
+        // Initialize variables for motors
+        hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
+        // Initialize parameters for motors
+        update_motor_parameters(i, init_motor_parameters());            
+        // Initialize current PID controller
+        update_motor_pid(i, CONTROL_CURRENT, init_motor_pid());
+        // Initialize velocity PID controller
+        update_motor_pid(i, CONTROL_VELOCITY, init_motor_pid());
+        // Initialize emergency procedure to stop
+        update_motor_emergency(i, init_motor_emergency());
+        // Initialize constraints motor
+        update_motor_constraints(i, init_motor_constraints());
+        // Initialize state controller
+        set_motor_state(i, STATE_CONTROL_DISABLE);
+        // Run task controller
         task_set(motor_manager, RUN);
     }
 }
