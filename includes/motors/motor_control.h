@@ -220,6 +220,14 @@ extern "C" {
      *  - Torque control (move to desired torque)
      */
     void MotorTaskController(int argc, int *argv);
+    
+    /**
+     * 
+     * @param motIdx
+     * @param adc_current
+     * @param adc_voltage
+     */
+    inline void CurrentControl(short motIdx, fractional adc_current, fractional adc_voltage);
 
     /**
      * Measure velocity from Input Capture and QEI
@@ -244,9 +252,12 @@ extern "C" {
      * 2. Load data (reference, measure) and execution PID control and get value
      * 3. Conversion PID value for PWM controller
      * @param motIdx Number motor
+     * @param type
+     * @param reference
+     * @param measure
      * @return control evaluation
      */
-    inline fractional MotorPID(short motIdx, tPID *pid);
+    inline fractional MotorPID(short motIdx, enum_state_t type, fractional reference, fractional measure);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
