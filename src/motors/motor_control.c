@@ -55,9 +55,9 @@
 /**
  * Default value for PID
  */
-#define DEFAULT_KP 0.6
-#define DEFAULT_KI 0.15
-#define DEFAULT_KD 0.2
+#define DEFAULT_KP 1
+#define DEFAULT_KI 0
+#define DEFAULT_KD 0
 
 #define DEFAULT_FREQ_MOTOR_CONTROL_VELOCITY 1000    // In Herts
 
@@ -321,9 +321,9 @@ inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type) {
 bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid) {
     // Update value of pid
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid = pid;
-    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[0] = Q15(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kp);
-    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[1] = Q15(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.ki);
-    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[2] = Q15(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kd);
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[0] = (int)(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kp*GAIN_KILO);
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[1] = (int)(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.ki*GAIN_KILO);
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[2] = (int)(motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kd*GAIN_KILO);
     
     // TODO Add stop of all Interrupt during the time of this function
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
