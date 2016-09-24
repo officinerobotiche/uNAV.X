@@ -245,6 +245,8 @@ void Motor_Init() {
         update_motor_pid(i, CONTROL_CURRENT, init_motor_pid());
         // Initialize velocity PID controller
         update_motor_pid(i, CONTROL_VELOCITY, init_motor_pid());
+        // Set the PID current control work in the ADC function
+        set_currentControlInside(i, false);
         // Initialize emergency procedure to stop
         update_motor_emergency(i, init_motor_emergency());
         // Initialize constraints motor

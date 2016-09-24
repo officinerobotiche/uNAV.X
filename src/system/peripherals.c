@@ -392,22 +392,34 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
+unsigned int current[NUM_MOTORS];
+unsigned int voltage[NUM_MOTORS];
+
 inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     //static int i, counter, adc;
+    
     switch(info_buffer.adc_conf) {
         case ADC_SIM_2:
             // Shift the value to cover all int range
             // TODO use a builtin
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch0, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch1, 0, info_buffer.size_base_2) << 5));
+            current[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_2_channels.ch0, 0, info_buffer.size_base_2) << 5;
+            current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_2_channels.ch1, 0, info_buffer.size_base_2) << 5;
+            voltage[MOTOR_ZERO] = 0;
+            voltage[MOTOR_ONE] = 0;
+            gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
+            gpio_ProcessADCSamples(1, current[MOTOR_ONE]);
             break;
         case ADC_SIM_4:
             // Shift the value to cover all int range
             // TODO use a builtin
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2) << 5));
+            current[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2) << 5;
+            voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2) << 5;
+            current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2) << 5;
+            voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2) << 5;
+            gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
+            gpio_ProcessADCSamples(1, voltage[MOTOR_ZERO]);
+            gpio_ProcessADCSamples(2, current[MOTOR_ONE]);
+            gpio_ProcessADCSamples(3, voltage[MOTOR_ONE]);
             break;
         case ADC_SCAN:
 //            counter = 0;
@@ -420,6 +432,10 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
 //            }
             break;
     }
+    // Launch the motor current control for motor zero
+    CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
+    // Launch the motor current control for motor one
+    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
 }
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {

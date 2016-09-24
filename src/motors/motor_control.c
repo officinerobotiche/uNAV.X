@@ -525,10 +525,11 @@ void MotorTaskController(int argc, int *argv) {
                     Motor_PWM(motIdx, motors[motIdx].controlOutput.velocity);
                     break;
                 }
-            } else {
-                motors[motIdx].controlOutput.velocity = 0;
-                Motor_PWM(motIdx, 0);
             }
+//            else {
+//                motors[motIdx].controlOutput.velocity = 0;
+//                Motor_PWM(motIdx, 0);
+//            }
         case CONTROL_CURRENT:
             if(motors[motIdx].currentControlInside) {
                 //TODO Run Current control in this place

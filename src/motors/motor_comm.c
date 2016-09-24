@@ -47,6 +47,10 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, info->message.motor.pid);
             list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
+        case MOTOR_CURRENT_PID:
+            update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, info->message.motor.pid);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            break;
         case MOTOR_PARAMETER:
             update_motor_parameters((short) motor.bitset.motor, info->message.motor.parameter);
             list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
@@ -57,6 +61,10 @@ void save_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             break;
         case MOTOR_VEL_REF:
             set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, info->message.motor.reference);
+            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            break;
+        case MOTOR_CURRENT_REF:
+            set_motor_reference((short) motor.bitset.motor, CONTROL_CURRENT, info->message.motor.reference);
             list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
             break;
         case MOTOR_STATE:
@@ -89,8 +97,16 @@ void send_frame_motor(packet_information_t* list_send, size_t* len, packet_infor
             send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
+        case MOTOR_CURRENT_PID:
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            break;
         case MOTOR_VEL_REF:
             send.motor.reference = get_motor_reference((short) motor.bitset.motor).velocity;
+            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            break;
+        case MOTOR_CURRENT_REF:
+            send.motor.reference = get_motor_reference((short) motor.bitset.motor).current;
             list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_STATE:
