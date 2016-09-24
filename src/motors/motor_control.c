@@ -134,6 +134,7 @@ typedef struct _motor_firmware {
     volatile int32_t enc_angle;
     int rotation; //Check if required in future
     //Emergency
+    uint32_t emergency_timeout;
     float emergency_step;
     float emergency_stop;
     bool save_velocity;
@@ -148,7 +149,7 @@ typedef struct _motor_firmware {
     motor_diagnostic_t diagnostic;
     motor_emergency_t emergency;
     motor_parameter_t parameter_motor;
-    bool ADCcurrentControl;
+    bool currentControlInside;
     pid_controller_t controller[NUM_CONTROLLERS];
     motor_t controlOutput;
     motor_t constraint;
@@ -194,7 +195,7 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     // Setup frequency task manager
     motors[motIdx].manager_freq = DEFAULT_FREQ_MOTOR_MANAGER;
     // Set if current control run in ADC callback
-    motors[motIdx].ADCcurrentControl = true;
+    motors[motIdx].currentControlInside = true;
     motors[motIdx].prescaler_callback = prescaler_event;
     //Setup diagnostic
     motors[motIdx].diagnostic.watt = 0;
@@ -328,7 +329,11 @@ inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type) {
 
 bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid) {
     // Update value of pid
-    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid = pid;
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.enable = pid.enable;
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.frequency = pid.frequency;
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kp = pid.kp;
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.ki = pid.ki;
+    motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid.kd = pid.kd;
     // Update time to launch the PID controller
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].time = motors[motIdx].manager_freq / pid.frequency;
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].counter = 0;
@@ -361,6 +366,7 @@ inline motor_emergency_t get_motor_emergency(short motIdx) {
 
 void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     motors[motIdx].emergency = emergency_data;
+    motors[motIdx].emergency_timeout = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
     motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
     motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
     motors[motIdx].counter_alive = 0;
@@ -453,7 +459,7 @@ void MotorTaskController(int argc, int *argv) {
     }
     /// Check for emergency mode
     if(motors[motIdx].reference.state > CONTROL_DISABLE) {
-        if ((motors[motIdx].counter_alive + 1) >= motors[motIdx].emergency.timeout) {
+        if ((motors[motIdx].counter_alive + 1) >= motors[motIdx].emergency_timeout) {
             /// Set Motor in emergency mode
             set_motor_state(motIdx, CONTROL_EMERGENCY);
             motors[motIdx].counter_stop = 0;
@@ -463,10 +469,15 @@ void MotorTaskController(int argc, int *argv) {
     }
     //Measure velocity
     measureVelocity(motIdx);
-    // Update current and volt values;
-    // The current is evaluated with sign of motor rotation
-    motors[motIdx].current.value = motors[motIdx].rotation * (gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
-    motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
+    if (motors[motIdx].currentControlInside) {
+        // Update current and volt values
+        // The current is evaluated with sign of motor rotation
+        motors[motIdx].current.value = motors[motIdx].rotation * (gpio_get_analog(0, motors[motIdx].pin_current)
+                - motors[motIdx].current.offset);
+        
+        motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage)
+                + motors[motIdx].volt.offset;
+    }
 
     switch (motors[motIdx].reference.state) {
         case CONTROL_POSITION:
@@ -490,9 +501,9 @@ void MotorTaskController(int argc, int *argv) {
         case CONTROL_VELOCITY:
             if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter >= motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].time) {
                 // Run Velocity PID control
-                motors[motIdx].controlOutput.velocity = 
-                        MotorPID(motIdx, CONTROL_VELOCITY, 
-                        motors[motIdx].reference.velocity, 
+                motors[motIdx].controlOutput.velocity =
+                        MotorPID(motIdx, CONTROL_VELOCITY,
+                        motors[motIdx].reference.velocity,
                         motors[motIdx].measure.velocity);
                 // Reset counter
                 motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].counter = 0;
@@ -510,7 +521,7 @@ void MotorTaskController(int argc, int *argv) {
                 break;
             }
         case CONTROL_CURRENT:
-            if(!motors[motIdx].ADCcurrentControl) {
+            if(motors[motIdx].currentControlInside) {
                 //TODO Run Current control in this place
             }
             // else run inside the ADC line
