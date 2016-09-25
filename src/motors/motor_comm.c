@@ -28,7 +28,7 @@
 #include "motors/motor_comm.h"
 
 #include "communication/serial.h"
-#include <serial/or_frame.h>
+#include <or_bus/or_frame.h>
 #include "motors/motor_control.h"
 
 #include "high_control/manager.h"

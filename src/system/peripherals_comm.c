@@ -21,7 +21,7 @@
 
 #include <xc.h>                 /* Device header file */
 
-#include <serial/or_frame.h>
+#include <or_bus/or_frame.h>
 
 #include "system/peripherals.h"
 #include "communication/serial.h"

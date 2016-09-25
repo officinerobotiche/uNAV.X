@@ -240,11 +240,15 @@ void Motor_Init() {
         // Initialize variables for motors
         hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
         // Initialize parameters for motors
-        update_motor_parameters(i, init_motor_parameters());            
+        update_motor_parameters(i, init_motor_parameters()); 
+        // Current PID
+        motor_pid_t current_pid = {16, 0, 0, 10000, false};
         // Initialize current PID controller
-        update_motor_pid(i, CONTROL_CURRENT, init_motor_pid());
+        update_motor_pid(i, CONTROL_CURRENT, current_pid);
+        // Velocity PID
+        motor_pid_t velocity_pid = {16, 0, 0, 1000, false};
         // Initialize velocity PID controller
-        update_motor_pid(i, CONTROL_VELOCITY, init_motor_pid());
+        update_motor_pid(i, CONTROL_VELOCITY, velocity_pid);
         // Set the PID current control work in the ADC function
         set_currentControlInside(i, false);
         // Initialize emergency procedure to stop

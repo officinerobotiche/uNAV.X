@@ -52,14 +52,6 @@
 #define DEFAULT_ENC_Z_INDEX MOTOR_ENC_Z_INDEX_NO
 #define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
 #define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
-/**
- * Default value for PID
- */
-#define DEFAULT_KP 0
-#define DEFAULT_KI 0
-#define DEFAULT_KD 0
-#define DEFAULT_FREQ_MOTOR_CONTROL 1000    // In Herts
-#define DEFAULT_PID_STATE false
 
 #define DEFAULT_FREQ_MOTOR_MANAGER 10000            // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
@@ -238,8 +230,8 @@ motor_parameter_t init_motor_parameters() {
     parameter.bridge.pwm_frequency = 0;
     parameter.bridge.volt_offset = DEFAULT_VOLT_BRIDGE;
     parameter.bridge.volt_gain = 1;
-    parameter.bridge.current_offset = 0;
-    parameter.bridge.current_gain = 1;
+    parameter.bridge.current_offset = 0.8425;
+    parameter.bridge.current_gain = 0.0623;
     parameter.encoder.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
     parameter.encoder.type.position = DEFAULT_ENC_POSITION;
     parameter.encoder.type.channels = DEFAULT_ENC_CHANNELS;
@@ -317,16 +309,6 @@ void update_motor_constraints(short motIdx, motor_t constraints) {
     motors[motIdx].constraint = constraints;
 }
 
-motor_pid_t init_motor_pid() {
-    motor_pid_t pid;
-    pid.kp = DEFAULT_KP;
-    pid.ki = DEFAULT_KI;
-    pid.kd = DEFAULT_KD;
-    pid.frequency = DEFAULT_FREQ_MOTOR_CONTROL;
-    pid.enable = DEFAULT_PID_STATE;
-    return pid;
-}
-
 inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type) {
     return motors[motIdx].controller[GET_CONTROLLER_NUM(type)].pid;
 }
@@ -345,10 +327,15 @@ bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid) {
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[0] = (int)(pid.kp*GAIN_KILO);
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[1] = (int)(pid.ki*GAIN_KILO);
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[2] = (int)(pid.kd*GAIN_KILO);
-    
+
+    int old;
+    SET_AND_SAVE_CPU_IPL(old, 7);
     // TODO Add stop of all Interrupt during the time of this function
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
     PIDCoeffCalc(&motors[motIdx].controller[GET_CONTROLLER_NUM(type)].kCoeffs[0], &motors[motIdx].controller[GET_CONTROLLER_NUM(type)].PIDstruct);
+    
+    RESTORE_CPU_IPL(old);
+    
     // TODO add check gains value
     // | Kp + ki + kd | < 1
     // | -(Kp + 2*Kd) | < 1
@@ -541,6 +528,8 @@ void MotorTaskController(int argc, int *argv) {
             Motor_PWM(motIdx, motors[motIdx].reference.pwm);
             break;
     }
+    // TODO TEST
+    //set_motor_reference(motIdx, CONTROL_VELOCITY, 0);
 }
 
 inline void CurrentControl(short motIdx, fractional adc_current, fractional adc_voltage) {
@@ -549,7 +538,7 @@ inline void CurrentControl(short motIdx, fractional adc_current, fractional adc_
     // Check if the CONTROL_CURRENT is enabled
     if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].pid.enable) {
         // Store current measure
-        motors[motIdx].measure.current = motors[motIdx].current.value;
+        motors[motIdx].measure.current = -motors[motIdx].current.value;
         // Run Velocity PID control
         motors[motIdx].controlOutput.current = 
                 MotorPID(motIdx, CONTROL_CURRENT, 
@@ -624,6 +613,9 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 }
 
 inline fractional MotorPID(short motIdx, enum_state_t type, fractional reference, fractional measure) {
+    int old;
+    SET_AND_SAVE_CPU_IPL(old, 7);
+    
     // Setpoint
     motors[motIdx].controller[GET_CONTROLLER_NUM(type)].PIDstruct.controlReference = reference;
     // Measure
@@ -632,6 +624,8 @@ inline fractional MotorPID(short motIdx, enum_state_t type, fractional reference
     PID(&motors[motIdx].controller[GET_CONTROLLER_NUM(type)].PIDstruct);
     // Control value calculation
     return motors[motIdx].controller[GET_CONTROLLER_NUM(type)].PIDstruct.controlOutput;
+    
+     RESTORE_CPU_IPL(old);
 }
 
 void Emergency(int argc, int *argv) {

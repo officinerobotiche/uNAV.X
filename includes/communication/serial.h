@@ -22,8 +22,8 @@
 extern "C" {
 #endif
 
-    #include <serial/or_message.h>
-    #include <serial/or_frame.h>
+    #include <or_bus/or_message.h>
+    #include <or_bus/or_frame.h>
     
     //Dimension of list messages to decode in a packet
     #define BUFFER_LIST_PARSING 10
