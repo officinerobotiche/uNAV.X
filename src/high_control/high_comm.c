@@ -35,55 +35,48 @@
 /* Parsing functions                                                         */
 /*****************************************************************************/
 
-void save_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
-    switch (info->command) {
+packet_information_t save_frame_motion(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+    switch (command) {
         case MOTION_COORDINATE:
-            update_motion_coordinate(info->message.motion.coordinate);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            update_motion_coordinate(message.motion.coordinate);
             break;
         case MOTION_PARAMETER_UNICYCLE:
-            update_motion_parameter_unicycle(info->message.motion.parameter_unicycle);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            update_motion_parameter_unicycle(message.motion.parameter_unicycle);
             break;
         case MOTION_VEL_REF:
-            set_motion_velocity_ref_unicycle(info->message.motion.velocity);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            set_motion_velocity_ref_unicycle(message.motion.velocity);
             break;
         case MOTION_STATE:
-            set_motion_state(info->message.motion.state);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            set_motion_state(message.motion.state);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_ACK(command, type);
 }
 
-void send_frame_motion(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+packet_information_t send_frame_motion(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     message_abstract_u send;
-    switch (info->command) {
+    switch (command) {
         case MOTION_COORDINATE:
             send.motion.coordinate = get_motion_coordinate();
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTION_VEL_REF:
             send.motion.velocity = get_motion_velocity_ref_unicycle();
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTION_VEL:
             send.motion.velocity = get_motion_velocity_meas_unicycle();
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTION_STATE:
             send.motion.state = get_motion_state();
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTION_PARAMETER_UNICYCLE:
             send.motion.parameter_unicycle = get_motion_parameter_unicycle();
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_DATA(command, type, send);
 }
