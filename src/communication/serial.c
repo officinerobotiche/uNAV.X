@@ -41,6 +41,7 @@ static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
 peripherals_serial_t serial_config[2];
 // Packet
 packet_t receive;
+packet_t send;
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
 hEvent_t parseEvent = INVALID_EVENT_HANDLE;
@@ -122,9 +123,11 @@ void parse_packet(int argc, int* argv) {
 
     if(parser(&receive, &list_data[0], &len) && len != 0) {
         //Build a new message
-        packet_t send = encoder(&list_data[0], len);
-        // Send a new packet
-        serial_send(send);
+        unsigned int n_packet = encoder(&send, &list_data[0], len);
+        if(n_packet != 0) {
+            // Send a new packet
+            serial_send(send);
+        }
     }
 }
 
