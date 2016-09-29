@@ -290,9 +290,9 @@ inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
 void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     // Update value of pid
     motors[motIdx].pid = pid;
-    motors[motIdx].kCoeffs[0] = Q15(motors[motIdx].pid.kp);
-    motors[motIdx].kCoeffs[1] = Q15(motors[motIdx].pid.ki);
-    motors[motIdx].kCoeffs[2] = Q15(motors[motIdx].pid.kd);
+    motors[motIdx].kCoeffs[0] = (int) (pid.kp * 1000.0);
+    motors[motIdx].kCoeffs[1] = (int) (pid.ki * 1000.0);
+    motors[motIdx].kCoeffs[2] = (int) (pid.kd * 1000.0);
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
     PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
 }
