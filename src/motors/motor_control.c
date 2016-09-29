@@ -75,10 +75,8 @@ static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
  */
-fractional abcCoefficient1[3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory1[3] __attribute__((section(".ybss, bss, ymemory")));
-fractional abcCoefficient2[3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory2[3] __attribute__((section(".ybss, bss, ymemory")));
+fractional abcCoefficient[NUM_MOTORS][3] __attribute__((section(".xbss, bss, xmemory")));
+fractional controlHistory[NUM_MOTORS][3] __attribute__((section(".ybss, bss, ymemory")));
 
 /** */
 
@@ -145,10 +143,21 @@ void reset_motor_data(motor_t* motor) {
     motor->state = CONTROL_DISABLE;
 }
 
+void initialize_controllers(short motIdx) {
+    //Initialize the PID data structure: PIDstruct
+    //Set up pointer to derived coefficients
+    motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient[motIdx][0];
+    //Set up pointer to controller history samples
+    motors[motIdx].PIDstruct.controlHistory = &controlHistory[motIdx][0];
+    // Clear the controller history and the controller output
+    PIDInit(&motors[motIdx].PIDstruct);
+}
+
 hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
-    
+    //Initialize controllers
+    initialize_controllers(motIdx);
     motors[motIdx].prescaler_callback = prescaler_event;
     //Setup diagnostic
     motors[motIdx].diagnostic.time_control = 0;
@@ -284,24 +293,6 @@ void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     motors[motIdx].kCoeffs[0] = Q15(motors[motIdx].pid.kp);
     motors[motIdx].kCoeffs[1] = Q15(motors[motIdx].pid.ki);
     motors[motIdx].kCoeffs[2] = Q15(motors[motIdx].pid.kd);
-    switch (motIdx) {
-        case MOTOR_ZERO:
-            //Initialize the PID data structure: PIDstruct
-            //Set up pointer to derived coefficients
-            motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient1[0];
-            //Set up pointer to controller history samples
-            motors[motIdx].PIDstruct.controlHistory = &controlHistory1[0];
-            break;
-        case MOTOR_ONE:
-            //Initialize the PID data structure: PIDstruct
-            //Set up pointer to derived coefficients
-            motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient2[0];
-            //Set up pointer to controller history samples
-            motors[motIdx].PIDstruct.controlHistory = &controlHistory2[0];
-            break;
-    }
-    // Clear the controller history and the controller output
-    PIDInit(&motors[motIdx].PIDstruct);
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
     PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
 }
