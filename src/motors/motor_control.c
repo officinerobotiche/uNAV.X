@@ -98,6 +98,8 @@ typedef struct _motor_firmware {
     motor_t last_reference;
     unsigned int counter_alive;
     unsigned int counter_stop;
+    // Frequency manager;
+    frequency_t manager_freq;
     /// Task register
     hTask_t task_manager;
     hTask_t task_emergency;
@@ -107,6 +109,7 @@ typedef struct _motor_firmware {
     volatile int32_t enc_angle;
     int rotation; //Check if required in future
     //Emergency
+    uint32_t emergency_timeout;
     float emergency_step;
     float emergency_stop;
     bool save_velocity;
@@ -161,6 +164,8 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     //Initialize controllers
     initialize_controllers(motIdx);
     motors[motIdx].prescaler_callback = prescaler_event;
+    // Setup frequency task manager
+    motors[motIdx].manager_freq = DEFAULT_FREQ_MOTOR_MANAGER;
     //Setup diagnostic
     motors[motIdx].diagnostic.time_control = 0;
     motors[motIdx].diagnostic.watt = 0;
@@ -180,7 +185,7 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     /// Register event and add in task controller - Working at 1KHz
     hModule_t motor_manager_module = register_module(&_MODULE_MOTOR);
     hEvent_t motor_manager_task = register_event_p(motor_manager_module, &MotorTaskController, EVENT_PRIORITY_MEDIUM);
-    motors[motIdx].task_manager = task_load_data(motor_manager_task, DEFAULT_FREQ_MOTOR_MANAGER, 1, (char) motIdx);
+    motors[motIdx].task_manager = task_load_data(motor_manager_task, motors[motIdx].manager_freq, 1, (char) motIdx);
     /// Load controller EMERGENCY - Working at 1KHz
     hModule_t emegency_module = register_module(&_MODULE_MOTOR);
     hEvent_t emergency_event = register_event_p(emegency_module, &Emergency, EVENT_PRIORITY_HIGH);
@@ -233,7 +238,7 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
     motors[motIdx].k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
     // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
-    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000000.0f);
+    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * motors[motIdx].manager_freq);
     
     //Update encoder swap
     switch (motIdx) {
@@ -313,8 +318,9 @@ inline motor_emergency_t get_motor_emergency(short motIdx) {
 
 void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     motors[motIdx].emergency = emergency_data;
-    motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * FRTMR1;
-    motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * FRTMR1;
+    motors[motIdx].emergency_timeout = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
+    motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
+    motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
     motors[motIdx].counter_alive = 0;
     motors[motIdx].counter_stop = 0;
 }
@@ -408,7 +414,7 @@ void MotorTaskController(int argc, int *argv) {
     }
     /// Check for emergency mode
     if(motors[motIdx].reference.state > CONTROL_DISABLE) {
-        if ((motors[motIdx].counter_alive + 1) >= motors[motIdx].emergency.timeout) {
+        if ((motors[motIdx].counter_alive + 1) >= motors[motIdx].emergency_timeout) {
             /// Set Motor in emergency mode
             set_motor_state(motIdx, CONTROL_EMERGENCY);
             motors[motIdx].counter_stop = 0;
@@ -418,7 +424,7 @@ void MotorTaskController(int argc, int *argv) {
     }
     //-------------- BUILD MEASURE----------------------------------------------
 
-    //Measure velocity
+    //Measure velocity in milli rad/s
     motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
     // Update current and volt values;
     // The current is evaluated with sign of motor rotation
