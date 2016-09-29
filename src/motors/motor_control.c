@@ -71,12 +71,14 @@
 #define MOTOR "MOTOR"
 static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
 
+#define NUM_CONTROLLERS 3
+
 /**
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
  */
-fractional abcCoefficient[NUM_MOTORS][3] __attribute__((section(".xbss, bss, xmemory")));
-fractional controlHistory[NUM_MOTORS][3] __attribute__((section(".ybss, bss, ymemory")));
+fractional abcCoefficient[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
+fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
 
 /** */
 
@@ -146,9 +148,9 @@ void reset_motor_data(motor_t* motor) {
 void initialize_controllers(short motIdx) {
     //Initialize the PID data structure: PIDstruct
     //Set up pointer to derived coefficients
-    motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient[motIdx][0];
+    motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient[motIdx][1][0];
     //Set up pointer to controller history samples
-    motors[motIdx].PIDstruct.controlHistory = &controlHistory[motIdx][0];
+    motors[motIdx].PIDstruct.controlHistory = &controlHistory[motIdx][1][0];
     // Clear the controller history and the controller output
     PIDInit(&motors[motIdx].PIDstruct);
 }
@@ -414,6 +416,8 @@ void MotorTaskController(int argc, int *argv) {
         } else
             motors[motIdx].counter_alive++;
     }
+    //-------------- BUILD MEASURE----------------------------------------------
+    
     //Measure velocity
     measureVelocity(motIdx);
     // Update current and volt values;
@@ -421,8 +425,15 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].current.value = motors[motIdx].rotation * (gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
     motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
     
-    
-    fractional control_output = MotorPID(motIdx, &motors[motIdx].PIDstruct);
+    //-------------- PID CONTROL -----------------------------------------------
+    // Set reference
+    motors[motIdx].PIDstruct.controlReference = motors[motIdx].reference.velocity;
+    // Set measure
+    motors[motIdx].PIDstruct.measuredOutput = motors[motIdx].measure.velocity;
+    // PID execution
+    PID(&motors[motIdx].PIDstruct);
+    // Set Output
+    fractional control_output = motors[motIdx].PIDstruct.controlOutput;
     
     // Send to motor the value of control
     Motor_PWM(motIdx, control_output);
@@ -489,17 +500,6 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
     // PWM output
     pwm_control = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
     SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
-}
-
-inline fractional MotorPID(short motIdx, tPID *pid) {
-    // Setpoint
-    pid->controlReference = motors[motIdx].reference.velocity;
-    // Measure
-    pid->measuredOutput = motors[motIdx].measure.velocity;
-    // PID execution
-    PID(pid);
-    // Control value calculation
-    return pid->controlOutput;
 }
 
 void Emergency(int argc, int *argv) {

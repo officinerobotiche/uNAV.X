@@ -217,18 +217,7 @@ extern "C" {
      *  - Position control (move to desired angle)
      *  - Velocity control (move to desired angular velocity)
      *  - Torque control (move to desired torque)
-     */
-    void MotorTaskController(int argc, int *argv);
-
-    /**
-     * Measure velocity from Input Capture and QEI
-     * @param motIdx Number motor
-     */
-    void measureVelocity(short motIdx);
-    
-    inline void Motor_PWM(short motIdx, int pwm_control);
-    
-    /**
+     * 
      * Execution velocity PID for left motor
      *           _____          _______
      * ref +    |     |  cont  |       |
@@ -242,10 +231,16 @@ extern "C" {
      * information is important for odometry)
      * 2. Load data (reference, measure) and execution PID control and get value
      * 3. Conversion PID value for PWM controller
-     * @param motIdx Number motor
-     * @return control evaluation
      */
-    inline fractional MotorPID(short motIdx, tPID *pid);
+    void MotorTaskController(int argc, int *argv);
+
+    /**
+     * Measure velocity from Input Capture and QEI
+     * @param motIdx Number motor
+     */
+    void measureVelocity(short motIdx);
+    
+    inline void Motor_PWM(short motIdx, int pwm_control);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
