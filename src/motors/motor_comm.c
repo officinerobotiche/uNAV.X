@@ -44,7 +44,7 @@ packet_information_t save_frame_motor(unsigned char option, unsigned char type, 
     motor.command_message = command;
     switch (motor.bitset.command) {
         case MOTOR_VEL_PID:
-            update_motor_pid((short) motor.bitset.motor, message.motor.pid);
+            update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid);
             break;
         case MOTOR_CURRENT_PID:
             //update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid);
@@ -85,7 +85,7 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
             send.motor.parameter = get_motor_parameters((short) motor.bitset.motor);
             break;
         case MOTOR_VEL_PID:
-            send.motor.pid = get_motor_pid((short) motor.bitset.motor);
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
             break;
         case MOTOR_CURRENT_PID:
             //send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);

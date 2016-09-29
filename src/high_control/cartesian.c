@@ -41,7 +41,7 @@ void init_cartesian (motor_state_t* state) {
     // Update parameter motors
     for(i = 0; i < NUM_MOTORS; ++i) {
         update_motor_parameters(i, motor[i]);
-        update_motor_pid(i, pid[i]);
+        update_motor_pid(i, CONTROL_VELOCITY, pid[i]);
     }
 }
 

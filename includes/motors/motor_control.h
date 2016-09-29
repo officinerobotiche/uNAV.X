@@ -135,7 +135,7 @@ extern "C" {
      * @param motIdx number of motor
      * @return value PID
      */
-    inline motor_pid_t get_motor_pid(short motIdx);
+    inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state);
     /**
      * Transform float value received from gain for PID right in Q15 value
      * for dsp controller.
@@ -144,7 +144,7 @@ extern "C" {
      *        PID data structure: PIDstruct for PID 1 (Motor left)
      *        PID data structure: PIDstruct for PID 1 (Motor right)
      */
-    void update_motor_pid(short motIdx, motor_pid_t pid);
+    void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid);
 
     /**
      * Initialization standard value for emergency configuration motor

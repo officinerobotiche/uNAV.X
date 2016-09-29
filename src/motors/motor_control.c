@@ -274,11 +274,11 @@ motor_pid_t init_motor_pid() {
     return pid;
 }
 
-inline motor_pid_t get_motor_pid(short motIdx) {
+inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
     return motors[motIdx].pid;
 }
 
-void update_motor_pid(short motIdx, motor_pid_t pid) {
+void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     // Update value of pid
     motors[motIdx].pid = pid;
     motors[motIdx].kCoeffs[0] = Q15(motors[motIdx].pid.kp);
