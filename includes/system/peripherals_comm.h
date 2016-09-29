@@ -12,11 +12,11 @@
 extern "C" {
 #endif
 
-    #include <serial/or_frame.h>
+    #include <or_bus/or_frame.h>
     
-void save_frame_gpio(packet_information_t* list_send, size_t* len, packet_information_t* info);
+packet_information_t save_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
-void send_frame_gpio(packet_information_t* list_send, size_t* len, packet_information_t* info);
+packet_information_t send_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
 
 #ifdef	__cplusplus

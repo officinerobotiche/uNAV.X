@@ -21,7 +21,7 @@
 
 #include <xc.h>                 /* Device header file */
 
-#include <serial/or_frame.h>
+#include <or_bus/or_frame.h>
 
 #include "system/peripherals.h"
 #include "communication/serial.h"
@@ -33,63 +33,58 @@
 /* Parsing functions                                                          */
 /******************************************************************************/
 
-void save_frame_gpio(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+packet_information_t save_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     int port_name;
-    switch (info->command) {
+    switch (command) {
         case PERIPHERALS_GPIO_SET:
-            port_name = (info->message.gpio.set.name == 'A') ? 0 : 1;
-            gpio_setup(port_name, info->message.gpio.set.number, info->message.gpio.set.type);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            port_name = (message.gpio.set.name == 'A') ? 0 : 1;
+            gpio_setup(port_name, message.gpio.set.number, message.gpio.set.type);
             break;
         case PERIPHERALS_GPIO:
-            port_name = (info->message.gpio.set.name == 'A') ? 0 : 1;
-            gpio_set(port_name, BIT_MASK(info->message.gpio.port.port));
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            port_name = (message.gpio.set.name == 'A') ? 0 : 1;
+            gpio_set(port_name, BIT_MASK(message.gpio.port.port));
             break;
         case PERIPHERALS_GPIO_ALL:
-            port_name = (info->message.gpio.port.name == 'A') ? 0 : 1;
-            gpio_set(port_name, info->message.gpio.port.port);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            port_name = (message.gpio.port.name == 'A') ? 0 : 1;
+            gpio_set(port_name, message.gpio.port.port);
             break;
         case PERIPHERALS_SERIAL:
-            list_send[(*len)++] = CREATE_PACKET_RESPONSE(info->command, info->type, Serial_set(info->message.gpio.serial));
+            return CREATE_PACKET_RESPONSE(command, type, Serial_set(message.gpio.serial));
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_ACK(command, type);
 }
 
-void send_frame_gpio(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+packet_information_t send_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     int port_name;
     message_abstract_u send;
-    switch (info->command) {
+    switch (command) {
         case PERIPHERALS_GPIO_SET:
-            port_name = (info->message.gpio.set.name == 'A') ? 0 : 1;
-            send.gpio.set.type = gpio_config(port_name, info->message.gpio.set.number);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            port_name = (message.gpio.set.name == 'A') ? 0 : 1;
+            send.gpio.set.type = gpio_config(port_name, message.gpio.set.number);
             break;
         case PERIPHERALS_GPIO:
-            port_name = (info->message.gpio.set.name == 'A') ? 0 : 1;
-            if(gpio_config(port_name, info->message.gpio.set.number) == GPIO_ANALOG) {
-                send.gpio.port.port = gpio_get_analog(port_name, info->message.gpio.port.port);
+            port_name = (message.gpio.set.name == 'A') ? 0 : 1;
+            if(gpio_config(port_name, message.gpio.set.number) == GPIO_ANALOG) {
+                send.gpio.port.port = gpio_get_analog(port_name, message.gpio.port.port);
             } else {
                 int data = gpio_get(port_name);
-                send.gpio.port.port = REGISTER_MASK_READ(&data, BIT_MASK(info->message.gpio.port.port));
+                send.gpio.port.port = REGISTER_MASK_READ(&data, BIT_MASK(message.gpio.port.port));
             }
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case PERIPHERALS_GPIO_ALL:
-            port_name = (info->message.gpio.port.name == 'A') ? 0 : 1;
+            port_name = (message.gpio.port.name == 'A') ? 0 : 1;
             send.gpio.port.port = gpio_get(port_name);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case PERIPHERALS_SERIAL:
             send.gpio.serial = Serial_get(0);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_DATA(command, type, send);
 };

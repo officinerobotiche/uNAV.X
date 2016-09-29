@@ -41,30 +41,29 @@ extern system_error_serial_t serial_error;
 /* User Functions                                                            */
 /*****************************************************************************/
 
-void save_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     message_abstract_u send;
-    switch (info->command) {
+    switch (command) {
         case SYSTEM_SERVICE:
-            send.system.service = services(info->message.system.service);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            send.system.service = services(message.system.service);
+            return CREATE_PACKET_DATA(command, type, send);
             break;
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
-            set_process(info->command, info->message.system.task);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            set_process(command, message.system.task);
+            return CREATE_PACKET_ACK(command, type);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
 }
 
-void send_frame_system(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     message_abstract_u send;
-    switch (info->command) {
+    switch (command) {
         case SYSTEM_SERVICE:
-            send.system.service = services(info->message.system.service);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            send.system.service = services(message.system.service);
             break;
         case SYSTEM_TASK_PRIORITY:
         case SYSTEM_TASK_FRQ:
@@ -72,23 +71,20 @@ void send_frame_system(packet_information_t* list_send, size_t* len, packet_info
             
             break;
         case SYSTEM_TASK_NUM:
-            send.system.task = get_process(info->command, info->message.system.task);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            send.system.task = get_process(command, message.system.task);
             break;
         case SYSTEM_TASK_NAME:
-            send.system.task_name = get_process_name(info->message.system.task_name);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            send.system.task_name = get_process_name(message.system.task_name);
             break;
         case SYSTEM_PARAMETER:
             send.system.parameter = parameter_system;
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case SYSTEM_SERIAL_ERROR:
             send.system.error_serial = serial_error;
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_DATA(command, type, send);
 }

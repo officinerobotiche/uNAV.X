@@ -28,7 +28,7 @@
 #include "motors/motor_comm.h"
 
 #include "communication/serial.h"
-#include <serial/or_frame.h>
+#include <or_bus/or_frame.h>
 #include "motors/motor_control.h"
 
 #include "high_control/manager.h"
@@ -40,81 +40,80 @@ motor_command_map_t motor;
 /* Parsing functions                                                          */
 /******************************************************************************/
 
-void save_frame_motor(packet_information_t* list_send, size_t* len, packet_information_t* info) {
-    motor.command_message = info->command;
+packet_information_t save_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+    motor.command_message = command;
     switch (motor.bitset.command) {
         case MOTOR_VEL_PID:
-            update_motor_pid((short) motor.bitset.motor, info->message.motor.pid);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            update_motor_pid((short) motor.bitset.motor, message.motor.pid);
+            break;
+        case MOTOR_CURRENT_PID:
+            //update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid);
             break;
         case MOTOR_PARAMETER:
-            update_motor_parameters((short) motor.bitset.motor, info->message.motor.parameter);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            update_motor_parameters((short) motor.bitset.motor, message.motor.parameter);
             break;
         case MOTOR_CONSTRAINT:
-            update_motor_constraints((short) motor.bitset.motor, info->message.motor.motor);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            update_motor_constraints((short) motor.bitset.motor, message.motor.motor);
             break;
         case MOTOR_VEL_REF:
-            set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, info->message.motor.reference);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.reference);
+            break;
+        case MOTOR_CURRENT_REF:
+            set_motor_reference((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.reference);
             break;
         case MOTOR_STATE:
-            set_motor_state((short) motor.bitset.motor, info->message.motor.state);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            set_motor_state((short) motor.bitset.motor, message.motor.state);
             break;
         case MOTOR_POS_RESET:
-            reset_motor_position_measure((short) motor.bitset.motor, info->message.motor.reference);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            reset_motor_position_measure((short) motor.bitset.motor, message.motor.reference);
             break;
         case MOTOR_EMERGENCY:
-            update_motor_emergency((short) motor.bitset.motor, info->message.motor.emergency);
-            list_send[(*len)++] = CREATE_PACKET_ACK(info->command, info->type);
+            update_motor_emergency((short) motor.bitset.motor, message.motor.emergency);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_ACK(command, type);
 }
 
-void send_frame_motor(packet_information_t* list_send, size_t* len, packet_information_t* info) {
+packet_information_t send_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     message_abstract_u send;
-    motor.command_message = info->command;
+    motor.command_message = command;
     switch (motor.bitset.command) {
         case MOTOR_PARAMETER:
             send.motor.parameter = get_motor_parameters((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_VEL_PID:
             send.motor.pid = get_motor_pid((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            break;
+        case MOTOR_CURRENT_PID:
+            //send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
             break;
         case MOTOR_VEL_REF:
             send.motor.reference = get_motor_reference((short) motor.bitset.motor).velocity;
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
+            break;
+        case MOTOR_CURRENT_REF:
+            send.motor.reference = get_motor_reference((short) motor.bitset.motor).current;
             break;
         case MOTOR_STATE:
             send.motor.state = get_motor_state((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_MEASURE:
             send.motor.motor = get_motor_measures((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_CONSTRAINT:
             send.motor.motor = get_motor_constraints((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_EMERGENCY:
             send.motor.emergency = get_motor_emergency((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         case MOTOR_DIAGNOSTIC:
             send.motor.diagnostic = get_motor_diagnostic((short) motor.bitset.motor);
-            list_send[(*len)++] = CREATE_PACKET_DATA(info->command, info->type, send);
             break;
         default:
-            list_send[(*len)++] = CREATE_PACKET_NACK(info->command, info->type);
+            return CREATE_PACKET_NACK(command, type);
             break;
     }
+    return CREATE_PACKET_DATA(command, type, send);
 }

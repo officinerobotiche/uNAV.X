@@ -47,7 +47,6 @@
 #define DEFAULT_VOLT_BRIDGE 3
 #define DEFAULT_CPR 300
 #define DEFAULT_RATIO 30
-#define DEFAULT_CASCADE_CONTROL 0
 #define DEFAULT_ENC_POSITION MOTOR_ENC_AFTER_GEAR
 #define DEFAULT_ENC_CHANNELS MOTOR_ENC_CHANNEL_TWO
 #define DEFAULT_ENC_Z_INDEX MOTOR_ENC_Z_INDEX_NO
@@ -141,7 +140,7 @@ void reset_motor_data(motor_t* motor) {
     motor->position_delta = 0;
     motor->position = 0;
     motor->velocity = 0;
-    motor->torque = 0;
+    motor->current = 0;
     motor->pwm = 0;
     motor->state = CONTROL_DISABLE;
 }
@@ -152,7 +151,8 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     
     motors[motIdx].prescaler_callback = prescaler_event;
     //Setup diagnostic
-    motors[motIdx].diagnostic.current = 0;
+    motors[motIdx].diagnostic.time_control = 0;
+    motors[motIdx].diagnostic.watt = 0;
     motors[motIdx].diagnostic.temperature = 0;
     // Register input capture
     motors[motIdx].ICinfo = ICinfo_;
@@ -182,7 +182,6 @@ motor_parameter_t init_motor_parameters() {
     motor_parameter_t parameter;
     parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
     parameter.rotation = DEFAULT_VERSUS_ROTATION;
-    parameter.cascade_control = DEFAULT_CASCADE_CONTROL;
     parameter.bridge.enable = DEFAULT_MOTOR_ENABLE;
     parameter.bridge.pwm_dead_zone = 0;
     parameter.bridge.pwm_frequency = 0;
@@ -252,7 +251,7 @@ motor_t init_motor_constraints() {
     motor_t constraint;
     constraint.state = 0;
     constraint.position = -1;
-    constraint.torque = -1;
+    constraint.current = -1;
     constraint.pwm = -1;
     constraint.velocity = 25000;
     return constraint;
@@ -330,7 +329,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
-    motors[motIdx].measure.torque = motors[motIdx].diagnostic.current; //TODO Add a coefficient conversion
+    motors[motIdx].measure.current = motors[motIdx].current.k * ((float) motors[motIdx].current.value);
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
@@ -339,7 +338,8 @@ inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
     // Convert internal volt value in standard [mV]
     motors[motIdx].diagnostic.volt = motors[motIdx].volt.k * ((float) motors[motIdx].volt.value);
     // Convert internal current value in standard [mA]
-    motors[motIdx].diagnostic.current = motors[motIdx].current.k * ((float) motors[motIdx].current.value);
+    motors[motIdx].diagnostic.watt = motors[motIdx].measure.current * motors[motIdx].diagnostic.volt;
+    
     return motors[motIdx].diagnostic;
 }
 
