@@ -238,7 +238,7 @@ extern "C" {
      * Measure velocity from Input Capture and QEI
      * @param motIdx Number motor
      */
-    void measureVelocity(short motIdx);
+    int32_t measureVelocity(short motIdx);
     
     inline void Motor_PWM(short motIdx, int pwm_control);
     

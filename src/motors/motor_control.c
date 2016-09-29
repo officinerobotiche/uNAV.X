@@ -417,9 +417,9 @@ void MotorTaskController(int argc, int *argv) {
             motors[motIdx].counter_alive++;
     }
     //-------------- BUILD MEASURE----------------------------------------------
-    
+
     //Measure velocity
-    measureVelocity(motIdx);
+    motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
     // Update current and volt values;
     // The current is evaluated with sign of motor rotation
     motors[motIdx].current.value = motors[motIdx].rotation * (gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
@@ -439,7 +439,7 @@ void MotorTaskController(int argc, int *argv) {
     Motor_PWM(motIdx, control_output);
 }
 
-void measureVelocity(short motIdx) {
+int32_t measureVelocity(short motIdx) {
     volatile ICdata temp;
     int QEICNTtmp;
     int32_t vel_mean = 0;
@@ -484,20 +484,24 @@ void measureVelocity(short motIdx) {
     } else {
         vel_mean = vel_qei;
     }
-    // Store velocity
-    motors[motIdx].measure.velocity = (motor_control_t) update_statistic(&motors[motIdx].mean_vel, vel_mean);
     //Select Prescaler
     motors[motIdx].prescaler_callback(motIdx);
     // Evaluate angle position
     if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;
     }
+    return update_statistic(&motors[motIdx].mean_vel, vel_mean);
 }
 
 inline void Motor_PWM(short motIdx, int pwm_control) {
     // Save pwm value
     motors[motIdx].measure.pwm = pwm_control;
     // PWM output
+    
+//    if(pwm_control > 2048) pwm_control = 2048;
+//    else if(pwm_control < -2048) pwm_control = -2048;
+//    pwm_control = motors[motIdx].parameter_motor.rotation * pwm_control;
+    
     pwm_control = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
     SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
 }
