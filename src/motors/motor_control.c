@@ -90,14 +90,17 @@ typedef struct _analog_convert {
     int value;
 } analog_convert_t;
 
+typedef struct _timer {
+    uint32_t time;
+    uint32_t counter;
+} timer_t;
+
 typedef struct _motor_firmware {
     //Use ONLY in firmware
     ICdata* ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
     int pin_current, pin_voltage;
     motor_t last_reference;
-    unsigned int counter_alive;
-    unsigned int counter_stop;
     // Frequency manager;
     frequency_t manager_freq;
     /// Task register
@@ -109,9 +112,11 @@ typedef struct _motor_firmware {
     volatile int32_t enc_angle;
     int rotation; //Check if required in future
     //Emergency
-    uint32_t emergency_timeout;
-    float emergency_step;
-    float emergency_stop;
+    timer_t emergency_alive;
+    timer_t emergency_stop_motor;
+    uint16_t emergency_step;
+    motor_emergency_t emergency;
+    
     bool save_velocity;
     //gain motor
     int32_t k_vel_ic, k_vel_qei;
@@ -122,7 +127,6 @@ typedef struct _motor_firmware {
     analog_convert_t volt, current;
     //Common
     motor_diagnostic_t diagnostic;
-    motor_emergency_t emergency;
     motor_parameter_t parameter_motor;
     motor_t constraint;
     motor_t reference;
@@ -317,12 +321,16 @@ inline motor_emergency_t get_motor_emergency(short motIdx) {
 }
 
 void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
+    
     motors[motIdx].emergency = emergency_data;
-    motors[motIdx].emergency_timeout = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
+    // Reset counter alive reference message
+    motors[motIdx].emergency_alive.time = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
+    motors[motIdx].emergency_alive.counter = 0;
+    // Reset counter Emergency stop
+    motors[motIdx].emergency_stop_motor.time = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
+    motors[motIdx].emergency_stop_motor.counter = 0;
+    // Fix step to slow down the motor
     motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
-    motors[motIdx].emergency_stop = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
-    motors[motIdx].counter_alive = 0;
-    motors[motIdx].counter_stop = 0;
 }
 
 inline motor_t get_motor_measures(short motIdx) {
@@ -353,7 +361,6 @@ inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
              
 void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference) {
     if(state == CONTROL_VELOCITY) {
-        motors[motIdx].counter_alive = 0; //Reset time emergency
         if(motors[motIdx].reference.state != CONTROL_VELOCITY) {
             set_motor_state(motIdx, CONTROL_VELOCITY);
         }
@@ -362,6 +369,8 @@ void set_motor_reference(short motIdx, motor_state_t state, motor_control_t refe
             motors[motIdx].reference.velocity = SGN(motors[motIdx].reference.velocity) * motors[motIdx].constraint.velocity;
         }
     }
+    // Reset time emergency
+    motors[motIdx].emergency_alive.counter = 0; 
 }
     
 inline motor_state_t get_motor_state(short motIdx) {
@@ -412,13 +421,13 @@ void MotorTaskController(int argc, int *argv) {
     }
     /// Check for emergency mode
     if(motors[motIdx].reference.state > CONTROL_DISABLE) {
-        if ((motors[motIdx].counter_alive + 1) >= motors[motIdx].emergency_timeout) {
+        if ((motors[motIdx].emergency_alive.counter + 1) >= motors[motIdx].emergency_alive.time) {
             /// Set Motor in emergency mode
             set_motor_state(motIdx, CONTROL_EMERGENCY);
-            motors[motIdx].counter_stop = 0;
-            motors[motIdx].counter_alive = 0;
+            motors[motIdx].emergency_stop_motor.counter = 0;
+            motors[motIdx].emergency_alive.counter = 0;
         } else
-            motors[motIdx].counter_alive++;
+            motors[motIdx].emergency_alive.counter++;
     }
     //-------------- BUILD MEASURE----------------------------------------------
 
@@ -513,15 +522,15 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].reference.velocity != 0) {
-        motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / (int16_t) (motors[motIdx].emergency_step + 0.5f);
+        motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / motors[motIdx].emergency_step;
         if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference.velocity < 0) {
             motors[motIdx].reference.velocity = 0;
         }
     } else if (motors[motIdx].reference.velocity == 0) {
-        if ((motors[motIdx].counter_stop + 1) >= motors[motIdx].emergency_stop) {
+        if ((motors[motIdx].emergency_stop_motor.counter + 1) >= motors[motIdx].emergency_stop_motor.time) {
             set_motor_state(motIdx, CONTROL_DISABLE);
-            motors[motIdx].counter_stop = 0;
+            motors[motIdx].emergency_stop_motor.counter = 0;
         } else
-            motors[motIdx].counter_stop++;
+            motors[motIdx].emergency_stop_motor.counter++;
     }
 }
