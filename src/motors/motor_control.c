@@ -132,6 +132,7 @@ typedef struct _motor_firmware {
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
     motor_t constraint;
+    motor_t controlOut;
     motor_t reference;
     motor_t measure;
     //PID
@@ -168,6 +169,7 @@ void initialize_controllers(short motIdx) {
 hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
+    reset_motor_data(&motors[motIdx].controlOut);
     //Initialize controllers
     initialize_controllers(motIdx);
     motors[motIdx].prescaler_callback = prescaler_event;
@@ -344,6 +346,10 @@ inline motor_t get_motor_measures(short motIdx) {
     return motors[motIdx].measure;
 }
 
+inline motor_t get_motor_control(short motIdx) {
+    return motors[motIdx].controlOut;
+}
+
 inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
     // get time execution
     motors[motIdx].diagnostic.time_control = get_time(motors[motIdx].motor_manager_event);
@@ -458,7 +464,7 @@ void MotorTaskController(int argc, int *argv) {
         } else
             motors[motIdx].motor_emergency.alive.counter++;
     }
-    //-------------- BUILD MEASURE----------------------------------------------
+    //-------------- BUILD MEASURES --------------------------------------------
 
     //Measure velocity in milli rad/s
     motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
@@ -476,10 +482,10 @@ void MotorTaskController(int argc, int *argv) {
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Set Output
-    fractional control_output = motors[motIdx].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.velocity = motors[motIdx].PIDstruct.controlOutput;
     
     // Send to motor the value of control
-    Motor_PWM(motIdx, control_output);
+    Motor_PWM(motIdx, motors[motIdx].controlOut.velocity);
 }
 
 int32_t measureVelocity(short motIdx) {

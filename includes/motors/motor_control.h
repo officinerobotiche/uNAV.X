@@ -170,6 +170,13 @@ extern "C" {
      * @return return information about motor
      */
     inline motor_t get_motor_measures(short motIdx);
+    
+    /**
+     * Return the control output from all levels (Position, velocity, current)
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_control(short motIdx);
     /**
      * Return information about diagnostic, current, temperature, etc etc.
      * @param motIdx number of motor

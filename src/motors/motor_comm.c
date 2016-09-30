@@ -99,6 +99,9 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
         case MOTOR_STATE:
             send.motor.state = get_motor_state((short) motor.bitset.motor);
             break;
+        case MOTOR_CONTROL:
+            send.motor.motor = get_motor_control((short) motor.bitset.motor);
+            break;
         case MOTOR_MEASURE:
             send.motor.motor = get_motor_measures((short) motor.bitset.motor);
             break;
