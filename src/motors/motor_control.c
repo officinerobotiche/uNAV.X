@@ -537,16 +537,15 @@ int32_t measureVelocity(short motIdx) {
 }
 
 inline void Motor_PWM(short motIdx, int pwm_control) {
-    // Save pwm value
-    motors[motIdx].measure.pwm = pwm_control;
-    // PWM output
-    
+
 //    if(pwm_control > 2048) pwm_control = 2048;
 //    else if(pwm_control < -2048) pwm_control = -2048;
 //    pwm_control = motors[motIdx].parameter_motor.rotation * pwm_control;
     
-    pwm_control = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
-    SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
+    // Save PWM value with attenuation => K = 1 / 16
+    motors[motIdx].measure.pwm = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
+    // PWM output
+    SetDCMCPWM1(motIdx + 1, motors[motIdx].measure.pwm + DEFAULT_PWM_OFFSET, 0);
 }
 
 void Emergency(int argc, int *argv) {
