@@ -365,11 +365,24 @@ inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
 }
              
 void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference) {
-    if(state == CONTROL_VELOCITY) {
-        if(motors[motIdx].reference.state != CONTROL_VELOCITY) {
-            set_motor_state(motIdx, CONTROL_VELOCITY);
-        }
-        motors[motIdx].reference.velocity = reference;
+    // Check state
+    if(state != motors[motIdx].measure.state) {
+        // Change motor control type
+        set_motor_state(motIdx, state);
+        // Update reference
+        motors[motIdx].reference.state = state;
+    }
+    // Setup reference
+    switch (state) {
+        case CONTROL_POSITION:
+            motors[motIdx].reference.position = reference;
+            break;
+        case CONTROL_VELOCITY:
+            motors[motIdx].reference.velocity = reference;
+            break;
+        case CONTROL_CURRENT:
+            motors[motIdx].reference.current = reference;
+            break;
     }
     // Reset time emergency
     motors[motIdx].motor_emergency.alive.counter = 0; 
