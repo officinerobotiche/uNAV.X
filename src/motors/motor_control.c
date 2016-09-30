@@ -370,9 +370,6 @@ void set_motor_reference(short motIdx, motor_state_t state, motor_control_t refe
             set_motor_state(motIdx, CONTROL_VELOCITY);
         }
         motors[motIdx].reference.velocity = reference;
-        if (abs(motors[motIdx].reference.velocity) > motors[motIdx].constraint.velocity) {
-            motors[motIdx].reference.velocity = SGN(motors[motIdx].reference.velocity) * motors[motIdx].constraint.velocity;
-        }
     }
     // Reset time emergency
     motors[motIdx].motor_emergency.alive.counter = 0; 
@@ -412,6 +409,20 @@ void set_motor_state(short motIdx, motor_state_t state) {
 #endif
 }
 
+inline int castToDSP(motor_control_t value, motor_control_t constraint) {
+    // Check constraint
+    if (abs(value) > constraint) {
+        value = SGN(value) * constraint;
+    }
+    // Check size
+    if(value > INT16_MAX)
+        return INT16_MAX;
+    else if(value < INT16_MIN)
+        return INT16_MIN;
+    else
+        return value;
+}
+
 void MotorTaskController(int argc, int *argv) {
     short motIdx = (short) argv[0];
     /// Add new task controller
@@ -445,19 +456,10 @@ void MotorTaskController(int argc, int *argv) {
     
     //-------------- PID CONTROL -----------------------------------------------
     // Set reference
-    if(motors[motIdx].reference.velocity > INT16_MAX)
-        motors[motIdx].PIDstruct.controlReference = INT16_MAX;
-    else if(motors[motIdx].reference.velocity < INT16_MIN)
-        motors[motIdx].PIDstruct.controlReference = INT16_MIN;
-    else
-        motors[motIdx].PIDstruct.controlReference = (int) motors[motIdx].reference.velocity;
+    motors[motIdx].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
+                            motors[motIdx].constraint.velocity);
     // Set measure
-    if(motors[motIdx].measure.velocity > INT16_MAX)
-        motors[motIdx].PIDstruct.measuredOutput = INT16_MAX;
-    else if(motors[motIdx].measure.velocity < INT16_MIN)
-        motors[motIdx].PIDstruct.measuredOutput = INT16_MIN;
-    else
-        motors[motIdx].PIDstruct.measuredOutput = (int) motors[motIdx].measure.velocity;
+    motors[motIdx].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Set Output
