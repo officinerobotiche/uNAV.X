@@ -113,9 +113,11 @@ typedef struct _motor_firmware {
     volatile int32_t enc_angle;
     int rotation; //Check if required in future
     //Emergency
-    timer_t emergency_alive;
-    timer_t emergency_stop_motor;
-    uint16_t emergency_step;
+    struct {
+        timer_t alive;
+        timer_t stop;
+        uint16_t step;
+    } motor_emergency;
     motor_emergency_t emergency;
     
     bool save_velocity;
@@ -325,13 +327,13 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     
     motors[motIdx].emergency = emergency_data;
     // Reset counter alive reference message
-    motors[motIdx].emergency_alive.time = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
-    motors[motIdx].emergency_alive.counter = 0;
+    motors[motIdx].motor_emergency.alive.time = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
+    motors[motIdx].motor_emergency.alive.counter = 0;
     // Reset counter Emergency stop
-    motors[motIdx].emergency_stop_motor.time = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
-    motors[motIdx].emergency_stop_motor.counter = 0;
+    motors[motIdx].motor_emergency.stop.time = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
+    motors[motIdx].motor_emergency.stop.counter = 0;
     // Fix step to slow down the motor
-    motors[motIdx].emergency_step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
+    motors[motIdx].motor_emergency.step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
 }
 
 inline motor_t get_motor_measures(short motIdx) {
@@ -373,7 +375,7 @@ void set_motor_reference(short motIdx, motor_state_t state, motor_control_t refe
         }
     }
     // Reset time emergency
-    motors[motIdx].emergency_alive.counter = 0; 
+    motors[motIdx].motor_emergency.alive.counter = 0; 
 }
     
 inline motor_state_t get_motor_state(short motIdx) {
@@ -424,13 +426,13 @@ void MotorTaskController(int argc, int *argv) {
     }
     /// Check for emergency mode
     if(motors[motIdx].reference.state > CONTROL_DISABLE) {
-        if ((motors[motIdx].emergency_alive.counter + 1) >= motors[motIdx].emergency_alive.time) {
+        if ((motors[motIdx].motor_emergency.alive.counter + 1) >= motors[motIdx].motor_emergency.alive.time) {
             /// Set Motor in emergency mode
             set_motor_state(motIdx, CONTROL_EMERGENCY);
-            motors[motIdx].emergency_stop_motor.counter = 0;
-            motors[motIdx].emergency_alive.counter = 0;
+            motors[motIdx].motor_emergency.stop.counter = 0;
+            motors[motIdx].motor_emergency.alive.counter = 0;
         } else
-            motors[motIdx].emergency_alive.counter++;
+            motors[motIdx].motor_emergency.alive.counter++;
     }
     //-------------- BUILD MEASURE----------------------------------------------
 
@@ -525,15 +527,15 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].reference.velocity != 0) {
-        motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / motors[motIdx].emergency_step;
+        motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / motors[motIdx].motor_emergency.step;
         if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference.velocity < 0) {
             motors[motIdx].reference.velocity = 0;
         }
     } else if (motors[motIdx].reference.velocity == 0) {
-        if ((motors[motIdx].emergency_stop_motor.counter + 1) >= motors[motIdx].emergency_stop_motor.time) {
+        if ((motors[motIdx].motor_emergency.stop.counter + 1) >= motors[motIdx].motor_emergency.stop.time) {
             set_motor_state(motIdx, CONTROL_DISABLE);
-            motors[motIdx].emergency_stop_motor.counter = 0;
+            motors[motIdx].motor_emergency.stop.counter = 0;
         } else
-            motors[motIdx].emergency_stop_motor.counter++;
+            motors[motIdx].motor_emergency.stop.counter++;
     }
 }
