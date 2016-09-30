@@ -104,6 +104,7 @@ typedef struct _motor_firmware {
     // Frequency manager;
     frequency_t manager_freq;
     /// Task register
+    hEvent_t motor_manager_event;
     hTask_t task_manager;
     hTask_t task_emergency;
     /// Motor position
@@ -188,8 +189,8 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
     hModule_t motor_manager_module = register_module(&_MODULE_MOTOR);
-    hEvent_t motor_manager_task = register_event_p(motor_manager_module, &MotorTaskController, EVENT_PRIORITY_MEDIUM);
-    motors[motIdx].task_manager = task_load_data(motor_manager_task, motors[motIdx].manager_freq, 1, (char) motIdx);
+    motors[motIdx].motor_manager_event = register_event_p(motor_manager_module, &MotorTaskController, EVENT_PRIORITY_MEDIUM);
+    motors[motIdx].task_manager = task_load_data(motors[motIdx].motor_manager_event, motors[motIdx].manager_freq, 1, (char) motIdx);
     /// Load controller EMERGENCY - Working at 1KHz
     hModule_t emegency_module = register_module(&_MODULE_MOTOR);
     hEvent_t emergency_event = register_event_p(emegency_module, &Emergency, EVENT_PRIORITY_HIGH);
@@ -342,6 +343,8 @@ inline motor_t get_motor_measures(short motIdx) {
 }
 
 inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
+    // get time execution
+    motors[motIdx].diagnostic.time_control = get_time(motors[motIdx].motor_manager_event);
     // Convert internal volt value in standard [mV]
     motors[motIdx].diagnostic.volt = motors[motIdx].volt.k * ((float) motors[motIdx].volt.value);
     // Convert internal current value in standard [mA]
