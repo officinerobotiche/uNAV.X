@@ -193,9 +193,8 @@ extern "C" {
      * reference to control constraint.
      * @param motIdx Number motor
      * @param reference reference of velocity
-     * @return Time to compute this function
      */
-    int set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference);
+    void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference);
 
     /**
      * Return state of motor

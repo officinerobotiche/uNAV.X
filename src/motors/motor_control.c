@@ -351,8 +351,7 @@ inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
     motors[motIdx].measure.position = (float) value;  
 }
              
-int set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference) {
-    unsigned int t = TMR1; // Timing function
+void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference) {
     if(state == CONTROL_VELOCITY) {
         motors[motIdx].counter_alive = 0; //Reset time emergency
         if(motors[motIdx].reference.state != CONTROL_VELOCITY) {
@@ -363,7 +362,6 @@ int set_motor_reference(short motIdx, motor_state_t state, motor_control_t refer
             motors[motIdx].reference.velocity = SGN(motors[motIdx].reference.velocity) * motors[motIdx].constraint.velocity;
         }
     }
-    return TMR1 - t; // Time of execution
 }
     
 inline motor_state_t get_motor_state(short motIdx) {
