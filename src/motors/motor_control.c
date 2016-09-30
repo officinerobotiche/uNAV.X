@@ -445,9 +445,19 @@ void MotorTaskController(int argc, int *argv) {
     
     //-------------- PID CONTROL -----------------------------------------------
     // Set reference
-    motors[motIdx].PIDstruct.controlReference = motors[motIdx].reference.velocity;
+    if(motors[motIdx].reference.velocity > INT16_MAX)
+        motors[motIdx].PIDstruct.controlReference = INT16_MAX;
+    else if(motors[motIdx].reference.velocity < INT16_MIN)
+        motors[motIdx].PIDstruct.controlReference = INT16_MIN;
+    else
+        motors[motIdx].PIDstruct.controlReference = (int) motors[motIdx].reference.velocity;
     // Set measure
-    motors[motIdx].PIDstruct.measuredOutput = motors[motIdx].measure.velocity;
+    if(motors[motIdx].measure.velocity > INT16_MAX)
+        motors[motIdx].PIDstruct.measuredOutput = INT16_MAX;
+    else if(motors[motIdx].measure.velocity < INT16_MIN)
+        motors[motIdx].PIDstruct.measuredOutput = INT16_MIN;
+    else
+        motors[motIdx].PIDstruct.measuredOutput = (int) motors[motIdx].measure.velocity;
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Set Output
