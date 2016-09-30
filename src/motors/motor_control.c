@@ -100,7 +100,6 @@ typedef struct _motor_firmware {
     ICdata* ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
     int pin_current, pin_voltage;
-    motor_t last_reference;
     // Frequency manager;
     frequency_t manager_freq;
     /// Task register
@@ -117,6 +116,7 @@ typedef struct _motor_firmware {
         timer_t alive;
         timer_t stop;
         uint16_t step;
+        motor_control_t last_reference;
     } motor_emergency;
     motor_emergency_t emergency;
     
@@ -410,7 +410,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
         REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     
     if (state == CONTROL_EMERGENCY) {
-        motors[motIdx].last_reference.velocity = motors[motIdx].reference.velocity;
+        motors[motIdx].motor_emergency.last_reference = motors[motIdx].reference.velocity;
     }
     /// Disable PWM generator
     if (enable) {
@@ -557,8 +557,8 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].reference.velocity != 0) {
-        motors[motIdx].reference.velocity -= motors[motIdx].last_reference.velocity / motors[motIdx].motor_emergency.step;
-        if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].last_reference.velocity < 0) {
+        motors[motIdx].reference.velocity -= motors[motIdx].motor_emergency.last_reference / motors[motIdx].motor_emergency.step;
+        if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].motor_emergency.last_reference < 0) {
             motors[motIdx].reference.velocity = 0;
         }
     } else if (motors[motIdx].reference.velocity == 0) {
