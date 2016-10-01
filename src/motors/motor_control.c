@@ -465,10 +465,13 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
     // Update current and volt values;
     // The current is evaluated with sign of motor rotation
-    motors[motIdx].measure.current = labs(motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
+    motors[motIdx].measure.current = motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset;
     motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
     
     //-------------- PID CONTROL -----------------------------------------------
+    
+    int control_output = 0;
+    
     // Set reference
     motors[motIdx].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
                             motors[motIdx].constraint.velocity);
@@ -477,10 +480,24 @@ void MotorTaskController(int argc, int *argv) {
     // PID execution
     PID(&motors[motIdx].PIDstruct);
     // Set Output
-    motors[motIdx].controlOut.velocity = motors[motIdx].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].PIDstruct.controlOutput;
+    control_output = motors[motIdx].controlOut.velocity;
+    
+//    // ======= TEST CONTROL CURRENT ==========
+//    // Set reference
+//    motors[motIdx].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.current, 
+//                            motors[motIdx].constraint.current);
+//    // Set measure
+//    motors[motIdx].PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
+//    // PID execution
+//    PID(&motors[motIdx].PIDstruct);
+//    // Set Output
+//    motors[motIdx].controlOut.current = motors[motIdx].PIDstruct.controlOutput;
+//    control_output = motors[motIdx].controlOut.current;
+//    // =======================================
     
     // Send to motor the value of control
-    Motor_PWM(motIdx, motors[motIdx].controlOut.velocity);
+    Motor_PWM(motIdx, control_output);
 }
 
 int32_t measureVelocity(short motIdx) {
@@ -542,7 +559,7 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 //    pwm_control = motors[motIdx].parameter_motor.rotation * pwm_control;
     
     // Save PWM value with attenuation => K = 1 / 16
-    motors[motIdx].measure.pwm = motors[motIdx].parameter_motor.rotation * (pwm_control >> 4);
+    motors[motIdx].measure.pwm = pwm_control >> 4;
     // PWM output
     SetDCMCPWM1(motIdx + 1, motors[motIdx].measure.pwm + DEFAULT_PWM_OFFSET, 0);
 }
