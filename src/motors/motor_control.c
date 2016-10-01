@@ -529,14 +529,14 @@ void MotorTaskController(int argc, int *argv) {
     
 //    // ======= TEST CONTROL CURRENT ==========
 //    // Set reference
-//    motors[motIdx].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.current, 
+//    motors[motIdx].velocity.PIDstruct.controlReference = castToDSP(motors[motIdx].reference.current, 
 //                            motors[motIdx].constraint.current);
 //    // Set measure
-//    motors[motIdx].PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
+//    motors[motIdx].velocity.PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
 //    // PID execution
-//    PID(&motors[motIdx].PIDstruct);
+//    PID(&motors[motIdx].velocity.PIDstruct);
 //    // Set Output
-//    motors[motIdx].controlOut.current = motors[motIdx].PIDstruct.controlOutput;
+//    motors[motIdx].controlOut.current = motors[motIdx].velocity.PIDstruct.controlOutput;
 //    control_output = motors[motIdx].controlOut.current;
 //    // =======================================
     
@@ -603,9 +603,10 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 //    pwm_control = motors[motIdx].parameter_motor.rotation * pwm_control;
     
     // Save PWM value with attenuation => K = 1 / 16
-    motors[motIdx].measure.pwm = pwm_control >> 4;
+    pwm_control = pwm_control >> 4;
+    motors[motIdx].measure.pwm = pwm_control * motors[motIdx].parameter_motor.rotation;
     // PWM output
-    SetDCMCPWM1(motIdx + 1, motors[motIdx].measure.pwm + DEFAULT_PWM_OFFSET, 0);
+    SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
 }
 
 void Emergency(int argc, int *argv) {
