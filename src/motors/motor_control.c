@@ -227,7 +227,7 @@ inline motor_parameter_t get_motor_parameters(short motIdx) {
 
 void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     //Update parameter configuration
-    motors[motIdx].parameter_motor = parameters;
+    memcpy(&motors[motIdx].parameter_motor, &parameters, sizeof(motor_parameter_t));
     // If CPR is before ratio
     //    ThC = CPR * RATIO   
     // else
@@ -270,6 +270,8 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
         motors[motIdx].volt.offset = (int)(motors[motIdx].parameter_motor.bridge.volt_offset / motors[motIdx].volt.k);
         motors[motIdx].volt.k *= GAIN_KILO;
     }
+    // Setup state with new bridge configuration
+    set_motor_state(motIdx, motors[motIdx].measure.state);
 }
 
 motor_t init_motor_constraints() {
@@ -305,7 +307,7 @@ inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
 
 void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     // Update value of pid
-    motors[motIdx].pid = pid;
+    memcpy(&motors[motIdx].pid, &pid, sizeof(motor_pid_t));
     motors[motIdx].kCoeffs[0] = (int) (pid.kp * 1000.0);
     motors[motIdx].kCoeffs[1] = (int) (pid.ki * 1000.0);
     motors[motIdx].kCoeffs[2] = (int) (pid.kd * 1000.0);
@@ -326,8 +328,8 @@ inline motor_emergency_t get_motor_emergency(short motIdx) {
 }
 
 void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
-    
-    motors[motIdx].emergency = emergency_data;
+    // Store emergency data
+    memcpy(&motors[motIdx].emergency, &emergency_data, sizeof(motor_emergency_t));
     // Reset counter alive reference message
     motors[motIdx].motor_emergency.alive.time = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
     motors[motIdx].motor_emergency.alive.counter = 0;
@@ -404,10 +406,11 @@ void set_motor_state(short motIdx, motor_state_t state) {
     
     /// Set enable or disable motors
     motors[motIdx].reference.state = state;
-    if(enable ^ motors[motIdx].parameter_motor.bridge.enable)
+    if(enable == (motors[motIdx].parameter_motor.bridge.enable == MOTOR_ENABLE_LOW)) {
         REGISTER_MASK_SET_HIGH(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
-    else
+    } else {
         REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
+    }
     
     if (state == CONTROL_EMERGENCY) {
         motors[motIdx].motor_emergency.last_reference = motors[motIdx].reference.velocity;
