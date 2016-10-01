@@ -465,6 +465,20 @@ inline int castToDSP(motor_control_t value, motor_control_t constraint) {
         return value;
 }
 
+bool runController(pid_controller_t *controller) {
+    // Check if the controller is enabled
+    if(controller->pid.enable) {
+        // Check if is the time to run
+        if(controller->counter >= controller->time) {
+            return true;
+        } else {
+            // Increase the counter
+            controller->counter++;
+        }
+    }
+    return false;
+}
+
 void MotorTaskController(int argc, int *argv) {
     short motIdx = (short) argv[0];
     /// Add new task controller
