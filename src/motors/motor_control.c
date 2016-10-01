@@ -40,7 +40,9 @@
 
 #define GAIN_KILO 1000
 #define ADC_AVSS 3.3
-#define GAIN_ADC (ADC_AVSS/INT16_MAX)
+#define INTADC_MAX 1023
+#define GAIN_ADC (ADC_AVSS/INTADC_MAX)
+//#define GAIN_ADC (ADC_AVSS/INT16_MAX)
 /**
  * Default value for motor parameters
  */
@@ -84,11 +86,10 @@ fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section
 
 #define DEFAULT_PWM_OFFSET 2048
 
-typedef struct _analog_convert {
-    float k;
-    int offset;
-    int value;
-} analog_convert_t;
+typedef struct _analog {
+    int32_t gain;
+    int32_t offset;
+} analog_t;
 
 typedef struct _timer {
     uint32_t time;
@@ -110,7 +111,6 @@ typedef struct _motor_firmware {
     uint32_t angle_limit;
     volatile int PulsEnc;
     volatile int32_t enc_angle;
-    int rotation; //Check if required in future
     //Emergency
     struct {
         timer_t alive;
@@ -127,7 +127,7 @@ typedef struct _motor_firmware {
     // Velocity mean
     statistic_buffer mean_vel;
     //Internal value volt and current
-    analog_convert_t volt, current;
+    analog_t volt, current;
     //Common
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
@@ -181,8 +181,6 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     motors[motIdx].diagnostic.temperature = 0;
     // Register input capture
     motors[motIdx].ICinfo = ICinfo_;
-    // Initialization direction of rotation
-    motors[motIdx].rotation = 1;
     /// Setup bit enable
     motors[motIdx].pin_enable = enable_;
     gpio_register(motors[motIdx].pin_enable);
@@ -259,28 +257,22 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
             break;
     }
     // Convert gain current in [mA]
-    motors[motIdx].current.k = (-motors[motIdx].parameter_motor.rotation) * GAIN_KILO * ((float) GAIN_ADC) / motors[motIdx].parameter_motor.bridge.current_gain;
-    motors[motIdx].current.offset = ((int)(motors[motIdx].parameter_motor.bridge.current_offset / ((float) GAIN_ADC)));
+    motors[motIdx].current.gain = ( 1000.0 * GAIN_ADC ) / motors[motIdx].parameter_motor.bridge.current_gain + 0.5f;
+    motors[motIdx].current.offset = (1000.0 * motors[motIdx].parameter_motor.bridge.current_offset ) / motors[motIdx].parameter_motor.bridge.current_gain + 0.5f;
     // Convert gain volt in [mV]
-    if(motors[motIdx].parameter_motor.bridge.volt_gain == 0) {
-        motors[motIdx].volt.offset = (int)(GAIN_KILO*motors[motIdx].parameter_motor.bridge.volt_offset);
-        motors[motIdx].volt.k = 1;
-    } else {
-        motors[motIdx].volt.k = motors[motIdx].parameter_motor.bridge.volt_gain * GAIN_ADC;
-        motors[motIdx].volt.offset = (int)(motors[motIdx].parameter_motor.bridge.volt_offset / motors[motIdx].volt.k);
-        motors[motIdx].volt.k *= GAIN_KILO;
-    }
+    motors[motIdx].volt.gain = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_gain;
+    motors[motIdx].volt.offset = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_offset;
     // Setup state with new bridge configuration
     set_motor_state(motIdx, motors[motIdx].measure.state);
 }
 
 motor_t init_motor_constraints() {
     motor_t constraint;
-    constraint.state = 0;
-    constraint.position = -1;
-    constraint.current = -1;
-    constraint.pwm = -1;
-    constraint.velocity = 25000;
+    constraint.state = STATE_CONTROL_DISABLE;
+    constraint.position = MOTOR_CONTROL_MAX;
+    constraint.current = MOTOR_CONTROL_MAX;
+    constraint.pwm = MOTOR_CONTROL_MAX;
+    constraint.velocity = MOTOR_CONTROL_MAX;
     return constraint;
 }
 
@@ -343,7 +335,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
-    motors[motIdx].measure.current = motors[motIdx].current.k * ((float) motors[motIdx].current.value);
+//    motors[motIdx].measure.current = motors[motIdx].current.k * ((float) motors[motIdx].current.value);
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
@@ -356,7 +348,7 @@ inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
     // get time execution
     motors[motIdx].diagnostic.time_control = get_time(motors[motIdx].motor_manager_event);
     // Convert internal volt value in standard [mV]
-    motors[motIdx].diagnostic.volt = motors[motIdx].volt.k * ((float) motors[motIdx].volt.value);
+//    motors[motIdx].diagnostic.volt = motors[motIdx].volt.k * ((float) motors[motIdx].volt.value);
     // Convert internal current value in standard [mA]
     motors[motIdx].diagnostic.watt = motors[motIdx].measure.current * motors[motIdx].diagnostic.volt;
     
@@ -473,8 +465,8 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
     // Update current and volt values;
     // The current is evaluated with sign of motor rotation
-    motors[motIdx].current.value = motors[motIdx].rotation * (gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
-    motors[motIdx].volt.value = gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
+    motors[motIdx].measure.current = labs(motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset);
+    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
     
     //-------------- PID CONTROL -----------------------------------------------
     // Set reference
@@ -524,8 +516,6 @@ int32_t measureVelocity(short motIdx) {
         int32_t temp_f = temp.k_mul * motors[motIdx].k_vel_ic;
         temp_f = temp_f / temp.timePeriod;
         int32_t vel_ic = temp.SIG_VEL * temp_f;
-
-        motors[motIdx].rotation = ((temp.SIG_VEL >= 0) ? 1 : -1);
 
         if (labs(vel_qei - vel_ic) < 2000) {
             // Mean velocity between IC and QEI estimation

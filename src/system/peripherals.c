@@ -398,16 +398,16 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
         case ADC_SIM_2:
             // Shift the value to cover all int range
             // TODO use a builtin
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch0, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch1, 0, info_buffer.size_base_2) << 5));
+            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch0, 0, info_buffer.size_base_2)));
+            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch1, 0, info_buffer.size_base_2)));
             break;
         case ADC_SIM_4:
             // Shift the value to cover all int range
             // TODO use a builtin
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2) << 5));
-            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2) << 5));
+            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2)));
+            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2)));
+            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2)));
+            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2)));
             break;
         case ADC_SCAN:
 //            counter = 0;
