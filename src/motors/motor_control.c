@@ -297,7 +297,7 @@ inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
     return motors[motIdx].pid;
 }
 
-void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
+bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     // Update value of pid
     memcpy(&motors[motIdx].pid, &pid, sizeof(motor_pid_t));
     motors[motIdx].kCoeffs[0] = (int) (pid.kp * 1000.0);
@@ -305,6 +305,12 @@ void update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     motors[motIdx].kCoeffs[2] = (int) (pid.kd * 1000.0);
     // Derive the a, b and c coefficients from the Kp, Ki & Kd
     PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
+    
+   // TODO add check gains value
+   // | Kp + ki + kd | < 1
+   // | -(Kp + 2*Kd) | < 1
+   // | Kd | < 1
+    return true;
 }
              
 motor_emergency_t init_motor_emergency() {
@@ -334,8 +340,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
-    motors[motIdx].measure.position = motors[motIdx].enc_angle * motors[motIdx].k_ang; 
-//    motors[motIdx].measure.current = motors[motIdx].current.k * ((float) motors[motIdx].current.value);
+    motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle; 
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
@@ -347,9 +352,7 @@ inline motor_t get_motor_control(short motIdx) {
 inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
     // get time execution
     motors[motIdx].diagnostic.time_control = get_time(motors[motIdx].motor_manager_event);
-    // Convert internal volt value in standard [mV]
-//    motors[motIdx].diagnostic.volt = motors[motIdx].volt.k * ((float) motors[motIdx].volt.value);
-    // Convert internal current value in standard [mA]
+    // Evaluate the Watt required [mW]
     motors[motIdx].diagnostic.watt = motors[motIdx].measure.current * motors[motIdx].diagnostic.volt;
     
     return motors[motIdx].diagnostic;

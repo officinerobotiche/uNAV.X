@@ -44,7 +44,9 @@ packet_information_t save_frame_motor(unsigned char option, unsigned char type, 
     motor.command_message = command;
     switch (motor.bitset.command) {
         case MOTOR_VEL_PID:
-            update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid);
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid))
+                return CREATE_PACKET_NACK(command, type);
             break;
         case MOTOR_CURRENT_PID:
             //update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid);
