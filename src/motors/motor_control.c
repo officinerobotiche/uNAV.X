@@ -183,6 +183,10 @@ void initialize_controllers(short motIdx) {
     motors[motIdx].velocity.PIDstruct.controlHistory = &controlHistory[motIdx][1][0];
     // Clear the controller history and the controller output
     PIDInit(&motors[motIdx].velocity.PIDstruct);
+    // Initialize PID counter time
+    motors[motIdx].velocity.counter = 0;
+    // Initialize PID time
+    motors[motIdx].velocity.time = 0;
 }
 
 hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
@@ -317,13 +321,18 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     long check2 = labs(1000.0 * (pid.kp + 2 * pid.kd));
     
     if(check1 < INT16_MAX && check2 < INT16_MAX && labs(pid.kd) < INT16_MAX) {
-        // Update value of pid
+        // Update PID struct
         memcpy(&motors[motIdx].velocity.pid, &pid, sizeof(motor_pid_t));
+        // Write new coefficients
         motors[motIdx].velocity.kCoeffs[0] = (int) (pid.kp * 1000.0);
         motors[motIdx].velocity.kCoeffs[1] = (int) (pid.ki * 1000.0);
         motors[motIdx].velocity.kCoeffs[2] = (int) (pid.kd * 1000.0);
         // Derive the a, b and c coefficients from the Kp, Ki & Kd
         PIDCoeffCalc(&motors[motIdx].velocity.kCoeffs[0], &motors[motIdx].velocity.PIDstruct);
+        // Write new time
+        motors[motIdx].velocity.time = motors[motIdx].manager_freq / pid.frequency;
+        // reset counter
+        motors[motIdx].velocity.counter = 0;
         return true;
     } else
         return false;
