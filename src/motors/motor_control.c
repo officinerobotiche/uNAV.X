@@ -298,19 +298,24 @@ inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
 }
 
 bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
-    // Update value of pid
-    memcpy(&motors[motIdx].pid, &pid, sizeof(motor_pid_t));
-    motors[motIdx].kCoeffs[0] = (int) (pid.kp * 1000.0);
-    motors[motIdx].kCoeffs[1] = (int) (pid.ki * 1000.0);
-    motors[motIdx].kCoeffs[2] = (int) (pid.kd * 1000.0);
-    // Derive the a, b and c coefficients from the Kp, Ki & Kd
-    PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
+    // Check gains value
+    // Check1 = | Kp + ki + kd | < 1 = INT16_MAX
+    // Check2 = | -(Kp + 2*Kd) | < 1 = INT16_MAX
+    // Check3 =      | Kd |      < 1 = INT16_MAX
+    long check1 = labs(1000.0 * (pid.kp + pid.ki + pid.kd));
+    long check2 = labs(1000.0 * (pid.kp + 2 * pid.kd));
     
-   // TODO add check gains value
-   // | Kp + ki + kd | < 1
-   // | -(Kp + 2*Kd) | < 1
-   // | Kd | < 1
-    return true;
+    if(check1 < INT16_MAX && check2 < INT16_MAX && labs(pid.kd) < INT16_MAX) {
+        // Update value of pid
+        memcpy(&motors[motIdx].pid, &pid, sizeof(motor_pid_t));
+        motors[motIdx].kCoeffs[0] = (int) (pid.kp * 1000.0);
+        motors[motIdx].kCoeffs[1] = (int) (pid.ki * 1000.0);
+        motors[motIdx].kCoeffs[2] = (int) (pid.kd * 1000.0);
+        // Derive the a, b and c coefficients from the Kp, Ki & Kd
+        PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
+        return true;
+    } else
+        return false;
 }
              
 motor_emergency_t init_motor_emergency() {
