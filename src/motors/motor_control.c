@@ -96,6 +96,22 @@ typedef struct _timer {
     uint32_t counter;
 } timer_t;
 
+/**
+  * Definition of PID ecosystem
+  */
+typedef struct _pid_control {
+    // Message information about value of PID
+    motor_pid_t pid;
+    // Struct of PID from dsp library
+    tPID PIDstruct;
+    // Coefficients KP, KI, KD
+    fractional kCoeffs[3];
+    // time to launch PID controller
+    unsigned int time;
+    // internal time counter
+    unsigned int counter;
+} pid_controller_t;
+
 typedef struct _motor_firmware {
     //Use ONLY in firmware
     ICdata* ICinfo; //Information for Input Capture
@@ -136,9 +152,12 @@ typedef struct _motor_firmware {
     motor_t reference;
     motor_t measure;
     //PID
-    motor_pid_t pid;
-    tPID PIDstruct;
-    fractional kCoeffs[3]; //Coefficients KP, KI, KD
+//    motor_pid_t pid;
+//    tPID PIDstruct;
+//    fractional kCoeffs[3]; //Coefficients KP, KI, KD
+    
+    pid_controller_t velocity;
+    
     event_prescaler_t prescaler_callback;
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
@@ -159,11 +178,11 @@ void reset_motor_data(motor_t* motor) {
 void initialize_controllers(short motIdx) {
     //Initialize the PID data structure: PIDstruct
     //Set up pointer to derived coefficients
-    motors[motIdx].PIDstruct.abcCoefficients = &abcCoefficient[motIdx][1][0];
+    motors[motIdx].velocity.PIDstruct.abcCoefficients = &abcCoefficient[motIdx][1][0];
     //Set up pointer to controller history samples
-    motors[motIdx].PIDstruct.controlHistory = &controlHistory[motIdx][1][0];
+    motors[motIdx].velocity.PIDstruct.controlHistory = &controlHistory[motIdx][1][0];
     // Clear the controller history and the controller output
-    PIDInit(&motors[motIdx].PIDstruct);
+    PIDInit(&motors[motIdx].velocity.PIDstruct);
 }
 
 hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
@@ -286,7 +305,7 @@ void update_motor_constraints(short motIdx, motor_t constraints) {
 }
 
 inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
-    return motors[motIdx].pid;
+    return motors[motIdx].velocity.pid;
 }
 
 bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
@@ -299,12 +318,12 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     
     if(check1 < INT16_MAX && check2 < INT16_MAX && labs(pid.kd) < INT16_MAX) {
         // Update value of pid
-        memcpy(&motors[motIdx].pid, &pid, sizeof(motor_pid_t));
-        motors[motIdx].kCoeffs[0] = (int) (pid.kp * 1000.0);
-        motors[motIdx].kCoeffs[1] = (int) (pid.ki * 1000.0);
-        motors[motIdx].kCoeffs[2] = (int) (pid.kd * 1000.0);
+        memcpy(&motors[motIdx].velocity.pid, &pid, sizeof(motor_pid_t));
+        motors[motIdx].velocity.kCoeffs[0] = (int) (pid.kp * 1000.0);
+        motors[motIdx].velocity.kCoeffs[1] = (int) (pid.ki * 1000.0);
+        motors[motIdx].velocity.kCoeffs[2] = (int) (pid.kd * 1000.0);
         // Derive the a, b and c coefficients from the Kp, Ki & Kd
-        PIDCoeffCalc(&motors[motIdx].kCoeffs[0], &motors[motIdx].PIDstruct);
+        PIDCoeffCalc(&motors[motIdx].velocity.kCoeffs[0], &motors[motIdx].velocity.PIDstruct);
         return true;
     } else
         return false;
@@ -465,22 +484,24 @@ void MotorTaskController(int argc, int *argv) {
     motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
     // Update current and volt values;
     // The current is evaluated with sign of motor rotation
-    motors[motIdx].measure.current = motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current) - motors[motIdx].current.offset;
-    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) + motors[motIdx].volt.offset;
+    motors[motIdx].measure.current = motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
+                            - motors[motIdx].current.offset;
+    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) 
+                            + motors[motIdx].volt.offset;
     
     //-------------- PID CONTROL -----------------------------------------------
     
     int control_output = 0;
     
     // Set reference
-    motors[motIdx].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
+    motors[motIdx].velocity.PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
                             motors[motIdx].constraint.velocity);
     // Set measure
-    motors[motIdx].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
+    motors[motIdx].velocity.PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
     // PID execution
-    PID(&motors[motIdx].PIDstruct);
+    PID(&motors[motIdx].velocity.PIDstruct);
     // Set Output
-    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].velocity.PIDstruct.controlOutput;
     control_output = motors[motIdx].controlOut.velocity;
     
 //    // ======= TEST CONTROL CURRENT ==========
