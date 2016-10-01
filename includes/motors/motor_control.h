@@ -124,12 +124,6 @@ extern "C" {
      * @param constraint constraints set
      */
     void update_motor_constraints(short motIdx, motor_t constraints);
-    
-    /**
-     * Initialization standard value for PID controllers
-     * @return Default configuration
-     */
-    motor_pid_t init_motor_pid();
     /**
      * Return value of PID controller
      * @param motIdx number of motor

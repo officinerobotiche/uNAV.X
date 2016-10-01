@@ -285,14 +285,6 @@ void update_motor_constraints(short motIdx, motor_t constraints) {
     motors[motIdx].constraint = constraints;
 }
 
-motor_pid_t init_motor_pid() {
-    motor_pid_t pid;
-    pid.kp = DEFAULT_KP;
-    pid.ki = DEFAULT_KI;
-    pid.kd = DEFAULT_KD;
-    return pid;
-}
-
 inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
     return motors[motIdx].pid;
 }
