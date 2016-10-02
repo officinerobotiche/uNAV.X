@@ -233,31 +233,33 @@ void Motor_Init() {
     for (i = 0; i < NUM_MOTORS; ++i) {
         // Init Input Capture
         InitICinfo(i);
-        // Open QEI
-        InitQEI(i);                                                     
-        ///< Open Input Capture
-        InitIC(i);                                                      
-        // Initialize variables for motors
+        // End
+        InitQEI(i);                     ///< Open QEI
+        InitIC(i);                      ///< Open Input Capture
+        /// Initialize variables for motors
         hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
-        // Initialize parameters for motors
-        update_motor_parameters(i, init_motor_parameters()); 
+        /// Initialize parameters for motors
+        update_motor_parameters(i, init_motor_parameters());
+/*
         // Current PID
         motor_pid_t current_pid = {16, 0, 0, 10000, false};
         // Initialize current PID controller
         update_motor_pid(i, CONTROL_CURRENT, current_pid);
-        // Velocity PID
-        motor_pid_t velocity_pid = {16, 0, 0, 1000, false};
-        // Initialize velocity PID controller
-        update_motor_pid(i, CONTROL_VELOCITY, velocity_pid);
+*/
+        /// Initialize Velocity PID controller
+        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1000, true};
+        update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
+/*
         // Set the PID current control work in the ADC function
         set_currentControlInside(i, false);
-        // Initialize emergency procedure to stop
+*/
+        /// Initialize emergency procedure to stop
         update_motor_emergency(i, init_motor_emergency());
-        // Initialize constraints motor
+        /// Initialize constraints motor
         update_motor_constraints(i, init_motor_constraints());
-        // Initialize state controller
+        /// Initialize state controller
         set_motor_state(i, STATE_CONTROL_DISABLE);
-        // Run task controller
+        /// Run task controller
         task_set(motor_manager, RUN);
     }
 }

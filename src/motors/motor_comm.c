@@ -44,10 +44,12 @@ packet_information_t save_frame_motor(unsigned char option, unsigned char type, 
     motor.command_message = command;
     switch (motor.bitset.command) {
         case MOTOR_VEL_PID:
-            update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid);
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid))
+                return CREATE_PACKET_NACK(command, type);
             break;
         case MOTOR_CURRENT_PID:
-            update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid);
+            //update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid);
             break;
         case MOTOR_PARAMETER:
             update_motor_parameters((short) motor.bitset.motor, message.motor.parameter);
@@ -88,7 +90,7 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
             send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
             break;
         case MOTOR_CURRENT_PID:
-            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
+            //send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
             break;
         case MOTOR_VEL_REF:
             send.motor.reference = get_motor_reference((short) motor.bitset.motor).velocity;
@@ -98,6 +100,9 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
             break;
         case MOTOR_STATE:
             send.motor.state = get_motor_state((short) motor.bitset.motor);
+            break;
+        case MOTOR_CONTROL:
+            send.motor.motor = get_motor_control((short) motor.bitset.motor);
             break;
         case MOTOR_MEASURE:
             send.motor.motor = get_motor_measures((short) motor.bitset.motor);

@@ -131,14 +131,13 @@ extern "C" {
      * @param constraint constraints set
      */
     void update_motor_constraints(short motIdx, motor_t constraints);
-    
     /**
      * Return value of PID controller
      * @param motIdx number of motor
      * @param type type of controller (position, velocity, current)
      * @return value PID
      */
-    inline motor_pid_t get_motor_pid(short motIdx, enum_state_t type);
+    inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state);
     /**
      * Transform float value received from gain for PID right in Q15 value
      * for dsp controller.
@@ -147,7 +146,7 @@ extern "C" {
      * @param pid update data for PID controller 
      * @return return true if the PID gains are correctly stored
      */
-    bool update_motor_pid(short motIdx, enum_state_t type, motor_pid_t pid);
+    bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid);
 
     /**
      * Initialization standard value for emergency configuration motor
@@ -173,6 +172,13 @@ extern "C" {
      * @return return information about motor
      */
     inline motor_t get_motor_measures(short motIdx);
+    
+    /**
+     * Return the control output from all levels (Position, velocity, current)
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_control(short motIdx);
     /**
      * Return information about diagnostic, current, temperature, etc etc.
      * @param motIdx number of motor
@@ -196,9 +202,8 @@ extern "C" {
      * reference to control constraint.
      * @param motIdx Number motor
      * @param reference reference of velocity
-     * @return Time to compute this function
      */
-    int set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference);
+    void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference);
 
     /**
      * Return state of motor
@@ -220,26 +225,7 @@ extern "C" {
      *  - Position control (move to desired angle)
      *  - Velocity control (move to desired angular velocity)
      *  - Torque control (move to desired torque)
-     */
-    void MotorTaskController(int argc, int *argv);
-    
-    /**
      * 
-     * @param motIdx
-     * @param adc_current
-     * @param adc_voltage
-     */
-    inline void CurrentControl(short motIdx, fractional adc_current, fractional adc_voltage);
-
-    /**
-     * Measure velocity from Input Capture and QEI
-     * @param motIdx Number motor
-     */
-    void measureVelocity(short motIdx);
-    
-    inline void Motor_PWM(short motIdx, int pwm_control);
-    
-    /**
      * Execution velocity PID for left motor
      *           _____          _______
      * ref +    |     |  cont  |       |
@@ -253,13 +239,16 @@ extern "C" {
      * information is important for odometry)
      * 2. Load data (reference, measure) and execution PID control and get value
      * 3. Conversion PID value for PWM controller
-     * @param motIdx Number motor
-     * @param type
-     * @param reference
-     * @param measure
-     * @return control evaluation
      */
-    inline fractional MotorPID(short motIdx, enum_state_t type, fractional reference, fractional measure);
+    void MotorTaskController(int argc, int *argv);
+
+    /**
+     * Measure velocity from Input Capture and QEI
+     * @param motIdx Number motor
+     */
+    int32_t measureVelocity(short motIdx);
+    
+    inline void Motor_PWM(short motIdx, int pwm_control);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors

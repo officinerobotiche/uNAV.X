@@ -89,11 +89,14 @@ void Init_I2C(void) {
     I2C1BRG = I2CBRGVAL;
     
     /// Open I2C module
-    I2C_Init(&MI2C1IF, &I2CCON, &I2CSTAT, &I2CTRN, &I2CRCV, &reset_I2C);
+    hEvent_t i2c_event = I2C_Init(&MI2C1IF, &I2CCON, &I2CSTAT, &I2CTRN, &I2CRCV, &reset_I2C);
     
     _MI2C1IP = 6; // I2C at priority 5
     _MI2C1IF = 0; // clear the I2C master interrupt
     _MI2C1IE = 1; // enable the interrupt
+    
+    /// Register I2C event in system control
+    register_time(SYSTEM_EVENT_I2C, i2c_event);
 }
 
 void __attribute__((__interrupt__, __no_auto_psv__)) _MI2C1Interrupt(void) {
