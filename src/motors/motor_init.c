@@ -234,14 +234,21 @@ void Motor_Init() {
         // Init Input Capture
         InitICinfo(i);
         // End
-        InitQEI(i);                                                     ///< Open QEI
-        InitIC(i);                                                      ///< Open Input Capture
-        hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);    ///< Initialize variables for motors
-        update_motor_parameters(i, init_motor_parameters());            ///< Initialize parameters for motors
-        update_motor_pid(i, CONTROL_VELOCITY, init_motor_pid());                          ///< Initialize PID controllers
-        update_motor_emergency(i, init_motor_emergency());              ///< Initialize emergency procedure to stop
-        update_motor_constraints(i, init_motor_constraints());          ///< Initialize constraints motor
-        set_motor_state(i, STATE_CONTROL_DISABLE);                      ///< Initialize state controller
+        InitQEI(i);                     ///< Open QEI
+        InitIC(i);                      ///< Open Input Capture
+        /// Initialize variables for motors
+        hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
+        /// Initialize parameters for motors
+        update_motor_parameters(i, init_motor_parameters());
+        /// Initialize Velocity PID controller
+        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1000, true};
+        update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
+        /// Initialize emergency procedure to stop
+        update_motor_emergency(i, init_motor_emergency());
+        /// Initialize constraints motor
+        update_motor_constraints(i, init_motor_constraints());
+        /// Initialize state controller
+        set_motor_state(i, STATE_CONTROL_DISABLE);
         /// Run task controller
         task_set(motor_manager, RUN);
     }
