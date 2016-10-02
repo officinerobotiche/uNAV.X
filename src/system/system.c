@@ -36,19 +36,19 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-system_parameter_t parameter_system = {(frequency_t) SYS_FREQ, (frequency_t) FRTMR1};
+//system_parameter_t parameter_system = {(frequency_t) SYS_FREQ, (frequency_t) FRTMR1};
 
-unsigned char _VERSION_DATE[] = __DATE__;
-unsigned char _VERSION_TIME[] = __TIME__;
-unsigned char _VERSION_CODE[] = "v0.5";
-unsigned char _AUTHOR_CODE[] = "Officine Robotiche";
-unsigned char _BOARD_TYPE[] = "Motor Control";
+const unsigned char _VERSION_DATE[] = __DATE__;
+const unsigned char _VERSION_TIME[] = __TIME__;
+const unsigned char _VERSION_CODE[] = "v0.6 alpha";
+const unsigned char _AUTHOR_CODE[] = "Officine Robotiche";
+const unsigned char _BOARD_TYPE[] = "Motor Control";
 #ifdef UNAV_V1
-unsigned char _BOARD_NAME[] = "uNAV";
+const unsigned char _BOARD_NAME[] = "uNAV";
 #elif ROBOCONTROLLER_V3
-unsigned char _BOARD_NAME[] = "RoboController";
+const unsigned char _BOARD_NAME[] = "RoboController";
 #elif MOTION_CONTROL
-unsigned char _BOARD_NAME[] = "Motion Control";
+const unsigned char _BOARD_NAME[] = "Motion Control";
 #endif
 
 #define EVENT_PRIORITY_LOW_ENABLE IEC3bits.RTCIE
@@ -88,10 +88,6 @@ void ConfigureOscillator(void) {
     while (OSCCONbits.COSC != 0b011); // Wait for Clock switch to occur
     while (OSCCONbits.LOCK != 1) {
     }; // Wait for PLL to lock
-}
-
-inline system_parameter_t get_system_parameters(void) {
-    return parameter_system;
 }
 
 void InitEvents(void) {
@@ -166,159 +162,38 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
 }
 
-system_task_t get_task(system_task_t process_state) {
-    //hTask_t task = (hTask_t) process_state.number;
-    
-    return process_state;
-}
-
-void set_process(uint8_t command, system_task_t process_state) {
-//    if (process_state.hashmap == HASHMAP_SYSTEM) {
-//        switch (command) {
-//            case SYSTEM_TASK_TIME:
-//                default_process[process_state.number].time = process_state.data;
-//                break;
-//            case SYSTEM_TASK_PRIORITY:
-//                default_process[process_state.number].priority = process_state.data;
-//                break;
-//            case SYSTEM_TASK_FRQ:
-//                default_process[process_state.number].frequency = process_state.data;
-//                break;
-//        }
-//    } else if (process_state.hashmap == HASHMAP_MOTOR) {
-//        switch (command) {
-//            case SYSTEM_TASK_TIME:
-//                motor_process[process_state.number].time = process_state.data;
-//                break;
-//            case SYSTEM_TASK_PRIORITY:
-//                motor_process[process_state.number].priority = process_state.data;
-//                break;
-//            case SYSTEM_TASK_FRQ:
-//                motor_process[process_state.number].frequency = process_state.data;
-//                break;
-//        }
-//    } else if (process_state.hashmap == HASHMAP_MOTION) {
-//        switch (command) {
-//            case SYSTEM_TASK_TIME:
-//                motion_process[process_state.number].time = process_state.data;
-//                break;
-//            case SYSTEM_TASK_PRIORITY:
-//                motion_process[process_state.number].priority = process_state.data;
-//                break;
-//            case SYSTEM_TASK_FRQ:
-//                motion_process[process_state.number].frequency = process_state.data;
-//                break;
-//        }
-//    }
-}
-
-system_task_t get_process(uint8_t command, system_task_t process_state) {
-//    if (process_state.hashmap == HASHMAP_SYSTEM) {
-//        switch (command) {
-//            case SYSTEM_TASK_TIME:
-//                process_state.data = default_process[process_state.number].time;
-//                break;
-//            case SYSTEM_TASK_PRIORITY:
-//                process_state.data = default_process[process_state.number].priority;
-//                break;
-//            case SYSTEM_TASK_FRQ:
-//                process_state.data = default_process[process_state.number].frequency;
-//                break;
-//            case SYSTEM_TASK_NUM:
-//                process_state.data = NUM_PROCESS_DEFAULT;
-//                break;
-//        }
-//    } else if (process_state.hashmap == HASHMAP_MOTOR) {
-//        switch (command) {
-//            case SYSTEM_TASK_TIME:
-//                process_state.data = motor_process[process_state.number].time;
-//                break;
-//            case SYSTEM_TASK_PRIORITY:
-//                process_state.data = motor_process[process_state.number].priority;
-//                break;
-//            case SYSTEM_TASK_FRQ:
-//                process_state.data = motor_process[process_state.number].frequency;
-//                break;
-//            case SYSTEM_TASK_NUM:
-//                process_state.data = PROCESS_MOTOR_LENGTH;
-//                break;
-//        }
-//    } else if (process_state.hashmap == HASHMAP_MOTION) {
-//        switch (command) {
-//            case SYSTEM_TASK_TIME:
-//                process_state.data = motion_process[process_state.number].time;
-//                break;
-//            case SYSTEM_TASK_PRIORITY:
-//                process_state.data = motion_process[process_state.number].priority;
-//                break;
-//            case SYSTEM_TASK_FRQ:
-//                process_state.data = motion_process[process_state.number].frequency;
-//                break;
-//            case SYSTEM_TASK_NUM:
-//                process_state.data = PROCESS_MOTION_LENGTH;
-//                break;
-//        }
-//    }
-    return process_state;
-}
-
-system_task_name_t get_process_name(system_task_name_t process_name) {
-//    if (process_name.hashmap == HASHMAP_SYSTEM) {
-//        strcpy(process_name.data, default_process[process_name.number].name);
-//    } else if (process_name.hashmap == HASHMAP_MOTOR) {
-//        strcpy(process_name.data, motor_process[process_name.number].name);
-//    } else if (process_name.hashmap == HASHMAP_MOTION) {
-//        strcpy(process_name.data, motion_process[process_name.number].name);
-//    }
-    return process_name;
-}
-
-//unsigned char update_priority(void) {
-//    default_process[PROCESS_IDLE].time = 0;
-//    InitInterrupts();
-//    return PACKET_ACK;
+//inline system_parameter_t get_system_parameters(void) {
+//    return parameter_system;
 //}
 
-unsigned char update_frequency(void) {
-//    if (motor_process[LEFT_PROCESS_PID].frequency == 0 || motor_process[RIGHT_PROCESS_PID].frequency == 0) {
-//        EVENT_PRIORITY_MEDIUM_ENABLE = 0; // Disable Output Compare Channel 1 interrupt
-//    } else
-//        EVENT_PRIORITY_MEDIUM_ENABLE = 1; // Enable Output Compare Channel 1 interrupt
-//    if (motion_process[PROCESS_ODOMETRY].frequency == 0 || motion_process[PROCESS_VELOCITY].frequency == 0) {
-//        EVENT_PRIORITY_LOW_ENABLE = 0; // Disable RTC interrupt
-//    } else
-//        EVENT_PRIORITY_LOW_ENABLE = 1; // Enable RTC interrupt
-    return PACKET_ACK;
-}
-
-system_service_t services(system_service_t service) {
-    system_service_t service_send;
-    service_send.command = service.command;
-    switch (service.command) {
-        case SERVICE_CODE_DATE:
-            memcpy(service_send.buffer, _VERSION_DATE, sizeof (_VERSION_DATE));
-            service_send.buffer[sizeof (_VERSION_DATE) - 1] = ' ';
-            memcpy(service_send.buffer + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
+void services(unsigned char command, message_abstract_u *message) {
+    switch(command) {
+        case SYSTEM_CODE_DATE:
+            memcpy(message->system.service, _VERSION_DATE, sizeof (_VERSION_DATE));
+            message->system.service[sizeof (_VERSION_DATE) - 1] = ' ';
+            memcpy(message->system.service + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
             break;
-        case SERVICE_CODE_BOARD_NAME:
-            memcpy(service_send.buffer, _BOARD_NAME, sizeof (_BOARD_NAME));
+        case SYSTEM_CODE_VERSION:
+            memcpy(message->system.service, _VERSION_CODE, sizeof (_VERSION_CODE));
             break;
-        case SERVICE_CODE_BOARD_TYPE:
-            memcpy(service_send.buffer, _BOARD_TYPE, sizeof (_BOARD_TYPE));
+        case SYSTEM_CODE_AUTHOR:
+            memcpy(message->system.service, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
             break;
-        case SERVICE_CODE_VERSION:
-            memcpy(service_send.buffer, _VERSION_CODE, sizeof (_VERSION_CODE));
+        case SYSTEM_CODE_BOARD_TYPE:
+            memcpy(message->system.service, _BOARD_TYPE, sizeof (_BOARD_TYPE));
             break;
-        case SERVICE_CODE_AUTHOR:
-            memcpy(service_send.buffer, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
-            break;
-        case SERVICE_RESET:
-            SET_CPU_IPL(7);     ///< disable all user interrupts
-            //DelayN1ms(200);
-            asm("RESET");       ///< System reset
-            break;
-        default:
+        case SYSTEM_CODE_BOARD_NAME:
+            memcpy(message->system.service, _BOARD_NAME, sizeof (_BOARD_NAME));
             break;
     }
-    return service_send;
+    
+//    switch (command) {
+//        case SERVICE_RESET:
+//            SET_CPU_IPL(7);     ///< disable all user interrupts
+//            //DelayN1ms(200);
+//            asm("RESET");       ///< System reset
+//            break;
+//        default:
+//            break;
+//    }
 }

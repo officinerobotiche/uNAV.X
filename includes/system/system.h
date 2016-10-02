@@ -66,8 +66,6 @@ extern "C" {
      */
     void ConfigureOscillator(void);
     
-    inline system_parameter_t get_system_parameters(void);
-    
     /**
      * Initialization all system events
      */
@@ -88,23 +86,12 @@ extern "C" {
      */
     unsigned char update_frequency(void);
 
-    void set_process(uint8_t command, system_task_t process_state);
     /**
-     * From name received, return a process required.
-     * @param number name process
-     * @return save in process_buffer name associated for process
+     * Management services messages. 
+     * @param The name of the service
+     * @param The buffer to return the information
      */
-    system_task_name_t get_process_name(system_task_name_t process_state);
-    system_task_t get_process(uint8_t command, system_task_t process_state);
-
-    /**
-     * Management services messages. Return a service message for correct parsing
-     * @param service to parsing
-     * @return a new service message
-     */
-    system_service_t services(system_service_t service);
-
-
+    void services(unsigned char command, message_abstract_u *message);
 
     /** Initialization Timer 1 - Timer system
      */

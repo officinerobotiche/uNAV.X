@@ -117,6 +117,7 @@ typedef struct _motor_firmware {
     ICdata* ICinfo; //Information for Input Capture
     gpio_t* pin_enable;
     int pin_current, pin_voltage;
+    event_prescaler_t prescaler_callback;
     // Frequency manager;
     frequency_t manager_freq;
     /// Task register
@@ -144,6 +145,8 @@ typedef struct _motor_firmware {
     statistic_buffer mean_vel;
     //Internal value volt and current
     analog_t volt, current;
+    //PID
+    pid_controller_t velocity;
     //Common
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
@@ -151,14 +154,6 @@ typedef struct _motor_firmware {
     motor_t controlOut;
     motor_t reference;
     motor_t measure;
-    //PID
-//    motor_pid_t pid;
-//    tPID PIDstruct;
-//    fractional kCoeffs[3]; //Coefficients KP, KI, KD
-    
-    pid_controller_t velocity;
-    
-    event_prescaler_t prescaler_callback;
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
 

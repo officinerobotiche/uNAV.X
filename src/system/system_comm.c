@@ -31,28 +31,28 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-/** GLOBAL VARIBLES */
-// From system/system.c
-extern system_parameter_t parameter_system;
-// From communication/serial.c
-extern system_error_serial_t serial_error;
+///** GLOBAL VARIBLES */
+//// From system/system.c
+//extern system_parameter_t parameter_system;
+//// From communication/serial.c
+//extern system_error_serial_t serial_error;
 
 /*****************************************************************************/
 /* User Functions                                                            */
 /*****************************************************************************/
 
 packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
-    message_abstract_u send;
+//    message_abstract_u send;
     switch (command) {
-        case SYSTEM_SERVICE:
-            send.system.service = services(message.system.service);
-            return CREATE_PACKET_DATA(command, type, send);
-            break;
-        case SYSTEM_TASK_PRIORITY:
-        case SYSTEM_TASK_FRQ:
-            set_process(command, message.system.task);
-            return CREATE_PACKET_ACK(command, type);
-            break;
+//        case SYSTEM_SERVICE:
+//            send.system.service = services(message.system.service);
+//            return CREATE_PACKET_DATA(command, type, send);
+//            break;
+//        case SYSTEM_TASK_PRIORITY:
+//        case SYSTEM_TASK_FRQ:
+//            set_process(command, message.system.task);
+//            return CREATE_PACKET_ACK(command, type);
+//            break;
         default:
             return CREATE_PACKET_NACK(command, type);
             break;
@@ -62,26 +62,38 @@ packet_information_t save_frame_system(unsigned char option, unsigned char type,
 packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     message_abstract_u send;
     switch (command) {
-        case SYSTEM_SERVICE:
-            send.system.service = services(message.system.service);
+        case SYSTEM_RESET:
+            // Not implemented at this time
+            return CREATE_PACKET_NACK(command, type);
             break;
-        case SYSTEM_TASK_PRIORITY:
-        case SYSTEM_TASK_FRQ:
-        case SYSTEM_TASK_TIME:
+        case SYSTEM_CODE_DATE:
+        case SYSTEM_CODE_VERSION:
+        case SYSTEM_CODE_AUTHOR:
+        case SYSTEM_CODE_BOARD_TYPE:
+        case SYSTEM_CODE_BOARD_NAME:
+            services(command, &send);
+            break;
             
-            break;
-        case SYSTEM_TASK_NUM:
-            send.system.task = get_process(command, message.system.task);
-            break;
-        case SYSTEM_TASK_NAME:
-            send.system.task_name = get_process_name(message.system.task_name);
-            break;
-        case SYSTEM_PARAMETER:
-            send.system.parameter = parameter_system;
-            break;
-        case SYSTEM_SERIAL_ERROR:
-            send.system.error_serial = serial_error;
-            break;
+//        case SYSTEM_SERVICE:
+//            send.system.service = services(message.system.service);
+//            break;
+//        case SYSTEM_TASK_PRIORITY:
+//        case SYSTEM_TASK_FRQ:
+//        case SYSTEM_TASK_TIME:
+//            
+//            break;
+//        case SYSTEM_TASK_NUM:
+//            send.system.task = get_process(command, message.system.task);
+//            break;
+//        case SYSTEM_TASK_NAME:
+//            send.system.task_name = get_process_name(message.system.task_name);
+//            break;
+//        case SYSTEM_PARAMETER:
+//            send.system.parameter = parameter_system;
+//            break;
+//        case SYSTEM_SERIAL_ERROR:
+//            send.system.error_serial = serial_error;
+//            break;
         default:
             return CREATE_PACKET_NACK(command, type);
             break;
