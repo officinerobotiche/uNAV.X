@@ -166,6 +166,19 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
 //    return parameter_system;
 //}
 
+void reset() {
+    // disable all user interrupts
+    SET_CPU_IPL(7);
+    /* __delay_ms() and __delay_us() are defined as macros. They depend
+     * on a user-supplied definition of FCY. If FCY is defined, the argument
+     * is converted and passed to __delay32(). Otherwise, the functions
+     * are declared external.
+     */
+    __delay_us(200);
+    // System reset
+    asm("RESET");
+}
+
 void services(unsigned char command, message_abstract_u *message) {
     switch(command) {
         case SYSTEM_CODE_DATE:
@@ -186,14 +199,4 @@ void services(unsigned char command, message_abstract_u *message) {
             memcpy(message->system.service, _BOARD_NAME, sizeof (_BOARD_NAME));
             break;
     }
-    
-//    switch (command) {
-//        case SERVICE_RESET:
-//            SET_CPU_IPL(7);     ///< disable all user interrupts
-//            //DelayN1ms(200);
-//            asm("RESET");       ///< System reset
-//            break;
-//        default:
-//            break;
-//    }
 }

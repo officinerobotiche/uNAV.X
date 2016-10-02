@@ -63,8 +63,9 @@ packet_information_t send_frame_system(unsigned char option, unsigned char type,
     message_abstract_u send;
     switch (command) {
         case SYSTEM_RESET:
-            // Not implemented at this time
-            return CREATE_PACKET_NACK(command, type);
+            // The board is in reset mode. It's futile to send other message 
+            // after this function
+            reset();
             break;
         case SYSTEM_CODE_DATE:
         case SYSTEM_CODE_VERSION:
@@ -74,9 +75,6 @@ packet_information_t send_frame_system(unsigned char option, unsigned char type,
             services(command, &send);
             break;
             
-//        case SYSTEM_SERVICE:
-//            send.system.service = services(message.system.service);
-//            break;
 //        case SYSTEM_TASK_PRIORITY:
 //        case SYSTEM_TASK_FRQ:
 //        case SYSTEM_TASK_TIME:

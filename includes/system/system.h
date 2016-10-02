@@ -85,6 +85,12 @@ extern "C" {
      * @return ACK value for correct update priority
      */
     unsigned char update_frequency(void);
+    
+    /**
+     * Board software reset.
+     * Disable all interrupt, wait 200us and reset the board
+     */
+    void reset();
 
     /**
      * Management services messages. 
