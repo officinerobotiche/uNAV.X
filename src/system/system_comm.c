@@ -31,12 +31,6 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-///** GLOBAL VARIBLES */
-//// From system/system.c
-//extern system_parameter_t parameter_system;
-//// From communication/serial.c
-//extern system_error_serial_t serial_error;
-
 /*****************************************************************************/
 /* User Functions                                                            */
 /*****************************************************************************/
