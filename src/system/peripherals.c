@@ -385,7 +385,9 @@ void InitLEDs(void) {
 #elif MOTION_CONTROL
     GPIO_INIT_TYPE(led_controller[0].gpio, A, 4, GPIO_OUTPUT);
 #endif
-    LED_Init(1000, &led_controller[0], LED_NUM);
+    hEvent_t event_led = LED_Init(1000, &led_controller[0], LED_NUM);
+    // Register event LED
+    register_time(SYSTEM_EVENT_LED,event_led);
 }
 
 inline void UpdateBlink(short num, short blink) {
@@ -393,6 +395,7 @@ inline void UpdateBlink(short num, short blink) {
 }
 
 inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
+    unsigned int t = TMR1; // Timing function
     //static int i, counter, adc;
     switch(info_buffer.adc_conf) {
         case ADC_SIM_2:
@@ -420,6 +423,7 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
 //            }
             break;
     }
+    update_adc_time(t, TMR1);
 }
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {

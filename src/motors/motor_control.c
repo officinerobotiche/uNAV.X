@@ -383,7 +383,7 @@ inline motor_t get_motor_reference(short motIdx) {
 }
              
 inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
-    motors[motIdx].enc_angle = (int)(((float)motors[motIdx].k_ang) / ((float)motors[motIdx].enc_angle));
+    motors[motIdx].enc_angle = (int)((value / ((float)motors[motIdx].k_ang) ));
     motors[motIdx].measure.position = (float) value;  
 }
              

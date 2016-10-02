@@ -32,6 +32,8 @@
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "communication/serial.h"
 
+#include <libpic30.h>    /* Inclusion for delay REQUIRED after definition FCY */
+
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
@@ -71,6 +73,9 @@ hardware_bit_t OC2IF = REGISTER_INIT(IFS0, 6);
 #define EVENT_PRIORITY_VERY_LOW_P IPC6bits.OC3IP
 hardware_bit_t OC3IF = REGISTER_INIT(IFS1, 9);
 
+uint32_t adc_time;
+hEvent_t system_events[NUM_SYSTEM_EVENTS];
+
 /******************************************************************************/
 /* System Level Functions                                                     */
 /******************************************************************************/
@@ -92,7 +97,7 @@ void ConfigureOscillator(void) {
 
 void InitEvents(void) {
     /// Register event controller
-    init_events(&TMR1, &PR1, SYS_FREQ);
+    init_events(&TMR1, &PR1, FOSC);
     
     EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
     EVENT_PRIORITY_VERY_LOW_P = EVENT_PRIORITY_VERY_LOW_LEVEL;
@@ -114,6 +119,7 @@ void InitEvents(void) {
     register_interrupt(EVENT_PRIORITY_HIGH, &OC2IF);
     EVENT_PRIORITY_HIGH_ENABLE = 1;
     
+    adc_time = 0;
     /// Initialization task controller
     task_init(FRTMR1);
 }
@@ -160,6 +166,26 @@ void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
     /// Execution task manager
     task_manager();
     IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag
+}
+
+void update_adc_time(uint16_t t2, uint16_t t1) {
+    if(t2 >= t1) {
+        adc_time = t2 - t1;
+    } else {
+        adc_time = t2 + (0xFFFF - t1);
+    }
+}
+
+void register_time(system_event_type_t event_type, hEvent_t event ) {
+    system_events[event_type] = event;
+}
+
+void get_system_time(message_abstract_u *message) {
+    message->system.time.idle = 0;
+    message->system.time.parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
+    message->system.time.i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
+    message->system.time.led = get_time(system_events[SYSTEM_EVENT_LED]);
+    message->system.time.adc = adc_time;
 }
 
 //inline system_parameter_t get_system_parameters(void) {

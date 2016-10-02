@@ -44,10 +44,6 @@
 packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
 //    message_abstract_u send;
     switch (command) {
-//        case SYSTEM_SERVICE:
-//            send.system.service = services(message.system.service);
-//            return CREATE_PACKET_DATA(command, type, send);
-//            break;
 //        case SYSTEM_TASK_PRIORITY:
 //        case SYSTEM_TASK_FRQ:
 //            set_process(command, message.system.task);
@@ -74,21 +70,9 @@ packet_information_t send_frame_system(unsigned char option, unsigned char type,
         case SYSTEM_CODE_BOARD_NAME:
             services(command, &send);
             break;
-            
-//        case SYSTEM_TASK_PRIORITY:
-//        case SYSTEM_TASK_FRQ:
-//        case SYSTEM_TASK_TIME:
-//            
-//            break;
-//        case SYSTEM_TASK_NUM:
-//            send.system.task = get_process(command, message.system.task);
-//            break;
-//        case SYSTEM_TASK_NAME:
-//            send.system.task_name = get_process_name(message.system.task_name);
-//            break;
-//        case SYSTEM_PARAMETER:
-//            send.system.parameter = parameter_system;
-//            break;
+        case SYSTEM_TIME:
+            get_system_time(&send);
+            break;
 //        case SYSTEM_SERIAL_ERROR:
 //            send.system.error_serial = serial_error;
 //            break;

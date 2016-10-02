@@ -145,6 +145,8 @@ void SerialComm_Init(void) {
     hModule_t serial_module = register_module(&_MODULE_SERIAL);
     /// Register event
     parseEvent = register_event_p(serial_module, &parse_packet, EVENT_PRIORITY_LOW);
+    /// Register parser event in system control
+    register_time(SYSTEM_EVENT_PARSER, parseEvent);
 }
 
 bool Serial_set(peripherals_serial_t serial) {

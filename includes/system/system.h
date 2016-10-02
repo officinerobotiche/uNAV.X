@@ -23,19 +23,21 @@ extern "C" {
 #endif
 
 #include <packet/packet.h>
+    
+#include <system/events.h>
 
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
     
     /* Microcontroller MIPs (FCY) */
-#define SYS_FREQ        80000000
-#define FCY             SYS_FREQ/2
+#define FOSC        80000000
+#define FCY         (FOSC/2)
 
 #define FRTMR1 1000            // Timer1 - Value in herz [Hz]
 #define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
 #define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
-#define FRTMR2 SYS_FREQ
+#define FRTMR2 FOSC
 #define TMR2_VALUE 0xFFFF       // Timer2 - Value for overflow
     
     /* Interrupt priority */
@@ -52,6 +54,16 @@ extern "C" {
 #define EVENT_PRIORITY_VERY_LOW_LEVEL 1
 
 #define UART_TX_LEVEL 1
+    
+    // Definition events
+    
+    #define NUM_SYSTEM_EVENTS 5
+
+    typedef enum {
+        SYSTEM_EVENT_PARSER = 0,
+        SYSTEM_EVENT_I2C    = 1,
+        SYSTEM_EVENT_LED    = 2
+    } system_event_type_t;
 
     /******************************************************************************/
     /* System Function Prototypes                                                 */
@@ -70,22 +82,29 @@ extern "C" {
      * Initialization all system events
      */
     void InitEvents(void);
-
-
-    /**
-     * Update priority for process, restart function Init Interrupt for restart
-     * process with correct value
-     * @return ACK value for correct update priority
-     */
-    unsigned char update_priority(void);
-
-    /**
-     * Update frequency for working processes. If value is equal to zero,
-     * the process are disabled.
-     * @return ACK value for correct update priority
-     */
-    unsigned char update_frequency(void);
     
+    /** Initialization Timer 1 - Timer system
+     */
+    void InitTimer1(void);
+    
+    /**
+     * Update time for ADC conversion
+     * @param t2
+     * @param t1
+     */
+    void update_adc_time(uint16_t t2, uint16_t t1);
+    /**
+     * Register system events
+     * @param event_type type of event
+     * @param event 
+     */
+    void register_time(system_event_type_t event_type, hEvent_t event );
+    
+    /**
+     * Return the time of execution of idle, parsing, adc conversion
+     * @param message
+     */
+    void get_system_time(message_abstract_u *message);
     /**
      * Board software reset.
      * Disable all interrupt, wait 200us and reset the board
@@ -98,10 +117,6 @@ extern "C" {
      * @param The buffer to return the information
      */
     void services(unsigned char command, message_abstract_u *message);
-
-    /** Initialization Timer 1 - Timer system
-     */
-    void InitTimer1(void);
 
 #ifdef	__cplusplus
 }
