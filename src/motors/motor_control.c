@@ -66,7 +66,8 @@
 static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
 
 #define NUM_CONTROLLERS 3
-
+// Get the number in controller array from enum_state_t
+#define GET_CONTROLLER_NUM(X) ((X) - 1)
 /**
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
@@ -141,12 +142,12 @@ typedef struct _motor_firmware {
     //Internal value volt and current
     analog_t volt, current;
     //PID
-    pid_controller_t velocity;
+    //pid_controller_t controller;
+    pid_controller_t controller[NUM_CONTROLLERS];
     //Common
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
     bool currentControlInside;
-    pid_controller_t controller[NUM_CONTROLLERS];
     motor_t controlOutput;
     motor_t constraint;
     motor_t controlOut;
@@ -169,17 +170,21 @@ void reset_motor_data(motor_t* motor) {
 }
 
 void initialize_controllers(short motIdx) {
-    //Initialize the PID data structure: PIDstruct
-    //Set up pointer to derived coefficients
-    motors[motIdx].velocity.PIDstruct.abcCoefficients = &abcCoefficient[motIdx][1][0];
-    //Set up pointer to controller history samples
-    motors[motIdx].velocity.PIDstruct.controlHistory = &controlHistory[motIdx][1][0];
-    // Clear the controller history and the controller output
-    PIDInit(&motors[motIdx].velocity.PIDstruct);
-    // Initialize PID counter time
-    motors[motIdx].velocity.counter = 0;
-    // Initialize PID time
-    motors[motIdx].velocity.time = 0;
+    int i;
+    // Initialize all controllers
+    for(i = 0; i < NUM_CONTROLLERS; i++) {
+        //Initialize the PID data structure: PIDstruct
+        //Set up pointer to derived coefficients
+        motors[motIdx].controller[i].PIDstruct.abcCoefficients = &abcCoefficient[motIdx][i][0];
+        //Set up pointer to controller history samples
+        motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory[motIdx][i][0];
+        // Clear the controller history and the controller output
+        PIDInit(&motors[motIdx].controller[i].PIDstruct);
+        // Initialize PID counter time
+        motors[motIdx].controller[i].counter = 0;
+        // Initialize PID time
+        motors[motIdx].controller[i].time = 0;
+    }
 }
 
 hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
@@ -311,7 +316,8 @@ void update_motor_constraints(short motIdx, motor_t constraints) {
 }
 
 inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
-    return motors[motIdx].velocity.pid;
+    int num_control = GET_CONTROLLER_NUM(state);
+    return motors[motIdx].controller[num_control].pid;
 }
 
 bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
@@ -323,18 +329,20 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     long check2 = labs(1000.0 * (pid.kp + 2 * pid.kd));
     
     if(check1 < INT16_MAX && check2 < INT16_MAX && labs(pid.kd) < INT16_MAX) {
+        int num_control = GET_CONTROLLER_NUM(state);
         // Update PID struct
-        memcpy(&motors[motIdx].velocity.pid, &pid, sizeof(motor_pid_t));
+        memcpy(&motors[motIdx].controller[num_control].pid, &pid, sizeof(motor_pid_t));
         // Write new coefficients
-        motors[motIdx].velocity.kCoeffs[0] = (int) (pid.kp * 1000.0);
-        motors[motIdx].velocity.kCoeffs[1] = (int) (pid.ki * 1000.0);
-        motors[motIdx].velocity.kCoeffs[2] = (int) (pid.kd * 1000.0);
+        motors[motIdx].controller[num_control].kCoeffs[0] = (int) (pid.kp * 1000.0);
+        motors[motIdx].controller[num_control].kCoeffs[1] = (int) (pid.ki * 1000.0);
+        motors[motIdx].controller[num_control].kCoeffs[2] = (int) (pid.kd * 1000.0);
         // Derive the a, b and c coefficients from the Kp, Ki & Kd
-        PIDCoeffCalc(&motors[motIdx].velocity.kCoeffs[0], &motors[motIdx].velocity.PIDstruct);
+        PIDCoeffCalc(&motors[motIdx].controller[num_control].kCoeffs[0], 
+                &motors[motIdx].controller[num_control].PIDstruct);
         // Write new time
-        motors[motIdx].velocity.time = motors[motIdx].manager_freq / pid.frequency;
+        motors[motIdx].controller[num_control].time = motors[motIdx].manager_freq / pid.frequency;
         // reset counter
-        motors[motIdx].velocity.counter = 0;
+        motors[motIdx].controller[num_control].counter = 0;
         return true;
     } else
         return false;
@@ -516,28 +524,33 @@ void MotorTaskController(int argc, int *argv) {
     //-------------- PID CONTROL -----------------------------------------------
     
     int control_output = 0;
+    int num_control = 0;
     
+    // ======= TEST CONTROL VELOCITY =========
+//    num_control = GET_CONTROLLER_NUM(CONTROL_VELOCITY);
 //    // Set reference
-//    motors[motIdx].velocity.PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
+//    motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
 //                            motors[motIdx].constraint.velocity);
 //    // Set measure
-//    motors[motIdx].velocity.PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
+//    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
 //    // PID execution
-//    PID(&motors[motIdx].velocity.PIDstruct);
+//    PID(&motors[motIdx].controller[num_control].PIDstruct);
 //    // Set Output
-//    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].velocity.PIDstruct.controlOutput;
+//    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[num_control].PIDstruct.controlOutput;
 //    control_output = motors[motIdx].controlOut.velocity;
+    // =======================================
     
     // ======= TEST CONTROL CURRENT ==========
-    // Set reference
-    motors[motIdx].velocity.PIDstruct.controlReference = castToDSP(motors[motIdx].reference.current, 
+    num_control = GET_CONTROLLER_NUM(CONTROL_CURRENT);
+    // Set reference    
+    motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.current, 
                             motors[motIdx].constraint.current);
     // Set measure
-    motors[motIdx].velocity.PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
+    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
     // PID execution
-    PID(&motors[motIdx].velocity.PIDstruct);
+    PID(&motors[motIdx].controller[num_control].PIDstruct);
     // Set Output
-    motors[motIdx].controlOut.current = motors[motIdx].velocity.PIDstruct.controlOutput;
+    motors[motIdx].controlOut.current = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
     control_output = motors[motIdx].controlOut.current;
     // =======================================
     

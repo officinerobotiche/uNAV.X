@@ -411,20 +411,19 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
         case ADC_SIM_4:
             // Shift the value to cover all int range
             // TODO use a builtin
-/*
-            current[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2) << 5;
-            voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2) << 5;
-            current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2) << 5;
-            voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2) << 5;
+            current[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2);
+            voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2);
+            current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2);
+            voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2);
             gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
             gpio_ProcessADCSamples(1, voltage[MOTOR_ZERO]);
             gpio_ProcessADCSamples(2, current[MOTOR_ONE]);
             gpio_ProcessADCSamples(3, voltage[MOTOR_ONE]);
-*/
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2)));
+
+//            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2)));
+//            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2)));
+//            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2)));
+//            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2)));
             break;
         case ADC_SCAN:
 //            counter = 0;

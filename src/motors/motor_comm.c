@@ -49,7 +49,9 @@ packet_information_t save_frame_motor(unsigned char option, unsigned char type, 
                 return CREATE_PACKET_NACK(command, type);
             break;
         case MOTOR_CURRENT_PID:
-            //update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid);
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid))
+                return CREATE_PACKET_NACK(command, type);
             break;
         case MOTOR_PARAMETER:
             update_motor_parameters((short) motor.bitset.motor, message.motor.parameter);
@@ -90,7 +92,7 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
             send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
             break;
         case MOTOR_CURRENT_PID:
-            //send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
             break;
         case MOTOR_VEL_REF:
             send.motor.reference = get_motor_reference((short) motor.bitset.motor).velocity;

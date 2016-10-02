@@ -240,12 +240,10 @@ void Motor_Init() {
         hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
         /// Initialize parameters for motors
         update_motor_parameters(i, init_motor_parameters());
-/*
-        // Current PID
-        motor_pid_t current_pid = {16, 0, 0, 10000, false};
         // Initialize current PID controller
+        //motor_pid_t current_pid = {16, 0, 0, 10000, false};
+        motor_pid_t current_pid = {6, 2, 1, 10000, false};
         update_motor_pid(i, CONTROL_CURRENT, current_pid);
-*/
         /// Initialize Velocity PID controller
         motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1000, true};
         update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
