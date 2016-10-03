@@ -36,7 +36,7 @@
 #define DEBUG_ADC
 
 #ifdef DEBUG_ADC
-#define ADC_BUFF 64
+#define ADC_BUFF 32
 #else
 #define ADC_BUFF 128
 #endif
@@ -155,7 +155,7 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
 #ifdef DEBUG_ADC
-    AD1CON4bits.DMABL = 0b101;
+    AD1CON4bits.DMABL = 0b100;
 #else
     // ADC_BUFF = 128 -> ADC_BUFF/2 = 64
     AD1CON4bits.DMABL = 0b110; // Allocates 64 words of buffer to each analog input
@@ -202,7 +202,7 @@ void InitADC_4Sim(adc_buff_info_t info_buffer) {
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
 #ifdef DEBUG_ADC
-    AD1CON4bits.DMABL = 0b100;
+    AD1CON4bits.DMABL = 0b011;
 #else    
     // ADC_BUFF = 128 -> ADC_BUFF/4 = 32
     AD1CON4bits.DMABL = 0b101; // Allocates 32 words of buffer to each analog input
@@ -235,7 +235,7 @@ bool adc_config(void) {
         case 2:
             info_buffer.adc_conf = ADC_SIM_2;
 #ifdef DEBUG_ADC
-            info_buffer.size_base_2 = MATH_BUFF_32;
+            info_buffer.size_base_2 = MATH_BUFF_16;
 #else
             info_buffer.size_base_2 = MATH_BUFF_64;
 #endif      
@@ -245,7 +245,7 @@ bool adc_config(void) {
         case 4:
             info_buffer.adc_conf = ADC_SIM_4;
 #ifdef DEBUG_ADC
-            info_buffer.size_base_2 = MATH_BUFF_16;
+            info_buffer.size_base_2 = MATH_BUFF_8;
 #else
             info_buffer.size_base_2 = MATH_BUFF_32;
 #endif

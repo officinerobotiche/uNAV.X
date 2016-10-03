@@ -284,7 +284,8 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
     motors[motIdx].k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
     // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
-    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * motors[motIdx].manager_freq);
+    //motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * motors[motIdx].manager_freq);
+    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * 1000.0);
     
     //Update encoder swap
     switch (motIdx) {
@@ -505,7 +506,7 @@ int control_velocity(short motIdx, motor_control_t reference) {
     motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.velocity);
     motors[motIdx].reference.velocity = motors[motIdx].controller[num_control].PIDstruct.controlReference;
     // Set measure
-    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
+    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
     // PID execution
     PID(&motors[motIdx].controller[num_control].PIDstruct);
     // Set Output
@@ -519,15 +520,12 @@ int control_current(short motIdx, motor_control_t reference) {
     motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current);
     motors[motIdx].reference.current = motors[motIdx].controller[num_control].PIDstruct.controlReference;
     // Set measure
-    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
+    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.current, INT16_MAX);
     // PID execution
     PID(&motors[motIdx].controller[num_control].PIDstruct);
     // Set Output
-    if(motors[motIdx].controller[num_control].PIDstruct.controlOutput == -32768) {
-        motors[motIdx].controlOut.current = 0;
-    } else {
-        motors[motIdx].controlOut.current = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
-    }
+    motors[motIdx].controlOut.current = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
+    
     return motors[motIdx].controlOut.current;
 }
 
@@ -579,6 +577,7 @@ void MotorTaskController(int argc, int *argv) {
 #endif
     //-------------- PID CONTROL -----------------------------------------------
 #define DEBUG
+#define DEBUG_WITH_VELOCITY
     // ======= TEST CONTROL VELOCITY =========
 #ifdef DEBUG_WITH_VELOCITY
     int num_control = GET_CONTROLLER_NUM(CONTROL_VELOCITY);
@@ -586,17 +585,11 @@ void MotorTaskController(int argc, int *argv) {
         //Measure velocity in milli rad/s
         motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
         // Set reference
-        motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(motors[motIdx].external_reference, motors[motIdx].constraint.velocity);
-        motors[motIdx].reference.velocity = motors[motIdx].controller[num_control].PIDstruct.controlReference;
-        // Set measure
-        motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
-        // PID execution
-        PID(&motors[motIdx].controller[num_control].PIDstruct);
         
-        motors[motIdx].control_output = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
+        motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
     }
 #else
-     motors[motIdx].control_output = 0;
+     motors[motIdx].control_output = 500;
 #endif
     // =======================================
 
@@ -683,7 +676,7 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
     motors[motIdx].measure.pwm = pwm_control * motors[motIdx].parameter_motor.rotation;
 #endif
     // PWM output
-    SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
+    SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET - pwm_control, 0);
 }
 
 void Emergency(int argc, int *argv) {
