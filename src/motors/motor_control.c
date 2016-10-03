@@ -105,6 +105,8 @@ typedef struct _pid_control {
     unsigned int counter;
     // enable
     volatile bool enable;
+    // antiwind up
+    fractional antiwindup;
 } pid_controller_t;
 
 /**
@@ -190,6 +192,8 @@ void initialize_controllers(short motIdx) {
         motors[motIdx].controller[i].time = 0;
         // Enable
         motors[motIdx].controller[i].enable = false;
+        // Anti wind-up
+        motors[motIdx].controller[i].antiwindup = 0;
     }
 }
 
@@ -586,6 +590,8 @@ void MotorTaskController(int argc, int *argv) {
         motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
         // Set reference
         
+        //motors[motIdx].controller[1].antiwindup = motors[motIdx].controlOut.velocity - motors[motIdx].controlOut.current;
+        //motors[motIdx].controller[1].PIDstruct.controlOutput -= motors[motIdx].controller[1].antiwindup / 8;
         motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
     }
 #else
