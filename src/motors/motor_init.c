@@ -241,11 +241,11 @@ void Motor_Init() {
         /// Initialize parameters for motors
         update_motor_parameters(i, init_motor_parameters());
         // Initialize current PID controller
-        //motor_pid_t pid_current = {16, 0, 0, 10000, false};
-        motor_pid_t pid_current = {6, 2, 1, 10000, false};
+        motor_pid_t pid_current = {16, 0, 0, 1000, false};
+        //motor_pid_t pid_current = {6, 2, 1, 10000, false};
         update_motor_pid(i, CONTROL_CURRENT, pid_current);
         /// Initialize Velocity PID controller
-        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1000, true};
+        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 100, true};
         update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
         /// Initialize Position PID controller
         motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 10, false};

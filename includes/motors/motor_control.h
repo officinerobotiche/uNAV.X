@@ -36,6 +36,10 @@ extern "C" {
     /* System Level #define Macros                                            */
     /**************************************************************************/
 
+    /****TEST *****/
+    // #define INTERNAL_CONTROL
+    /**************/
+    
     /**
      * Numbers of motors available in this board
      */
@@ -218,6 +222,15 @@ extern "C" {
      */
     void set_motor_state(short motIdx, motor_state_t motor);
 
+    /**
+     * Check the size of the value and return a value available for the DSP
+     * @param value
+     * @param constraint
+     * @return 
+     */
+    inline int castToDSP(motor_control_t value, motor_control_t constraint);
+    
+    void CurrentControl(short motIdx, int current, int voltage);
     /**
      * Convert and check reference for type of law control selected. We have
      * four principal type of control motor:

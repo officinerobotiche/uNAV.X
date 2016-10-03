@@ -55,7 +55,7 @@
 #define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
 #define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
 
-#define DEFAULT_FREQ_MOTOR_MANAGER 1000             // Task Manager 10Khz
+#define DEFAULT_FREQ_MOTOR_MANAGER 10000             // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
 
 /*****************************************************************************/
@@ -103,6 +103,8 @@ typedef struct _pid_control {
     unsigned int time;
     // internal time counter
     unsigned int counter;
+    // enable
+    volatile bool enable;
 } pid_controller_t;
 
 /**
@@ -142,6 +144,8 @@ typedef struct _motor_firmware {
     //Internal value volt and current
     analog_t volt, current;
     //PID
+    volatile motor_control_t external_reference;
+    volatile motor_control_t control_output;
     //pid_controller_t controller;
     pid_controller_t controller[NUM_CONTROLLERS];
     //Common
@@ -184,6 +188,8 @@ void initialize_controllers(short motIdx) {
         motors[motIdx].controller[i].counter = 0;
         // Initialize PID time
         motors[motIdx].controller[i].time = 0;
+        // Enable
+        motors[motIdx].controller[i].enable = false;
     }
 }
 
@@ -191,6 +197,9 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     reset_motor_data(&motors[motIdx].controlOut);
+    
+    motors[motIdx].control_output = 0;
+    motors[motIdx].external_reference = 0;
     //Initialize controllers
     initialize_controllers(motIdx);
 /*
@@ -312,7 +321,7 @@ inline motor_t get_motor_constraints(short motIdx) {
 
 void update_motor_constraints(short motIdx, motor_t constraints) {
     //Update parameter constraints
-    motors[motIdx].constraint = constraints;
+    memcpy(&motors[motIdx].constraint, &constraints, sizeof(motor_t));
 }
 
 inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
@@ -339,10 +348,14 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
         // Derive the a, b and c coefficients from the Kp, Ki & Kd
         PIDCoeffCalc(&motors[motIdx].controller[num_control].kCoeffs[0], 
                 &motors[motIdx].controller[num_control].PIDstruct);
+        // Clear the controller history and the controller output
+        PIDInit(&motors[motIdx].controller[num_control].PIDstruct);
         // Write new time
         motors[motIdx].controller[num_control].time = motors[motIdx].manager_freq / pid.frequency;
         // reset counter
         motors[motIdx].controller[num_control].counter = 0;
+        
+        motors[motIdx].controller[num_control].enable = pid.enable;
         return true;
     } else
         return false;
@@ -388,7 +401,7 @@ inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
     // get time execution
     motors[motIdx].diagnostic.time_control = get_time(motors[motIdx].motor_manager_event);
     // Evaluate the Watt required [mW]
-    motors[motIdx].diagnostic.watt = motors[motIdx].measure.current * motors[motIdx].diagnostic.volt;
+    motors[motIdx].diagnostic.watt = (motors[motIdx].measure.current * motors[motIdx].diagnostic.volt) / 1000;
     return motors[motIdx].diagnostic;
 }
 
@@ -410,17 +423,18 @@ void set_motor_reference(short motIdx, motor_state_t state, motor_control_t refe
         motors[motIdx].reference.state = state;
     }
     // Setup reference
-    switch (state) {
-        case CONTROL_POSITION:
-            motors[motIdx].reference.position = reference;
-            break;
-        case CONTROL_VELOCITY:
-            motors[motIdx].reference.velocity = reference;
-            break;
-        case CONTROL_CURRENT:
-            motors[motIdx].reference.current = reference;
-            break;
-    }
+    motors[motIdx].external_reference = reference;
+//    switch (state) {
+//        case CONTROL_POSITION:
+//            motors[motIdx].reference.position = reference;
+//            break;
+//        case CONTROL_VELOCITY:
+//            motors[motIdx].reference.velocity = reference;
+//            break;
+//        case CONTROL_CURRENT:
+//            motors[motIdx].reference.current = reference;
+//            break;
+//    }
     // Reset time emergency
     motors[motIdx].motor_emergency.alive.counter = 0; 
 }
@@ -474,88 +488,135 @@ inline int castToDSP(motor_control_t value, motor_control_t constraint) {
         return value;
 }
 
-bool runController(pid_controller_t *controller) {
-    // Check if the controller is enabled
-    if(controller->pid.enable) {
-        // Check if is the time to run
-        if(controller->counter >= controller->time) {
-            return true;
-        } else {
-            // Increase the counter
-            controller->counter++;
-        }
+bool run_controller(pid_controller_t *controller) {
+    // Check if is the time to run
+    if(controller->counter >= controller->time) {
+        return true;
+    } else {
+        // Increase the counter
+        controller->counter++;
     }
     return false;
 }
 
-void MotorTaskController(int argc, int *argv) {
-    short motIdx = (short) argv[0];
-    /// Add new task controller
-    if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
-        if(motors[motIdx].reference.state == CONTROL_EMERGENCY) {
-            task_set(motors[motIdx].task_emergency, RUN);
-        } else {
-            task_set(motors[motIdx].task_emergency, STOP);
-        }
-        /// Save new state controller
-        motors[motIdx].measure.state = motors[motIdx].reference.state;
-    }
-    /// Check for emergency mode
-    if(motors[motIdx].reference.state > CONTROL_DISABLE) {
-        if ((motors[motIdx].motor_emergency.alive.counter + 1) >= motors[motIdx].motor_emergency.alive.time) {
-            /// Set Motor in emergency mode
-            set_motor_state(motIdx, CONTROL_EMERGENCY);
-            motors[motIdx].motor_emergency.stop.counter = 0;
-            motors[motIdx].motor_emergency.alive.counter = 0;
-        } else
-            motors[motIdx].motor_emergency.alive.counter++;
-    }
-    //-------------- BUILD MEASURES --------------------------------------------
+int control_velocity(short motIdx, motor_control_t reference) {
+    int num_control = GET_CONTROLLER_NUM(CONTROL_VELOCITY);
+    // Set reference
+    motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.velocity);
+    motors[motIdx].reference.velocity = motors[motIdx].controller[num_control].PIDstruct.controlReference;
+    // Set measure
+    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
+    // PID execution
+    PID(&motors[motIdx].controller[num_control].PIDstruct);
+    // Set Output
+    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[num_control].PIDstruct.controlOutput;
+    return motors[motIdx].controlOut.velocity;
+}
 
-    //Measure velocity in milli rad/s
-    motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
-    // Update current and volt values;
-    // The current is evaluated with sign of motor rotation
-    motors[motIdx].measure.current = motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
-                            - motors[motIdx].current.offset;
-    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) 
-                            + motors[motIdx].volt.offset;
-    
-    //-------------- PID CONTROL -----------------------------------------------
-    
-    int control_output = 0;
-    int num_control = 0;
-    
-    // ======= TEST CONTROL VELOCITY =========
-//    num_control = GET_CONTROLLER_NUM(CONTROL_VELOCITY);
-//    // Set reference
-//    motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.velocity, 
-//                            motors[motIdx].constraint.velocity);
-//    // Set measure
-//    motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
-//    // PID execution
-//    PID(&motors[motIdx].controller[num_control].PIDstruct);
-//    // Set Output
-//    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[num_control].PIDstruct.controlOutput;
-//    control_output = motors[motIdx].controlOut.velocity;
-    // =======================================
-    
-    // ======= TEST CONTROL CURRENT ==========
-    num_control = GET_CONTROLLER_NUM(CONTROL_CURRENT);
-    // Set reference    
-    motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(motors[motIdx].reference.current, 
-                            motors[motIdx].constraint.current);
+int control_current(short motIdx, motor_control_t reference) {
+    int num_control = GET_CONTROLLER_NUM(CONTROL_CURRENT);
+    // Set reference
+    motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current);
+    motors[motIdx].reference.current = motors[motIdx].controller[num_control].PIDstruct.controlReference;
     // Set measure
     motors[motIdx].controller[num_control].PIDstruct.measuredOutput = - castToDSP(motors[motIdx].measure.current, INT16_MAX);
     // PID execution
     PID(&motors[motIdx].controller[num_control].PIDstruct);
     // Set Output
-    motors[motIdx].controlOut.current = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
-    control_output = motors[motIdx].controlOut.current;
-    // =======================================
+    if(motors[motIdx].controller[num_control].PIDstruct.controlOutput == -32768) {
+        motors[motIdx].controlOut.current = 0;
+    } else {
+        motors[motIdx].controlOut.current = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
+    }
+    return motors[motIdx].controlOut.current;
+}
+
+inline void CurrentControl(short motIdx, int current, int voltage) {
+    motors[motIdx].measure.current = motors[motIdx].current.gain * current - motors[motIdx].current.offset;
+    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * voltage + motors[motIdx].volt.offset;
     
+    if(motors[motIdx].controller[2].enable) {
+        int control_output = control_current(motIdx, motors[motIdx].control_output);
+
+        // Send to motor the value of control
+        Motor_PWM(motIdx, control_output);
+    }
+}
+
+void MotorTaskController(int argc, int *argv) {
+    short motIdx = (short) argv[0];
+    /// Add new task controller
+//    if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
+//        if(motors[motIdx].reference.state == CONTROL_EMERGENCY) {
+//            task_set(motors[motIdx].task_emergency, RUN);
+//        } else {
+//            task_set(motors[motIdx].task_emergency, STOP);
+//        }
+//        /// Save new state controller
+//        motors[motIdx].measure.state = motors[motIdx].reference.state;
+//    }
+//    /// Check for emergency mode
+//    if(motors[motIdx].reference.state > CONTROL_DISABLE) {
+//        if ((motors[motIdx].motor_emergency.alive.counter + 1) >= motors[motIdx].motor_emergency.alive.time) {
+//            /// Set Motor in emergency mode
+//            set_motor_state(motIdx, CONTROL_EMERGENCY);
+//            motors[motIdx].motor_emergency.stop.counter = 0;
+//            motors[motIdx].motor_emergency.alive.counter = 0;
+//        } else
+//            motors[motIdx].motor_emergency.alive.counter++;
+//    }
+    //-------------- BUILD MEASURES --------------------------------------------
+
+    //Measure velocity in milli rad/s
+//    motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
+    // Update current and volt values;
+    // The current is evaluated with sign of motor rotation
+#ifndef INTERNAL_CONTROL
+    motors[motIdx].measure.current = motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
+                            - motors[motIdx].current.offset;
+    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) 
+                            + motors[motIdx].volt.offset;
+#endif
+    //-------------- PID CONTROL -----------------------------------------------
+#define DEBUG
+    // ======= TEST CONTROL VELOCITY =========
+#ifdef DEBUG_WITH_VELOCITY
+    int num_control = GET_CONTROLLER_NUM(CONTROL_VELOCITY);
+    if(run_controller(&motors[motIdx].controller[num_control])) {
+        //Measure velocity in milli rad/s
+        motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
+        // Set reference
+        motors[motIdx].controller[num_control].PIDstruct.controlReference = castToDSP(motors[motIdx].external_reference, motors[motIdx].constraint.velocity);
+        motors[motIdx].reference.velocity = motors[motIdx].controller[num_control].PIDstruct.controlReference;
+        // Set measure
+        motors[motIdx].controller[num_control].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
+        // PID execution
+        PID(&motors[motIdx].controller[num_control].PIDstruct);
+        
+        motors[motIdx].control_output = motors[motIdx].controller[num_control].PIDstruct.controlOutput;
+    }
+#else
+     motors[motIdx].control_output = 0;
+#endif
+    // =======================================
+
+    // ======= TEST CONTROL CURRENT ==========
+#ifdef DEBUG
+    if(motIdx == MOTOR_ZERO) {
+        motors[motIdx].control_output = control_current(motIdx, motors[motIdx].control_output);
+    } else {
+        motors[motIdx].control_output = 0;
+    }
+#else
+    motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference);
+#endif
+    // =======================================
+
+
+#ifndef INTERNAL_CONTROL
     // Send to motor the value of control
-    Motor_PWM(motIdx, control_output);
+    Motor_PWM(motIdx, motors[motIdx].control_output);
+#endif
 }
 
 int32_t measureVelocity(short motIdx) {
@@ -610,15 +671,17 @@ int32_t measureVelocity(short motIdx) {
     return update_statistic(&motors[motIdx].mean_vel, vel_mean);
 }
 
+#define SATURATION
 inline void Motor_PWM(short motIdx, int pwm_control) {
 
-//    if(pwm_control > 2048) pwm_control = 2048;
-//    else if(pwm_control < -2048) pwm_control = -2048;
-//    pwm_control = motors[motIdx].parameter_motor.rotation * pwm_control;
-    
+#ifdef SATURATION
+    if(pwm_control > 2048) pwm_control = 2048;
+    else if(pwm_control < -2048) pwm_control = -2048;
+#else
     // Save PWM value with attenuation => K = 1 / 16
     pwm_control = pwm_control >> 4;
     motors[motIdx].measure.pwm = pwm_control * motors[motIdx].parameter_motor.rotation;
+#endif
     // PWM output
     SetDCMCPWM1(motIdx + 1, pwm_control + DEFAULT_PWM_OFFSET, 0);
 }

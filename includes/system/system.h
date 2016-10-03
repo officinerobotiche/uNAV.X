@@ -34,7 +34,7 @@ extern "C" {
 #define FOSC        80000000
 #define FCY         (FOSC/2)
 
-#define FRTMR1 1000             // Timer1 - Value in herz [Hz]
+#define FRTMR1 10000            // Timer1 - Value in herz [Hz]
 #define TCTMR1 1/FRTMR1         // Timer1 - Value in seconds [s]
 #define TMR1_VALUE FCY/FRTMR1   // Timer1 - Value in CLK
 #define FRTMR2 FOSC
@@ -42,10 +42,10 @@ extern "C" {
     
     /* Interrupt priority */
     /* Max priority 7 - Min priority 1 */
+#define UART_RX_LEVEL 7
 #define PWM_TIMER_LEVEL 7
 #define INPUT_CAPTURE_LEVEL 6
 #define ADC_DMA_LEVEL 6
-#define UART_RX_LEVEL 6
 #define SYS_TIMER_LEVEL 5
     
 #define EVENT_PRIORITY_HIGH_LEVEL 4

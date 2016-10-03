@@ -33,8 +33,13 @@
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
+#define DEBUG_ADC
 
+#ifdef DEBUG_ADC
+#define ADC_BUFF 64
+#else
 #define ADC_BUFF 128
+#endif
 
 typedef enum _type_conf {
     ADC_SIM_2,
@@ -149,8 +154,12 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
-
+#ifdef DEBUG_ADC
+    AD1CON4bits.DMABL = 0b101;
+#else
+    // ADC_BUFF = 128 -> ADC_BUFF/2 = 64
     AD1CON4bits.DMABL = 0b110; // Allocates 64 words of buffer to each analog input
+#endif
     
     AD1CHS0bits.CH0SA = 1;      //< CH0 pos -> AN1
     AD1CHS0bits.CH0NA = 0;      //< CH0 neg -> Vrefl
@@ -192,9 +201,12 @@ void InitADC_4Sim(adc_buff_info_t info_buffer) {
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
-
+#ifdef DEBUG_ADC
+    AD1CON4bits.DMABL = 0b100;
+#else    
+    // ADC_BUFF = 128 -> ADC_BUFF/4 = 32
     AD1CON4bits.DMABL = 0b101; // Allocates 32 words of buffer to each analog input
-    
+#endif
     AD1CHS0bits.CH0SA = 3;      //< CH0 pos -> AN3
     AD1CHS0bits.CH0NA = 0;      //< CH0 neg -> Vrefl
     AD1CHS0bits.CH0SB = 0;      //< don't care -> sample B
@@ -222,13 +234,21 @@ bool adc_config(void) {
     switch(info_buffer.numadc){
         case 2:
             info_buffer.adc_conf = ADC_SIM_2;
+#ifdef DEBUG_ADC
+            info_buffer.size_base_2 = MATH_BUFF_32;
+#else
             info_buffer.size_base_2 = MATH_BUFF_64;
+#endif      
             info_buffer.size = ADC_BUFF/2;
             InitADC_2Sim(info_buffer);
             break;
         case 4:
             info_buffer.adc_conf = ADC_SIM_4;
+#ifdef DEBUG_ADC
+            info_buffer.size_base_2 = MATH_BUFF_16;
+#else
             info_buffer.size_base_2 = MATH_BUFF_32;
+#endif
             info_buffer.size = ADC_BUFF/4;
             InitADC_4Sim(info_buffer);
             break;
@@ -436,12 +456,13 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
 //            }
             break;
     }
-/*
+    
+#ifdef INTERNAL_CONTROL
     // Launch the motor current control for motor zero
     CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
     // Launch the motor current control for motor one
-    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
-*/
+    // CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
+#endif    
     update_adc_time(t, TMR1);
 }
 

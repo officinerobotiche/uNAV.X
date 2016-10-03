@@ -120,6 +120,9 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
         case MOTOR_MEASURE:
             send.motor.motor = get_motor_measures((short) motor.bitset.motor);
             break;
+        case MOTOR_REFERENCE:
+            send.motor.motor = get_motor_reference((short) motor.bitset.motor);
+            break;
         case MOTOR_CONSTRAINT:
             send.motor.motor = get_motor_constraints((short) motor.bitset.motor);
             break;
