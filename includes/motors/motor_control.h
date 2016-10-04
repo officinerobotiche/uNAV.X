@@ -228,7 +228,7 @@ extern "C" {
      * @param constraint
      * @return 
      */
-    inline int castToDSP(motor_control_t value, motor_control_t constraint);
+    inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint);
     
     void CurrentControl(short motIdx, int current, int voltage);
     /**
