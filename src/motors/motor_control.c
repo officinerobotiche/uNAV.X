@@ -46,7 +46,6 @@
 /**
  * Default value for motor parameters
  */
-#define DEFAULT_VOLT_BRIDGE 3
 #define DEFAULT_CPR 300
 #define DEFAULT_RATIO 30
 #define DEFAULT_ENC_POSITION MOTOR_ENC_AFTER_GEAR
@@ -250,8 +249,8 @@ motor_parameter_t init_motor_parameters() {
     parameter.bridge.enable = DEFAULT_MOTOR_ENABLE;
     parameter.bridge.pwm_dead_zone = 0;
     parameter.bridge.pwm_frequency = 0;
-    parameter.bridge.volt_offset = DEFAULT_VOLT_BRIDGE;
-    parameter.bridge.volt_gain = 1;
+    parameter.bridge.volt_offset = 0;
+    parameter.bridge.volt_gain = 6.06;
     parameter.bridge.current_offset = 0.8425;
     parameter.bridge.current_gain = 0.0623;
     parameter.encoder.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
@@ -303,7 +302,7 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     motors[motIdx].current.gain = ( 1000.0 * GAIN_ADC ) / motors[motIdx].parameter_motor.bridge.current_gain + 0.5f;
     motors[motIdx].current.offset = (1000.0 * motors[motIdx].parameter_motor.bridge.current_offset ) / motors[motIdx].parameter_motor.bridge.current_gain + 0.5f;
     // Convert gain volt in [mV]
-    motors[motIdx].volt.gain = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_gain;
+    motors[motIdx].volt.gain = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_gain * GAIN_ADC;
     motors[motIdx].volt.offset = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_offset;
     // Setup state with new bridge configuration
     set_motor_state(motIdx, motors[motIdx].measure.state);
@@ -523,13 +522,13 @@ inline int __attribute__((always_inline)) control_current(short motIdx, motor_co
 #undef CONTROLLER_CURR
 }
 
-inline void CurrentControl(short motIdx, int current, int voltage) {
+inline void __attribute__((always_inline)) CurrentControl(short motIdx, int current, int voltage) {
     motors[motIdx].measure.current = - motors[motIdx].current.gain * current + motors[motIdx].current.offset;
     motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * voltage + motors[motIdx].volt.offset;
     
     if(motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+        // Run the Current control
         int control_output = control_current(motIdx, motors[motIdx].control_output);
-
         // Send to motor the value of control
         Motor_PWM(motIdx, control_output);
     }
@@ -564,7 +563,7 @@ void MotorTaskController(int argc, int *argv) {
 
     // ========= CONTROL VELOCITY ============
     // Check if is the time to run the controller
-    if(run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)])) {
+//    if(run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)])) {
         //Measure velocity in milli rad/s
         motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
         // Run PID control
@@ -574,7 +573,7 @@ void MotorTaskController(int argc, int *argv) {
         control_velocity(motIdx, motors[motIdx].external_reference);
         motors[motIdx].control_output = 0;
 #endif
-    }
+//    }
     // =======================================
 
 #ifndef INTERNAL_CONTROL
@@ -591,6 +590,12 @@ void MotorTaskController(int argc, int *argv) {
     // Send to motor the value of control
     Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
     // =======================================
+#else
+    // If disabled Send the PWM after this line
+    if(!motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+        // Send to motor the value of control
+        Motor_PWM(motIdx, motors[motIdx].control_output);
+    }
 #endif
 }
 

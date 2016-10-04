@@ -33,10 +33,10 @@
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
-//#define DEBUG_ADC
+#define DEBUG_ADC
 
 #ifdef DEBUG_ADC
-#define ADC_BUFF 32
+#define ADC_BUFF 16
 #else
 #define ADC_BUFF 32
 #endif
@@ -155,7 +155,7 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
 #ifdef DEBUG_ADC
-    AD1CON4bits.DMABL = 0b100;
+    AD1CON4bits.DMABL = 0b011;
 #else
     // ADC_BUFF = 32 -> ADC_BUFF/2 = 16
     AD1CON4bits.DMABL = 0b100; // Allocates 16 words of buffer to each analog input
@@ -197,12 +197,12 @@ void InitADC_4Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0;       //< 1 Tad auto sample time
+    AD1CON3bits.SAMC = 0b1111;  //< 1 Tad auto sample time
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = info_buffer.size - 1;
+    AD1CON3bits.ADCS = info_buffer.size + 2;
 #ifdef DEBUG_ADC
-    AD1CON4bits.DMABL = 0b011;
+    AD1CON4bits.DMABL = 0b010;
 #else    
     // ADC_BUFF = 32 -> ADC_BUFF/4 = 8
     AD1CON4bits.DMABL = 0b011; // Allocates 8 words of buffer to each analog input
@@ -235,7 +235,7 @@ bool adc_config(void) {
         case 2:
             info_buffer.adc_conf = ADC_SIM_2;
 #ifdef DEBUG_ADC
-            info_buffer.size_base_2 = MATH_BUFF_16;
+            info_buffer.size_base_2 = MATH_BUFF_8;
 #else
             info_buffer.size_base_2 = MATH_BUFF_16;
 #endif      
@@ -245,7 +245,7 @@ bool adc_config(void) {
         case 4:
             info_buffer.adc_conf = ADC_SIM_4;
 #ifdef DEBUG_ADC
-            info_buffer.size_base_2 = MATH_BUFF_8;
+            info_buffer.size_base_2 = MATH_BUFF_4;
 #else
             info_buffer.size_base_2 = MATH_BUFF_8;
 #endif
@@ -437,11 +437,12 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
             voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2);
             current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2);
             voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2);
+#ifndef INTERNAL_CONTROL
             gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
             gpio_ProcessADCSamples(1, voltage[MOTOR_ZERO]);
             gpio_ProcessADCSamples(2, current[MOTOR_ONE]);
             gpio_ProcessADCSamples(3, voltage[MOTOR_ONE]);
-
+#endif
 //            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2)));
 //            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2)));
 //            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2)));
