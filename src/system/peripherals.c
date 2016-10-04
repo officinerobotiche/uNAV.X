@@ -33,12 +33,12 @@
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
-#define DEBUG_ADC
+//#define DEBUG_ADC
 
 #ifdef DEBUG_ADC
 #define ADC_BUFF 32
 #else
-#define ADC_BUFF 128
+#define ADC_BUFF 32
 #endif
 
 typedef enum _type_conf {
@@ -150,15 +150,15 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0b11111; //< 31 Tad auto sample time
+    AD1CON3bits.SAMC = 0;       //< 1 Tad auto sample time
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
 #ifdef DEBUG_ADC
     AD1CON4bits.DMABL = 0b100;
 #else
-    // ADC_BUFF = 128 -> ADC_BUFF/2 = 64
-    AD1CON4bits.DMABL = 0b110; // Allocates 64 words of buffer to each analog input
+    // ADC_BUFF = 32 -> ADC_BUFF/2 = 16
+    AD1CON4bits.DMABL = 0b100; // Allocates 16 words of buffer to each analog input
 #endif
     
     AD1CHS0bits.CH0SA = 1;      //< CH0 pos -> AN1
@@ -197,15 +197,15 @@ void InitADC_4Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0b11111; //< 31 Tad auto sample time
+    AD1CON3bits.SAMC = 0;       //< 1 Tad auto sample time
     // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
     // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
     AD1CON3bits.ADCS = info_buffer.size - 1;
 #ifdef DEBUG_ADC
     AD1CON4bits.DMABL = 0b011;
 #else    
-    // ADC_BUFF = 128 -> ADC_BUFF/4 = 32
-    AD1CON4bits.DMABL = 0b101; // Allocates 32 words of buffer to each analog input
+    // ADC_BUFF = 32 -> ADC_BUFF/4 = 8
+    AD1CON4bits.DMABL = 0b011; // Allocates 8 words of buffer to each analog input
 #endif
     AD1CHS0bits.CH0SA = 3;      //< CH0 pos -> AN3
     AD1CHS0bits.CH0NA = 0;      //< CH0 neg -> Vrefl
@@ -237,7 +237,7 @@ bool adc_config(void) {
 #ifdef DEBUG_ADC
             info_buffer.size_base_2 = MATH_BUFF_16;
 #else
-            info_buffer.size_base_2 = MATH_BUFF_64;
+            info_buffer.size_base_2 = MATH_BUFF_16;
 #endif      
             info_buffer.size = ADC_BUFF/2;
             InitADC_2Sim(info_buffer);
@@ -247,7 +247,7 @@ bool adc_config(void) {
 #ifdef DEBUG_ADC
             info_buffer.size_base_2 = MATH_BUFF_8;
 #else
-            info_buffer.size_base_2 = MATH_BUFF_32;
+            info_buffer.size_base_2 = MATH_BUFF_8;
 #endif
             info_buffer.size = ADC_BUFF/4;
             InitADC_4Sim(info_buffer);
@@ -391,6 +391,8 @@ void Peripherals_Init(void) {
     // When initialized AD1PCFGL = 0xFFFF set all Analog ports as digital
     gpio_init(&ana_en, &dma_en, &AD1PCFGL, &adc_config, 2, &portA, &portB);
 #endif
+    
+    TRISCbits.TRISC3 = 0;
 }
 
 void InitLEDs(void) {
@@ -473,6 +475,7 @@ void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     } else {
         ProcessADCSamples(&AdcBufferB);
     }
+    LATCbits.LATC3 ^= 1;
     DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }

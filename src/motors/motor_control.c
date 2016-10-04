@@ -55,7 +55,7 @@
 #define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
 #define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
 
-#define DEFAULT_FREQ_MOTOR_MANAGER 10000             // Task Manager 10Khz
+#define DEFAULT_FREQ_MOTOR_MANAGER 1000             // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
 
 /*****************************************************************************/
@@ -537,12 +537,6 @@ inline void CurrentControl(short motIdx, int current, int voltage) {
 
 void MotorTaskController(int argc, int *argv) {
     short motIdx = (short) argv[0];
-//    // Wait to update all task
-//    while(!motors[motIdx].control_access) {
-//        return;
-//    }
-//    // Bring the token
-//    motors[motIdx].control_access = false;
     
     /// Add new task controller
     if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
@@ -567,19 +561,21 @@ void MotorTaskController(int argc, int *argv) {
 
 #define DEBUG_WITH_VELOCITY
     
-#ifdef DEBUG_WITH_VELOCITY
+
     // ========= CONTROL VELOCITY ============
     // Check if is the time to run the controller
     if(run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)])) {
         //Measure velocity in milli rad/s
         motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
         // Run PID control
+#ifdef DEBUG_WITH_VELOCITY
         motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
-    }
 #else
-     motors[motIdx].control_output = -500;
-    // =======================================
+        control_velocity(motIdx, motors[motIdx].external_reference);
+        motors[motIdx].control_output = 0;
 #endif
+    }
+    // =======================================
 
 #ifndef INTERNAL_CONTROL
     // ========= CONTROL CURRENT =============
@@ -596,10 +592,6 @@ void MotorTaskController(int argc, int *argv) {
     Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
     // =======================================
 #endif
-
-    
-//    // release the token
-//    motors[motIdx].control_access = true;
 }
 
 int32_t measureVelocity(short motIdx) {
@@ -651,8 +643,7 @@ int32_t measureVelocity(short motIdx) {
     if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
         motors[motIdx].enc_angle = 0;
     }
-    //return update_statistic(&motors[motIdx].mean_vel, vel_mean);
-    return vel_mean;
+    return update_statistic(&motors[motIdx].mean_vel, vel_mean);
 }
 
 #define SATURATION
@@ -664,9 +655,8 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 #else
     // Save PWM value with attenuation => K = 1 / 16
     pwm_control = pwm_control >> 4;
-    motors[motIdx].measure.pwm = pwm_control * motors[motIdx].parameter_motor.rotation;
 #endif
-    motors[motIdx].measure.pwm = pwm_control;
+    motors[motIdx].measure.pwm = pwm_control;// * motors[motIdx].parameter_motor.rotation;
     // PWM output
     SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + pwm_control, 0);
 }
