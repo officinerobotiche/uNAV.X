@@ -391,8 +391,8 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 }
 
 inline motor_t get_motor_measures(short motIdx) {
-//    motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
-//    motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle; 
+    motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
+    motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle; 
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
@@ -648,9 +648,9 @@ int32_t measureVelocity(short motIdx) {
     //Select Prescaler
     motors[motIdx].prescaler_callback(motIdx);
     // Evaluate angle position
-//    if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
-//        motors[motIdx].enc_angle = 0;
-//    }
+    if (labs(motors[motIdx].enc_angle) > motors[motIdx].angle_limit) {
+        motors[motIdx].enc_angle = 0;
+    }
     //return update_statistic(&motors[motIdx].mean_vel, vel_mean);
     return vel_mean;
 }

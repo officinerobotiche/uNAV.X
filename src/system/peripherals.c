@@ -461,7 +461,7 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     // Launch the motor current control for motor zero
     CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
     // Launch the motor current control for motor one
-    // CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
+    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
 #endif    
     update_adc_time(t, TMR1);
 }
