@@ -406,6 +406,7 @@ inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
 
 inline motor_t get_motor_reference(short motIdx) {
     motors[motIdx].reference.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].reference.velocity;
+    motors[motIdx].reference.pwm = motors[motIdx].parameter_motor.rotation * motors[motIdx].reference.pwm;
     return motors[motIdx].reference;
 }
              
@@ -683,7 +684,8 @@ int32_t measureVelocity(short motIdx) {
 
 #define SATURATION
 inline int Motor_PWM(short motIdx, int duty_cycle) {
-
+    // Store the real value send to the PWM
+    motors[motIdx].reference.pwm = duty_cycle;
 #ifdef SATURATION
     int error = 0;
     if(duty_cycle > DEFAULT_PWM_MAX) {
@@ -697,6 +699,7 @@ inline int Motor_PWM(short motIdx, int duty_cycle) {
     // Save PWM value with attenuation => K = 1 / 16
     duty_cycle = duty_cycle >> 4;
 #endif
+    // Real PWM send
     motors[motIdx].measure.pwm = duty_cycle;
     // PWM output
     SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + duty_cycle, 0);
