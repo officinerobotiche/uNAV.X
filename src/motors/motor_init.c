@@ -250,10 +250,6 @@ void Motor_Init() {
         /// Initialize Position PID controller
         motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 10, false};
         update_motor_pid(i, CONTROL_POSITION, pid_pos);
-/*
-        // Set the PID current control work in the ADC function
-        set_currentControlInside(i, false);
-*/
         /// Initialize emergency procedure to stop
         update_motor_emergency(i, init_motor_emergency());
         /// Initialize constraints motor

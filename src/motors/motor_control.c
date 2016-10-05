@@ -150,7 +150,6 @@ typedef struct _motor_firmware {
     //Common
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
-    bool currentControlInside;
     motor_t constraint;
     motor_t controlOut;
     motor_t reference;
@@ -200,10 +199,7 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     motors[motIdx].external_reference = 0;
     //Initialize controllers
     initialize_controllers(motIdx);
-/*
-    // Set if current control run in ADC callback
-    motors[motIdx].currentControlInside = true;
-*/
+
     motors[motIdx].prescaler_callback = prescaler_event;
     // Setup frequency task manager
     motors[motIdx].manager_freq = DEFAULT_FREQ_MOTOR_MANAGER;
@@ -232,10 +228,6 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     motors[motIdx].task_emergency = task_load_data(emergency_event, DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY, 1, (char) motIdx);
     // Return Task manager
     return motors[motIdx].task_manager;
-}
-
-void set_currentControlInside(short motIdx, bool value) {
-    motors[motIdx].currentControlInside = value;
 }
 
 motor_parameter_t init_motor_parameters() {
@@ -676,7 +668,7 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
     // Save PWM value with attenuation => K = 1 / 16
     pwm_control = pwm_control >> 4;
 #endif
-    motors[motIdx].measure.pwm = pwm_control;// * motors[motIdx].parameter_motor.rotation;
+    motors[motIdx].measure.pwm = pwm_control;
     // PWM output
     SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + pwm_control, 0);
 }

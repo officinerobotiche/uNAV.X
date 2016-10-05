@@ -95,13 +95,6 @@ extern "C" {
     hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
     
     /**
-     * Set if the current control function works inside or outside
-     * @param motIdx number selected motor
-     * @param value
-     */
-    void set_currentControlInside(short motIdx, bool value);
-    
-    /**
      * Initialization parameters for motor controller.
      * @return Default configuration
      */
