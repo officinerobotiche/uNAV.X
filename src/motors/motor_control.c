@@ -54,8 +54,8 @@
 #define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
 #define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
 
-#define DEFAULT_FREQ_MOTOR_MANAGER 1000             // Task Manager 10Khz
-#define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000   // In Herts
+#define DEFAULT_FREQ_MOTOR_MANAGER 1000.0             // Task Manager 10Khz
+#define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000.0   // In Herts
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
@@ -387,13 +387,16 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
-    motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle; 
+    motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle;
+    motors[motIdx].measure.pwm = motors[motIdx].parameter_motor.rotation * motors[motIdx].measure.pwm;
+    motors[motIdx].measure.current = motors[motIdx].parameter_motor.rotation * motors[motIdx].measure.current;
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
 
 inline motor_t get_motor_control(short motIdx) {
-    motors[motIdx].controlOut.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.current = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controlOut.velocity;
     return motors[motIdx].controlOut;
 }
 
@@ -406,6 +409,7 @@ inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
 }
 
 inline motor_t get_motor_reference(short motIdx) {
+    motors[motIdx].reference.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].reference.velocity;
     return motors[motIdx].reference;
 }
              
@@ -498,7 +502,7 @@ inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_c
     // PID execution
     PID(&motors[motIdx].controller[CONTROLLER_VEL].PIDstruct);
     // Set Output
-    motors[motIdx].controlOut.velocity = motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlOutput;
     return motors[motIdx].controlOut.velocity;
 #undef CONTROLLER_VEL
 }
