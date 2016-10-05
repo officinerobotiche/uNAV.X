@@ -150,10 +150,9 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0;       //< 1 Tad auto sample time
-    // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
-    // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = info_buffer.size - 1;
+    AD1CON3bits.SAMC = 2;		// Auto Sample Time = 2*Tad		
+    AD1CON3bits.ADCS = 2;		// ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*3 = 75ns (13.3Mhz)
+                                // ADC Conversion Time for 10-bit Tc=12*Tad =  900ns (1.1MHz)
 #ifdef DEBUG_ADC
     AD1CON4bits.DMABL = 0b011;
 #else
@@ -197,10 +196,9 @@ void InitADC_4Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0b1111;  //< 1 Tad auto sample time
-    // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
-    // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = info_buffer.size + 2;
+    AD1CON3bits.SAMC = 2;		// Auto Sample Time = 2*Tad		
+    AD1CON3bits.ADCS = 2;		// ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*3 = 75ns (13.3Mhz)
+                                // ADC Conversion Time for 10-bit Tc=12*Tad =  900ns (1.1MHz)
 #ifdef DEBUG_ADC
     AD1CON4bits.DMABL = 0b010;
 #else    
@@ -416,8 +414,8 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
-unsigned int current[NUM_MOTORS];
-unsigned int voltage[NUM_MOTORS];
+volatile unsigned int current[NUM_MOTORS];
+volatile unsigned int voltage[NUM_MOTORS];
 
 inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     unsigned int t = TMR1; // Timing function
@@ -462,9 +460,9 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     
 #ifdef INTERNAL_CONTROL
     // Launch the motor current control for motor zero
-    CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
+    CurrentControl(MOTOR_ZERO, (volatile int) current[MOTOR_ZERO], (volatile int) voltage[MOTOR_ZERO]);
     // Launch the motor current control for motor one
-    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
+    CurrentControl(MOTOR_ONE, (volatile int) current[MOTOR_ONE], (volatile int) voltage[MOTOR_ONE]);
 #endif    
     update_adc_time(t, TMR1);
 }

@@ -122,8 +122,6 @@ typedef struct _motor_firmware {
     hEvent_t motor_manager_event;
     hTask_t task_manager;
     hTask_t task_emergency;
-    // Token between task manager and other task
-    volatile bool control_access;
     /// Motor position
     uint32_t angle_limit;
     volatile int PulsEnc;
@@ -209,8 +207,6 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     motors[motIdx].prescaler_callback = prescaler_event;
     // Setup frequency task manager
     motors[motIdx].manager_freq = DEFAULT_FREQ_MOTOR_MANAGER;
-    // Initialize the token true
-    motors[motIdx].control_access = true;
     //Setup diagnostic
     motors[motIdx].diagnostic.time_control = 0;
     motors[motIdx].diagnostic.watt = 0;
@@ -522,10 +518,10 @@ inline int __attribute__((always_inline)) control_current(short motIdx, motor_co
 #undef CONTROLLER_CURR
 }
 
-inline void __attribute__((always_inline)) CurrentControl(short motIdx, int current, int voltage) {
+inline void __attribute__((always_inline)) CurrentControl(short motIdx, volatile int current, volatile int voltage) {
     motors[motIdx].measure.current = - motors[motIdx].current.gain * current + motors[motIdx].current.offset;
     motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * voltage + motors[motIdx].volt.offset;
-    
+
     if(motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
         // Run the Current control
         int control_output = control_current(motIdx, motors[motIdx].control_output);
