@@ -254,7 +254,13 @@ extern "C" {
      */
     int32_t measureVelocity(short motIdx);
     
-    inline void Motor_PWM(short motIdx, int pwm_control);
+    /**
+     * Send the duty cycle to the PWM and send information about the command error.
+     * @param motIdx Number motor
+     * @param duty_cycle value of the duty cycle
+     * @return Return the error from the required duty cycle and real duty-cycle send
+     */
+    inline int Motor_PWM(short motIdx, int duty_cycle);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors

@@ -76,7 +76,9 @@ fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section
 
 /** */
 
-#define DEFAULT_PWM_OFFSET 2048
+#define DEFAULT_PWM_OFFSET 2047
+#define DEFAULT_PWM_MAX 2048
+#define DEFAULT_PWM_MIN -2047
 
 typedef struct _analog {
     int32_t gain;
@@ -680,18 +682,29 @@ int32_t measureVelocity(short motIdx) {
 }
 
 #define SATURATION
-inline void Motor_PWM(short motIdx, int pwm_control) {
+inline int Motor_PWM(short motIdx, int duty_cycle) {
 
 #ifdef SATURATION
-    if(pwm_control > 2048) pwm_control = 2048;
-    else if(pwm_control < -2048) pwm_control = -2048;
+    int error = 0;
+    if(duty_cycle > DEFAULT_PWM_MAX) {
+        error = DEFAULT_PWM_MAX - duty_cycle;
+        duty_cycle = DEFAULT_PWM_MAX;
+    } else if(duty_cycle < DEFAULT_PWM_MIN) {
+        error = DEFAULT_PWM_MIN - duty_cycle;
+        duty_cycle = DEFAULT_PWM_MIN;
+    }
 #else
     // Save PWM value with attenuation => K = 1 / 16
-    pwm_control = pwm_control >> 4;
+    duty_cycle = duty_cycle >> 4;
 #endif
-    motors[motIdx].measure.pwm = pwm_control;
+    motors[motIdx].measure.pwm = duty_cycle;
     // PWM output
-    SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + pwm_control, 0);
+    SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + duty_cycle, 0);
+#ifdef SATURATION
+    return error;
+#else
+    return 0;
+#endif
 }
 
 void Emergency(int argc, int *argv) {

@@ -43,32 +43,14 @@ motor_command_map_t motor;
 packet_information_t save_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     motor.command_message = command;
     switch (motor.bitset.command) {
-        case MOTOR_VEL_PID:
-            // If the PID is not true return a NACK otherwhise return ACK
-            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid))
-                return CREATE_PACKET_NACK(command, type);
-            break;
-        case MOTOR_CURRENT_PID:
-            // If the PID is not true return a NACK otherwhise return ACK
-            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid))
-                return CREATE_PACKET_NACK(command, type);
-            break;
-        case MOTOR_POS_PID:
-            // If the PID is not true return a NACK otherwhise return ACK
-            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_POSITION, message.motor.pid))
-                return CREATE_PACKET_NACK(command, type);
-            break;
         case MOTOR_PARAMETER:
             update_motor_parameters((short) motor.bitset.motor, message.motor.parameter);
             break;
         case MOTOR_CONSTRAINT:
             update_motor_constraints((short) motor.bitset.motor, message.motor.motor);
             break;
-        case MOTOR_VEL_REF:
-            set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.reference);
-            break;
-        case MOTOR_CURRENT_REF:
-            set_motor_reference((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.reference);
+        case MOTOR_EMERGENCY:
+            update_motor_emergency((short) motor.bitset.motor, message.motor.emergency);
             break;
         case MOTOR_STATE:
             set_motor_state((short) motor.bitset.motor, message.motor.state);
@@ -76,8 +58,29 @@ packet_information_t save_frame_motor(unsigned char option, unsigned char type, 
         case MOTOR_POS_RESET:
             reset_motor_position_measure((short) motor.bitset.motor, message.motor.reference);
             break;
-        case MOTOR_EMERGENCY:
-            update_motor_emergency((short) motor.bitset.motor, message.motor.emergency);
+//        case MOTOR_POS_REF:
+//            
+//            break;
+        case MOTOR_POS_PID:
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_POSITION, message.motor.pid))
+                return CREATE_PACKET_NACK(command, type);
+            break;
+        case MOTOR_VEL_REF:
+            set_motor_reference((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.reference);
+            break;
+        case MOTOR_VEL_PID:
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY, message.motor.pid))
+                return CREATE_PACKET_NACK(command, type);
+            break;
+        case MOTOR_CURRENT_REF:
+            set_motor_reference((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.reference);
+            break;
+        case MOTOR_CURRENT_PID:
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid))
+                return CREATE_PACKET_NACK(command, type);
             break;
         default:
             return CREATE_PACKET_NACK(command, type);
@@ -90,38 +93,20 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
     message_abstract_u send;
     motor.command_message = command;
     switch (motor.bitset.command) {
-        case MOTOR_PARAMETER:
-            send.motor.parameter = get_motor_parameters((short) motor.bitset.motor);
-            break;
-        case MOTOR_VEL_PID:
-            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
-            break;
-        case MOTOR_CURRENT_PID:
-            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
-            break;
-        case MOTOR_POS_PID:
-            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_POSITION);
-            break;
-        case MOTOR_VEL_REF:
-            send.motor.reference = get_motor_reference((short) motor.bitset.motor).velocity;
-            break;
-        case MOTOR_CURRENT_REF:
-            send.motor.reference = get_motor_reference((short) motor.bitset.motor).current;
-            break;
-        case MOTOR_POS_REF:
-            //send.motor.reference = get_motor_reference((short) motor.bitset.motor).position;
-            break;
-        case MOTOR_STATE:
-            send.motor.state = get_motor_state((short) motor.bitset.motor);
-            break;
-        case MOTOR_CONTROL:
-            send.motor.motor = get_motor_control((short) motor.bitset.motor);
-            break;
         case MOTOR_MEASURE:
             send.motor.motor = get_motor_measures((short) motor.bitset.motor);
             break;
         case MOTOR_REFERENCE:
             send.motor.motor = get_motor_reference((short) motor.bitset.motor);
+            break;
+        case MOTOR_CONTROL:
+            send.motor.motor = get_motor_control((short) motor.bitset.motor);
+            break;
+        case MOTOR_DIAGNOSTIC:
+            send.motor.diagnostic = get_motor_diagnostic((short) motor.bitset.motor);
+            break;
+        case MOTOR_PARAMETER:
+            send.motor.parameter = get_motor_parameters((short) motor.bitset.motor);
             break;
         case MOTOR_CONSTRAINT:
             send.motor.motor = get_motor_constraints((short) motor.bitset.motor);
@@ -129,8 +114,17 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
         case MOTOR_EMERGENCY:
             send.motor.emergency = get_motor_emergency((short) motor.bitset.motor);
             break;
-        case MOTOR_DIAGNOSTIC:
-            send.motor.diagnostic = get_motor_diagnostic((short) motor.bitset.motor);
+        case MOTOR_STATE:
+            send.motor.state = get_motor_state((short) motor.bitset.motor);
+            break;
+        case MOTOR_POS_PID:
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_POSITION);
+            break;
+        case MOTOR_VEL_PID:
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_VELOCITY);
+            break;
+        case MOTOR_CURRENT_PID:
+            send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
             break;
         default:
             return CREATE_PACKET_NACK(command, type);
