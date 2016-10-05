@@ -393,6 +393,7 @@ inline motor_t get_motor_measures(short motIdx) {
 }
 
 inline motor_t get_motor_control(short motIdx) {
+    motors[motIdx].controlOut.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
     return motors[motIdx].controlOut;
 }
 
@@ -518,16 +519,26 @@ inline int __attribute__((always_inline)) control_current(short motIdx, motor_co
 #undef CONTROLLER_CURR
 }
 
-inline void __attribute__((always_inline)) CurrentControl(short motIdx, volatile int current, volatile int voltage) {
+inline void __attribute__((always_inline)) CurrentControl(short motIdx, int current, int voltage) {
+#define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
     motors[motIdx].measure.current = - motors[motIdx].current.gain * current + motors[motIdx].current.offset;
     motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * voltage + motors[motIdx].volt.offset;
 
-    if(motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
-        // Run the Current control
-        int control_output = control_current(motIdx, motors[motIdx].control_output);
-        // Send to motor the value of control
-        Motor_PWM(motIdx, control_output);
+    if(motors[motIdx].controller[CONTROLLER_CURR].enable) {
+        // Set measure        
+        if(motors[motIdx].measure.current > INT16_MAX) {
+            motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
+        } else if(motors[motIdx].measure.current < INT16_MIN) {
+            motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
+        } else {
+            motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motors[motIdx].measure.current;
+        }
+        // PID execution
+        PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
+        // Set Output        
+        Motor_PWM(motIdx, motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput);
     }
+#undef CONTROLLER_CURR
 }
 
 void MotorTaskController(int argc, int *argv) {
@@ -588,7 +599,11 @@ void MotorTaskController(int argc, int *argv) {
     // =======================================
 #else
     // If disabled Send the PWM after this line
-    if(!motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+    if(motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+        // Set current reference
+        motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = castToDSP(motors[motIdx].control_output, motors[motIdx].constraint.current);
+        motors[motIdx].reference.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
+    } else {
         // Send to motor the value of control
         Motor_PWM(motIdx, motors[motIdx].control_output);
     }

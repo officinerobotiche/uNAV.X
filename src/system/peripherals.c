@@ -132,7 +132,7 @@ void InitDMA0(void) {
 /** 
  * Initialization ADC with read CH0, CH1 simultaneously 
  */
-void InitADC_2Sim(adc_buff_info_t info_buffer) {
+void InitADC_2Sim() {
     // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
@@ -178,7 +178,7 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
 /**
  * Initialization ADC with read CH0, CH1, CH2, CH3 simultaneously 
  */
-void InitADC_4Sim(adc_buff_info_t info_buffer) {
+void InitADC_4Sim() {
     // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
@@ -238,7 +238,7 @@ bool adc_config(void) {
             info_buffer.size_base_2 = MATH_BUFF_16;
 #endif      
             info_buffer.size = ADC_BUFF/2;
-            InitADC_2Sim(info_buffer);
+            InitADC_2Sim();
             break;
         case 4:
             info_buffer.adc_conf = ADC_SIM_4;
@@ -248,7 +248,7 @@ bool adc_config(void) {
             info_buffer.size_base_2 = MATH_BUFF_8;
 #endif
             info_buffer.size = ADC_BUFF/4;
-            InitADC_4Sim(info_buffer);
+            InitADC_4Sim();
             break;
         default:
             info_buffer.adc_conf = ADC_SCAN;
@@ -414,8 +414,8 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
-volatile unsigned int current[NUM_MOTORS];
-volatile unsigned int voltage[NUM_MOTORS];
+unsigned int current[NUM_MOTORS];
+unsigned int voltage[NUM_MOTORS];
 
 inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     unsigned int t = TMR1; // Timing function
@@ -460,9 +460,9 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     
 #ifdef INTERNAL_CONTROL
     // Launch the motor current control for motor zero
-    CurrentControl(MOTOR_ZERO, (volatile int) current[MOTOR_ZERO], (volatile int) voltage[MOTOR_ZERO]);
+    CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
     // Launch the motor current control for motor one
-    CurrentControl(MOTOR_ONE, (volatile int) current[MOTOR_ONE], (volatile int) voltage[MOTOR_ONE]);
+    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
 #endif    
     update_adc_time(t, TMR1);
 }
