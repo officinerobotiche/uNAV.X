@@ -135,6 +135,8 @@ typedef struct _motor_firmware {
     } motor_emergency;
     motor_emergency_t emergency;
     bool save_velocity;
+    motor_diagnostic_t diagnostic;
+    motor_parameter_t parameter_motor;
     //gain motor
     int32_t k_vel_ic, k_vel_qei;
     float k_ang;
@@ -145,15 +147,12 @@ typedef struct _motor_firmware {
     //PID
     volatile motor_control_t external_reference;
     volatile motor_control_t control_output;
-    //pid_controller_t controller;
     pid_controller_t controller[NUM_CONTROLLERS];
     //Common
-    motor_diagnostic_t diagnostic;
-    motor_parameter_t parameter_motor;
     motor_t constraint;
-    motor_t controlOut;
-    motor_t reference;
-    motor_t measure;
+    volatile motor_t controlOut;
+    volatile motor_t reference;
+    volatile motor_t measure;
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
 
@@ -161,7 +160,7 @@ motor_firmware_t motors[NUM_MOTORS];
 /* User Functions                                                            */
 /*****************************************************************************/
 
-void reset_motor_data(motor_t* motor) {
+void reset_motor_data(volatile motor_t* motor) {
     motor->position_delta = 0;
     motor->position = 0;
     motor->velocity = 0;
@@ -275,7 +274,7 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     motors[motIdx].k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
     // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
     //motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * motors[motIdx].manager_freq);
-    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * 1000.0);
+    motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * ((float) motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].pid.frequency));
     
     //Update encoder swap
     switch (motIdx) {
@@ -347,6 +346,9 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
         motors[motIdx].controller[num_control].counter = 0;
         
         motors[motIdx].controller[num_control].enable = pid.enable;
+        if(state == CONTROL_VELOCITY) {
+            motors[motIdx].k_vel_qei = motors[motIdx].k_ang * 1000.0f *((float) pid.frequency);
+        }
         return true;
     } else
         return false;
@@ -561,49 +563,56 @@ void MotorTaskController(int argc, int *argv) {
             motors[motIdx].motor_emergency.alive.counter++;
     }
 
-#define DEBUG_WITH_VELOCITY
-    
-
-    // ========= CONTROL VELOCITY ============
-    // Check if is the time to run the controller
-//    if(run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)])) {
-        //Measure velocity in milli rad/s
-        motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
-        // Run PID control
-#ifdef DEBUG_WITH_VELOCITY
-        motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
+    // If some controller is selected
+    if (motors[motIdx].reference.state != CONTROL_DISABLE) {
+        // ========= CONTROL VELOCITY ============
+#define ENABLE_VELOCITY_CONTROL
+        // Check if the velocity control is enabled
+        if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].enable) {
+            // Check if is the time to run the controller
+            if (run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)])) {
+                //Measure velocity in milli rad/s
+                motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
+                // Run PID control
+#ifdef ENABLE_VELOCITY_CONTROL
+                motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
 #else
-        control_velocity(motIdx, motors[motIdx].external_reference);
-        motors[motIdx].control_output = 0;
+                control_velocity(motIdx, motors[motIdx].external_reference);
+                motors[motIdx].control_output = 0;
 #endif
-//    }
-    // =======================================
+            }
+        } else {
+            // Set the reference for the other current control the same of the reference
+            motors[motIdx].control_output = motors[motIdx].external_reference;
+        }
+        // =======================================
 
 #ifndef INTERNAL_CONTROL
-    // ========= CONTROL CURRENT =============
-    // The current is evaluated with sign of motor rotation
-     // Update current and volt values;
-    motors[motIdx].measure.current =  - motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
-                            + motors[motIdx].current.offset;
-    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage) 
-                            + motors[motIdx].volt.offset;
-    // Run PID control
-    motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference);
-    
-    // Send to motor the value of control
-    Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
-    // =======================================
-#else
-    // If disabled Send the PWM after this line
-    if(motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
-        // Set current reference
-        motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = castToDSP(motors[motIdx].control_output, motors[motIdx].constraint.current);
-        motors[motIdx].reference.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
-    } else {
+        // ========= CONTROL CURRENT =============
+        // The current is evaluated with sign of motor rotation
+        // Update current and volt values;
+        motors[motIdx].measure.current = -motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
+                + motors[motIdx].current.offset;
+        motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage)
+                + motors[motIdx].volt.offset;
+        // Run PID control
+        motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference);
+
         // Send to motor the value of control
-        Motor_PWM(motIdx, motors[motIdx].control_output);
-    }
+        Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
+        // =======================================
+#else
+        // If disabled Send the PWM after this line
+        if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+            // Set current reference
+            motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = castToDSP(motors[motIdx].control_output, motors[motIdx].constraint.current);
+            motors[motIdx].reference.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
+        } else {
+            // Send to motor the value of control
+            Motor_PWM(motIdx, motors[motIdx].control_output);
+        }
 #endif
+    }
 }
 
 int32_t measureVelocity(short motIdx) {
