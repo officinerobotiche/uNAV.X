@@ -683,12 +683,12 @@ inline void Motor_PWM(short motIdx, int pwm_control) {
 
 void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
-    if (motors[motIdx].reference.velocity != 0) {
-        motors[motIdx].reference.velocity -= motors[motIdx].motor_emergency.last_reference / motors[motIdx].motor_emergency.step;
-        if (SGN(motors[motIdx].reference.velocity) * motors[motIdx].motor_emergency.last_reference < 0) {
-            motors[motIdx].reference.velocity = 0;
+    if (motors[motIdx].external_reference != 0) {
+        motors[motIdx].external_reference -= motors[motIdx].motor_emergency.last_reference / motors[motIdx].motor_emergency.step;
+        if (SGN(motors[motIdx].external_reference) * motors[motIdx].motor_emergency.last_reference < 0) {
+            motors[motIdx].external_reference = 0;
         }
-    } else if (motors[motIdx].reference.velocity == 0) {
+    } else if (motors[motIdx].external_reference == 0) {
         if ((motors[motIdx].motor_emergency.stop.counter + 1) >= motors[motIdx].motor_emergency.stop.time) {
             set_motor_state(motIdx, CONTROL_DISABLE);
             motors[motIdx].motor_emergency.stop.counter = 0;
