@@ -36,9 +36,9 @@ extern "C" {
     /* System Level #define Macros                                            */
     /**************************************************************************/
 
-    /****TEST *****/
-    #define INTERNAL_CONTROL
-    /**************/
+    /**** RUN THE CURRENT CONTROL IN ADC LOOP *****/
+    #define CURRENT_CONTROL_IN_ADC_LOOP
+    /**********************************************/
     
     /**
      * Numbers of motors available in this board

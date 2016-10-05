@@ -441,16 +441,12 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
             voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2);
             current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2);
             voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2);
-#ifndef INTERNAL_CONTROL
+#ifndef CURRENT_CONTROL_IN_ADC_LOOP
             gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
             gpio_ProcessADCSamples(1, voltage[MOTOR_ZERO]);
             gpio_ProcessADCSamples(2, current[MOTOR_ONE]);
             gpio_ProcessADCSamples(3, voltage[MOTOR_ONE]);
 #endif
-//            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2)));
-//            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2)));
-//            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2)));
-//            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2)));
             break;
         case ADC_SCAN:
 //            counter = 0;
@@ -464,7 +460,7 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
             break;
     }
     
-#ifdef INTERNAL_CONTROL
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
     // Launch the motor current control for motor zero
     CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
     // Launch the motor current control for motor one

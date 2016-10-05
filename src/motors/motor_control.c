@@ -565,6 +565,12 @@ void MotorTaskController(int argc, int *argv) {
 
     // If some controller is selected
     if (motors[motIdx].reference.state != CONTROL_DISABLE) {
+        // ========== CONTROL DIRECT =============
+        if(motors[motIdx].reference.state == CONTROL_DIRECT) {
+            // Send to motor the value of control
+            Motor_PWM(motIdx, motors[motIdx].external_reference);
+            return;
+        }
         // ========= CONTROL VELOCITY ============
 #define ENABLE_VELOCITY_CONTROL
         // Check if the velocity control is enabled
@@ -587,19 +593,25 @@ void MotorTaskController(int argc, int *argv) {
         }
         // =======================================
 
-#ifndef INTERNAL_CONTROL
+#ifndef CURRENT_CONTROL_IN_ADC_LOOP
         // ========= CONTROL CURRENT =============
-        // The current is evaluated with sign of motor rotation
-        // Update current and volt values;
-        motors[motIdx].measure.current = -motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
-                + motors[motIdx].current.offset;
-        motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage)
-                + motors[motIdx].volt.offset;
-        // Run PID control
-        motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference);
+        // Check if the current control is enabled
+        if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+            // Check if is the time to run the controller
+            if (run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)])) {
+                // The current is evaluated with sign of motor rotation
+                // Update current and volt values;
+                motors[motIdx].measure.current = -motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
+                        + motors[motIdx].current.offset;
+                motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage)
+                        + motors[motIdx].volt.offset;
+                // Run PID control
+                motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference);
 
-        // Send to motor the value of control
-        Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
+                // Send to motor the value of control
+                Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
+            }
+        }
         // =======================================
 #else
         // If disabled Send the PWM after this line
