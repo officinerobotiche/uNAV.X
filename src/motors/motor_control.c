@@ -149,6 +149,7 @@ typedef struct _motor_firmware {
     //Internal value volt and current
     analog_t volt, current;
     //PID
+    fractional saturation;
     volatile motor_control_t external_reference;
     volatile motor_control_t control_output;
     pid_controller_t controller[NUM_CONTROLLERS];
@@ -202,6 +203,7 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     
     motors[motIdx].control_output = 0;
     motors[motIdx].external_reference = 0;
+    motors[motIdx].saturation = 0;
     //Initialize controllers
     initialize_controllers(motIdx);
 
@@ -538,10 +540,12 @@ inline void __attribute__((always_inline)) CurrentControl(short motIdx, int curr
         } else {
             motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motors[motIdx].measure.current;
         }
+        // Add antiwind up saturation from PWM
+        // motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput += motors[motIdx].saturation;
         // PID execution
         PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
         // Set Output        
-        Motor_PWM(motIdx, motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput);
+        motors[motIdx].saturation = Motor_PWM(motIdx, motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput);
     }
 #undef CONTROLLER_CURR
 }
