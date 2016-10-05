@@ -106,6 +106,8 @@ typedef struct _pid_control {
     unsigned int counter;
     // enable
     volatile bool enable;
+    // anti wind up correction
+    volatile fractional antiwindup;
 } pid_controller_t;
 
 /**
@@ -188,6 +190,8 @@ void initialize_controllers(short motIdx) {
         motors[motIdx].controller[i].time = 0;
         // Enable
         motors[motIdx].controller[i].enable = false;
+        // Anti wind up correction
+        motors[motIdx].controller[i].antiwindup = 0;
     }
 }
 
