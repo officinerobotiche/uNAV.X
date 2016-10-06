@@ -151,6 +151,7 @@ typedef struct _motor_firmware {
     //Internal value volt and current
     analog_t volt, current;
     //PID
+    motor_state_t state;
     fractional pwm_saturation;
     volatile motor_control_t external_reference;
     volatile motor_control_t control_output;
@@ -174,7 +175,6 @@ void reset_motor_data(volatile motor_t* motor) {
     motor->current = 0;
     motor->effort = 0;
     motor->pwm = 0;
-    motor->state = CONTROL_DISABLE;
 }
 
 void initialize_controllers(short motIdx) {
@@ -220,6 +220,9 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     motors[motIdx].diagnostic.watt = 0;
     motors[motIdx].diagnostic.temperature = 0;
     motors[motIdx].diagnostic.time_control = 0;
+    motors[motIdx].diagnostic.state = CONTROL_DISABLE;
+    // Internal state
+    motors[motIdx].state = CONTROL_DISABLE;
     // Register input capture
     motors[motIdx].ICinfo = ICinfo_;
     /// Setup bit enable
@@ -305,16 +308,16 @@ void update_motor_parameters(short motIdx, motor_parameter_t parameters) {
     motors[motIdx].volt.gain = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_gain * GAIN_ADC;
     motors[motIdx].volt.offset = 1000.0 * motors[motIdx].parameter_motor.bridge.volt_offset;
     // Setup state with new bridge configuration
-    set_motor_state(motIdx, motors[motIdx].measure.state);
+    set_motor_state(motIdx, motors[motIdx].state);
 }
 
 motor_t init_motor_constraints() {
     motor_t constraint;
-    constraint.state = STATE_CONTROL_DISABLE;
-    constraint.position = MOTOR_CONTROL_MAX;
-    constraint.current = MOTOR_CONTROL_MAX;
     constraint.pwm = MOTOR_CONTROL_MAX;
+    constraint.effort = MOTOR_CONTROL_MAX;
+    constraint.current = MOTOR_CONTROL_MAX;
     constraint.velocity = MOTOR_CONTROL_MAX;
+    constraint.position = MOTOR_CONTROL_MAX;
     return constraint;
 }
 
@@ -433,11 +436,11 @@ inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
              
 void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference) {
     // Check state
-    if(state != motors[motIdx].measure.state) {
+    if(state != motors[motIdx].state) {
         // Change motor control type
         set_motor_state(motIdx, state);
         // Update reference
-        motors[motIdx].reference.state = state;
+        motors[motIdx].state = state;
     }
     // Setup reference
     motors[motIdx].external_reference = reference;
@@ -446,7 +449,7 @@ void set_motor_reference(short motIdx, motor_state_t state, motor_control_t refe
 }
     
 inline motor_state_t get_motor_state(short motIdx) {
-    return motors[motIdx].measure.state;
+    return motors[motIdx].diagnostic.state;
 }
 
 void set_motor_state(short motIdx, motor_state_t state) {
@@ -454,7 +457,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
     int led_state = (state != CONTROL_EMERGENCY) ? state + 1 : state;
     
     /// Set enable or disable motors
-    motors[motIdx].reference.state = state;
+    motors[motIdx].state = state;
     if(enable == (motors[motIdx].parameter_motor.bridge.enable == MOTOR_ENABLE_LOW)) {
         REGISTER_MASK_SET_HIGH(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     } else {
@@ -468,8 +471,8 @@ void set_motor_state(short motIdx, motor_state_t state) {
     if (enable) {
         PTCONbits.PTEN = 1;
     } else {
-        if ((motors[MOTOR_ZERO].reference.state == CONTROL_DISABLE) && 
-                (motors[MOTOR_ONE].reference.state == CONTROL_DISABLE)) {
+        if ((motors[MOTOR_ZERO].state == CONTROL_DISABLE) && 
+                (motors[MOTOR_ONE].state == CONTROL_DISABLE)) {
             PTCONbits.PTEN = 0;
         }
     }
@@ -566,17 +569,17 @@ void MotorTaskController(int argc, int *argv) {
     short motIdx = (short) argv[0];
     
     /// Add new task controller
-    if(motors[motIdx].reference.state != motors[motIdx].measure.state) {
-        if(motors[motIdx].reference.state == CONTROL_EMERGENCY) {
+    if(motors[motIdx].state != motors[motIdx].diagnostic.state) {
+        if(motors[motIdx].state == CONTROL_EMERGENCY) {
             task_set(motors[motIdx].task_emergency, RUN);
         } else {
             task_set(motors[motIdx].task_emergency, STOP);
         }
         /// Save new state controller
-        motors[motIdx].measure.state = motors[motIdx].reference.state;
+        motors[motIdx].diagnostic.state = motors[motIdx].state;
     }
     /// Check for emergency mode
-    if(motors[motIdx].reference.state > CONTROL_DISABLE) {
+    if(motors[motIdx].state > CONTROL_DISABLE) {
         if ((motors[motIdx].motor_emergency.alive.counter + 1) >= motors[motIdx].motor_emergency.alive.time) {
             /// Set Motor in emergency mode
             set_motor_state(motIdx, CONTROL_EMERGENCY);
@@ -587,9 +590,9 @@ void MotorTaskController(int argc, int *argv) {
     }
 
     // If some controller is selected
-    if (motors[motIdx].reference.state != CONTROL_DISABLE) {
+    if (motors[motIdx].state != CONTROL_DISABLE) {
         // ========== CONTROL DIRECT =============
-        if(motors[motIdx].reference.state == CONTROL_DIRECT) {
+        if(motors[motIdx].state == CONTROL_DIRECT) {
             // Send to motor the value of control
             Motor_PWM(motIdx, motors[motIdx].external_reference);
             return;
