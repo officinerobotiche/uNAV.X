@@ -113,7 +113,7 @@ int16_t main(void) {
     /// Initialize motion parameters and controller
     HighControl_Init();
     /// Initialize communication
-    set_frame_reader(HASHMAP_MOTION, &send_frame_motion, &save_frame_motion);
+    set_frame_reader(HASHMAP_DIFF_DRIVE, &send_frame_motion, &save_frame_motion);
     
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);

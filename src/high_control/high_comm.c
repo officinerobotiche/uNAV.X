@@ -37,17 +37,17 @@
 
 packet_information_t save_frame_motion(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     switch (command) {
-        case MOTION_COORDINATE:
-            update_motion_coordinate(message.motion.coordinate);
+        case DIFF_DRIVE_COORDINATE:
+            update_motion_coordinate(message.diff_drive.coordinate);
             break;
-        case MOTION_PARAMETER_UNICYCLE:
-            update_motion_parameter_unicycle(message.motion.parameter_unicycle);
+        case DIFF_DRIVE_PARAMETER_UNICYCLE:
+            update_motion_parameter_unicycle(message.diff_drive.parameter_unicycle);
             break;
-        case MOTION_VEL_REF:
-            set_motion_velocity_ref_unicycle(message.motion.velocity);
+        case DIFF_DRIVE_VEL_REF:
+            set_motion_velocity_ref_unicycle(message.diff_drive.velocity);
             break;
-        case MOTION_STATE:
-            set_motion_state(message.motion.state);
+        case DIFF_DRIVE_STATE:
+            set_motion_state(message.diff_drive.state);
             break;
         default:
             return CREATE_PACKET_NACK(command, type);
@@ -59,20 +59,20 @@ packet_information_t save_frame_motion(unsigned char option, unsigned char type,
 packet_information_t send_frame_motion(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
     message_abstract_u send;
     switch (command) {
-        case MOTION_COORDINATE:
-            send.motion.coordinate = get_motion_coordinate();
+        case DIFF_DRIVE_COORDINATE:
+            send.diff_drive.coordinate = get_motion_coordinate();
             break;
-        case MOTION_VEL_REF:
-            send.motion.velocity = get_motion_velocity_ref_unicycle();
+        case DIFF_DRIVE_VEL_REF:
+            send.diff_drive.velocity = get_motion_velocity_ref_unicycle();
             break;
-        case MOTION_VEL:
-            send.motion.velocity = get_motion_velocity_meas_unicycle();
+        case DIFF_DRIVE_VEL:
+            send.diff_drive.velocity = get_motion_velocity_meas_unicycle();
             break;
-        case MOTION_STATE:
-            send.motion.state = get_motion_state();
+        case DIFF_DRIVE_STATE:
+            send.diff_drive.state = get_motion_state();
             break;
-        case MOTION_PARAMETER_UNICYCLE:
-            send.motion.parameter_unicycle = get_motion_parameter_unicycle();
+        case DIFF_DRIVE_PARAMETER_UNICYCLE:
+            send.diff_drive.parameter_unicycle = get_motion_parameter_unicycle();
             break;
         default:
             return CREATE_PACKET_NACK(command, type);

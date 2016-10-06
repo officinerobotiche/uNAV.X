@@ -33,7 +33,7 @@
 void init_cartesian (motor_state_t* state) {
     *state = STATE_CONTROL_VELOCITY;
     int i;
-    motion_parameter_unicycle_t unicycle;
+    diff_drive_parameter_unicycle_t unicycle;
     motor_parameter_t motor[NUM_MOTORS];
     motor_pid_t pid[NUM_MOTORS];
     /// Update parameter unicycle
@@ -45,8 +45,8 @@ void init_cartesian (motor_state_t* state) {
     }
 }
 
-motion_velocity_t loop_cartesian (motion_velocity_t* measure, motion_coordinate_t* coordinate) {
-    motion_velocity_t vel;
+diff_drive_velocity_t loop_cartesian (diff_drive_velocity_t* measure, diff_drive_coordinate_t* coordinate) {
+    diff_drive_velocity_t vel;
     vel.v = 0;
     vel.w = 0;
     return vel;

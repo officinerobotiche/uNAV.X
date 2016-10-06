@@ -24,7 +24,7 @@ extern "C" {
 
 void init_cartesian (motor_state_t* state);
 
-motion_velocity_t loop_cartesian (motion_velocity_t* measure, motion_coordinate_t* coordinate);
+diff_drive_velocity_t loop_cartesian (diff_drive_velocity_t* measure, diff_drive_coordinate_t* coordinate);
 
 
 #ifdef	__cplusplus

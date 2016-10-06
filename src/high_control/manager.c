@@ -43,7 +43,7 @@ static string_data_t _MODULE_HIGH_CONTROL = {HIGH_CONTROL, sizeof(HIGH_CONTROL)}
 static hTask_t HighControlTask = NULL;
 
 //State controller
-volatile motion_state_t control_state = 0;
+volatile diff_drive_state_t control_state = 0;
 
 #define MAX_HIGH_TASK 3
 
@@ -71,9 +71,9 @@ typedef struct parameter_unicycle_int {
 } parameter_unicycle_int_t;
 parameter_unicycle_int_t parameter_unicycle_int;
 
-motion_velocity_t reference, measure;
-motion_parameter_unicycle_t parameter_unicycle;
-motion_coordinate_t coordinate;
+diff_drive_velocity_t reference, measure;
+diff_drive_parameter_unicycle_t parameter_unicycle;
+diff_drive_coordinate_t coordinate;
 
 /*****************************************************************************/
 /* Dead Reckoning functions                                                  */
@@ -142,8 +142,8 @@ void HighLevelTaskController(int argc, int *argv) {
 #endif
 }
 
-motion_parameter_unicycle_t init_motion_parameter_unicycle(void) {
-    motion_parameter_unicycle_t parameter_unicycle;
+diff_drive_parameter_unicycle_t init_motion_parameter_unicycle(void) {
+    diff_drive_parameter_unicycle_t parameter_unicycle;
     parameter_unicycle.radius_l = 0.1;
     parameter_unicycle.radius_r = 0.1;
     parameter_unicycle.wheelbase = 0.1;
@@ -151,11 +151,11 @@ motion_parameter_unicycle_t init_motion_parameter_unicycle(void) {
 }
 
 /* inline */ 
-motion_parameter_unicycle_t get_motion_parameter_unicycle(void) {
+diff_drive_parameter_unicycle_t get_motion_parameter_unicycle(void) {
     return parameter_unicycle;
 }
 
-void update_motion_parameter_unicycle(motion_parameter_unicycle_t parameter) {
+void update_motion_parameter_unicycle(diff_drive_parameter_unicycle_t parameter) {
     parameter_unicycle = parameter;
     parameter_unicycle_int.radius_l = ((int) (parameter_unicycle.radius_l * 1000.0));
     parameter_unicycle_int.radius_r = ((int) (parameter_unicycle.radius_r * 1000.0));
@@ -163,8 +163,8 @@ void update_motion_parameter_unicycle(motion_parameter_unicycle_t parameter) {
     wheel_m = parameter_unicycle.wheelbase / 2;
 }
 
-motion_coordinate_t init_motion_coordinate(void) {
-    motion_coordinate_t coordinate;
+diff_drive_coordinate_t init_motion_coordinate(void) {
+    diff_drive_coordinate_t coordinate;
     coordinate.x = 0;
     coordinate.y = 0;
     coordinate.theta = 0;
@@ -172,22 +172,22 @@ motion_coordinate_t init_motion_coordinate(void) {
     return coordinate;
 }
 
-inline motion_coordinate_t get_motion_coordinate(void) {
+inline diff_drive_coordinate_t get_motion_coordinate(void) {
     return coordinate;
 }
 
-void update_motion_coordinate(motion_coordinate_t coord) {
+void update_motion_coordinate(diff_drive_coordinate_t coord) {
     coordinate = coord;
     sinTh_old = sinf(coordinate.theta);
     cosTh_old = cosf(coordinate.theta);
 }
 
 /* inline */
-motion_state_t get_motion_state(void) {
+diff_drive_state_t get_motion_state(void) {
     return control_state;
 }
 
-void set_motion_state(motion_state_t state) {
+void set_motion_state(diff_drive_state_t state) {
     if (state != control_state) {
         control_state = state;
         if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
@@ -204,11 +204,11 @@ void set_motion_state(motion_state_t state) {
     }
 }
 
-inline motion_velocity_t get_motion_velocity_ref_unicycle(void) {
+inline diff_drive_velocity_t get_motion_velocity_ref_unicycle(void) {
     return reference;
 }
 
-void set_motion_velocity_ref_unicycle(motion_velocity_t velocity) {
+void set_motion_velocity_ref_unicycle(diff_drive_velocity_t velocity) {
     reference = velocity;
     // >>>>> Second part: references calculation
     long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(velocity.v - (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
@@ -232,7 +232,7 @@ void set_motion_velocity_ref_unicycle(motion_velocity_t velocity) {
     // <<<<< Saturation on 16 bit values
 }
 
-inline motion_velocity_t get_motion_velocity_meas_unicycle(void) {
+inline diff_drive_velocity_t get_motion_velocity_meas_unicycle(void) {
     return measure;
 }
 
@@ -248,7 +248,7 @@ int VelocityMeasure(void) {
 
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
-    volatile motion_coordinate_t delta;
+    volatile diff_drive_coordinate_t delta;
     float WheelSpL = parameter_unicycle.radius_l * get_motor_measures(MOTOR_ZERO).position;
     float WheelSpR = parameter_unicycle.radius_r * get_motor_measures(MOTOR_ONE).position;
     float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote

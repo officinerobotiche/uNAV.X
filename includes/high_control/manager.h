@@ -36,7 +36,7 @@ extern "C" {
 #define MOTOR_RIGHT MOTOR_ONE
     
     typedef void (*control_task_init_t) (motor_state_t*);
-    typedef motion_velocity_t (*control_task_loop_t) (motion_velocity_t*, motion_coordinate_t*);
+    typedef diff_drive_velocity_t (*control_task_loop_t) (diff_drive_velocity_t*, diff_drive_coordinate_t*);
 
     /*************************************************************************/
     /* System Function Prototypes                                            */
@@ -50,29 +50,29 @@ extern "C" {
     /**
      * Initialization all parameters for motor controller.
      */
-    motion_parameter_unicycle_t init_motion_parameter_unicycle(void);
+    diff_drive_parameter_unicycle_t init_motion_parameter_unicycle(void);
     /**
      * Get all parameters for motor controller.
      */
-    inline motion_parameter_unicycle_t get_motion_parameter_unicycle(void);
+    inline diff_drive_parameter_unicycle_t get_motion_parameter_unicycle(void);
     /**
      * Function to update parameters relative a parameter message
      */
-    void update_motion_parameter_unicycle(motion_parameter_unicycle_t parameter_unicycle);
+    void update_motion_parameter_unicycle(diff_drive_parameter_unicycle_t parameter_unicycle);
 
     /**
      * Initialization coordinate for odometry
      */
-    motion_coordinate_t init_motion_coordinate(void);
+    diff_drive_coordinate_t init_motion_coordinate(void);
     /**
      * 
      * @return 
      */
-    inline motion_coordinate_t get_motion_coordinate(void);
+    inline diff_drive_coordinate_t get_motion_coordinate(void);
     /**
      * Update stored sine and cosine with new theta value
      */
-    void update_motion_coordinate(motion_coordinate_t coordinate);
+    void update_motion_coordinate(diff_drive_coordinate_t coordinate);
 
     /**
      * Start deadReckoning operation
@@ -84,13 +84,13 @@ extern "C" {
      * Get motion state
      * @return motion state
      */
-    inline motion_state_t get_motion_state(void);
+    inline diff_drive_state_t get_motion_state(void);
 
     /**
      * Update state controller for high level control
      * @param state set state to high level motion control
      */
-    void set_motion_state(motion_state_t state);
+    void set_motion_state(diff_drive_state_t state);
 
     /**
      *
@@ -103,19 +103,19 @@ extern "C" {
      * @param set velocity to control
      * @return time to compute this function
      */
-    void set_motion_velocity_ref_unicycle(motion_velocity_t vel_rif);
+    void set_motion_velocity_ref_unicycle(diff_drive_velocity_t vel_rif);
 
     /**
      * Return velocity unicycle robot
      * @return return velocity unicycle
      */
-    inline motion_velocity_t get_motion_velocity_ref_unicycle(void);
+    inline diff_drive_velocity_t get_motion_velocity_ref_unicycle(void);
 
     /**
      * 
      * @return 
      */
-    inline motion_velocity_t get_motion_velocity_meas_unicycle(void);
+    inline diff_drive_velocity_t get_motion_velocity_meas_unicycle(void);
     /**
      * Conversion data from rotor motors measure and save value for velocity.
      * @return time to compute this function
