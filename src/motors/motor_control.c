@@ -100,6 +100,8 @@ typedef struct _pid_control {
     tPID PIDstruct;
     // Coefficients KP, KI, KD
     fractional kCoeffs[3];
+    // Coefficient K anti wind up
+    fractional k_aw;
     // time to launch PID controller
     unsigned int time;
     // internal time counter
@@ -170,6 +172,7 @@ void reset_motor_data(volatile motor_t* motor) {
     motor->position = 0;
     motor->velocity = 0;
     motor->current = 0;
+    motor->effort = 0;
     motor->pwm = 0;
     motor->state = CONTROL_DISABLE;
 }
@@ -191,8 +194,10 @@ void initialize_controllers(short motIdx) {
         motors[motIdx].controller[i].time = 0;
         // Enable
         motors[motIdx].controller[i].enable = false;
-        // Anti wind up correction
+        // Saturation value
         motors[motIdx].controller[i].saturation = 0;
+        // Gain anti wind up
+        motors[motIdx].controller[i].k_aw = 0;
     }
 }
 
@@ -348,12 +353,15 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
                 &motors[motIdx].controller[num_control].PIDstruct);
         // Clear the controller history and the controller output
         PIDInit(&motors[motIdx].controller[num_control].PIDstruct);
+        // Gain anti wind up
+        motors[motIdx].controller[num_control].k_aw = (int) (pid.kaw * 1000.0);
         // Write new time
         motors[motIdx].controller[num_control].time = motors[motIdx].manager_freq / pid.frequency;
         // reset counter
         motors[motIdx].controller[num_control].counter = 0;
-        
+        // Set enable PID
         motors[motIdx].controller[num_control].enable = pid.enable;
+        // Update K_qei
         if(state == CONTROL_VELOCITY) {
             motors[motIdx].k_vel_qei = motors[motIdx].k_ang * 1000.0f *((float) pid.frequency);
         }
@@ -392,6 +400,8 @@ inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle;
     motors[motIdx].measure.pwm = motors[motIdx].parameter_motor.rotation * motors[motIdx].measure.pwm;
     motors[motIdx].measure.current = motors[motIdx].parameter_motor.rotation * motors[motIdx].measure.current;
+    // Torque in [m Nm]
+    motors[motIdx].measure.effort = (motors[motIdx].measure.current * motors[motIdx].diagnostic.volt) / motors[motIdx].measure.velocity;
     motors[motIdx].PulsEnc = 0;
     return motors[motIdx].measure;
 }
@@ -542,7 +552,8 @@ inline void __attribute__((always_inline)) CurrentControl(short motIdx, int curr
         }
         // Add anti wind up saturation from PWM
         // Add coefficient K_back calculation for anti wind up
-        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput += motors[motIdx].pwm_saturation;
+        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
+                motors[motIdx].controller[CONTROLLER_CURR].k_aw * motors[motIdx].pwm_saturation;
         // PID execution
         PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
         // Set Output        
