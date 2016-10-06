@@ -30,11 +30,20 @@
 
 #include "motors/motor_control.h"
 
+//#define ADC_HIGH_FREQ
+
+#ifdef ADC_HIGH_FREQ
+#define ADC_BUFF 8
+#else
+#define ADC_BUFF 16
+#endif
+
+// Test pin to check frequency of the code
+//#define TEST_PIN // PIN RC3
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
-
-#define ADC_BUFF 128
 
 typedef enum _type_conf {
     ADC_SIM_2,
@@ -127,7 +136,7 @@ void InitDMA0(void) {
 /** 
  * Initialization ADC with read CH0, CH1 simultaneously 
  */
-void InitADC_2Sim(adc_buff_info_t info_buffer) {
+void InitADC_2Sim() {
     // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
@@ -145,12 +154,15 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0b11111; //< 31 Tad auto sample time
-    // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
-    // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = info_buffer.size - 1;
-
-    AD1CON4bits.DMABL = 0b110; // Allocates 64 words of buffer to each analog input
+    AD1CON3bits.SAMC = 2;		// Auto Sample Time = 2*Tad		
+    AD1CON3bits.ADCS = 2;		// ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*3 = 75ns (13.3Mhz)
+                                // ADC Conversion Time for 10-bit Tc=12*Tad =  900ns (1.1MHz)
+#ifdef ADC_HIGH_FREQ
+    AD1CON4bits.DMABL = 0b010;
+#else
+    // ADC_BUFF = 16 -> ADC_BUFF/2 = 8
+    AD1CON4bits.DMABL = 0b011; // Allocates 16 words of buffer to each analog input
+#endif
     
     AD1CHS0bits.CH0SA = 1;      //< CH0 pos -> AN1
     AD1CHS0bits.CH0NA = 0;      //< CH0 neg -> Vrefl
@@ -170,7 +182,7 @@ void InitADC_2Sim(adc_buff_info_t info_buffer) {
 /**
  * Initialization ADC with read CH0, CH1, CH2, CH3 simultaneously 
  */
-void InitADC_4Sim(adc_buff_info_t info_buffer) {
+void InitADC_4Sim() {
     // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
@@ -188,13 +200,15 @@ void InitADC_4Sim(adc_buff_info_t info_buffer) {
     AD1CON2bits.SMPI = 0b0000;  //< number of DMA buffers -1
     
     AD1CON3bits.ADRC = 0;       //< ADC Clock is derived from Systems Clock
-    AD1CON3bits.SAMC = 0b11111; //< 31 Tad auto sample time
-    // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*64 = 1.6us (625Khz)
-    // ADC Conversion Time for 10-bit Tc=12*Tab = 19.2us
-    AD1CON3bits.ADCS = info_buffer.size - 1;
-
-    AD1CON4bits.DMABL = 0b101; // Allocates 32 words of buffer to each analog input
-    
+    AD1CON3bits.SAMC = 2;		// Auto Sample Time = 2*Tad		
+    AD1CON3bits.ADCS = 2;		// ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*3 = 75ns (13.3Mhz)
+                                // ADC Conversion Time for 10-bit Tc=12*Tad =  900ns (1.1MHz)
+#ifdef ADC_HIGH_FREQ
+    AD1CON4bits.DMABL = 0b001;
+#else    
+    // ADC_BUFF = 16 -> ADC_BUFF/4 = 4
+    AD1CON4bits.DMABL = 0b010; // Allocates 8 words of buffer to each analog input
+#endif
     AD1CHS0bits.CH0SA = 3;      //< CH0 pos -> AN3
     AD1CHS0bits.CH0NA = 0;      //< CH0 neg -> Vrefl
     AD1CHS0bits.CH0SB = 0;      //< don't care -> sample B
@@ -222,15 +236,23 @@ bool adc_config(void) {
     switch(info_buffer.numadc){
         case 2:
             info_buffer.adc_conf = ADC_SIM_2;
-            info_buffer.size_base_2 = MATH_BUFF_64;
+#ifdef ADC_HIGH_FREQ
+            info_buffer.size_base_2 = MATH_BUFF_4;
+#else
+            info_buffer.size_base_2 = MATH_BUFF_8;
+#endif      
             info_buffer.size = ADC_BUFF/2;
-            InitADC_2Sim(info_buffer);
+            InitADC_2Sim();
             break;
         case 4:
             info_buffer.adc_conf = ADC_SIM_4;
-            info_buffer.size_base_2 = MATH_BUFF_32;
+#ifdef ADC_HIGH_FREQ
+            info_buffer.size_base_2 = MATH_BUFF_2;
+#else
+            info_buffer.size_base_2 = MATH_BUFF_4;
+#endif
             info_buffer.size = ADC_BUFF/4;
-            InitADC_4Sim(info_buffer);
+            InitADC_4Sim();
             break;
         default:
             info_buffer.adc_conf = ADC_SCAN;
@@ -371,6 +393,10 @@ void Peripherals_Init(void) {
     // When initialized AD1PCFGL = 0xFFFF set all Analog ports as digital
     gpio_init(&ana_en, &dma_en, &AD1PCFGL, &adc_config, 2, &portA, &portB);
 #endif
+
+#ifdef TEST_PIN
+    TRISCbits.TRISC3 = 0;
+#endif
 }
 
 void InitLEDs(void) {
@@ -394,9 +420,13 @@ inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
+unsigned int current[NUM_MOTORS];
+unsigned int voltage[NUM_MOTORS];
+
 inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
     unsigned int t = TMR1; // Timing function
     //static int i, counter, adc;
+    
     switch(info_buffer.adc_conf) {
         case ADC_SIM_2:
             // Shift the value to cover all int range
@@ -407,10 +437,16 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
         case ADC_SIM_4:
             // Shift the value to cover all int range
             // TODO use a builtin
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(2, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(3, (statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2)));
+            current[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2);
+            voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2);
+            current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2);
+            voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2);
+#ifndef CURRENT_CONTROL_IN_ADC_LOOP
+            gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
+            gpio_ProcessADCSamples(1, voltage[MOTOR_ZERO]);
+            gpio_ProcessADCSamples(2, current[MOTOR_ONE]);
+            gpio_ProcessADCSamples(3, voltage[MOTOR_ONE]);
+#endif
             break;
         case ADC_SCAN:
 //            counter = 0;
@@ -423,6 +459,13 @@ inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
 //            }
             break;
     }
+    
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
+    // Launch the motor current control for motor zero
+    CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
+    // Launch the motor current control for motor one
+    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
+#endif    
     update_adc_time(t, TMR1);
 }
 
@@ -433,6 +476,9 @@ void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     } else {
         ProcessADCSamples(&AdcBufferB);
     }
+#ifdef TEST_PIN
+    __builtin_btg ((unsigned int*)&LATC, 3); //LATCbits.LATC3 ^= 1;
+#endif
     DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }

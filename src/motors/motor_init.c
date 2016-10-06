@@ -49,7 +49,7 @@ const ICMode_t ICMode[4] = {
 
 #define ICMODE_DEFAULT 0
 #define IC_TIMEPERIOD_TH_MAX 0x8000
-#define IC_TIMEPERIOD_TH_MIN 4000
+#define IC_TIMEPERIOD_TH_MIN 2000
 
 ICdata ICinfo[NUM_MOTORS];
 gpio_t enable[NUM_MOTORS];
@@ -240,9 +240,16 @@ void Motor_Init() {
         hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
         /// Initialize parameters for motors
         update_motor_parameters(i, init_motor_parameters());
+        // Initialize current PID controller
+        motor_pid_t pid_current = {5, 0.001, 0.01, 12000, true};
+        //motor_pid_t pid_current = {6, 2, 1, 10000, false};
+        update_motor_pid(i, CONTROL_CURRENT, pid_current);
         /// Initialize Velocity PID controller
         motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1000, true};
         update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
+        /// Initialize Position PID controller
+        motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 10, false};
+        update_motor_pid(i, CONTROL_POSITION, pid_pos);
         /// Initialize emergency procedure to stop
         update_motor_emergency(i, init_motor_emergency());
         /// Initialize constraints motor

@@ -33,7 +33,6 @@ extern "C" {
      * @param info message to parsing
      */
     packet_information_t save_frame_motor(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
-    
     /**
      * Send for all standard messages the data. The information are saved
      * in a information_packet_t by functions createPacket and createDataPacket

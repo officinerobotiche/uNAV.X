@@ -177,11 +177,11 @@
         <property key="enable-ansi-warnings" value="false"/>
         <property key="enable-fatal-warnings" value="false"/>
         <property key="enable-large-arrays" value="false"/>
-        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-omit-frame-pointer" value="true"/>
         <property key="enable-procedural-abstraction" value="false"/>
         <property key="enable-short-double" value="false"/>
         <property key="enable-symbols" value="true"/>
-        <property key="enable-unroll-loops" value="false"/>
+        <property key="enable-unroll-loops" value="true"/>
         <property key="extra-include-directories" value="includes"/>
         <property key="isolate-each-function" value="false"/>
         <property key="keep-inline" value="false"/>
@@ -196,10 +196,10 @@
         <property key="oXC16gcc-name-text-sec" value=""/>
         <property key="oXC16gcc-near-chars" value="false"/>
         <property key="oXC16gcc-no-isr-warn" value="false"/>
-        <property key="oXC16gcc-sfr-warn" value="false"/>
+        <property key="oXC16gcc-sfr-warn" value="true"/>
         <property key="oXC16gcc-smar-io-lvl" value="1"/>
         <property key="oXC16gcc-smart-io-fmt" value=""/>
-        <property key="optimization-level" value="0"/>
+        <property key="optimization-level" value="1"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="preprocessor-macros" value=""/>
@@ -278,7 +278,7 @@
         <property key="common-include-directories"
                   value="includes;../or_bus_c.X/includes;../or_common_c.X/includes;../or_kernel_c.X/includes"/>
         <property key="dual-boot-partition" value="0"/>
-        <property key="fast-math" value="false"/>
+        <property key="fast-math" value="true"/>
         <property key="generic-16-bit" value="false"/>
         <property key="legacy-libc" value="false"/>
         <property key="oXC16glb-macros" value="UNAV_V1"/>

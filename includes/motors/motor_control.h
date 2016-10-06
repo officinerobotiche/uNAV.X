@@ -36,6 +36,10 @@ extern "C" {
     /* System Level #define Macros                                            */
     /**************************************************************************/
 
+    /**** RUN THE CURRENT CONTROL IN ADC LOOP *****/
+    #define CURRENT_CONTROL_IN_ADC_LOOP
+    /**********************************************/
+    
     /**
      * Numbers of motors available in this board
      */
@@ -127,6 +131,7 @@ extern "C" {
     /**
      * Return value of PID controller
      * @param motIdx number of motor
+     * @param type type of controller (position, velocity, current)
      * @return value PID
      */
     inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state);
@@ -211,6 +216,15 @@ extern "C" {
     void set_motor_state(short motIdx, motor_state_t motor);
 
     /**
+     * Check the size of the value and return a value available for the DSP
+     * @param value
+     * @param constraint
+     * @return 
+     */
+    inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint);
+    
+    void CurrentControl(short motIdx, int current, int voltage);
+    /**
      * Convert and check reference for type of law control selected. We have
      * four principal type of control motor:
      *  - Direct control (write direct PWM)
@@ -240,7 +254,13 @@ extern "C" {
      */
     int32_t measureVelocity(short motIdx);
     
-    inline void Motor_PWM(short motIdx, int pwm_control);
+    /**
+     * Send the duty cycle to the PWM and send information about the command error.
+     * @param motIdx Number motor
+     * @param duty_cycle value of the duty cycle
+     * @return Return the error from the required duty cycle and real duty-cycle send
+     */
+    inline int Motor_PWM(short motIdx, int duty_cycle);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
