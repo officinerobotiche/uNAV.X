@@ -180,7 +180,7 @@ unsigned int ReadUART1(void) {
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
     IFS0bits.U1RXIF = 0; // clear RX interrupt flag
     /* get the data */
-    if (U1STAbits.URXDA == 1) {
+    if (U1STAbits.FERR == 0 && U1STAbits.OERR == 0 && U1STAbits.URXDA == 1) {
         if (decode_pkgs(ReadUART1())) {
             trigger_event(parseEvent);
         }
@@ -199,4 +199,12 @@ void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
 
 void __attribute__((interrupt, auto_psv)) _DMA1Interrupt(void) {
     IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
+}
+
+/**
+ * @brief Clear the UART1 Error Interrupt Flag
+ */
+void __attribute__((interrupt, no_auto_psv)) _U1ErrInterrupt(void) {
+
+    IFS4bits.U1EIF = 0;
 }
