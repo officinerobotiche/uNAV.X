@@ -595,6 +595,18 @@ void MotorTaskController(int argc, int *argv) {
             motors[motIdx].motor_emergency.alive.counter++;
     }
 
+    // ================ READ MEASURES ==========================
+    
+    bool velocity_control = run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)]);
+    
+    // Check if is the time to run the controller
+    if (velocity_control) {
+        //Measure velocity in milli rad/s
+        motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
+    }
+    
+    // ================ RUN CONTROLLERS ==========================
+    
     // If some controller is selected
     if (motors[motIdx].state != CONTROL_DISABLE) {
         // ========== CONTROL DIRECT =============
@@ -608,9 +620,7 @@ void MotorTaskController(int argc, int *argv) {
         // Check if the velocity control is enabled
         if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].enable) {
             // Check if is the time to run the controller
-            if (run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)])) {
-                //Measure velocity in milli rad/s
-                motors[motIdx].measure.velocity = (motor_control_t) measureVelocity(motIdx);
+            if (velocity_control) {
                 // Run PID control
 #ifdef ENABLE_VELOCITY_CONTROL
                 motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
