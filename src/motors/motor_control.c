@@ -76,9 +76,9 @@ fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section
 
 /** */
 
-#define DEFAULT_PWM_OFFSET 2047
-#define DEFAULT_PWM_MAX 2048
-#define DEFAULT_PWM_MIN -2047
+#define DEFAULT_PWM_OFFSET 2048
+#define DEFAULT_PWM_MAX 2047
+#define DEFAULT_PWM_MIN -2048
 
 typedef struct _analog {
     int32_t gain;
@@ -401,7 +401,6 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
 inline motor_t get_motor_measures(short motIdx) {
     motors[motIdx].measure.position_delta = motors[motIdx].k_ang * motors[motIdx].PulsEnc;
     motors[motIdx].measure.position = motors[motIdx].k_ang * motors[motIdx].enc_angle;
-    motors[motIdx].measure.pwm = motors[motIdx].parameter_motor.rotation * motors[motIdx].measure.pwm;
     motors[motIdx].measure.current = motors[motIdx].parameter_motor.rotation * motors[motIdx].measure.current;
     // Torque in [m Nm]
     motors[motIdx].measure.effort = (motors[motIdx].measure.current * motors[motIdx].diagnostic.volt) / motors[motIdx].measure.velocity;
@@ -410,8 +409,7 @@ inline motor_t get_motor_measures(short motIdx) {
 }
 
 inline motor_t get_motor_control(short motIdx) {
-    motors[motIdx].controlOut.current = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
-    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controlOut.velocity;
+    motors[motIdx].controlOut.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
     return motors[motIdx].controlOut;
 }
 
@@ -424,8 +422,6 @@ inline motor_diagnostic_t get_motor_diagnostic(short motIdx) {
 }
 
 inline motor_t get_motor_reference(short motIdx) {
-    motors[motIdx].reference.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].reference.velocity;
-    motors[motIdx].reference.pwm = motors[motIdx].parameter_motor.rotation * motors[motIdx].reference.pwm;
     return motors[motIdx].reference;
 }
              
@@ -485,7 +481,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
 
 inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint) {
     // Check constraint
-    if (abs(value) > constraint) {
+    if (labs(value) > constraint) {
         value = SGN(value) * constraint;
     }
     // Check size
@@ -514,11 +510,17 @@ inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_c
     motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.velocity);
     motors[motIdx].reference.velocity = motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlReference;
     // Set measure
-    motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.velocity, INT16_MAX);
+    if(motors[motIdx].measure.velocity > INT16_MAX) {
+        motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.measuredOutput = INT16_MAX;
+    } else if(motors[motIdx].measure.velocity < INT16_MIN) {
+        motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.measuredOutput = INT16_MIN;
+    } else {
+        motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.measuredOutput = motors[motIdx].measure.velocity;
+    }
     // PID execution
     PID(&motors[motIdx].controller[CONTROLLER_VEL].PIDstruct);
     // Set Output
-    motors[motIdx].controlOut.velocity = motors[motIdx].parameter_motor.rotation * motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlOutput;
+    motors[motIdx].controlOut.velocity = motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlOutput;
     return motors[motIdx].controlOut.velocity;
 #undef CONTROLLER_VEL
 }
@@ -528,14 +530,18 @@ inline int __attribute__((always_inline)) control_current(short motIdx, motor_co
     // Set reference
     motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current);
     motors[motIdx].reference.current = motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference;
-    // Set measure
-    motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = castToDSP(motors[motIdx].measure.current, INT16_MAX);
+    // Set measure        
+    if(motors[motIdx].measure.current > INT16_MAX) {
+        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
+    } else if(motors[motIdx].measure.current < INT16_MIN) {
+        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
+    } else {
+        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motors[motIdx].measure.current;
+    }
     // PID execution
     PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
-    // Set Output
-    motors[motIdx].controlOut.current = motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput;
-    
-    return motors[motIdx].controlOut.current;
+    // Get Output
+    return motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput;
 #undef CONTROLLER_CURR
 }
 
@@ -725,7 +731,7 @@ inline int Motor_PWM(short motIdx, int duty_cycle) {
     // Real PWM send
     motors[motIdx].measure.pwm = duty_cycle;
     // PWM output
-    SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + duty_cycle, 0);
+    SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + ((motor_control_t) motors[motIdx].parameter_motor.rotation) * duty_cycle, 0);
 #ifdef SATURATION
     return error;
 #else

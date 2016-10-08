@@ -42,10 +42,10 @@ extern "C" {
     
     /* Interrupt priority */
     /* Max priority 7 - Min priority 1 */
-#define ADC_DMA_LEVEL 7
-#define PWM_TIMER_LEVEL 7
-#define INPUT_CAPTURE_LEVEL 7
-#define UART_RX_LEVEL 6
+#define ADC_DMA_LEVEL 6
+#define PWM_TIMER_LEVEL 6
+#define INPUT_CAPTURE_LEVEL 6
+#define UART_RX_LEVEL 7
 #define SYS_TIMER_LEVEL 5
     
 #define EVENT_PRIORITY_HIGH_LEVEL 4

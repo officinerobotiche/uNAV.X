@@ -97,7 +97,7 @@ void ConfigureOscillator(void) {
 
 void InitEvents(void) {
     /// Register event controller
-    init_events(&TMR1, &PR1, FOSC);
+    init_events(&TMR1, &PR1, FOSC, 6);
     
     EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
     EVENT_PRIORITY_VERY_LOW_P = EVENT_PRIORITY_VERY_LOW_LEVEL;
