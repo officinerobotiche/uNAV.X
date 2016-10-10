@@ -41,7 +41,7 @@ packet_information_t save_frame_gpio(unsigned char option, unsigned char type, u
     gpio_port_t port;
     switch (peripheral.bitset.command) {
         case PERIPHERALS_GPIO_SET:
-            gpio_setup(peripheral.bitset.port, message.gpio.set.number, message.gpio.set.type);
+            gpio_setup(peripheral.bitset.port, message.gpio.set.port.port, message.gpio.set.type);
             break;
         case PERIPHERALS_GPIO_DIGITAL:
             port.len = message.gpio.port.len;
@@ -66,13 +66,13 @@ packet_information_t send_frame_gpio(unsigned char option, unsigned char type, u
     message_abstract_u send;
     peripheral.message = command;
     gpio_port_t port;
-    peripherals_gpio_set_t setup;
+//    peripherals_gpio_set_t setup;
     switch (peripheral.bitset.command) {
-        case PERIPHERALS_GPIO_SET:
-            setup.type = gpio_config(peripheral.bitset.port, message.gpio.number);
-            setup.number = message.gpio.number;
-            send.gpio.set = setup;
-            break;
+//        case PERIPHERALS_GPIO_SET:
+//            setup.type = gpio_config(peripheral.bitset.port, message.gpio.number);
+//            setup.port.port = message.gpio.number;
+//            send.gpio.set = setup;
+//            break;
         case PERIPHERALS_GPIO:
             if(gpio_config(peripheral.bitset.port, message.gpio.number) == GPIO_ANALOG) {
                 send.gpio.pin = gpio_get_analog(peripheral.bitset.port, message.gpio.port.port);
