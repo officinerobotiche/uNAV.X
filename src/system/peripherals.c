@@ -337,13 +337,13 @@ void Peripherals_Init(void) {
                 "mov.b w3, [w1] \n"
                 "bset OSCCON, #6");
     // *********************************** Peripheral PIN selection
-
+    
 //    /* Setup port direction */
 //    // weak pullups enable
 //    CNPU1 = 0xffff;
 //    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
-//    Removed for ADC ... now Works better without this pullups enable.
-//    REMOVE after CHECK the code for RoboController and Motion Control
+//    // Removed for ADC ... now Works better without this pullups enable.
+//    // REMOVE after CHECK the code for RoboController and Motion Control
 
     GPIO_PORT_INIT(portA, &port_A_gpio[0], 4);
     /// CURRENT 1

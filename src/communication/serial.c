@@ -179,16 +179,16 @@ unsigned int ReadUART1(void) {
 
 void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
     IFS0bits.U1RXIF = 0; // clear RX interrupt flag
+    /* check for receive errors */
+    if (U1STAbits.FERR == 1) {
+        pkg_error(ERROR_FRAMMING);
+    }
     /* get the data */
-    if (U1STAbits.FERR == 0 && U1STAbits.OERR == 0 && U1STAbits.URXDA == 1) {
+    if (U1STAbits.OERR == 0 && U1STAbits.URXDA == 1) {
         if (decode_pkgs(ReadUART1())) {
             trigger_event(parseEvent);
         }
     } else {
-        /* check for receive errors */
-        if (U1STAbits.FERR == 1) {
-            pkg_error(ERROR_FRAMMING);
-        }
         /* must clear the overrun error to keep uart receiving */
         if (U1STAbits.OERR == 1) {
             U1STAbits.OERR = 0;
