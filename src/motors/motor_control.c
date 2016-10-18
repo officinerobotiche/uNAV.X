@@ -141,6 +141,8 @@ typedef struct _motor_firmware {
     } motor_emergency;
     motor_emergency_t emergency;
     bool save_velocity;
+    // Safety
+    motor_safety_t safety;
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
     //gain motor
@@ -396,6 +398,15 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     motors[motIdx].motor_emergency.stop.counter = 0;
     // Fix step to slow down the motor
     motors[motIdx].motor_emergency.step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
+}
+
+inline motor_safety_t get_motor_safety(short motIdx) {
+    return motors[motIdx].safety;
+}
+
+void update_motor_safety(short motIdx, motor_safety_t safety) {
+    // Store emergency data
+    memcpy(&motors[motIdx].safety, &safety, sizeof(motor_safety_t));
 }
 
 inline motor_t get_motor_measures(short motIdx) {

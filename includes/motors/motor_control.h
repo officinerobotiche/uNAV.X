@@ -162,7 +162,16 @@ extern "C" {
      * @param emergency configuration to save
      */
     void update_motor_emergency(short motIdx, motor_emergency_t emergency);
-    
+    /**
+     * Return motor safety state
+     * @param motIdx Number motor
+     */
+    inline motor_safety_t get_motor_safety(short motIdx);
+    /**
+     * Update counter and max value to start safety control
+     * @param motIdx Number motor
+     */
+    void update_motor_safety(short motIdx, motor_safety_t safety);
     /**
      * Return information about state motor, torque velocity position.
      * @param motIdx number of motor

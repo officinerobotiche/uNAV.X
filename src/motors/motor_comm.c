@@ -82,6 +82,9 @@ packet_information_t save_frame_motor(unsigned char option, unsigned char type, 
             if( ! update_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT, message.motor.pid))
                 return CREATE_PACKET_NACK(command, type);
             break;
+        case MOTOR_SAFETY:
+            update_motor_safety((short) motor.bitset.motor, message.motor.safety);
+            break;
         default:
             return CREATE_PACKET_NACK(command, type);
             break;
@@ -125,6 +128,9 @@ packet_information_t send_frame_motor(unsigned char option, unsigned char type, 
             break;
         case MOTOR_CURRENT_PID:
             send.motor.pid = get_motor_pid((short) motor.bitset.motor, CONTROL_CURRENT);
+            break;
+        case MOTOR_SAFETY:
+            send.motor.safety = get_motor_safety((short) motor.bitset.motor);
             break;
         default:
             return CREATE_PACKET_NACK(command, type);
