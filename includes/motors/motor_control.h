@@ -59,12 +59,13 @@ extern "C" {
 #define RIGHT_PROCESS_MEASURE_STRING "Right/Meas"
     
     typedef enum {
-        CONTROL_EMERGENCY = -1,     ///< Motors slow down to zero speed, then the bridge is turned off
-        CONTROL_DISABLE = 0,        ///< Motors disabled
-        CONTROL_POSITION = 1,       ///< Motors controlled in position
-        CONTROL_VELOCITY = 2,       ///< Motors controlled in velocity
-        CONTROL_CURRENT = 3,         ///< Motors controller in torque
-        CONTROL_DIRECT = 4,         ///< Motors controlled using direct PWM signals
+        CONTROL_SAFETY = -2,        ///< Motor disabled for high current
+        CONTROL_EMERGENCY = -1,     ///< Motor slow down to zero speed, then the bridge is turned off
+        CONTROL_DISABLE = 0,        ///< Motor disabled
+        CONTROL_POSITION = 1,       ///< Motor controlled in position
+        CONTROL_VELOCITY = 2,       ///< Motor controlled in velocity
+        CONTROL_CURRENT = 3,        ///< Motor controller in torque
+        CONTROL_DIRECT = 4,         ///< Motor controlled using direct PWM signals
     } enum_state_t;
     
     typedef struct _ICdata {
@@ -144,12 +145,7 @@ extern "C" {
      * @return return true if the PID gains are correctly stored
      */
     bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid);
-
-    /**
-     * Initialization standard value for emergency configuration motor
-     * @return default configuration for emergency stop
-     */
-    motor_emergency_t init_motor_emergency();
+    
     /**
      * Return emergency parameters from motor
      * @param motIdx number selected motor

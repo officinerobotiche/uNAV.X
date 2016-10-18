@@ -142,7 +142,9 @@ typedef struct _motor_firmware {
     motor_emergency_t emergency;
     bool save_velocity;
     // Safety
+    timer_t safety_stop;
     motor_safety_t safety;
+    // Parameter and diagnostic
     motor_diagnostic_t diagnostic;
     motor_parameter_t parameter_motor;
     //gain motor
@@ -374,14 +376,6 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     } else
         return false;
 }
-             
-motor_emergency_t init_motor_emergency() {
-    motor_emergency_t emergency;
-    emergency.slope_time = 1.0;
-    emergency.timeout = 500;
-    emergency.bridge_off = 2.0;
-    return emergency;
-}
 
 inline motor_emergency_t get_motor_emergency(short motIdx) {
     return motors[motIdx].emergency;
@@ -405,8 +399,10 @@ inline motor_safety_t get_motor_safety(short motIdx) {
 }
 
 void update_motor_safety(short motIdx, motor_safety_t safety) {
-    // Store emergency data
+    // Store safety data
     memcpy(&motors[motIdx].safety, &safety, sizeof(motor_safety_t));
+    motors[motIdx].safety_stop.time = safety.timeout * (motors[motIdx].manager_freq / 1000);
+    motors[motIdx].safety_stop.counter = 0;
 }
 
 inline motor_t get_motor_measures(short motIdx) {
@@ -460,8 +456,8 @@ inline motor_state_t get_motor_state(short motIdx) {
 }
 
 void set_motor_state(short motIdx, motor_state_t state) {
-    volatile bool enable = (state != CONTROL_DISABLE) ? true : false;
-    int led_state = (state != CONTROL_EMERGENCY) ? state + 1 : state;
+    bool enable = (state == CONTROL_DISABLE) ? false : true;
+    int led_state = (state < CONTROL_DISABLE) ? state : state + 1;
     
     /// Set enable or disable motors
     motors[motIdx].state = state;
@@ -520,6 +516,21 @@ inline __attribute__((always_inline)) bool run_controller(pid_controller_t *cont
         controller->counter++;
     }
     return false;
+}
+
+inline void __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
+    if(labs(current) > motors[motIdx].safety.warning_zone) {
+        if ((motors[motIdx].safety_stop.counter + 1) >= motors[motIdx].safety_stop.time) {
+            // Change motor state
+            set_motor_state(motIdx, CONTROL_SAFETY);
+            // Stop the motor
+            Motor_PWM(motIdx, 0);
+        } else 
+            motors[motIdx].safety_stop.counter++;
+    } else  {
+        // Reset the counter if the value is low
+        motors[motIdx].safety_stop.counter = 0;
+    }
 }
 
 inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_control_t reference, volatile fractional saturation) {
@@ -620,7 +631,7 @@ void MotorTaskController(int argc, int *argv) {
         } else
             motors[motIdx].motor_emergency.alive.counter++;
     }
-
+    
     // ================ READ MEASURES ==========================
     
     bool velocity_control = run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)]);
