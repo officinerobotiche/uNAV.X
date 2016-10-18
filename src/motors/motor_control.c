@@ -479,18 +479,25 @@ void set_motor_state(short motIdx, motor_state_t state) {
 #endif
 }
 
-inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint) {
+inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint, volatile fractional *saturation) {
     // Check constraint
-    if (labs(value) > constraint) {
-        value = SGN(value) * constraint;
+    motor_control_t int_const = constraint;
+    if(constraint > INT16_MAX) {
+        int_const = INT16_MAX;
+    } else if(constraint < INT16_MIN) {
+        int_const = INT16_MIN;
     }
     // Check size
-    if(value > INT16_MAX)
-        return INT16_MAX;
-    else if(value < INT16_MIN)
-        return INT16_MIN;
-    else
+    if(value > int_const) {
+        *saturation = value - int_const;
+        return int_const;
+    } else if(value < int_const) {
+        *saturation = value - int_const;
+        return int_const;
+    } else {
+        *saturation = 0;
         return value;
+    }
 }
 
 inline __attribute__((always_inline)) bool run_controller(pid_controller_t *controller) {
@@ -507,7 +514,7 @@ inline __attribute__((always_inline)) bool run_controller(pid_controller_t *cont
 inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_control_t reference) {
 #define CONTROLLER_VEL GET_CONTROLLER_NUM(CONTROL_VELOCITY)
     // Set reference
-    motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.velocity);
+    motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.velocity, &motors[motIdx].controller[CONTROLLER_VEL].saturation);
     motors[motIdx].reference.velocity = motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlReference;
     // Set measure
     if(motors[motIdx].measure.velocity > INT16_MAX) {
@@ -528,7 +535,7 @@ inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_c
 inline int __attribute__((always_inline)) control_current(short motIdx, motor_control_t reference) {
 #define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
     // Set reference
-    motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current);
+    motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current, &motors[motIdx].controller[CONTROLLER_CURR].saturation);
     motors[motIdx].reference.current = motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference;
     // Set measure        
     if(motors[motIdx].measure.current > INT16_MAX) {
@@ -659,7 +666,9 @@ void MotorTaskController(int argc, int *argv) {
         // If disabled Send the PWM after this line
         if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
             // Set current reference
-            motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = castToDSP(motors[motIdx].control_output, motors[motIdx].constraint.current);
+            motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = castToDSP(motors[motIdx].control_output, 
+                    motors[motIdx].constraint.current,
+                    &motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
             motors[motIdx].reference.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
         } else {
             // Send to motor the value of control
