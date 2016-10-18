@@ -518,19 +518,19 @@ inline __attribute__((always_inline)) bool run_controller(pid_controller_t *cont
     return false;
 }
 
-inline void __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
+inline bool __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
     if(labs(current) > motors[motIdx].safety.warning_zone) {
         if ((motors[motIdx].safety_stop.counter + 1) >= motors[motIdx].safety_stop.time) {
             // Change motor state
             set_motor_state(motIdx, CONTROL_SAFETY);
-            // Stop the motor
-            Motor_PWM(motIdx, 0);
+            return false;
         } else 
             motors[motIdx].safety_stop.counter++;
     } else  {
         // Reset the counter if the value is low
         motors[motIdx].safety_stop.counter = 0;
     }
+    return true;
 }
 
 inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_control_t reference, volatile fractional saturation) {
