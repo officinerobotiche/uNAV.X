@@ -511,7 +511,7 @@ inline __attribute__((always_inline)) bool run_controller(pid_controller_t *cont
     return false;
 }
 
-inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_control_t reference) {
+inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_control_t reference, volatile fractional saturation) {
 #define CONTROLLER_VEL GET_CONTROLLER_NUM(CONTROL_VELOCITY)
     // Set reference
     motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.velocity, &motors[motIdx].controller[CONTROLLER_VEL].saturation);
@@ -524,6 +524,10 @@ inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_c
     } else {
         motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.measuredOutput = motors[motIdx].measure.velocity;
     }
+    // Add anti wind up saturation from PWM
+    // Add coefficient K_back calculation for anti wind up
+    motors[motIdx].controller[CONTROLLER_VEL].PIDstruct.controlOutput += 
+            motors[motIdx].controller[CONTROLLER_VEL].k_aw * saturation;
     // PID execution
     PID(&motors[motIdx].controller[CONTROLLER_VEL].PIDstruct);
     // Set Output
@@ -532,7 +536,7 @@ inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_c
 #undef CONTROLLER_VEL
 }
 
-inline int __attribute__((always_inline)) control_current(short motIdx, motor_control_t reference) {
+inline int __attribute__((always_inline)) control_current(short motIdx, motor_control_t reference, volatile fractional saturation) {
 #define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
     // Set reference
     motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current, &motors[motIdx].controller[CONTROLLER_CURR].saturation);
@@ -545,6 +549,10 @@ inline int __attribute__((always_inline)) control_current(short motIdx, motor_co
     } else {
         motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motors[motIdx].measure.current;
     }
+    // Add anti wind up saturation from PWM
+    // Add coefficient K_back calculation for anti wind up
+    motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
+            motors[motIdx].controller[CONTROLLER_CURR].k_aw * saturation;
     // PID execution
     PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
     // Get Output
@@ -630,9 +638,9 @@ void MotorTaskController(int argc, int *argv) {
             if (velocity_control) {
                 // Run PID control
 #ifdef ENABLE_VELOCITY_CONTROL
-                motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference);
+                motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference, motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
 #else
-                control_velocity(motIdx, motors[motIdx].external_reference);
+                control_velocity(motIdx, motors[motIdx].external_reference, motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
                 motors[motIdx].control_output = 0;
 #endif
             }
@@ -655,7 +663,7 @@ void MotorTaskController(int argc, int *argv) {
                 motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage)
                         + motors[motIdx].volt.offset;
                 // Run PID control
-                motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference);
+                motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference, motors[motIdx].pwm_saturation);
 
                 // Send to motor the value of control
                 Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
