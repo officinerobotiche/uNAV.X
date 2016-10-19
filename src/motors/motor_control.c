@@ -489,18 +489,16 @@ void set_motor_state(short motIdx, motor_state_t state) {
 inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint, volatile fractional *saturation) {
     // Check constraint
     motor_control_t int_const = constraint;
-    if(constraint > INT16_MAX) {
+    if(labs(constraint) > INT16_MAX) {
         int_const = INT16_MAX;
-    } else if(constraint < INT16_MIN) {
-        int_const = INT16_MIN;
     }
     // Check size
     if(value > int_const) {
-        *saturation = value - int_const;
+        *saturation = int_const - value;
         return int_const;
-    } else if(value < int_const) {
-        *saturation = value - int_const;
-        return int_const;
+    } else if(value < (-int_const-1)) {
+        *saturation = (-int_const-1) - value;
+        return (-int_const-1);
     } else {
         *saturation = 0;
         return value;
