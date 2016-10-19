@@ -98,10 +98,8 @@ typedef struct _pid_control {
     fractional kCoeffs[3];
     // Coefficient K anti wind up
     fractional k_aw;
-    // time to launch PID controller
-    unsigned int time;
-    // internal time counter
-    unsigned int counter;
+    // soft timer to launch PID controller
+    soft_timer_t timer;
     // enable
     volatile bool enable;
     // anti wind up correction
@@ -188,10 +186,6 @@ void initialize_controllers(short motIdx) {
         motors[motIdx].controller[i].PIDstruct.controlHistory = &controlHistory[motIdx][i][0];
         // Clear the controller history and the controller output
         PIDInit(&motors[motIdx].controller[i].PIDstruct);
-        // Initialize PID counter time
-        motors[motIdx].controller[i].counter = 0;
-        // Initialize PID time
-        motors[motIdx].controller[i].time = 0;
         // Enable
         motors[motIdx].controller[i].enable = false;
         // Saturation value
@@ -358,10 +352,8 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
         PIDInit(&motors[motIdx].controller[num_control].PIDstruct);
         // Gain anti wind up
         motors[motIdx].controller[num_control].k_aw = (int) (pid.kaw * 1000.0);
-        // Write new time
-        motors[motIdx].controller[num_control].time = motors[motIdx].manager_freq / pid.frequency;
-        // reset counter
-        motors[motIdx].controller[num_control].counter = 0;
+        // Initialize soft timer
+        init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
         // Set enable PID
         motors[motIdx].controller[num_control].enable = pid.enable;
         // Update K_qei
@@ -499,17 +491,6 @@ inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor
     }
 }
 
-inline __attribute__((always_inline)) bool run_controller(pid_controller_t *controller) {
-    // Check if is the time to run
-    if(controller->counter >= controller->time) {
-        return true;
-    } else {
-        // Increase the counter
-        controller->counter++;
-    }
-    return false;
-}
-
 inline bool __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
     if(labs(current) > motors[motIdx].safety.warning_zone) {
         if(run_timer(&motors[motIdx].safety_stop)) {
@@ -622,7 +603,7 @@ void MotorTaskController(int argc, int *argv) {
     
     // ================ READ MEASURES ==========================
     
-    bool velocity_control = run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)]);
+    bool velocity_control = run_timer(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].timer);
     
     // Check if is the time to run the controller
     if (velocity_control) {
