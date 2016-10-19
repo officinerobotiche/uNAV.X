@@ -28,6 +28,7 @@
 
 #include <peripherals/gpio.h>
 #include <system/task_manager.h>
+#include <system/soft_timer.h>
 
 #include <or_math/math.h>
 #include <or_math/statistics.h>
@@ -85,11 +86,6 @@ typedef struct _analog {
     int32_t offset;
 } analog_t;
 
-typedef struct _timer {
-    uint32_t time;
-    uint32_t counter;
-} timer_t;
-
 /**
  * Definition of PID ecosystem
  */
@@ -134,15 +130,15 @@ typedef struct _motor_firmware {
     volatile int32_t enc_angle;
     //Emergency
     struct {
-        timer_t alive;
-        timer_t stop;
+        soft_timer_t alive;
+        soft_timer_t stop;
         uint16_t step;
         motor_control_t last_reference;
     } motor_emergency;
     motor_emergency_t emergency;
     bool save_velocity;
     // Safety
-    timer_t safety_stop;
+    soft_timer_t safety_stop;
     motor_safety_t safety;
     // Parameter and diagnostic
     motor_diagnostic_t diagnostic;
@@ -385,11 +381,9 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     // Store emergency data
     memcpy(&motors[motIdx].emergency, &emergency_data, sizeof(motor_emergency_t));
     // Reset counter alive reference message
-    motors[motIdx].motor_emergency.alive.time = emergency_data.timeout * (motors[motIdx].manager_freq / 1000);
-    motors[motIdx].motor_emergency.alive.counter = 0;
+    init_soft_timer(&motors[motIdx].motor_emergency.alive, (motors[motIdx].manager_freq / 1000), emergency_data.timeout * 1000000);
     // Reset counter Emergency stop
-    motors[motIdx].motor_emergency.stop.time = motors[motIdx].emergency.bridge_off * motors[motIdx].manager_freq;
-    motors[motIdx].motor_emergency.stop.counter = 0;
+    init_soft_timer(&motors[motIdx].motor_emergency.stop, motors[motIdx].manager_freq, motors[motIdx].emergency.bridge_off * 1000000);
     // Fix step to slow down the motor
     motors[motIdx].motor_emergency.step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
 }
@@ -401,8 +395,8 @@ inline motor_safety_t get_motor_safety(short motIdx) {
 void update_motor_safety(short motIdx, motor_safety_t safety) {
     // Store safety data
     memcpy(&motors[motIdx].safety, &safety, sizeof(motor_safety_t));
-    motors[motIdx].safety_stop.time = safety.timeout * (motors[motIdx].manager_freq / 1000);
-    motors[motIdx].safety_stop.counter = 0;
+    // Init safety controller
+    init_soft_timer(&motors[motIdx].safety_stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
 }
 
 inline motor_t get_motor_measures(short motIdx) {
@@ -448,7 +442,7 @@ void set_motor_reference(short motIdx, motor_state_t state, motor_control_t refe
     // Setup reference
     motors[motIdx].external_reference = reference;
     // Reset time emergency
-    motors[motIdx].motor_emergency.alive.counter = 0; 
+    reset_timer(&motors[motIdx].motor_emergency.alive);
 }
     
 inline motor_state_t get_motor_state(short motIdx) {
@@ -518,15 +512,13 @@ inline __attribute__((always_inline)) bool run_controller(pid_controller_t *cont
 
 inline bool __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
     if(labs(current) > motors[motIdx].safety.warning_zone) {
-        if ((motors[motIdx].safety_stop.counter + 1) >= motors[motIdx].safety_stop.time) {
+        if(run_timer(&motors[motIdx].safety_stop)) {
             // Change motor state
             set_motor_state(motIdx, CONTROL_SAFETY);
-            return false;
-        } else 
-            motors[motIdx].safety_stop.counter++;
+        }
     } else  {
         // Reset the counter if the value is low
-        motors[motIdx].safety_stop.counter = 0;
+        reset_timer(&motors[motIdx].safety_stop);
     }
     return true;
 }
@@ -621,13 +613,11 @@ void MotorTaskController(int argc, int *argv) {
     }
     /// Check for emergency mode
     if(motors[motIdx].state > CONTROL_DISABLE) {
-        if ((motors[motIdx].motor_emergency.alive.counter + 1) >= motors[motIdx].motor_emergency.alive.time) {
+        if(run_timer(&motors[motIdx].motor_emergency.alive)) {
             /// Set Motor in emergency mode
             set_motor_state(motIdx, CONTROL_EMERGENCY);
-            motors[motIdx].motor_emergency.stop.counter = 0;
-            motors[motIdx].motor_emergency.alive.counter = 0;
-        } else
-            motors[motIdx].motor_emergency.alive.counter++;
+            reset_timer(&motors[motIdx].motor_emergency.stop);
+        }
     }
     
     // ================ READ MEASURES ==========================
@@ -794,10 +784,8 @@ void Emergency(int argc, int *argv) {
             motors[motIdx].external_reference = 0;
         }
     } else if (motors[motIdx].external_reference == 0) {
-        if ((motors[motIdx].motor_emergency.stop.counter + 1) >= motors[motIdx].motor_emergency.stop.time) {
+        if(run_timer(&motors[motIdx].motor_emergency.stop)) {
             set_motor_state(motIdx, CONTROL_DISABLE);
-            motors[motIdx].motor_emergency.stop.counter = 0;
-        } else
-            motors[motIdx].motor_emergency.stop.counter++;
+        }
     }
 }
