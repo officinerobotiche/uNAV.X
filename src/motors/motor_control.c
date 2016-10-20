@@ -368,7 +368,7 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
             // Initialize soft timer
             init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
         }
-#elif
+#else
         // Initialize soft timer
         init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
 #endif
@@ -612,6 +612,12 @@ void MotorTaskController(int argc, int *argv) {
         }
         /// Save new state controller
         motors[motIdx].diagnostic.state = motors[motIdx].state;
+    }
+    
+    // ================ SAFETY CHECK ===========================
+    /// Check maximum current in long time
+    if(check_safety(motIdx, motors[motIdx].measure.current)) {
+        
     }
     /// Check for emergency mode
     if(motors[motIdx].state > CONTROL_DISABLE) {
