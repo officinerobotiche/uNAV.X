@@ -279,6 +279,11 @@ extern "C" {
     void Emergency(int argc, int *argv);
     
     /**
+     * Restore safety control with stop safety task and clear timer
+     * @param motIdx Number motor
+     */
+    void restore_safety_control(short motIdx);
+    /**
      * task control when the motor is in safety condition
      * @param argc
      * @param argv

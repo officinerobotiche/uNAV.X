@@ -416,7 +416,7 @@ void update_motor_safety(short motIdx, motor_safety_t safety) {
     // Init safety controller
     init_soft_timer(&motors[motIdx].motor_safety.stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
     // Initialization auto recovery system
-    init_soft_timer(&motors[motIdx].motor_safety.recovery, (motors[motIdx].manager_freq / 1000), safety.recovery_time * 1000000);
+    init_soft_timer(&motors[motIdx].motor_safety.recovery, (motors[motIdx].manager_freq / 1000), safety.autorestore * 1000000);
     // Fixed step to slow down the motor in function of stop time
     motors[motIdx].motor_safety.step = (safety.timeout * motors[motIdx].manager_freq) / 1000;
 }
@@ -479,6 +479,11 @@ void set_motor_state(short motIdx, motor_state_t state) {
     // For all error controller the blinks are disabled
     int led_state = (state < CONTROL_DISABLE) ? state : state + 1;
     
+    // Restore safety control when auto restore is disabled
+    if(motors[motIdx].safety.autorestore == 0 && motors[motIdx].state == CONTROL_SAFETY && state != CONTROL_SAFETY) {
+        restore_safety_control(motIdx);
+    }
+    
     /// Set enable or disable motors
     motors[motIdx].state = state;
     if(enable == (motors[motIdx].parameter_motor.bridge.enable == MOTOR_ENABLE_LOW)) {
@@ -487,6 +492,7 @@ void set_motor_state(short motIdx, motor_state_t state) {
         REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     }
     
+    // Store last velocity if run some error mode
     if (state < CONTROL_DISABLE) {
         motors[motIdx].last_reference = motors[motIdx].reference.velocity;
     }
@@ -827,6 +833,13 @@ void Emergency(int argc, int *argv) {
     }
 }
 
+void restore_safety_control(short motIdx) {
+    // Reset stop time
+    reset_timer(&motors[motIdx].motor_safety.stop);
+    // Stop safety controller
+    task_set(motors[motIdx].motor_safety.task_safety, STOP);
+}
+
 void Safety(int argc, int *argv) {
     short motIdx = (short) argv[0];
     // Reduction external reference
@@ -840,14 +853,15 @@ void Safety(int argc, int *argv) {
         // Reset recovery time
         reset_timer(&motors[motIdx].motor_safety.recovery);
     } else {
-        // Run auto recovery timer
-        if(run_timer(&motors[motIdx].motor_safety.recovery)) {
-            // Reset stop time
-            reset_timer(&motors[motIdx].motor_safety.stop);
-            // Stop safety controller
-            task_set(motors[motIdx].motor_safety.task_safety, STOP);
-            // Restore old controller
-            set_motor_state(motIdx, motors[motIdx].motor_safety.old_state);
+        // Check if auto restore is disabled
+        if(motors[motIdx].safety.autorestore != 0) {
+            // Run auto recovery timer
+            if(run_timer(&motors[motIdx].motor_safety.recovery)) {
+                // Restore control
+                restore_safety_control(motIdx);
+                // Restore old controller
+                set_motor_state(motIdx, motors[motIdx].motor_safety.old_state);
+            }
         }
     }
 }
