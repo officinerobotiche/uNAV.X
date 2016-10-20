@@ -57,6 +57,7 @@
 
 #define DEFAULT_FREQ_MOTOR_MANAGER 1000.0             // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000.0   // In Herts
+#define DEFAULT_FREQ_MOTOR_CONTROL_SAFETY 1000.0      // In Herts
 
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
@@ -137,8 +138,10 @@ typedef struct _motor_firmware {
     bool save_velocity;
     // Safety
     struct {
+        hTask_t task_safety;
         soft_timer_t stop;
         soft_timer_t recovery;
+        motor_state_t old_state;
     } motor_safety;
     motor_safety_t safety;
     // Parameter and diagnostic
@@ -238,6 +241,10 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     hModule_t emegency_module = register_module(&_MODULE_MOTOR);
     hEvent_t emergency_event = register_event_p(emegency_module, &Emergency, EVENT_PRIORITY_HIGH);
     motors[motIdx].task_emergency = task_load_data(emergency_event, DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY, 1, (char) motIdx);
+    /// Load controller SAFETY - Working at 1KHz
+    hModule_t safety_module = register_module(&_MODULE_MOTOR);
+    hEvent_t safety_event = register_event_p(safety_module, &Safety, EVENT_PRIORITY_HIGH);
+    motors[motIdx].motor_safety.task_safety = task_load_data(safety_event, DEFAULT_FREQ_MOTOR_CONTROL_SAFETY, 1, (char) motIdx);
     // Return Task manager
     return motors[motIdx].task_manager;
 }
@@ -444,15 +451,18 @@ inline void reset_motor_position_measure(short motIdx, motor_control_t value) {
 }
              
 void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference) {
-    // Check state
-    if(state != motors[motIdx].state) {
-        // Change motor control type
-        set_motor_state(motIdx, state);
-        // Update reference
-        motors[motIdx].state = state;
+    // If the controller is in safety state the new reference is skipped
+    if(motors[motIdx].diagnostic.state != CONTROL_SAFETY) {
+        // Check state
+        if(state != motors[motIdx].state) {
+            // Change motor control type
+            set_motor_state(motIdx, state);
+            // Update reference
+            motors[motIdx].state = state;
+        }
+        // Setup reference
+        motors[motIdx].external_reference = reference;
     }
-    // Setup reference
-    motors[motIdx].external_reference = reference;
     // Reset time emergency
     reset_timer(&motors[motIdx].motor_emergency.alive);
 }
@@ -463,6 +473,7 @@ inline motor_state_t get_motor_state(short motIdx) {
 
 void set_motor_state(short motIdx, motor_state_t state) {
     bool enable = (state == CONTROL_DISABLE) ? false : true;
+    // For all error controller the blinks are disabled
     int led_state = (state < CONTROL_DISABLE) ? state : state + 1;
     
     /// Set enable or disable motors
@@ -509,20 +520,6 @@ inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor
         *saturation = 0;
         return value;
     }
-}
-
-inline bool __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
-    if(labs(current) > motors[motIdx].safety.warning_zone) {
-        if(run_timer(&motors[motIdx].motor_safety.stop)) {
-            // Change motor state
-            set_motor_state(motIdx, CONTROL_SAFETY);
-            return false;
-        }
-    } else  {
-        // Reset the counter if the value is low
-        reset_timer(&motors[motIdx].motor_safety.stop);
-    }
-    return true;
 }
 
 inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_control_t reference, volatile fractional saturation) {
@@ -603,31 +600,51 @@ inline void __attribute__((always_inline)) CurrentControl(short motIdx, int curr
 void MotorTaskController(int argc, int *argv) {
     short motIdx = (short) argv[0];
     
+    // ================ SAFETY CHECK ===========================
+    /// Check for emergency mode or in safety mode
+    if (motors[motIdx].state > CONTROL_DISABLE) {
+        // Check safety condition
+        if (labs(motors[motIdx].measure.current) > motors[motIdx].safety.critical_zone) {
+            // Run timer if current is too high
+            if (run_timer(&motors[motIdx].motor_safety.stop)) {
+                // Store old state
+                motors[motIdx].motor_safety.old_state = motors[motIdx].state;
+                // Change motor state
+                set_motor_state(motIdx, CONTROL_SAFETY);
+            }
+        } else {
+            // Reset the counter if the value is low
+            reset_timer(&motors[motIdx].motor_safety.stop);
+        }
+    }
+    // Check emergency 
+    if(motors[motIdx].state != CONTROL_EMERGENCY && motors[motIdx].state != CONTROL_DISABLE) {
+        // check to run emergency mode
+        if(run_timer(&motors[motIdx].motor_emergency.alive)) {
+            /// Set Motor in emergency mode
+            set_motor_state(motIdx, CONTROL_EMERGENCY);
+            // Reset stop timer
+            reset_timer(&motors[motIdx].motor_emergency.stop);
+        }
+    }
+    // ================ RUN CONTROLLERS ========================
     /// Add new task controller
     if(motors[motIdx].state != motors[motIdx].diagnostic.state) {
         if(motors[motIdx].state == CONTROL_EMERGENCY) {
+            if(motors[motIdx].diagnostic.state == CONTROL_SAFETY) {
+                // Stop safety task
+                task_set(motors[motIdx].motor_safety.task_safety, STOP);
+            }
             task_set(motors[motIdx].task_emergency, RUN);
         } else {
             task_set(motors[motIdx].task_emergency, STOP);
         }
+        if(motors[motIdx].state == CONTROL_SAFETY) {
+            task_set(motors[motIdx].motor_safety.task_safety, RUN);
+        }
         /// Save new state controller
         motors[motIdx].diagnostic.state = motors[motIdx].state;
     }
-    
-    // ================ SAFETY CHECK ===========================
-    /// Check maximum current in long time
-    if(check_safety(motIdx, motors[motIdx].measure.current)) {
-        
-    }
-    /// Check for emergency mode
-    if(motors[motIdx].state > CONTROL_DISABLE) {
-        if(run_timer(&motors[motIdx].motor_emergency.alive)) {
-            /// Set Motor in emergency mode
-            set_motor_state(motIdx, CONTROL_EMERGENCY);
-            reset_timer(&motors[motIdx].motor_emergency.stop);
-        }
-    }
-    
     // ================ READ MEASURES ==========================
     
     bool velocity_control = run_timer(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].timer);
@@ -776,7 +793,10 @@ inline int Motor_PWM(short motIdx, int duty_cycle) {
     // Real PWM send
     motors[motIdx].measure.pwm = duty_cycle;
     // PWM output
-    SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + ((motor_control_t) motors[motIdx].parameter_motor.rotation) * duty_cycle, 0);
+    if(motors[motIdx].state != CONTROL_DISABLE)
+        SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET + ((motor_control_t) motors[motIdx].parameter_motor.rotation) * duty_cycle, 0);
+    else
+        SetDCMCPWM1(motIdx + 1, DEFAULT_PWM_OFFSET, 0);
 #ifdef SATURATION
     return error;
 #else
@@ -794,6 +814,26 @@ void Emergency(int argc, int *argv) {
     } else if (motors[motIdx].external_reference == 0) {
         if(run_timer(&motors[motIdx].motor_emergency.stop)) {
             set_motor_state(motIdx, CONTROL_DISABLE);
+        }
+    }
+}
+
+void Safety(int argc, int *argv) {
+    short motIdx = (short) argv[0];
+    // Reduction external reference
+    if(labs(motors[motIdx].measure.current) > motors[motIdx].safety.critical_zone) {
+        motors[motIdx].external_reference = motors[motIdx].external_reference / motors[motIdx].safety.step;
+        // Reset recovery time
+        reset_timer(&motors[motIdx].motor_safety.recovery);
+    } else {
+        // Run auto recovery timer
+        if(run_timer(&motors[motIdx].motor_safety.recovery)) {
+            // Reset stop time
+            reset_timer(&motors[motIdx].motor_safety.stop);
+            // Stop safety controller
+            task_set(motors[motIdx].motor_safety.task_safety, STOP);
+            // Restore old controller
+            set_motor_state(motIdx, motors[motIdx].motor_safety.old_state);
         }
     }
 }

@@ -277,6 +277,13 @@ extern "C" {
      * @return start emergency mode or not.
      */
     void Emergency(int argc, int *argv);
+    
+    /**
+     * task control when the motor is in safety condition
+     * @param argc
+     * @param argv
+     */
+    void Safety(int argc, int *argv);
 
 #ifdef	__cplusplus
 }

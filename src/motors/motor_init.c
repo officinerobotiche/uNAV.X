@@ -251,7 +251,7 @@ void Motor_Init() {
         motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 0.0, 10, false};
         update_motor_pid(i, CONTROL_POSITION, pid_pos);
         /// Initialize safety procedure
-        motor_safety_t safety = {3000, 100, 100};
+        motor_safety_t safety = {1000, 1000, 1000, 2};
         update_motor_safety(i, safety);
         /// Initialize emergency procedure to stop
         motor_emergency_t emergency = {1.0, 2.0, 500};
