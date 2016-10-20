@@ -140,7 +140,7 @@ typedef struct _motor_firmware {
     struct {
         hTask_t task_safety;
         soft_timer_t stop;
-        soft_timer_t recovery;
+        soft_timer_t restore;
         motor_state_t old_state;
         uint16_t step;
     } motor_safety;
@@ -416,7 +416,7 @@ void update_motor_safety(short motIdx, motor_safety_t safety) {
     // Init safety controller
     init_soft_timer(&motors[motIdx].motor_safety.stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
     // Initialization auto recovery system
-    init_soft_timer(&motors[motIdx].motor_safety.recovery, (motors[motIdx].manager_freq / 1000), safety.autorestore * 1000000);
+    init_soft_timer(&motors[motIdx].motor_safety.restore, (motors[motIdx].manager_freq / 1000), safety.autorestore * 1000000);
     // Fixed step to slow down the motor in function of stop time
     motors[motIdx].motor_safety.step = (safety.timeout * motors[motIdx].manager_freq) / 1000;
 }
@@ -851,12 +851,12 @@ void Safety(int argc, int *argv) {
             }
         }
         // Reset recovery time
-        reset_timer(&motors[motIdx].motor_safety.recovery);
+        reset_timer(&motors[motIdx].motor_safety.restore);
     } else {
         // Check if auto restore is disabled
         if(motors[motIdx].safety.autorestore != 0) {
             // Run auto recovery timer
-            if(run_timer(&motors[motIdx].motor_safety.recovery)) {
+            if(run_timer(&motors[motIdx].motor_safety.restore)) {
                 // Restore control
                 restore_safety_control(motIdx);
                 // Restore old controller
