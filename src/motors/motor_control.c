@@ -329,15 +329,19 @@ inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
     return motors[motIdx].controller[num_control].pid;
 }
 
-bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {    
+bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
+    // If the motor control is the same in action you can not disable
+    if(motors[motIdx].diagnostic.state == state && pid.enable == false)
+        return false;
     // Check gains value
     // Check1 = | Kp + ki + kd | < 1 = INT16_MAX
     // Check2 = | -(Kp + 2*Kd) | < 1 = INT16_MAX
     // Check3 =      | Kd |      < 1 = INT16_MAX
     long check1 = labs(1000.0 * (pid.kp + pid.ki + pid.kd));
     long check2 = labs(1000.0 * (pid.kp + 2 * pid.kd));
+    long check3 = labs(1000.0 * pid.kd);
     
-    if(check1 < INT16_MAX && check2 < INT16_MAX && labs(pid.kd) < INT16_MAX) {
+    if(check1 < INT16_MAX && check2 < INT16_MAX && check3 < INT16_MAX) {
         int num_control = GET_CONTROLLER_NUM(state);
         // Update PID struct
         memcpy(&motors[motIdx].controller[num_control].pid, &pid, sizeof(motor_pid_t));
@@ -389,6 +393,8 @@ void update_motor_safety(short motIdx, motor_safety_t safety) {
     memcpy(&motors[motIdx].safety, &safety, sizeof(motor_safety_t));
     // Init safety controller
     init_soft_timer(&motors[motIdx].safety_stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
+    // Initialization auto recovery system
+    //init_soft_timer(&motors[motIdx].safety_stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
 }
 
 inline motor_t get_motor_measures(short motIdx) {
