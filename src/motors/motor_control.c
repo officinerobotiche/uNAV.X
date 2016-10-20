@@ -360,8 +360,18 @@ bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
         PIDInit(&motors[motIdx].controller[num_control].PIDstruct);
         // Gain anti wind up
         motors[motIdx].controller[num_control].k_aw = (int) (pid.kaw * 1000.0);
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
+        if(state == CONTROL_CURRENT) {
+            // Manual reset frequency  current loop
+            motors[motIdx].controller[num_control].pid.frequency = CURRENT_ADC_LOOP_FRQ;
+        } else {
+            // Initialize soft timer
+            init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
+        }
+#elif
         // Initialize soft timer
         init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
+#endif
         // Set enable PID
         motors[motIdx].controller[num_control].enable = pid.enable;
         // Update K_qei

@@ -40,6 +40,10 @@ extern "C" {
     #define CURRENT_CONTROL_IN_ADC_LOOP
     /**********************************************/
     
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
+#define CURRENT_ADC_LOOP_FRQ 33200
+#endif
+    
     /**
      * Numbers of motors available in this board
      */
