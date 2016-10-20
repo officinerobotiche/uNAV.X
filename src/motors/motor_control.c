@@ -132,16 +132,17 @@ typedef struct _motor_firmware {
         soft_timer_t alive;
         soft_timer_t stop;
         uint16_t step;
-        motor_control_t last_reference;
     } motor_emergency;
     motor_emergency_t emergency;
     bool save_velocity;
+    motor_control_t last_reference;
     // Safety
     struct {
         hTask_t task_safety;
         soft_timer_t stop;
         soft_timer_t recovery;
         motor_state_t old_state;
+        uint16_t step;
     } motor_safety;
     motor_safety_t safety;
     // Parameter and diagnostic
@@ -401,7 +402,7 @@ void update_motor_emergency(short motIdx, motor_emergency_t emergency_data) {
     init_soft_timer(&motors[motIdx].motor_emergency.alive, (motors[motIdx].manager_freq / 1000), emergency_data.timeout * 1000000);
     // Reset counter Emergency stop
     init_soft_timer(&motors[motIdx].motor_emergency.stop, motors[motIdx].manager_freq, motors[motIdx].emergency.bridge_off * 1000000);
-    // Fix step to slow down the motor
+    // Fixed step to slow down the motor
     motors[motIdx].motor_emergency.step = motors[motIdx].emergency.slope_time * motors[motIdx].manager_freq;
 }
 
@@ -416,6 +417,8 @@ void update_motor_safety(short motIdx, motor_safety_t safety) {
     init_soft_timer(&motors[motIdx].motor_safety.stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
     // Initialization auto recovery system
     init_soft_timer(&motors[motIdx].motor_safety.recovery, (motors[motIdx].manager_freq / 1000), safety.recovery_time * 1000000);
+    // Fixed step to slow down the motor in function of stop time
+    motors[motIdx].motor_safety.step = (safety.timeout * motors[motIdx].manager_freq) / 1000;
 }
 
 inline motor_t get_motor_measures(short motIdx) {
@@ -484,8 +487,8 @@ void set_motor_state(short motIdx, motor_state_t state) {
         REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
     }
     
-    if (state == CONTROL_EMERGENCY) {
-        motors[motIdx].motor_emergency.last_reference = motors[motIdx].reference.velocity;
+    if (state < CONTROL_DISABLE) {
+        motors[motIdx].last_reference = motors[motIdx].reference.velocity;
     }
     /// Disable PWM generator
     if (enable) {
@@ -672,10 +675,16 @@ void MotorTaskController(int argc, int *argv) {
             // Check if is the time to run the controller
             if (velocity_control) {
                 // Run PID control
+                volatile fractional saturation = 0;
+                if(motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable == true) {
+                    saturation = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation;
+                } else {
+                    saturation = motors[motIdx].pwm_saturation;
+                }
 #ifdef ENABLE_VELOCITY_CONTROL
-                motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference, motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
+                motors[motIdx].control_output = control_velocity(motIdx, motors[motIdx].external_reference, saturation);
 #else
-                control_velocity(motIdx, motors[motIdx].external_reference, motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
+                control_velocity(motIdx, motors[motIdx].external_reference, saturation);
                 motors[motIdx].control_output = 0;
 #endif
             }
@@ -715,7 +724,7 @@ void MotorTaskController(int argc, int *argv) {
             motors[motIdx].reference.current = motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
         } else {
             // Send to motor the value of control
-            Motor_PWM(motIdx, motors[motIdx].control_output);
+            motors[motIdx].pwm_saturation = Motor_PWM(motIdx, motors[motIdx].control_output);
         }
 #endif
     }
@@ -807,8 +816,8 @@ inline int Motor_PWM(short motIdx, int duty_cycle) {
 void Emergency(int argc, int *argv) {
     short motIdx = (short) argv[0];
     if (motors[motIdx].external_reference != 0) {
-        motors[motIdx].external_reference -= motors[motIdx].motor_emergency.last_reference / motors[motIdx].motor_emergency.step;
-        if (SGN(motors[motIdx].external_reference) * motors[motIdx].motor_emergency.last_reference < 0) {
+        motors[motIdx].external_reference -= motors[motIdx].last_reference / motors[motIdx].motor_emergency.step;
+        if (SGN(motors[motIdx].external_reference) * motors[motIdx].last_reference < 0) {
             motors[motIdx].external_reference = 0;
         }
     } else if (motors[motIdx].external_reference == 0) {
@@ -822,7 +831,12 @@ void Safety(int argc, int *argv) {
     short motIdx = (short) argv[0];
     // Reduction external reference
     if(labs(motors[motIdx].measure.current) > motors[motIdx].safety.critical_zone) {
-        motors[motIdx].external_reference = motors[motIdx].external_reference / motors[motIdx].safety.step;
+        if (motors[motIdx].external_reference != 0) {
+            motors[motIdx].external_reference -= motors[motIdx].last_reference / motors[motIdx].motor_safety.step;
+            if (SGN(motors[motIdx].external_reference) * motors[motIdx].last_reference < 0) {
+                motors[motIdx].external_reference = 0;
+            }
+        }
         // Reset recovery time
         reset_timer(&motors[motIdx].motor_safety.recovery);
     } else {
