@@ -136,7 +136,10 @@ typedef struct _motor_firmware {
     motor_emergency_t emergency;
     bool save_velocity;
     // Safety
-    soft_timer_t safety_stop;
+    struct {
+        soft_timer_t stop;
+        soft_timer_t recovery;
+    } motor_safety;
     motor_safety_t safety;
     // Parameter and diagnostic
     motor_diagnostic_t diagnostic;
@@ -331,8 +334,9 @@ inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
 
 bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid) {
     // If the motor control is the same in action you can not disable
-    if(motors[motIdx].diagnostic.state == state && pid.enable == false)
+    if(motors[motIdx].diagnostic.state == state && pid.enable == false) {
         return false;
+    }
     // Check gains value
     // Check1 = | Kp + ki + kd | < 1 = INT16_MAX
     // Check2 = | -(Kp + 2*Kd) | < 1 = INT16_MAX
@@ -392,9 +396,9 @@ void update_motor_safety(short motIdx, motor_safety_t safety) {
     // Store safety data
     memcpy(&motors[motIdx].safety, &safety, sizeof(motor_safety_t));
     // Init safety controller
-    init_soft_timer(&motors[motIdx].safety_stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
+    init_soft_timer(&motors[motIdx].motor_safety.stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
     // Initialization auto recovery system
-    //init_soft_timer(&motors[motIdx].safety_stop, (motors[motIdx].manager_freq / 1000), safety.timeout * 1000000);
+    init_soft_timer(&motors[motIdx].motor_safety.recovery, (motors[motIdx].manager_freq / 1000), safety.recovery_time * 1000000);
 }
 
 inline motor_t get_motor_measures(short motIdx) {
@@ -499,13 +503,14 @@ inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor
 
 inline bool __attribute__((always_inline)) check_safety(short motIdx, motor_control_t current) {
     if(labs(current) > motors[motIdx].safety.warning_zone) {
-        if(run_timer(&motors[motIdx].safety_stop)) {
+        if(run_timer(&motors[motIdx].motor_safety.stop)) {
             // Change motor state
             set_motor_state(motIdx, CONTROL_SAFETY);
+            return false;
         }
     } else  {
         // Reset the counter if the value is low
-        reset_timer(&motors[motIdx].safety_stop);
+        reset_timer(&motors[motIdx].motor_safety.stop);
     }
     return true;
 }
