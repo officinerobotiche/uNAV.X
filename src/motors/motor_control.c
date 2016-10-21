@@ -119,6 +119,7 @@ typedef struct _motor_firmware {
     event_prescaler_t prescaler_callback;
     // Frequency manager;
     frequency_t manager_freq;
+    volatile int pwm_limit;
     /// Task register
     hEvent_t motor_manager_event;
     hTask_t task_manager;
@@ -206,6 +207,9 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     reset_motor_data(&motors[motIdx].controlOut);
+    
+    // PWM limit
+    motors[motIdx].pwm_limit = DEFAULT_PWM_MAX;
     
     motors[motIdx].control_output = 0;
     motors[motIdx].external_reference = 0;
@@ -333,6 +337,10 @@ inline motor_t get_motor_constraints(short motIdx) {
 void update_motor_constraints(short motIdx, motor_t constraints) {
     //Update parameter constraints
     memcpy(&motors[motIdx].constraint, &constraints, sizeof(motor_t));
+    //Update PWM max value
+    //Shifted from maximum motor_control_t value to maximum PWM value
+    // 31bit -> 11 bit = 20
+    motors[motIdx].pwm_limit = motors[motIdx].constraint.pwm >> 20;
 }
 
 inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state) {
@@ -794,12 +802,12 @@ inline int Motor_PWM(short motIdx, int duty_cycle) {
     motors[motIdx].reference.pwm = duty_cycle;
 #ifdef SATURATION
     int error = 0;
-    if(duty_cycle > DEFAULT_PWM_MAX) {
-        error = DEFAULT_PWM_MAX - duty_cycle;
-        duty_cycle = DEFAULT_PWM_MAX;
-    } else if(duty_cycle < DEFAULT_PWM_MIN) {
-        error = DEFAULT_PWM_MIN - duty_cycle;
-        duty_cycle = DEFAULT_PWM_MIN;
+    if(duty_cycle > motors[motIdx].pwm_limit) {
+        error = motors[motIdx].pwm_limit - duty_cycle;
+        duty_cycle = motors[motIdx].pwm_limit;
+    } else if(duty_cycle < (-motors[motIdx].pwm_limit-1)) {
+        error = (-motors[motIdx].pwm_limit-1) - duty_cycle;
+        duty_cycle = (-motors[motIdx].pwm_limit-1);
     }
 #else
     // Save PWM value with attenuation => K = 1 / 16

@@ -241,7 +241,7 @@ void Motor_Init() {
         /// Initialize parameters for motors
         update_motor_parameters(i, init_motor_parameters());
         // Initialize current PID controller
-        motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, true};
+        motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
         //motor_pid_t pid_current = {6, 2, 1, 10000, false};
         update_motor_pid(i, CONTROL_CURRENT, pid_current);
         /// Initialize Velocity PID controller
