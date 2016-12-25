@@ -63,9 +63,6 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-#define MOTOR "MOTOR"
-static string_data_t _MODULE_MOTOR = {MOTOR, sizeof(MOTOR)};
-
 #define NUM_CONTROLLERS 3
 // Get the number in controller array from enum_state_t
 #define GET_CONTROLLER_NUM(X) ((X) - 1)
@@ -239,16 +236,13 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     // Init mean buffer
     init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
-    hModule_t motor_manager_module = register_module(&_MODULE_MOTOR);
-    motors[motIdx].motor_manager_event = register_event_p(motor_manager_module, &MotorTaskController, EVENT_PRIORITY_MEDIUM);
+    motors[motIdx].motor_manager_event = register_event_p(&MotorTaskController, EVENT_PRIORITY_MEDIUM);
     motors[motIdx].task_manager = task_load_data(motors[motIdx].motor_manager_event, motors[motIdx].manager_freq, 1, (char) motIdx);
     /// Load controller EMERGENCY - Working at 1KHz
-    hModule_t emegency_module = register_module(&_MODULE_MOTOR);
-    hEvent_t emergency_event = register_event_p(emegency_module, &Emergency, EVENT_PRIORITY_HIGH);
+    hEvent_t emergency_event = register_event_p(&Emergency, EVENT_PRIORITY_HIGH);
     motors[motIdx].task_emergency = task_load_data(emergency_event, DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY, 1, (char) motIdx);
     /// Load controller SAFETY - Working at 1KHz
-    hModule_t safety_module = register_module(&_MODULE_MOTOR);
-    hEvent_t safety_event = register_event_p(safety_module, &Safety, EVENT_PRIORITY_HIGH);
+    hEvent_t safety_event = register_event_p(&Safety, EVENT_PRIORITY_HIGH);
     motors[motIdx].motor_safety.task_safety = task_load_data(safety_event, DEFAULT_FREQ_MOTOR_CONTROL_SAFETY, 1, (char) motIdx);
     // Return Task manager
     return motors[motIdx].task_manager;

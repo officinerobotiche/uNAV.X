@@ -31,9 +31,6 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-#define SERIAL "SERIAL"
-static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
-
 //UART
 #define BAUDRATE 115200
 #define BRGVAL   ((FCY/BAUDRATE)/16)-1
@@ -141,10 +138,8 @@ void SerialComm_Init(void) {
     
     orb_message_init(&receive);           ///< Initialize buffer serial error
     orb_frame_init();                     ///< Initialize hash map packet
-    /// Register module
-    hModule_t serial_module = register_module(&_MODULE_SERIAL);
     /// Register event
-    parseEvent = register_event_p(serial_module, &parse_packet, EVENT_PRIORITY_LOW);
+    parseEvent = register_event_p(&parse_packet, EVENT_PRIORITY_LOW);
     /// Register parser event in system control
     register_time(SYSTEM_EVENT_PARSER, parseEvent);
 }
