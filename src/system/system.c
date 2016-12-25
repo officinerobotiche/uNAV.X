@@ -42,7 +42,7 @@
 
 const unsigned char _VERSION_DATE[] = __DATE__;
 const unsigned char _VERSION_TIME[] = __TIME__;
-const unsigned char _VERSION_CODE[] = "v0.6 alpha";
+const unsigned char _VERSION_CODE[] = "v0.6";
 const unsigned char _AUTHOR_CODE[] = "Officine Robotiche";
 const unsigned char _BOARD_TYPE[] = "Motor Control";
 #ifdef UNAV_V1

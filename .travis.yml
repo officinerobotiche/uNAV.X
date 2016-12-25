@@ -18,7 +18,7 @@ addons:
     - libstdc++6:i386
     - libexpat1:i386
 
-before_install: 
+before_install:
  - chmod +x travis-install-dependencies.sh
  - chmod +x travis-install-dependencies-unav.sh
 
@@ -30,5 +30,5 @@ install:
 # Generate Makefiles and make
 script:
  - pwd
- - /opt/microchip/mplabx/v3.40/mplab_ide/bin/prjMakefilesGenerator.sh .
+ - /opt/microchip/mplabx/v3.50/mplab_ide/bin/prjMakefilesGenerator.sh .
  - make
