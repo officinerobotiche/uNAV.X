@@ -44,7 +44,7 @@
 #include <stdbool.h>        /* Includes true/false definition */
 
 #include <or_system/events.h>
-#include <or_peripherals/I2C/i2c_controller.h>
+#include <or_peripherals/I2C/I2C.h>
 #include "system/system.h"
 
 #include "communication/I2c.h"

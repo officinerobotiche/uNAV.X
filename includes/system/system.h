@@ -65,9 +65,9 @@ extern "C" {
         SYSTEM_EVENT_LED    = 2
     } system_event_type_t;
 
-    /******************************************************************************/
-    /* System Function Prototypes                                                 */
-    /******************************************************************************/
+/******************************************************************************/
+/* System Function Prototypes                                                 */
+/******************************************************************************/
 
     /* Custom oscillator configuration functions, reset source evaluation
     functions, and other non-peripheral microcontroller initialization functions
