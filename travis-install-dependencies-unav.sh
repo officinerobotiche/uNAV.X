@@ -3,9 +3,9 @@
 # Install the uNAV required libraries needed for a build.
 #
 #*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
-# 
+#
 # Copyright (c) 2016 Raffaello Bonghi
-# 
+#
 # This file is part of uNAV project which is released under the
 # MIT License (MIT).
 # For full license details see file "LICENSE" or go to
@@ -15,10 +15,10 @@
 #
 # Downloads the software from Microchip and saves them in a folder outside
 # of the project directory. Than extracts and installs them.
-# 
+#
 # Versions:
-#  MPLAB® X IDE:            v3.40
-#  MPLAB® XC16 Compiler:    v1.26
+#  MPLAB® X IDE:            v3.50
+#  MPLAB® XC16 Compiler:    v1.30
 #  MPLAB® Pheriperhal Lib:  v2.00
 #
 
@@ -28,7 +28,7 @@ pushd .
 # Go to the home folder for the unav libraries.
 cd ../
 
-export MPLABVER=v3.40
+export MPLABVER=v3.50
 echo "- MPLAB X IDE VERSION: $MPLABVER -"
 
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"

@@ -3,9 +3,9 @@
 # Install the software needed for a build.
 #
 #*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
-# 
+#
 # Copyright (c) 2015 Jeroen de Bruijn
-# 
+#
 # This file is part of MPLABX_Travis-CI_Example which is released under the
 # MIT License (MIT).
 # For full license details see file "LICENSE" or go to
@@ -15,15 +15,15 @@
 #
 # Downloads the software from Microchip and saves them in a folder outside
 # of the project directory. Than extracts and installs them.
-# 
+#
 # Versions:
-#  MPLAB® X IDE:            v3.40
-#  MPLAB® XC16 Compiler:    v1.26
+#  MPLAB® X IDE:            v3.50
+#  MPLAB® XC16 Compiler:    v1.30
 #  MPLAB® Pheriperhal Lib:  v2.00
 #
 
-export MPLABVER=v3.40
-export XC16VER=v1.26
+export MPLABVER=v3.50
+export XC16VER=v1.30
 export PERIPHERAL_LIBRARY=v2.00
 
 # Save the current working directory
@@ -36,7 +36,7 @@ cd ../install-dependencies
 
 
 ### IDE
-# Install MPLAB X IDE 
+# Install MPLAB X IDE
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Downloading MPLAB X IDE $MPLABVER... +"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
@@ -54,7 +54,7 @@ sudo ./MPLABX-$MPLABVER-linux-installer.sh -- --mode unattended
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
 echo "- Installation of MPLAB X IDE $MPLABVER finished... -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
-echo 
+echo
 
 ### Compiler
 # Install MPLAB XC16 Compiler
@@ -74,7 +74,7 @@ sudo ./xc16-$XC16VER-full-install-linux-installer.run --mode unattended --netser
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
 echo "- Installation of MPLAB XC16 Compiler $XC16VER finished... -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
-echo 
+echo
 
 ### Compiler
 # Install MPLAB XC16 Peripheral libraries for pic24 and dspic
@@ -94,7 +94,7 @@ sudo ./"peripheral-libraries-for-pic24-and-dspic-$PERIPHERAL_LIBRARY-linux-insta
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
 echo "- Installation MPLAB XC16 Peripheral libraries for pic24 and dspic $PERIPHERAL_LIBRARY... -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
-echo 
+echo
 
 # Return to the saved working directory
 popd
