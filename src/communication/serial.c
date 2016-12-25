@@ -19,121 +19,192 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>                 /* Device header file */
 
-#include <stdint.h>        /* Includes uint16_t definition   */
-#include <stdbool.h>       /* Includes true/false definition */
-#include <string.h>
+#include <system/events.h>
 
 #include "communication/serial.h"
+
+#include "system/system.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-/*! Pointer to function, initialized for pkg_header */
-int (*pkg_parse) (unsigned char inchar) = &pkg_header;
+#define SERIAL "SERIAL"
+static string_data_t _MODULE_SERIAL = {SERIAL, sizeof(SERIAL)};
+
+//UART
+#define BAUDRATE 115200
+#define BRGVAL   ((FCY/BAUDRATE)/16)-1
+
+peripherals_serial_t serial_config[2];
+// Packet
+packet_t receive;
+packet_t send;
 /*! Array for DMA UART buffer */
 unsigned char BufferTx[MAX_BUFF_TX] __attribute__((space(dma)));
-/*! Receive packet */
-packet_t receive_pkg;
-char receive_header;
-unsigned int index_data = 0;
-system_error_serial_t serial_error;
+hEvent_t parseEvent = INVALID_EVENT_HANDLE;
 
 /******************************************************************************/
-/* Comunication Functions                                                     */
+/* Communication Functions                                                    */
 /******************************************************************************/
 
-void init_buff_serial_error(){
-    memset(serial_error.number, 0, MAX_BUFF_ERROR_SERIAL);
+void InitUART1(short idx) {
+    U1MODEbits.STSEL = 0; // 1-stop bit
+    U1MODEbits.PDSEL = serial_config[idx].byte_conf; // No Parity, 8-data bits
+    U1MODEbits.ABAUD = 0; // Auto-Baud Disabled
+    U1MODEbits.BRGH = 0; // Low Speed mode
+
+    U1BRG = ((FCY/serial_config[idx].baud)/16)-1; // BAUD Rate Setting on System.h
+
+    U1STAbits.UTXISEL0 = 0; // Interrupt after one Tx character is transmitted
+    U1STAbits.UTXISEL1 = 0;
+
+    IEC0bits.U1TXIE = 0; // Disable UART Tx interrupt
+    U1STAbits.URXISEL = 0; // Interrupt after one RX character is received
+
+    U1MODEbits.UARTEN = 1; // Enable UART
+    U1STAbits.UTXEN = 1; // Enable UART Tx
+
+    IEC4bits.U1EIE = 0;
+    IPC2bits.U1RXIP = UART_RX_LEVEL; // Set UART Rx Interrupt Priority Level
+    IFS0bits.U1RXIF = 0; // Reset RX interrupt flag
+    IEC0bits.U1RXIE = 1; // Enable RX interrupt
 }
 
-int decode_pkgs(unsigned char rxchar) {
-    return (*pkg_parse)(rxchar);
-}
+void InitDMA1(void) {
+    //DMA1CON = 0x2001;			// One-Shot, Post-Increment, RAM-to-Peripheral
 
-int pkg_header(unsigned char rxchar) {
-    if ((rxchar == HEADER_SYNC) || (rxchar == HEADER_ASYNC)) {
-        receive_header = rxchar;    // Save
-        pkg_parse = &pkg_length;
-        return false;
-    } else {
-        return pkg_error(ERROR_HEADER);
+    DMA1CONbits.CHEN = 0;
+    DMA1CONbits.SIZE = 1;
+    DMA1CONbits.DIR = 1;
+    DMA1CONbits.HALF = 0;
+    DMA1CONbits.NULLW = 0;
+    DMA1CONbits.AMODE = 0;
+    DMA1CONbits.MODE = 1;
+
+    DMA1CNT = MAX_BUFF_TX - 1; // 32 DMA requests
+    DMA1REQ = 0x000c; // Select UART1 Transmitter
+
+    DMA1STA = __builtin_dmaoffset(BufferTx);
+    DMA1PAD = (volatile unsigned int) &U1TXREG;
+
+    IPC3bits.DMA1IP = UART_TX_LEVEL; // Set DMA Interrupt Priority Level
+    IFS0bits.DMA1IF = 0; // Clear DMA Interrupt Flag
+    IEC0bits.DMA1IE = 1; // Enable DMA interrupt
+}
+/**
+ * In a packet we have more messages. A typical data packet
+ * have this structure:
+ * -------------------------- ---------------------------- -----------------------
+ * | Length | CMD | DATA ... | Length | CMD | INFORMATION |Length | CMD | ... ... |
+ * -------------------------- ---------------------------- -----------------------
+ *    1        2 -> length    length+1 length+2 length+3   ...
+ * It is possible to have different type of messages:
+ * * Message with data (D)
+ * * Message with state information:
+ *      * (R) request data
+ *      * (A) ack
+ *      * (N) nack
+ * We have three parts to elaborate and send a new packet (if required)
+ * 1. [SAVING] The first part of this function split packets in a
+ * list of messages to compute.
+ * 2. [COMPUTE] If message have a data in tail, start compute and return a
+ * new ACK or NACK message to append in a new packet. If is a request
+ * message (R), the new message have in tail the data required.
+ * 3. [SEND] Encoding de messages and transform in a packet to send.
+ * *This function is a long function*
+ * @return time to compute parsing packet
+ */
+void parse_packet(int argc, int* argv) {
+    packet_information_t list_data[BUFFER_LIST_PARSING];
+    size_t len = 0;
+
+    if(parser(&receive, &list_data[0], &len) && len != 0) {
+        //Build a new message
+        unsigned int n_packet = encoder(&send, &list_data[0], len);
+        // Send a new packet
+        if(n_packet != 0)
+            serial_send(send);
     }
 }
 
-int pkg_length(unsigned char rxchar) {
-    if (rxchar > MAX_BUFF_RX) {
-        return pkg_error(ERROR_LENGTH);
-    } else {
-        pkg_parse = &pkg_data;
-        receive_pkg.length = rxchar;
-        return false;
-    }
+void SerialComm_Init(void) {
+    
+    serial_config[0].number = 0;
+    serial_config[0].baud = BAUDRATE;
+    serial_config[0].byte_conf = 0;
+    
+    InitUART1(0);
+    InitDMA1();
+    
+    orb_message_init(&receive);           ///< Initialize buffer serial error
+    orb_frame_init();                     ///< Initialize hash map packet
+    /// Register module
+    hModule_t serial_module = register_module(&_MODULE_SERIAL);
+    /// Register event
+    parseEvent = register_event_p(serial_module, &parse_packet, EVENT_PRIORITY_LOW);
+    /// Register parser event in system control
+    register_time(SYSTEM_EVENT_PARSER, parseEvent);
 }
 
-int pkg_data(unsigned char rxchar) {
-    int cks_clc;
-    if ((index_data + 1) == (receive_pkg.length + 1)) {
-        pkg_parse = &pkg_header; //Restart parse serial packet
-        if ((cks_clc = pkg_checksum(receive_pkg.buffer, 0, index_data)) == rxchar) { //checksum data
-            index_data = 0; //flush index array data buffer
-            return true;
-        } else {
-            bool t = pkg_error(ERROR_CKS);
-            return t;
-        }
-    } else {
-        receive_pkg.buffer[index_data] = rxchar;
-        index_data++;
-        return false;
-    }
+bool Serial_set(peripherals_serial_t serial) {
+    serial_config[serial.number] = serial;
+    return true;
 }
 
-int pkg_error(int error) {
-    index_data = 0;
-    pkg_parse = &pkg_header; //Restart parse serial packet
-    serial_error.number[(-error - 1)] += 1;
-    return error;
+peripherals_serial_t Serial_get(short idx) {
+    return serial_config[idx];
 }
 
-unsigned char pkg_checksum(volatile unsigned char* Buffer, int FirstIndx, int LastIndx) {
-    unsigned char ChkSum = 0;
-    int ChkCnt;
-    for (ChkCnt = FirstIndx; ChkCnt < LastIndx; ChkCnt++) {
-        ChkSum += Buffer[ChkCnt];
-    }
-    return ChkSum;
-}
-
-void pkg_send(char header, packet_t packet) {
-
+void serial_send(packet_t packet) {
+    
     //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
-
-    int i;
-    BufferTx[0] = header;
-    BufferTx[1] = packet.length;
-
-    //Copy all element to DMA buffer
-    for (i = 0; i < packet.length; i++) {
-        BufferTx[i + HEAD_PKG] = packet.buffer[i];
-    }
-
-    // Create a checksum
-    BufferTx[packet.length + HEAD_PKG] = pkg_checksum(BufferTx, HEAD_PKG, packet.length + HEAD_PKG);
-
-    DMA1CNT = (HEAD_PKG + packet.length + 1) - 1; // # of DMA requests
+    //Build a message to send to serial
+    build_pkg(BufferTx, packet);
+    
+    DMA1CNT = (LNG_PACKET_HEADER + packet.length + 1) - 1; // # of DMA requests
     DMA1CONbits.CHEN = 1; // Enable DMA1 Channel
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
+}
+
+unsigned int ReadUART1(void) {
+    if (U1MODEbits.PDSEL == 3)
+        return (U1RXREG);
+    else
+        return (U1RXREG & 0xFF);
+}
+
+void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
+    IFS0bits.U1RXIF = 0; // clear RX interrupt flag
+    /* check for receive errors */
+    if (U1STAbits.FERR == 1) {
+        pkg_error(ERROR_FRAMMING);
+    }
+    /* get the data */
+    if (U1STAbits.OERR == 0 && U1STAbits.URXDA == 1) {
+        if (decode_pkgs(ReadUART1())) {
+            trigger_event(parseEvent);
+        }
+    } else {
+        /* must clear the overrun error to keep uart receiving */
+        if (U1STAbits.OERR == 1) {
+            U1STAbits.OERR = 0;
+            pkg_error(ERROR_OVERRUN);
+        }
+    }
+}
+
+void __attribute__((interrupt, auto_psv)) _DMA1Interrupt(void) {
+    IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
+}
+
+/**
+ * @brief Clear the UART1 Error Interrupt Flag
+ */
+void __attribute__((interrupt, no_auto_psv)) _U1ErrInterrupt(void) {
+
+    IFS4bits.U1EIF = 0;
 }

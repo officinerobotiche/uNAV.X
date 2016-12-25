@@ -19,44 +19,26 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>            /* Device header file */
 
 #include <stdint.h>        /* Includes uint16_t definition   */
 #include <stdbool.h>       /* Includes true/false definition */
 
-#include "system/user.h"
 #include "system/system.h"
+
+//#include <or_bus/or_message.h>
+//#include <or_bus/or_frame.h>
+
 #include "communication/serial.h"
-#include "communication/parsing_messages.h"
-#include "control/motors/motors.h"
-#include "control/high_level_control.h"
+
+#include "motors/motor_init.h"
+#include "high_control/manager.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-ICdata ICinfo[NUM_MOTORS];
-
-//From system.c
-extern process_t default_process[2];
-extern process_t motor_process[PROCESS_MOTOR_LENGTH];
-extern process_t motion_process[PROCESS_MOTION_LENGTH];
-
-//From high_level_control
-extern volatile unsigned int control_state;
-
-//From user
-extern led_control_t led_controller[LED_NUM];
-extern bool led_effect;
+extern ICdata ICinfo[NUM_MOTORS];
 
 /******************************************************************************/
 /* Interrupt Vector Options                                                   */
@@ -132,123 +114,54 @@ extern bool led_effect;
 /*                                                                            */
 /******************************************************************************/
 /* Interrupt Routines                                                         */
-
 /******************************************************************************/
 
-void __attribute__((interrupt, auto_psv, shadow)) _IC1Interrupt(void) {
-    unsigned int t1, t2;
-    t2 = IC1BUF; // IC1BUF is a FIFO, each reading is a POP
-    t1 = IC1BUF;
-
-    ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
-    ICinfo[MOTOR_ZERO].overTmr = 0;
-
-    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); //Save sign Vel motor 0
-//    ICinfo[MOTOR_ZERO].SIG_VEL = (QEI1CONbits.UPDN ? 1 : -1); //Save sign Vel L
+void __attribute__((interrupt, auto_psv)) _IC1Interrupt(void) {
+    unsigned int newTime = IC1BUF; // Reading IC1BUF every interrupt
+    
+    // Detail in Microchip Application Note: AN545
+    if(ICinfo[MOTOR_ZERO].overTmr == 0) {
+        ICinfo[MOTOR_ZERO].delta = newTime - ICinfo[MOTOR_ZERO].oldTime;
+        ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
+    } else {
+        ICinfo[MOTOR_ZERO].delta = (newTime + (0xFFFF - ICinfo[MOTOR_ZERO].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ZERO].overTmr - 1)));
+        ICinfo[MOTOR_ZERO].timePeriod += ICinfo[MOTOR_ZERO].delta;
+        ICinfo[MOTOR_ZERO].overTmr = 0;
+    }
+    // Store old time period
+    ICinfo[MOTOR_ZERO].oldTime = newTime;
+    
+    /// Save sign Vel motor 0
+    (QEI1CONbits.UPDN ? ICinfo[MOTOR_ZERO].SIG_VEL++ : ICinfo[MOTOR_ZERO].SIG_VEL--); 
+    
     IFS0bits.IC1IF = 0;
 }
 
-void __attribute__((interrupt, auto_psv, shadow)) _IC2Interrupt(void) {
-    unsigned int t1, t2;
-    t2 = IC2BUF; // IC1BUF is a FIFO, each reading is a POP
-    t1 = IC2BUF;
+void __attribute__((interrupt, auto_psv)) _IC2Interrupt(void) {
+    unsigned int newTime = IC2BUF; // Reading IC1BUF every interrupt
 
-    ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].overTmr * PR2 + t2 - t1; // PR2 is 0xFFFF
-    ICinfo[MOTOR_ONE].overTmr = 0;
+    // Detail in Microchip Application Note: AN545
+    if(ICinfo[MOTOR_ONE].overTmr == 0) {
+        ICinfo[MOTOR_ONE].delta = newTime - ICinfo[MOTOR_ONE].oldTime;
+        ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
+    } else {
+        ICinfo[MOTOR_ONE].delta = (newTime + (0xFFFF - ICinfo[MOTOR_ONE].oldTime)
+                + (0xFFFF * (ICinfo[MOTOR_ONE].overTmr - 1)));
+        ICinfo[MOTOR_ONE].timePeriod += ICinfo[MOTOR_ONE].delta;
+        ICinfo[MOTOR_ONE].overTmr = 0;
+    }
+    // Store old time period
+    ICinfo[MOTOR_ONE].oldTime = newTime;
     
-    //	if(QEI2CONbits.UPDN) SIG_VELR++;		//Save sign Vel R
-    //	else SIG_VELR--;
-    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); //Save sign Vel motor 1
-//    ICinfo[MOTOR_ONE].SIG_VEL = (QEI2CONbits.UPDN ? 1 : -1); //Save sign Vel R
+    /// Save sign Vel motor 1
+    (QEI2CONbits.UPDN ? ICinfo[MOTOR_ONE].SIG_VEL++ : ICinfo[MOTOR_ONE].SIG_VEL--); 
+    
     IFS0bits.IC2IF = 0;
-}
-
-void __attribute__((interrupt, auto_psv)) _T1Interrupt(void) {
-    IFS0bits.T1IF = 0; // Clear Timer 1 Interrupt Flag?
-    int led_counter = 0;
-    
-    /**
-     * If high level control selected, then set new reference for all motors.
-     */
-    if (control_state != STATE_CONTROL_HIGH_DISABLE) {
-        FLAG_TASK_HIGH_LEVEL = 1;
-    }
-    /**
-     * Run motors control task
-     */
-    FLAG_TASK_MOTORS = 1; //Start OC1Interrupt for PID control
-    /**
-     * Blink controller for all leds
-     */
-    for (led_counter = 0; led_counter < LED_NUM; led_counter++) {
-        if (led_controller[led_counter].number_blink > LED_OFF)
-            BlinkController(&led_controller[led_counter]);
-    }
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    if (ICinfo[MOTOR_ZERO].timePeriod)
-        ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for Left engines
-    if (ICinfo[MOTOR_ONE].timePeriod)
-        ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for Right engines
-}
-
-void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
-    motor_process[PROCESS_VELOCITY].time = MotorTaskController();
-    FLAG_TASK_MOTORS = 0; // interrupt flag reset
-}
-
-void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
-    default_process[PROCESS_PARSE].time = parse_packet();
-    PARSER_FLAG = 0; //interrupt flag reset
-}
-
-void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
-    //Will be added in feature #39
-    //time.process[PROCESS_MEASURE_VEL] = measureVelocity(REF_MOTOR_LEFT);
-    //time.process[PROCESS_MEASURE_VEL] += measureVelocity(REF_MOTOR_RIGHT);
-    MEASURE_FLAG = 0;
-}
-
-void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
-    HighLevelTaskController();
-    FLAG_TASK_HIGH_LEVEL = 0; //interrupt flag reset
-}
-
-unsigned int ReadUART1(void) {
-    if (U1MODEbits.PDSEL == 3)
-        return (U1RXREG);
-    else
-        return (U1RXREG & 0xFF);
-}
-
-void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
-    IFS0bits.U1RXIF = 0; // clear RX interrupt flag
-
-    /* get the data */
-    if (U1STAbits.URXDA == 1) {
-        if (decode_pkgs(ReadUART1())) {
-            PARSER_FLAG = 1; //if correct packet parse command start interrupt flag
-        }
-    } else {
-        /* check for receive errors */
-        if (U1STAbits.FERR == 1) {
-            pkg_error(ERROR_FRAMMING);
-        }
-        /* must clear the overrun error to keep uart receiving */
-        if (U1STAbits.OERR == 1) {
-            U1STAbits.OERR = 0;
-            pkg_error(ERROR_OVERRUN);
-        }
-    }
-}
-
-void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
-    IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
-    adc_motors_current(); // Esecution mean value for current motors
-}
-
-void __attribute__((interrupt, auto_psv)) _DMA1Interrupt(void) {
-    IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
+    ICinfo[MOTOR_ZERO].overTmr++; // timer overflow counter for first motor
+    ICinfo[MOTOR_ONE].overTmr++; // timer overflow counter for second motor
 }

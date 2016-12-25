@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Officine Robotiche
+ * Copyright (C) 2015 Officine Robotiche
  * Author: Raffaello Bonghi
  * email:  raffaello.bonghi@officinerobotiche.it
  * Permission is granted to copy, distribute, and/or modify this program
@@ -13,37 +13,41 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
-#ifndef PARSING_OTHER_MESSAGES_H
-#define	PARSING_OTHER_MESSAGES_H
+#ifndef SYSTEM_COMM_H
+#define	SYSTEM_COMM_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    /**
-     * Similar to saveData (in parsing_mesages.h) this function save messages
-     * from packet recived.
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    void saveOtherData(packet_information_t* list_send, size_t len, packet_information_t* info);
+#include <or_bus/or_frame.h>
 
     /**
-     * Similar to sendData (in parsing_messages.h) this function send messages
-     * about unav board.
+     * Save for all standard messages the data in tail and save in controller.
+     * Others messages, typical for this board are saved with function
+     * save_other_data in file parsing_other_messages.h
      * @param list_send a pointer to buffer to save information from board
      * @param len length of list_send list
      * @param info message to parsing
      */
-    void sendOtherData(packet_information_t* list_send, size_t len, packet_information_t* info);
+    packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+
+    /**
+     * Send for all standard messages the data. The information are saved
+     * in a information_packet_t by functions createPacket and createDataPacket
+     * in tail of this file.
+     * @param list_send a pointer to buffer to save information from board
+     * @param len length of list_send list
+     * @param info message to parsing
+     */
+    packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* PARSING_OTHER_MESSAGES_H */
+#endif	/* SYSTEM_COMM_H */
 

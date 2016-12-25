@@ -19,27 +19,31 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>             /* Device header file */
 
 #include <stdint.h>        /* Includes uint16_t definition                    */
 #include <stdbool.h>       /* Includes true/false definition                  */
 
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
-#include "system/user.h"   /* User funct/params, such as InitApp              */
+#include "system/system_comm.h"
+
+#include "system/peripherals.h"
+#include "system/peripherals_comm.h"
+
+#include "communication/I2c.h"
+#include <peripherals/i2c/i2c.h>
+
 #include "communication/serial.h"
-#include "communication/parsing_messages.h"
-#include "control/motors/init.h"
-#include "control/motors/motors.h"
-#include "control/high_level_control.h"
+
+#include "motors/motor_init.h"
+#include "motors/motor_control.h"
+#include "motors/motor_comm.h"
+
+#include "high_control/manager.h"
+#include "high_control/high_comm.h"
+
+// high level include
+#include "high_control/cartesian.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
@@ -57,7 +61,7 @@
  * Some interrupts are managed directly by the hardware peripherals or through
  * the DMA, other are used as "soft interrupts" triggered by the code.
  * In this way it's possible to define the priority for each function, even
- * dinamically, optimizing the resources at most. A slow procedure can be
+ * dynamically, optimizing the resources at most. A slow procedure can be
  * interrupted by time-critical one performing a true real-time behavior.
  *
  * Let's analyzing in detail the ISRs
@@ -76,50 +80,46 @@
  * - RTC triggers the dead-reckoning procedures.
  * @return type of error
  */
-
 int16_t main(void) {
-    int i;
-    /* Configure the oscillator for the device */
-    ConfigureOscillator();
+    /** INITIALIZATION Operative System **/
+    ConfigureOscillator();  ///< Configure the oscillator for the device
+    InitEvents();           ///< Initialize processes controller
+    InitTimer1();           ///< Open Timer1 for clock system
+    
+    Peripherals_Init();     ///< Initialize IO ports and peripherals
+    InitLEDs();             ///< Initialization LEDs
+    
+    /* Peripherals initialization */
+    InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
+    
+    /* I2C CONFIGURATION */
+    Init_I2C();     ///< Open I2C module
+    EEPROM_init(20);  ///< Launch the EEPROM controller
+    
+    /** SERIAL CONFIGURATION **/
+    SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
+    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system); ///< Initialize parsing reader
+    set_frame_reader(HASHMAP_PERIPHERALS, &send_frame_gpio, &save_frame_gpio); ///< Initialize parsing reader
+    
+    /*** MOTOR INITIALIZATION ***/
+    Motor_Init();
+    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);  ///< Initialize communication
+    
+    /** HIGH LEVEL INITIALIZATION **/
+    /// Initialize variables for unicycle 
+    update_motion_parameter_unicycle(init_motion_parameter_unicycle());
+    /// Initialize dead reckoning
+    update_motion_coordinate(init_motion_coordinate());
+    /// Initialize motion parameters and controller
+    HighControl_Init();
+    /// Initialize communication
+    set_frame_reader(HASHMAP_DIFF_DRIVE, &send_frame_motion, &save_frame_motion);
+    
+    /* LOAD high level task */
+    //add_task(false, &init_cartesian, &loop_cartesian);
+           
+   while (true) {
+   }
 
-    /* Initialize hashmap packet */
-    init_hashmap();
-    /* Initialize buffer serial error */
-    init_buff_serial_error();
-    /* Initialize processes controller */
-    init_process();
-    /* Initialize IO ports and peripherals */
-    InitApp();
-
-    /* Open PWM */
-    InitPWM();
-    for (i = 0; i < NUM_MOTORS; ++i) {
-        /* Open QEI */
-        InitQEI(i);
-        /* Open Input Capture */
-        InitIC(i);
-        /* Initialize variables for motors */
-        init_motor(i);
-        /* Initialize parameters for motors */
-        update_motor_parameters(i, init_motor_parameters());
-        /* Initialize pid controllers */
-        update_motor_pid(i, init_motor_pid());
-        /* Initialize emergency procedure to stop */
-        update_motor_emergency(i, init_motor_emergency());
-        /* Initialize constraints motor */
-        update_motor_constraints(i, init_motor_constraints());
-        /* Init state controller */
-        set_motor_state(i, STATE_CONTROL_DISABLE);
-    }
-
-    /* Initialize variables for unicycle */
-    init_parameter_unicycle();
-    /* Initialize dead reckoning */
-    init_coordinate();
-
-    while (1) {
-
-    }
-
-    return 1;
+    return 0;
 }

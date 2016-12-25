@@ -15,41 +15,21 @@
  * Public License for more details
  */
 
-#ifndef INIT_H
-#define	INIT_H
+#ifndef CARTESIAN_H
+#define	CARTESIAN_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-    /** 
-     * Initialization PWM for all motors
-     */
-    void InitPWM(void);
+void init_cartesian (motor_state_t* state);
 
-    /** 
-     * Initialization QEI motors
-     * @param motIdx number motor
-     */
-    void InitQEI(short motIdx);
-    
-    /** 
-     * Safely switch to the new Input Capture prescaler
-     * @param mode
-     * @param motIdx number motor
-     */
-    void SwitchIcPrescaler(int mode, int motIdx);
-
-    /** 
-     * Initialization Input Capture motors
-     * @param motIdx number motor
-     */
-    void InitIC(short motIdx);
+diff_drive_velocity_t loop_cartesian (diff_drive_velocity_t* measure, diff_drive_coordinate_t* coordinate);
 
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* INIT_H */
+#endif	/* CARTESIAN_H */
 

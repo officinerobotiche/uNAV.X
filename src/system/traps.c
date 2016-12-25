@@ -19,21 +19,13 @@
 /* Files to Include                                                           */
 /******************************************************************************/
 
-/* Device header file */
-#if defined(__XC16__)
-#include <xc.h>
-#elif defined(__C30__)
-#if defined(__dsPIC33E__)
-#include <p33Exxxx.h>
-#elif defined(__dsPIC33F__)
-#include <p33Fxxxx.h>
-#endif
-#endif
+#include <xc.h>             /* Device header file */
 
 #include <stdint.h>        /* Includes uint16_t definition */
 #include <stdbool.h>       /* Includes true/false definition */
 #include <libpic30.h>      /* Includes for delay definition */
-#include "system/user.h"   /* User funct/params, such as InitApp */
+
+#include "system/peripherals.h"
 
 /******************************************************************************/
 /* Trap Function Prototypes                                                   */
@@ -109,9 +101,18 @@ void __attribute__((interrupt, no_auto_psv)) _SoftTrapError(void);
  *
  */
 
+void disable_routine()
+{
+    // Disable PWM
+    PTCONbits.PTEN = 0;
+}
+
 /* Primary (non-alternate) address error trap function declarations */
 void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
     INTCON1bits.OSCFAIL = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(200000); // delay of 8 MHz RC oscillator
@@ -130,6 +131,9 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
     INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -148,6 +152,9 @@ void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
     INTCON1bits.STKERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -166,6 +173,9 @@ void __attribute__((interrupt, no_auto_psv)) _StackError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
     INTCON1bits.MATHERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -186,6 +196,9 @@ void __attribute__((interrupt, no_auto_psv)) _MathError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
     INTCON1bits.DMACERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -209,6 +222,9 @@ void __attribute__((interrupt, no_auto_psv)) _DMACError(void) {
 /* Alternate address error trap function declarations */
 void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
     INTCON1bits.OSCFAIL = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -227,6 +243,9 @@ void __attribute__((interrupt, no_auto_psv)) _AltOscillatorFail(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
     INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -245,6 +264,9 @@ void __attribute__((interrupt, no_auto_psv)) _AltAddressError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
     INTCON1bits.STKERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -263,6 +285,9 @@ void __attribute__((interrupt, no_auto_psv)) _AltStackError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
     INTCON1bits.MATHERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -283,6 +308,9 @@ void __attribute__((interrupt, no_auto_psv)) _AltMathError(void) {
 
 void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
     INTCON1bits.DMACERR = 0; /* Clear the trap flag */
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);
@@ -311,6 +339,9 @@ void __attribute__((interrupt, no_auto_psv)) _AltDMACError(void) {
 
 /******************************************************************************/
 void __attribute__((interrupt, no_auto_psv)) _DefaultInterrupt(void) {
+    // Disable all peripheral enabled    
+    disable_routine();
+    // LED blink error
     while (1) {
         LED1_BIT = 1;
         __delay32(2000000);

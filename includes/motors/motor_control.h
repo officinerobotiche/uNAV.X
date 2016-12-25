@@ -15,17 +15,35 @@
  * Public License for more details
  */
 
-#ifndef MOTORS_H
-#define	MOTORS_H
+#ifndef MOTOR_CONTROL_H
+#define	MOTOR_CONTROL_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
+    #include <stdint.h>
+    #include <stdbool.h>
+    #include <string.h>
+    #include <dsp.h>
+
+    #include <system/task_manager.h>
+    #include <peripherals/gpio.h>
+
+    #include "system/peripherals.h"
+    
     /**************************************************************************/
     /* System Level #define Macros                                            */
     /**************************************************************************/
 
+    /**** RUN THE CURRENT CONTROL IN ADC LOOP *****/
+    #define CURRENT_CONTROL_IN_ADC_LOOP
+    /**********************************************/
+    
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
+#define CURRENT_ADC_LOOP_FRQ 33200
+#endif
+    
     /**
      * Numbers of motors available in this board
      */
@@ -44,11 +62,27 @@ extern "C" {
 #define RIGHT_PROCESS_MEASURE 4
 #define RIGHT_PROCESS_MEASURE_STRING "Right/Meas"
     
+    typedef enum {
+        CONTROL_SAFETY = -2,        ///< Motor disabled for high current
+        CONTROL_EMERGENCY = -1,     ///< Motor slow down to zero speed, then the bridge is turned off
+        CONTROL_DISABLE = 0,        ///< Motor disabled
+        CONTROL_POSITION = 1,       ///< Motor controlled in position
+        CONTROL_VELOCITY = 2,       ///< Motor controlled in velocity
+        CONTROL_CURRENT = 3,        ///< Motor controller in torque
+        CONTROL_DIRECT = 4,         ///< Motor controlled using direct PWM signals
+    } enum_state_t;
+    
     typedef struct _ICdata {
-        volatile unsigned int overTmr; //Overflow timer
-        volatile unsigned long timePeriod; //Time period from Input Capture
-        volatile int SIG_VEL; //Sign of versus rotation motor
+        volatile unsigned int delta;
+        volatile unsigned int k_mul;        // k_vel multiplier according to IC scale
+        volatile unsigned int overTmr;      //Overflow timer
+        volatile unsigned int oldTime;      //Old time stored
+        volatile unsigned long timePeriod;  //Time period from Input Capture
+        volatile int SIG_VEL;               //Sign of versus rotation motor
+        volatile unsigned short number;       //Mode of Input Capture
     } ICdata;
+    
+    typedef void (*event_prescaler_t)(int motIdx);
 
     /******************************************************************************/
     /* System Function Prototypes                                                 */
@@ -57,8 +91,13 @@ extern "C" {
     /**
      * Initialization all variables for motor controller.
      * @param motIdx Number motor
+     * @param enable_ GPIO for enable
+     * @param ICinfo_ Input capture information
+     * @param current_ Analog pin number for current
+     * @param voltage_ Analog pin number for temperature
+     * @return task to run the MotorControlManager
      */
-    void init_motor(short motIdx);
+    hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
     
     /**
      * Initialization parameters for motor controller.
@@ -94,33 +133,23 @@ extern "C" {
      * @param constraint constraints set
      */
     void update_motor_constraints(short motIdx, motor_t constraints);
-    
-    /**
-     * Initialization standard value for PID controllers
-     * @return Default configuration
-     */
-    motor_pid_t init_motor_pid();
     /**
      * Return value of PID controller
      * @param motIdx number of motor
+     * @param type type of controller (position, velocity, current)
      * @return value PID
      */
-    inline motor_pid_t get_motor_pid(short motIdx);
+    inline motor_pid_t get_motor_pid(short motIdx, motor_state_t state);
     /**
      * Transform float value received from gain for PID right in Q15 value
      * for dsp controller.
      * @param motIdx Number motor
-     * @param pid update pid for:
-     *        PID data structure: PIDstruct for PID 1 (Motor left)
-     *        PID data structure: PIDstruct for PID 1 (Motor right)
+     * @param type type of controller (position, velocity, current)
+     * @param pid update data for PID controller 
+     * @return return true if the PID gains are correctly stored
      */
-    void update_motor_pid(short motIdx, motor_pid_t pid);
-
-    /**
-     * Initialization standard value for emergency configuration motor
-     * @return default configuration for emergency stop
-     */
-    motor_emergency_t init_motor_emergency();
+    bool update_motor_pid(short motIdx, motor_state_t state, motor_pid_t pid);
+    
     /**
      * Return emergency parameters from motor
      * @param motIdx number selected motor
@@ -133,13 +162,35 @@ extern "C" {
      * @param emergency configuration to save
      */
     void update_motor_emergency(short motIdx, motor_emergency_t emergency);
-    
+    /**
+     * Return motor safety state
+     * @param motIdx Number motor
+     */
+    inline motor_safety_t get_motor_safety(short motIdx);
+    /**
+     * Update counter and max value to start safety control
+     * @param motIdx Number motor
+     */
+    void update_motor_safety(short motIdx, motor_safety_t safety);
     /**
      * Return information about state motor, torque velocity position.
      * @param motIdx number of motor
      * @return return information about motor
      */
     inline motor_t get_motor_measures(short motIdx);
+    
+    /**
+     * Return the control output from all levels (Position, velocity, current)
+     * @param motIdx number of motor
+     * @return return information about motor
+     */
+    inline motor_t get_motor_control(short motIdx);
+    /**
+     * Return information about diagnostic, current, temperature, etc etc.
+     * @param motIdx number of motor
+     * @return return diagnostic information about motor
+     */
+    inline motor_diagnostic_t get_motor_diagnostic(short motIdx);
     /**
      * Return information about motor reference of control.
      * @param motIdx number of motor
@@ -157,9 +208,8 @@ extern "C" {
      * reference to control constraint.
      * @param motIdx Number motor
      * @param reference reference of velocity
-     * @return Time to compute this function
      */
-    int set_motor_velocity(short motIdx, motor_control_t reference);
+    void set_motor_reference(short motIdx, motor_state_t state, motor_control_t reference);
 
     /**
      * Return state of motor
@@ -175,24 +225,22 @@ extern "C" {
     void set_motor_state(short motIdx, motor_state_t motor);
 
     /**
+     * Check the size of the value and return a value available for the DSP
+     * @param value
+     * @param constraint
+     * @return 
+     */
+    inline __attribute__((always_inline)) int castToDSP(motor_control_t value, motor_control_t constraint, volatile fractional *saturation);
+    
+    void CurrentControl(short motIdx, int current, int voltage);
+    /**
      * Convert and check reference for type of law control selected. We have
      * four principal type of control motor:
      *  - Direct control (write direct PWM)
      *  - Position control (move to desired angle)
      *  - Velocity control (move to desired angular velocity)
      *  - Torque control (move to desired torque)
-     * @return Time to Compute task control reference
-     */
-    int MotorTaskController(void);
-
-    /**
-     * Measure velocity from Input Capture and QEI
-     * @param motIdx Number motor
-     * @return Time to Compute task control reference
-     */
-    int measureVelocity(short motIdx);
-    
-    /**
+     * 
      * Execution velocity PID for left motor
      *           _____          _______
      * ref +    |     |  cont  |       |
@@ -206,25 +254,44 @@ extern "C" {
      * information is important for odometry)
      * 2. Load data (reference, measure) and execution PID control and get value
      * 3. Conversion PID value for PWM controller
-     * @param motIdx Number motor
-     * @return time to compute parsing packet
      */
-    int MotorPID(short motIdx);
+    void MotorTaskController(int argc, int *argv);
+
+    /**
+     * Measure velocity from Input Capture and QEI
+     * @param motIdx Number motor
+     */
+    int32_t measureVelocity(short motIdx);
+    
+    /**
+     * Send the duty cycle to the PWM and send information about the command error.
+     * @param motIdx Number motor
+     * @param duty_cycle value of the duty cycle
+     * @return Return the error from the required duty cycle and real duty-cycle send
+     */
+    inline int Motor_PWM(short motIdx, int duty_cycle);
     
     /**
      * If not receive anything velocity messages. Start controlled stop motors
      * @param motIdx Number motor
      * @return start emergency mode or not.
      */
-    bool Emergency(short motIdx);
-
+    void Emergency(int argc, int *argv);
+    
     /**
-     * Mean value for current measure motors
+     * Restore safety control with stop safety task and clear timer
+     * @param motIdx Number motor
      */
-    void adc_motors_current(void);
+    void restore_safety_control(short motIdx);
+    /**
+     * task control when the motor is in safety condition
+     * @param argc
+     * @param argv
+     */
+    void Safety(int argc, int *argv);
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* MOTORS_H */
+#endif	/* MOTOR_CONTROL_H */
