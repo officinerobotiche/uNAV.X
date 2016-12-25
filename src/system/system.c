@@ -26,8 +26,8 @@
 #include <pwm12.h>
 #include <string.h>
 
-#include <system/events.h>
-#include <system/task_manager.h>
+#include <or_system/events.h>
+#include <or_system/task_manager.h>
 
 #include "system/system.h"   /* variables/params used by system.c             */
 #include "communication/serial.h"

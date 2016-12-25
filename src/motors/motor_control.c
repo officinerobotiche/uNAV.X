@@ -26,9 +26,9 @@
 #include <dsp.h>
 #include <pwm12.h>
 
-#include <peripherals/gpio.h>
-#include <system/task_manager.h>
-#include <system/soft_timer.h>
+#include <or_peripherals/GPIO/gpio.h>
+#include <or_system/task_manager.h>
+#include <or_system/soft_timer.h>
 
 #include <or_math/math.h>
 #include <or_math/statistics.h>

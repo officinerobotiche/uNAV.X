@@ -21,7 +21,7 @@
 
 #include <xc.h>                 /* Device header file */
 
-#include <system/events.h>
+#include <or_system/events.h>
 
 #include "communication/serial.h"
 

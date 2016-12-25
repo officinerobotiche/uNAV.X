@@ -29,8 +29,8 @@
 
 #include "system/system.h"
 
-#include <peripherals/gpio.h>
-#include <system/task_manager.h>
+#include <or_peripherals/GPIO/gpio.h>
+#include <or_system/task_manager.h>
 
 #include "high_control/manager.h"
 #include "motors/motor_control.h"

@@ -27,7 +27,7 @@
 #include "communication/serial.h"
 
 //TEMP
-#include <peripherals/gpio.h>
+#include <or_peripherals/GPIO/gpio.h>
 
 //Split motor and command
 peripheral_gpio_map_t peripheral;

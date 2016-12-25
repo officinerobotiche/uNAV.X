@@ -27,8 +27,8 @@ extern "C" {
     #include <string.h>
     #include <dsp.h>
 
-    #include <system/task_manager.h>
-    #include <peripherals/gpio.h>
+    #include <or_system/task_manager.h>
+    #include <or_peripherals/GPIO/gpio.h>
 
     #include "system/peripherals.h"
     

@@ -31,7 +31,7 @@
 #include "system/peripherals_comm.h"
 
 #include "communication/I2c.h"
-#include <peripherals/i2c/i2c.h>
+#include <or_peripherals/I2C/eeprom.h>
 
 #include "communication/serial.h"
 
