@@ -53,25 +53,15 @@ const unsigned char _BOARD_NAME[] = "RoboController";
 const unsigned char _BOARD_NAME[] = "Motion Control";
 #endif
 
-#define EVENT_PRIORITY_LOW_ENABLE IEC3bits.RTCIE
-#define EVENT_PRIORITY_LOW_FLAG IFS3bits.RTCIF
-#define EVENT_PRIORITY_LOW_P IPC15bits.RTCIP
-hardware_bit_t RTCIF = REGISTER_INIT(IFS3, 14);
+#define EVENT_PRIORITY_VERY_LOW_P IPC15bits.RTCIP
+const interrupt_controller_t RTC_IT = EVENT_INTERRUPT_INIT(IFS3, 14, IEC3, 14);
+#define EVENT_PRIORITY_LOW_P IPC0bits.OC1IP
+const interrupt_controller_t OC1_IT = EVENT_INTERRUPT_INIT(IFS0, 2, IEC0, 2);
+#define EVENT_PRIORITY_MEDIUM_P IPC1bits.OC2IP
+const interrupt_controller_t OC2_IT = EVENT_INTERRUPT_INIT(IFS0, 6, IEC0, 6);
+#define EVENT_PRIORITY_HIGH_P IPC6bits.OC3IP
+const interrupt_controller_t OC3_IT = EVENT_INTERRUPT_INIT(IFS1, 9, IEC1, 9);
 
-#define EVENT_PRIORITY_MEDIUM_ENABLE IEC0bits.OC1IE
-#define EVENT_PRIORITY_MEDIUM_FLAG IFS0bits.OC1IF
-#define EVENT_PRIORITY_MEDIUM_P IPC0bits.OC1IP
-hardware_bit_t OC1IF = REGISTER_INIT(IFS0, 2);
-
-#define EVENT_PRIORITY_HIGH_ENABLE IEC0bits.OC2IE
-#define EVENT_PRIORITY_HIGH_FLAG IFS0bits.OC2IF
-#define EVENT_PRIORITY_HIGH_P IPC1bits.OC2IP
-hardware_bit_t OC2IF = REGISTER_INIT(IFS0, 6);
-
-#define EVENT_PRIORITY_VERY_LOW_ENABLE IEC1bits.OC3IE
-#define EVENT_PRIORITY_VERY_LOW_FLAG IFS1bits.OC3IF
-#define EVENT_PRIORITY_VERY_LOW_P IPC6bits.OC3IP
-hardware_bit_t OC3IF = REGISTER_INIT(IFS1, 9);
 
 uint32_t adc_time;
 hEvent_t system_events[NUM_SYSTEM_EVENTS];
@@ -99,25 +89,14 @@ void InitEvents(void) {
     /// Register event controller
     init_events(&TMR1, &PR1, FOSC, 6);
     
-    EVENT_PRIORITY_VERY_LOW_ENABLE = 0;
     EVENT_PRIORITY_VERY_LOW_P = EVENT_PRIORITY_VERY_LOW_LEVEL;
-    register_interrupt(EVENT_PRIORITY_VERY_LOW, &RTCIF);
-    EVENT_PRIORITY_VERY_LOW_ENABLE = 1;
-    
-    EVENT_PRIORITY_LOW_ENABLE = 0;
+    register_interrupt(EVENT_PRIORITY_VERY_LOW, &RTC_IT);
     EVENT_PRIORITY_LOW_P = EVENT_PRIORITY_LOW_LEVEL;
-    register_interrupt(EVENT_PRIORITY_LOW, &RTCIF);
-    EVENT_PRIORITY_LOW_ENABLE = 1;
-    
-    EVENT_PRIORITY_MEDIUM_ENABLE = 0;
+    register_interrupt(EVENT_PRIORITY_LOW, &RTC_IT);
     EVENT_PRIORITY_MEDIUM_P = EVENT_PRIORITY_MEDIUM_LEVEL;
-    register_interrupt(EVENT_PRIORITY_MEDIUM, &OC1IF);
-    EVENT_PRIORITY_MEDIUM_ENABLE = 1;
-    
-    EVENT_PRIORITY_HIGH_ENABLE = 0;
+    register_interrupt(EVENT_PRIORITY_MEDIUM, &OC1_IT);
     EVENT_PRIORITY_HIGH_P = EVENT_PRIORITY_HIGH_LEVEL;
-    register_interrupt(EVENT_PRIORITY_HIGH, &OC2IF);
-    EVENT_PRIORITY_HIGH_ENABLE = 1;
+    register_interrupt(EVENT_PRIORITY_HIGH, &OC2_IT);
     
     adc_time = 0;
     /// Initialization task controller
@@ -125,23 +104,16 @@ void InitEvents(void) {
 }
 
 void __attribute__((interrupt, auto_psv)) _RTCCInterrupt(void) {
-    event_manager(EVENT_PRIORITY_LOW);
-    EVENT_PRIORITY_LOW_FLAG = 0; //interrupt flag reset
-}
-
-void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
-    event_manager(EVENT_PRIORITY_MEDIUM);
-    EVENT_PRIORITY_MEDIUM_FLAG = 0; // interrupt flag reset
-}
-
-void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
-    event_manager(EVENT_PRIORITY_HIGH);
-    EVENT_PRIORITY_HIGH_FLAG = 0; //interrupt flag reset
-}
-
-void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
     event_manager(EVENT_PRIORITY_VERY_LOW);
-    EVENT_PRIORITY_VERY_LOW_FLAG = 0;
+}
+void __attribute__((interrupt, auto_psv)) _OC1Interrupt(void) {
+    event_manager(EVENT_PRIORITY_LOW);
+}
+void __attribute__((interrupt, auto_psv)) _OC2Interrupt(void) {
+    event_manager(EVENT_PRIORITY_MEDIUM);
+}
+void __attribute__((interrupt, auto_psv)) _OC3Interrupt(void) {
+    event_manager(EVENT_PRIORITY_HIGH);
 }
 
 void InitTimer1(void) {
