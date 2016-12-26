@@ -23,21 +23,13 @@
 
 #include <or_math/math.h>
 #include <or_math/statistics.h>
-#include <or_peripherals/led.h>
+#include <or_peripherals/GPIO/led.h>
 #include <or_peripherals/GPIO/adc.h>
 
 #include "system/peripherals.h"
 #include "system/system.h"
 
 #include "motors/motor_control.h"
-
-//#define ADC_HIGH_FREQ
-
-#ifdef ADC_HIGH_FREQ
-#define ADC_BUFF 8
-#else
-#define ADC_BUFF 16
-#endif
 
 // Test pin to check frequency of the code
 //#define TEST_PIN // PIN RC3
@@ -52,7 +44,7 @@ unsigned int AdcBufferB[ADC_BUFF] __attribute__((space(dma), aligned(ADC_BUFF*2)
 
 #ifdef UNAV_V1
 // Initialization LED on uNAV
-led_control_t led_controller[] = {
+LED_t leds[] = {
     GPIO_LED(C, 6), // Led 1 Green
     GPIO_LED(C, 7), // Led 2 Red
     GPIO_LED(C, 8), // Led 3 Yellow
@@ -74,7 +66,7 @@ gpio_t portB[] = {
 #define NUM_GPIO (sizeof(portB) / ( sizeof(portB[0])))
 #elif ROBOCONTROLLER_V3
 // Initialization LED on RoboController
-led_control_t led_controller[] = {
+LED_t leds[] = {
     GPIO_LED(A, 8), // Led 1 green
     GPIO_LED(A, 9), // Led 2 green
 };
@@ -91,7 +83,7 @@ gpio_t portB[] = {
 #define NUM_GPIO (sizeof(portB) / ( sizeof(portB[0])))
 #elif MOTION_CONTROL
 // Initialization LED on motion control
-led_control_t led_controller[] = {
+LED_t leds[] = {
     GPIO_LED(A, 4), // Led Blue
 };
 gpio_t portB[] = {};
@@ -99,8 +91,9 @@ gpio_t portB[] = {};
 #define NUM_GPIO 0
 #endif
 /// Number of available LEDs
-#define LED_NUM (sizeof(led_controller) / ( sizeof(led_controller[0])))
-
+#define LED_NUM (sizeof(leds) / ( sizeof(leds[0])))
+// Initialization LED controller
+LED_controller_t LED_CONTROLLER = LED_CONTROLLER(leds, LED_NUM, 1000);
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -310,7 +303,7 @@ void Peripherals_Init(void) {
     // Initialize portB
     gpio_init_port(&portB[0], NUM_GPIO);
     // Initialization LED
-    LED_Init(1000, &led_controller[0], LED_NUM);
+    LED_Init(&LED_CONTROLLER);
     
 #ifdef TEST_PIN
     TRISCbits.TRISC3 = 0;
@@ -318,7 +311,7 @@ void Peripherals_Init(void) {
 }
 
 inline void UpdateBlink(short num, short blink) {
-    LED_updateBlink(led_controller, num, blink);
+    LED_updateBlink(&LED_CONTROLLER, num, blink);
 }
 
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {

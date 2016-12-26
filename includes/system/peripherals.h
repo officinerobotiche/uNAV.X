@@ -21,6 +21,14 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
+    
+//#define ADC_HIGH_FREQ
+
+#ifdef ADC_HIGH_FREQ
+#define ADC_BUFF 8
+#else
+#define ADC_BUFF 16
+#endif
 
     /**
      * I/O and Peripheral Initialization

@@ -50,6 +50,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_kernel_c.X library        -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_kernel_c.X/
+git branch feature/new_kernel
 /opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../
@@ -61,6 +62,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_commont_c.X library       -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_common_c.X/
+git branch feature/new_kernel
 /opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../

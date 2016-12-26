@@ -235,8 +235,7 @@ hTask_t init_motor(const short motIdx, gpio_adc_t *adc, size_t adc_size, const g
     gpio_init_pin(motors[motIdx].pin_enable);
     /// Setup ADC current and temperature
     motors[motIdx].adc = adc;
-    hADCEvent_t adcEvent = gpio_adc_register(adc, adc_size, &ADC_callback, &motors[motIdx]);
-    gpio_adc_enable(adcEvent, true);
+    gpio_adc_register(adc, adc_size, &ADC_callback, &motors[motIdx]);
     // Initialize mean buffer
     init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
