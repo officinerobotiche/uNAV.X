@@ -26,7 +26,6 @@
 #include <dsp.h>
 #include <pwm12.h>
 
-#include <or_peripherals/GPIO/gpio.h>
 #include <or_system/task_manager.h>
 #include <or_system/soft_timer.h>
 
@@ -108,11 +107,12 @@ typedef struct _pid_control {
  * Use ONLY in firmware
  */
 typedef struct _motor_firmware {
+    unsigned int index;
     // Information for Input Capture
     ICdata* ICinfo;
     // Enable pin for H-bridge
     gpio_t* pin_enable;
-    int pin_current, pin_voltage;
+    gpio_adc_t *adc;
     event_prescaler_t prescaler_callback;
     // Frequency manager;
     frequency_t manager_freq;
@@ -167,6 +167,8 @@ typedef struct _motor_firmware {
 } motor_firmware_t;
 motor_firmware_t motors[NUM_MOTORS];
 
+inline void ADC_callback(void* obj);
+
 /*****************************************************************************/
 /* User Functions                                                            */
 /*****************************************************************************/
@@ -200,7 +202,8 @@ void initialize_controllers(short motIdx) {
     }
 }
 
-hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_) {
+hTask_t init_motor(const short motIdx, gpio_adc_t *adc, size_t adc_size, const gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event) {
+    motors[motIdx].index = motIdx;
     reset_motor_data(&motors[motIdx].measure);
     reset_motor_data(&motors[motIdx].reference);
     reset_motor_data(&motors[motIdx].controlOut);
@@ -228,12 +231,13 @@ hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_p
     // Register input capture
     motors[motIdx].ICinfo = ICinfo_;
     /// Setup bit enable
-    motors[motIdx].pin_enable = enable_;
-    gpio_register(motors[motIdx].pin_enable);
+    motors[motIdx].pin_enable = (gpio_t*) enable_;
+    gpio_init_pin(motors[motIdx].pin_enable);
     /// Setup ADC current and temperature
-    motors[motIdx].pin_current = current_;
-    motors[motIdx].pin_voltage = voltage_;
-    // Init mean buffer
+    motors[motIdx].adc = adc;
+    hADCEvent_t adcEvent = gpio_adc_register(adc, adc_size, &ADC_callback, &motors[motIdx]);
+    gpio_adc_enable(adcEvent, true);
+    // Initialize mean buffer
     init_statistic_buffer(&motors[motIdx].mean_vel);
     /// Register event and add in task controller - Working at 1KHz
     motors[motIdx].motor_manager_event = register_event_p(&MotorTaskController, EVENT_PRIORITY_MEDIUM);
@@ -489,9 +493,9 @@ void set_motor_state(short motIdx, motor_state_t state) {
     /// Set enable or disable motors
     motors[motIdx].state = state;
     if(enable == (motors[motIdx].parameter_motor.bridge.enable == MOTOR_ENABLE_LOW)) {
-        REGISTER_MASK_SET_HIGH(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
+        gpio_set_pin(motors[motIdx].pin_enable, GPIO_HIGH);
     } else {
-        REGISTER_MASK_SET_LOW(motors[motIdx].pin_enable->CS_PORT, motors[motIdx].pin_enable->CS_mask);
+        gpio_set_pin(motors[motIdx].pin_enable, GPIO_LOW);
     }
     
     // Store last velocity if run some error mode
@@ -558,52 +562,29 @@ inline int __attribute__((always_inline)) control_velocity(short motIdx, motor_c
 #undef CONTROLLER_VEL
 }
 
-inline int __attribute__((always_inline)) control_current(short motIdx, motor_control_t reference, volatile fractional saturation) {
+inline void __attribute__((always_inline)) ADC_callback(void* obj) {
+    motor_firmware_t *motor = (motor_firmware_t*) &obj;
 #define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
-    // Set reference
-    motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference = castToDSP(reference, motors[motIdx].constraint.current, &motors[motIdx].controller[CONTROLLER_CURR].saturation);
-    motors[motIdx].reference.current = motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlReference;
-    // Set measure        
-    if(motors[motIdx].measure.current > INT16_MAX) {
-        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
-    } else if(motors[motIdx].measure.current < INT16_MIN) {
-        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
-    } else {
-        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motors[motIdx].measure.current;
-    }
-    // Add anti wind up saturation from PWM
-    // Add coefficient K_back calculation for anti wind up
-    motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
-            motors[motIdx].controller[CONTROLLER_CURR].k_aw * saturation;
-    // PID execution
-    PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
-    // Get Output
-    return motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput;
-#undef CONTROLLER_CURR
-}
-
-inline void __attribute__((always_inline)) CurrentControl(short motIdx, int current, int voltage) {
-#define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
-    motors[motIdx].measure.current = - motors[motIdx].current.gain * current + motors[motIdx].current.offset;
-    motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * voltage + motors[motIdx].volt.offset;
-
-    if(motors[motIdx].controller[CONTROLLER_CURR].enable) {
+    motor->measure.current = - motor->current.gain * motor->adc[0].value + motor->current.offset;
+    motor->diagnostic.volt = motor->volt.gain * motor->adc[1].value + motor->volt.offset;
+    
+    if(motor->controller[CONTROLLER_CURR].enable) {
         // Set measure        
-        if(motors[motIdx].measure.current > INT16_MAX) {
-            motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
-        } else if(motors[motIdx].measure.current < INT16_MIN) {
-            motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
+        if(motor->measure.current > INT16_MAX) {
+            motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
+        } else if(motor->measure.current < INT16_MIN) {
+            motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
         } else {
-            motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motors[motIdx].measure.current;
+            motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motor->measure.current;
         }
         // Add anti wind up saturation from PWM
         // Add coefficient K_back calculation for anti wind up
-        motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
-                motors[motIdx].controller[CONTROLLER_CURR].k_aw * motors[motIdx].pwm_saturation;
+        motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
+                motor->controller[CONTROLLER_CURR].k_aw * motor->pwm_saturation;
         // PID execution
-        PID(&motors[motIdx].controller[CONTROLLER_CURR].PIDstruct);
+        PID(&motor->controller[CONTROLLER_CURR].PIDstruct);
         // Set Output        
-        motors[motIdx].pwm_saturation = Motor_PWM(motIdx, motors[motIdx].controller[CONTROLLER_CURR].PIDstruct.controlOutput);
+        motor->pwm_saturation = Motor_PWM(motor->index, motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput);
     }
 #undef CONTROLLER_CURR
 }
@@ -702,27 +683,6 @@ void MotorTaskController(int argc, int *argv) {
         }
         // =======================================
 
-#ifndef CURRENT_CONTROL_IN_ADC_LOOP
-        // ========= CONTROL CURRENT =============
-        // Check if the current control is enabled
-        if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
-            // Check if is the time to run the controller
-            if (run_controller(&motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)])) {
-                // The current is evaluated with sign of motor rotation
-                // Update current and volt values;
-                motors[motIdx].measure.current = -motors[motIdx].current.gain * gpio_get_analog(0, motors[motIdx].pin_current)
-                        + motors[motIdx].current.offset;
-                motors[motIdx].diagnostic.volt = motors[motIdx].volt.gain * gpio_get_analog(0, motors[motIdx].pin_voltage)
-                        + motors[motIdx].volt.offset;
-                // Run PID control
-                motors[motIdx].control_output = control_current(motIdx, motors[motIdx].external_reference, motors[motIdx].pwm_saturation);
-
-                // Send to motor the value of control
-                Motor_PWM(motIdx, motors[motIdx].parameter_motor.rotation * motors[motIdx].control_output);
-            }
-        }
-        // =======================================
-#else
         // If disabled Send the PWM after this line
         if (motors[motIdx].controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
             // Set current reference
@@ -734,7 +694,6 @@ void MotorTaskController(int argc, int *argv) {
             // Send to motor the value of control
             motors[motIdx].pwm_saturation = Motor_PWM(motIdx, motors[motIdx].control_output);
         }
-#endif
     }
 }
 

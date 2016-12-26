@@ -24,6 +24,7 @@
 #include <or_math/math.h>
 #include <or_math/statistics.h>
 #include <or_peripherals/led.h>
+#include <or_peripherals/GPIO/adc.h>
 
 #include "system/peripherals.h"
 #include "system/system.h"
@@ -45,69 +46,61 @@
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
 
-typedef enum _type_conf {
-    ADC_SIM_2,
-    ADC_SIM_4,
-    ADC_SCAN
-} type_conf_t;
-
-typedef struct adc_sim_2_channels {
-    unsigned int ch0[ADC_BUFF/2];
-    unsigned int ch1[ADC_BUFF/2];
-} adc_sim_2_channels_t;
-
-typedef struct adc_sim_4_channels {
-    unsigned int ch0[ADC_BUFF/4];
-    unsigned int ch1[ADC_BUFF/4];
-    unsigned int ch2[ADC_BUFF/4];
-    unsigned int ch3[ADC_BUFF/4];
-} adc_sim_4_channels_t;
-
-typedef union _adc_buffer {
-    adc_sim_2_channels_t sim_2_channels;
-    adc_sim_4_channels_t sim_4_channels;
-    unsigned int buffer[ADC_BUFF];
-} adc_buffer_t;
-
-typedef struct _adc_buff_info {
-    type_conf_t adc_conf;
-    int numadc;
-    math_buffer_size_t size_base_2;
-    int size;
-} adc_buff_info_t;
-
-hardware_bit_t ana_en = REGISTER_INIT(AD1CON1, 15);
-hardware_bit_t dma_en = REGISTER_INIT(DMA0CON, 15);
-
- // ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 4 x 32 = 64 bytes
-adc_buffer_t AdcBufferA __attribute__((space(dma), aligned(ADC_BUFF*2)));
-adc_buffer_t AdcBufferB __attribute__((space(dma), aligned(ADC_BUFF*2)));
-adc_buff_info_t info_buffer;
+// ADC buffer, 4 channels (AN0, AN1, AN2, AN3), 32 bytes each, 4 x 32 = 64 bytes
+unsigned int AdcBufferA[ADC_BUFF] __attribute__((space(dma), aligned(ADC_BUFF*2)));
+unsigned int AdcBufferB[ADC_BUFF] __attribute__((space(dma), aligned(ADC_BUFF*2)));
 
 #ifdef UNAV_V1
-/// Number of available LEDs
-#define LED_NUM 4
+// Initialization LED on uNAV
+led_control_t led_controller[] = {
+    GPIO_LED(C, 6), // Led 1 Green
+    GPIO_LED(C, 7), // Led 2 Red
+    GPIO_LED(C, 8), // Led 3 Yellow
+    GPIO_LED(C, 9), // Led 4 Blue
+};
+// Initialization controllable GPIO
+gpio_t portB[] = {
+    GPIO_INIT(A, 9, GPIO_OUTPUT),   // GP0
+    GPIO_INIT(C, 0, GPIO_OUTPUT),   // GP1
+    GPIO_INIT(C, 1, GPIO_OUTPUT),   // GP2
+    GPIO_INIT(C, 2, GPIO_OUTPUT),   // GP3
+    GPIO_INIT(C, 3, GPIO_OUTPUT),   // GP4
+    GPIO_INIT(A, 4, GPIO_OUTPUT),   // GP5
+    GPIO_INIT(B, 4, GPIO_OUTPUT),   // GP6
+    GPIO_INIT(B, 7, GPIO_OUTPUT),   // GP7
+    GPIO_INIT(A, 8, GPIO_OUTPUT),   // GP8
+};
 /// Number of available GPIOs
-#define NUM_GPIO 9
+#define NUM_GPIO (sizeof(portB) / ( sizeof(portB[0])))
 #elif ROBOCONTROLLER_V3
-/// Number of available LEDs
-#define LED_NUM 2
+// Initialization LED on RoboController
+led_control_t led_controller[] = {
+    GPIO_LED(A, 8), // Led 1 green
+    GPIO_LED(A, 9), // Led 2 green
+};
+// Initialization controllable GPIO
+gpio_t portB[] = {
+    GPIO_INIT(A, 7, GPIO_OUTPUT),   // GP0
+    GPIO_INIT(A, 10, GPIO_OUTPUT),  // GP1
+    GPIO_INIT(B, 4, GPIO_OUTPUT),   // GP2
+    GPIO_INIT(C, 2, GPIO_OUTPUT),   // GP3
+    GPIO_INIT(C, 3, GPIO_OUTPUT),   // GP4
+    GPIO_INIT(B, 7, GPIO_OUTPUT),   // GP5
+};
 /// Number of available GPIOs
-#define NUM_GPIO 2
+#define NUM_GPIO (sizeof(portB) / ( sizeof(portB[0])))
 #elif MOTION_CONTROL
+// Initialization LED on motion control
+led_control_t led_controller[] = {
+    GPIO_LED(A, 4), // Led Blue
+};
+gpio_t portB[] = {};
+/// Number of available GPIOs
+#define NUM_GPIO 0
+#endif
 /// Number of available LEDs
-#define LED_NUM 1
-#endif
+#define LED_NUM (sizeof(led_controller) / ( sizeof(led_controller[0])))
 
-gp_analog_t adc_gpio_data[7];
-gp_port_def_t portA;
-gp_peripheral_t port_A_gpio[4];
-led_control_t led_controller[LED_NUM];
-    
-#ifdef NUM_GPIO
-gp_port_def_t portB;
-gp_peripheral_t port_B_gpio[NUM_GPIO];
-#endif
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -116,8 +109,6 @@ gp_peripheral_t port_B_gpio[NUM_GPIO];
  * Initialization DMA0 for ADC
  */
 void InitDMA0(void) {
-    // DMA enabled from GPIO library DMA0CONbits.CHEN = 1;
-    
     DMA0REQ = 13; // Select ADC1 as DMA Request source
 
     DMA0CONbits.AMODE = 2;
@@ -132,12 +123,13 @@ void InitDMA0(void) {
     IEC0bits.DMA0IE = 1; // Enable DMA interrupt
     
     DMA0CNT = ADC_BUFF - 1; // DMA request
+    
+    DMA0CONbits.CHEN = 1;   //< Enable DMA0
 }
 /** 
  * Initialization ADC with read CH0, CH1 simultaneously 
  */
 void InitADC_2Sim() {
-    // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
     AD1CON1bits.SSRC = 0b111;   //< Sample Clock Source: Internal counter sampling and starts convertions (auto-convert)
@@ -178,12 +170,13 @@ void InitADC_2Sim() {
     IEC0bits.AD1IE = 0; // Do Not Enable A/D interrupt
     
     AD1CSSL = 0;
+    
+    AD1CON1bits.ADON = 1;       //< Enable ADC
 }
 /**
  * Initialization ADC with read CH0, CH1, CH2, CH3 simultaneously 
  */
 void InitADC_4Sim() {
-    // ADC enabled from GPIO library AD1CON1bits.ADON = 1;
     // When initialized from GPIO library AD1PCFGL = 0xFFFF set all Analog ports as digital
     AD1CON1bits.FORM = 0;       //< Data Output Format: Integer
     AD1CON1bits.SSRC = 0b111;   //< Sample Clock Source: Internal counter sampling and starts convertions (auto-convert)
@@ -223,44 +216,8 @@ void InitADC_4Sim() {
     IEC0bits.AD1IE = 0; // Do Not Enable A/D interrupt
     
     AD1CSSL = 0;
-}
-/**
- * Callback to setup ADC from GPIO library. It's required from GPIO library
- * @return return if ADC are correctly configured
- */
-bool adc_config(void) {
-    IFS0bits.AD1IF = 0; // Clear the A/D interrupt flag bit
-    IFS0bits.DMA0IF = 0; // Clear DMA Interrupt Flag
-    //Evaluate the number of analog pin on AD1PCFGL
-    info_buffer.numadc = NumberOfSetBits((~AD1PCFGL) << 7);
-    switch(info_buffer.numadc){
-        case 2:
-            info_buffer.adc_conf = ADC_SIM_2;
-#ifdef ADC_HIGH_FREQ
-            info_buffer.size_base_2 = MATH_BUFF_4;
-#else
-            info_buffer.size_base_2 = MATH_BUFF_8;
-#endif      
-            info_buffer.size = ADC_BUFF/2;
-            InitADC_2Sim();
-            break;
-        case 4:
-            info_buffer.adc_conf = ADC_SIM_4;
-#ifdef ADC_HIGH_FREQ
-            info_buffer.size_base_2 = MATH_BUFF_2;
-#else
-            info_buffer.size_base_2 = MATH_BUFF_4;
-#endif
-            info_buffer.size = ADC_BUFF/4;
-            InitADC_4Sim();
-            break;
-        default:
-            info_buffer.adc_conf = ADC_SCAN;
-            //TODO
-            return false;
-            break;
-    }
-    return true;
+    
+    AD1CON1bits.ADON = 1;       //< Enable ADC
 }
 /**
  * Initialization remappable peripherals and setup GPIO library
@@ -338,147 +295,47 @@ void Peripherals_Init(void) {
                 "bset OSCCON, #6");
     // *********************************** Peripheral PIN selection
     
-//    /* Setup port direction */
-//    // weak pullups enable
-//    CNPU1 = 0xffff;
-//    CNPU2 = 0x9fff; // Pull up on CN29 and CN30 must not be enable to avoid problems with clock!!! by Walt
-//    // Removed for ADC ... now Works better without this pullups enable.
-//    // REMOVE after CHECK the code for RoboController and Motion Control
-
-    GPIO_PORT_INIT(portA, &port_A_gpio[0], 4);
-    /// CURRENT 1
-    GPIO_ANALOG_CONF(adc_gpio_data[0], 0);
-    GPIO_INIT_ANALOG(port_A_gpio[0], A, 0, &adc_gpio_data[0]);
-    GPIO_ANALOG_CONF(adc_gpio_data[1], 1);
-    GPIO_INIT_ANALOG(port_A_gpio[1], A, 1, &adc_gpio_data[1]);
-    GPIO_ANALOG_CONF(adc_gpio_data[2], 2);
-    GPIO_INIT_ANALOG(port_A_gpio[2], B, 0, &adc_gpio_data[2]);
-    GPIO_ANALOG_CONF(adc_gpio_data[3], 3);
-    GPIO_INIT_ANALOG(port_A_gpio[3], B, 1, &adc_gpio_data[3]);
-#ifdef UNAV_V1
-    GPIO_PORT_INIT(portB, &port_B_gpio[0], NUM_GPIO);
-    // GPIO
-    GPIO_INIT(port_B_gpio[0], A, 9); // GP0 - HALT //< TO BE DEFINE
-    GPIO_ANALOG_CONF(adc_gpio_data[4], 6);
-    GPIO_INIT_ANALOG(port_B_gpio[1], C, 0, &adc_gpio_data[4]); // GP1
-    GPIO_ANALOG_CONF(adc_gpio_data[5], 7);
-    GPIO_INIT_ANALOG(port_B_gpio[2], C, 1, &adc_gpio_data[5]); // GP2
-    GPIO_ANALOG_CONF(adc_gpio_data[6], 8);
-    GPIO_INIT_ANALOG(port_B_gpio[3], C, 2, &adc_gpio_data[6]); // GP3
-    GPIO_INIT(port_B_gpio[4], C, 3); // GP4
-    GPIO_INIT(port_B_gpio[5], A, 4); // GP5
-    GPIO_INIT(port_B_gpio[6], B, 4); // GP6
-    GPIO_INIT(port_B_gpio[7], B, 7); // GP7
-    GPIO_INIT(port_B_gpio[8], A, 8); // GP8
-#elif ROBOCONTROLLER_V3
-    // GPIO
-    GPIO_INIT(port_B_gpio[0], A, 7); // GP0
-    GPIO_INIT(port_B_gpio[1], A, 10);// GP1
-    GPIO_INIT(port_B_gpio[2], B, 4); // GP2
-    GPIO_INIT(port_B_gpio[3], C, 2); // GP3
-    GPIO_INIT(port_B_gpio[4], C, 3); // GP4
-    GPIO_INIT(port_B_gpio[5], B, 7); // GP5
-#elif MOTION_CONTROL
+#if MOTION_CONTROL
     _TRISB5 = 1;
     _TRISB6 = 1;
     _TRISB10 = 1;
     _TRISB11 = 1;
-#else
-#error Configuration error. Does not selected a board!
 #endif
     
-    InitDMA0();   ///< Open DMA0 for buffering measures ADC
-    
-#ifdef NUM_GPIO
+    // Initialize analog port
     // When initialized AD1PCFGL = 0xFFFF set all Analog ports as digital
-    gpio_init(&ana_en, &dma_en, &AD1PCFGL, &adc_config, 2, &portA, &portB);
-#endif
-
+    gpio_adc_init(&AD1PCFGL);
+    InitDMA0();         ///< Open DMA0 for buffering measures ADC
+    InitADC_4Sim();     ///< Initialize ADC 4 channels simultaneously
+    // Initialize portB
+    gpio_init_port(&portB[0], NUM_GPIO);
+    // Initialization LED
+    LED_Init(1000, &led_controller[0], LED_NUM);
+    
 #ifdef TEST_PIN
     TRISCbits.TRISC3 = 0;
 #endif
-}
-
-void InitLEDs(void) {
-#ifdef UNAV_V1
-    GPIO_INIT_TYPE(led_controller[0].gpio, C, 6, GPIO_OUTPUT);
-    GPIO_INIT_TYPE(led_controller[1].gpio, C, 7, GPIO_OUTPUT);
-    GPIO_INIT_TYPE(led_controller[2].gpio, C, 8, GPIO_OUTPUT);
-    GPIO_INIT_TYPE(led_controller[3].gpio, C, 9, GPIO_OUTPUT);
-#elif ROBOCONTROLLER_V3
-    GPIO_INIT_TYPE(led_controller[0].gpio, A, 8, GPIO_OUTPUT);
-    GPIO_INIT_TYPE(led_controller[1].gpio, A, 9, GPIO_OUTPUT);
-#elif MOTION_CONTROL
-    GPIO_INIT_TYPE(led_controller[0].gpio, A, 4, GPIO_OUTPUT);
-#endif
-    hEvent_t event_led = LED_Init(1000, &led_controller[0], LED_NUM);
-    // Register event LED
-    register_time(SYSTEM_EVENT_LED,event_led);
 }
 
 inline void UpdateBlink(short num, short blink) {
     LED_updateBlink(led_controller, num, blink);
 }
 
-unsigned int current[NUM_MOTORS];
-unsigned int voltage[NUM_MOTORS];
-
-inline void ProcessADCSamples(adc_buffer_t* AdcBuffer) {
-    unsigned int t = TMR1; // Timing function
-    //static int i, counter, adc;
-    
-    switch(info_buffer.adc_conf) {
-        case ADC_SIM_2:
-            // Shift the value to cover all int range
-            // TODO use a builtin
-            gpio_ProcessADCSamples(1, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch0, 0, info_buffer.size_base_2)));
-            gpio_ProcessADCSamples(0, (statistic_buff_mean(AdcBuffer->sim_2_channels.ch1, 0, info_buffer.size_base_2)));
-            break;
-        case ADC_SIM_4:
-            // Shift the value to cover all int range
-            // TODO use a builtin
-            current[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch0, 0, info_buffer.size_base_2);
-            voltage[MOTOR_ZERO] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch1, 0, info_buffer.size_base_2);
-            current[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch2, 0, info_buffer.size_base_2);
-            voltage[MOTOR_ONE] = statistic_buff_mean(AdcBuffer->sim_4_channels.ch3, 0, info_buffer.size_base_2);
-#ifndef CURRENT_CONTROL_IN_ADC_LOOP
-            gpio_ProcessADCSamples(0, current[MOTOR_ZERO]);
-            gpio_ProcessADCSamples(1, voltage[MOTOR_ZERO]);
-            gpio_ProcessADCSamples(2, current[MOTOR_ONE]);
-            gpio_ProcessADCSamples(3, voltage[MOTOR_ONE]);
-#endif
-            break;
-        case ADC_SCAN:
-//            counter = 0;
-//            adc = (~AD1PCFGL & 0b0000000111111111);
-//            for(i = 0; counter < info_buffer.numadc; ++i) {
-//                if(REGISTER_MASK_READ(&adc, BIT_MASK(i))) {
-//                    gpio_ProcessADCSamples(i, statistic_buff_mean(AdcBuffer->buffer, counter*info_buffer.size, info_buffer.size_base_2));
-//                    counter++;
-//                }
-//            }
-            break;
-    }
-    
-#ifdef CURRENT_CONTROL_IN_ADC_LOOP
-    // Launch the motor current control for motor zero
-    CurrentControl(MOTOR_ZERO, current[MOTOR_ZERO], voltage[MOTOR_ZERO]);
-    // Launch the motor current control for motor one
-    CurrentControl(MOTOR_ONE, current[MOTOR_ONE], voltage[MOTOR_ONE]);
-#endif    
-    update_adc_time(t, TMR1);
-}
-
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
+    unsigned int t = TMR1; // Timing function
     static unsigned short DmaBuffer = 0;
     if(DmaBuffer == 0) {
-        ProcessADCSamples(&AdcBufferA);
+        ADC_controller(&AdcBufferA[0]);
     } else {
-        ProcessADCSamples(&AdcBufferB);
+        ADC_controller(&AdcBufferB[0]);
     }
+    // Change buffer to read
+    DmaBuffer ^= 1;
+    // Update ADC time evaluation
+    update_adc_time(t, TMR1);
+    
 #ifdef TEST_PIN
     __builtin_btg ((unsigned int*)&LATC, 3); //LATCbits.LATC3 ^= 1;
 #endif
-    DmaBuffer ^= 1;
     IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }

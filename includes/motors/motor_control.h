@@ -28,7 +28,7 @@ extern "C" {
     #include <dsp.h>
 
     #include <or_system/task_manager.h>
-    #include <or_peripherals/GPIO/gpio.h>
+    #include <or_peripherals/GPIO/adc.h>
 
     #include "system/peripherals.h"
     
@@ -97,7 +97,7 @@ extern "C" {
      * @param voltage_ Analog pin number for temperature
      * @return task to run the MotorControlManager
      */
-    hTask_t init_motor(const short motIdx, gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event, int current_, int voltage_);
+    hTask_t init_motor(const short motIdx, gpio_adc_t *adc, size_t adc_size, const gpio_t* enable_, ICdata* ICinfo_, event_prescaler_t prescaler_event);
     
     /**
      * Initialization parameters for motor controller.

@@ -24,6 +24,8 @@
 #include <stdint.h>        /* Includes uint16_t definition                    */
 #include <stdbool.h>       /* Includes true/false definition                  */
 
+#include <or_system/events.h>
+
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
 #include "system/system_comm.h"
 
@@ -87,7 +89,6 @@ int16_t main(void) {
     InitTimer1();           ///< Open Timer1 for clock system
     
     Peripherals_Init();     ///< Initialize IO ports and peripherals
-    InitLEDs();             ///< Initialization LEDs
     
     /* Peripherals initialization */
     InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
@@ -117,9 +118,9 @@ int16_t main(void) {
     
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
-           
-   while (true) {
-   }
+    
+   // Events controller    
+   EventsController();
 
     return 0;
 }

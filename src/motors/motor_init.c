@@ -25,6 +25,7 @@
 #include <stdbool.h>         /* For true/false definition                     */
 #include <pwm12.h>
 #include <string.h>
+#include <or_peripherals/GPIO/adc.h>
 
 #include "system/system.h"
 #include "motors/motor_control.h"
@@ -52,7 +53,33 @@ const ICMode_t ICMode[4] = {
 #define IC_TIMEPERIOD_TH_MIN 2000
 
 ICdata ICinfo[NUM_MOTORS];
-gpio_t enable[NUM_MOTORS];
+#ifdef UNAV_V1
+const gpio_t enable[] = {
+    GPIO_INIT(A, 7, GPIO_OUTPUT),   // ENABLE0
+    GPIO_INIT(A, 10, GPIO_OUTPUT),   // ENABLE1
+};
+#elif ROBOCONTROLLER_V3
+const gpio_t enable[] = {
+    GPIO_INIT(A, 1, GPIO_OUTPUT),   // ENABLE0
+    GPIO_INIT(A, 4, GPIO_OUTPUT),   // ENABLE1
+};
+#elif MOTION_CONTROL
+const gpio_t enable[] = {
+    GPIO_INIT(B, 2, GPIO_OUTPUT),   // ENABLE0
+    GPIO_INIT(B, 3, GPIO_OUTPUT),   // ENABLE1
+};
+#endif
+
+#define LEN_ADC_BUFF 8
+
+gpio_adc_t ADCmotor[2][2] = {
+    // Current and Voltage Motor 0
+    { GPIO_ADC(A, 0, AD1PCFGL, 0,              0, LEN_ADC_BUFF),
+    GPIO_ADC(A, 1, AD1PCFGL, 1,     LEN_ADC_BUFF, LEN_ADC_BUFF)},
+    // Current and Voltage Motor 1
+    { GPIO_ADC(B, 0, AD1PCFGL, 2, 2*LEN_ADC_BUFF, LEN_ADC_BUFF),
+    GPIO_ADC(B, 1, AD1PCFGL, 3,   3*LEN_ADC_BUFF, LEN_ADC_BUFF)},
+};
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -67,7 +94,7 @@ void InitPWM(void) {
     unsigned int config1;
     // Holds the value be loaded into PWMCON1 register
     unsigned int config2;
-    // Holds the value to config the special event trigger postscale and duty cycle
+    // Holds the value to configuration the special event trigger postscale and duty cycle
     unsigned int config3;
     // Config PWM
     period = 2048; // PWM F=19,340Hz counting UP 12bit resolution @ Fcy=39.628 MHz
@@ -193,10 +220,6 @@ void InitICinfo(int motIdx) {
 
 void Motor_Init() {
 #ifdef UNAV_V1
-    /// ENABLE 1
-    GPIO_INIT_TYPE(enable[0], A, 7, GPIO_OUTPUT);
-    /// ENABLE 2
-    GPIO_INIT_TYPE(enable[1], A, 10, GPIO_OUTPUT);
     // Encoders
     _TRISB10 = 1;
     _TRISB11 = 1;
@@ -207,10 +230,6 @@ void Motor_Init() {
     _TRISB14 = 0; // PWM2 +
     _TRISB15 = 0; // PWM2 -
 #elif ROBOCONTROLLER_V3
-    /// ENABLE 1
-    GPIO_INIT_TYPE(enable[0], A, 1, GPIO_OUTPUT);
-    /// ENABLE 2
-    GPIO_INIT_TYPE(enable[1], A, 4, GPIO_OUTPUT);
     // ADC
     _TRISB2 = 1; // CH1
     _TRISB3 = 1; // CH2
@@ -221,28 +240,21 @@ void Motor_Init() {
     _TRISC7 = 1; // QEB_1
     _TRISC8 = 1; // QEA_2
     _TRISC9 = 1; // QEB_2
-#elif MOTION_CONTROL
-    /// ENABLE 1
-    GPIO_INIT_TYPE(enable[0], B, 2, GPIO_OUTPUT);
-    /// ENABLE 2
-    GPIO_INIT_TYPE(enable[0], B, 3, GPIO_OUTPUT);
 #endif
-    gpio_setup(0, 0b1111, GPIO_ANALOG);                         ///< Open Analog ports
     InitPWM();                                                  ///< Open PWM
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
-        // Init Input Capture
+        // Initialization Input Capture
         InitICinfo(i);
         // End
         InitQEI(i);                     ///< Open QEI
         InitIC(i);                      ///< Open Input Capture
         /// Initialize variables for motors
-        hTask_t motor_manager = init_motor(i, &enable[i], &ICinfo[i], &SelectIcPrescaler, (i << 1), (i << 1)+1);
+        hTask_t motor_manager = init_motor(i, &ADCmotor[i][0], 2, &enable[i], &ICinfo[i], &SelectIcPrescaler);
         /// Initialize parameters for motors
         update_motor_parameters(i, init_motor_parameters());
         // Initialize current PID controller
         motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
-        //motor_pid_t pid_current = {6, 2, 1, 10000, false};
         update_motor_pid(i, CONTROL_CURRENT, pid_current);
         /// Initialize Velocity PID controller
         motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1.0, 1000, true};
@@ -269,11 +281,11 @@ inline void SwitchIcPrescaler(int motIdx, int mode) {
     // here is the assignment of the ICx module to the correct motor
     switch (motIdx) {
         case MOTOR_ZERO:
-            IC1CONbits.ICM = IC_DISABLE;    // turn off prescaler
+            IC1CONbits.ICM = IC_DISABLE;    // turn off pre scaler
             IC1CONbits.ICM = ICMode[mode].mode;  // Set new value for the Input Capture
             break;
         case MOTOR_ONE:
-            IC2CONbits.ICM = IC_DISABLE;         // turn off prescaler
+            IC2CONbits.ICM = IC_DISABLE;         // turn off pre scaler
             IC2CONbits.ICM = ICMode[mode].mode;  // Set new value for the Input Capture
             break;
     }
