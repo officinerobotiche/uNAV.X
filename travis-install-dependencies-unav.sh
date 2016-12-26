@@ -50,7 +50,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_kernel_c.X library        -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_kernel_c.X/
-git checkout feature/new_kernel
+git checkout feature/structure_controller
 /opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../
