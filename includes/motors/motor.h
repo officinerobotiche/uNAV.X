@@ -34,6 +34,7 @@ extern "C" {
 #include <or_system/soft_timer.h>
 #include <or_system/task_manager.h>
 #include <or_peripherals/GPIO/adc.h>
+#include <or_peripherals/GPIO/led.h>
 
 #include <or_math/statistics.h>
 
@@ -42,8 +43,6 @@ extern "C" {
 /******************************************************************************/
 
 #define NUM_CONTROLLERS 3
-    // Get the number in controller array from enum_state_t
-#define GET_CONTROLLER_NUM(X) ((X) - 1)
 
     typedef enum {
         CONTROL_SAFETY = -2, ///< Motor disabled for high current
@@ -94,11 +93,15 @@ extern "C" {
 
     typedef struct _motor_firmware {
         unsigned int index;
+        // led controller
+        LED_controller_t* led_controller;
         // Information for Input Capture
         ICdata* ICinfo;
+        frequency_t ICfreq;
         // Enable pin for H-bridge
         gpio_t* pin_enable;
         gpio_adc_t *adc;
+        float gain_adc;
         event_prescaler_t prescaler_callback;
         // Frequency manager;
         frequency_t manager_freq;
