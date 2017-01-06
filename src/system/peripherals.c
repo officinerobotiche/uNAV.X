@@ -315,10 +315,6 @@ void Peripherals_Init(void) {
 #endif
 }
 
-inline void UpdateBlink(short num, short blink) {
-    LED_updateBlink(&LED_CONTROLLER, num, blink);
-}
-
 void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
     unsigned int t = TMR1; // Timing function
     static unsigned short DmaBuffer = 0;

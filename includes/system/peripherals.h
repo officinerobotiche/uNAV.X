@@ -34,12 +34,6 @@ extern "C" {
      * I/O and Peripheral Initialization
      */
     void Peripherals_Init(void);
-    /**
-     * Update frequency or type of blink
-     * @param led to control
-     * @param blink number of blinks
-     */
-    inline void UpdateBlink(short num, short blink);
 
 
 #ifdef	__cplusplus

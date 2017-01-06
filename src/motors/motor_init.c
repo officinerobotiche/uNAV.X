@@ -32,6 +32,26 @@
 #include "system/system.h"
 #include "motors/motor_init.h"
 
+#define DEFAULT_PWM_OFFSET 2048
+#define DEFAULT_PWM_MAX 2047
+#define DEFAULT_PWM_MIN -2048
+
+#define GAIN_KILO 1000
+#define ADC_AVSS 3.3
+#define INTADC_MAX 1023
+#define GAIN_ADC (ADC_AVSS/INTADC_MAX)
+//#define GAIN_ADC (ADC_AVSS/INT16_MAX)
+/**
+ * Default value for motor parameters
+ */
+#define DEFAULT_CPR 300
+#define DEFAULT_RATIO 30
+#define DEFAULT_ENC_POSITION MOTOR_ENC_AFTER_GEAR
+#define DEFAULT_ENC_CHANNELS MOTOR_ENC_CHANNEL_TWO
+#define DEFAULT_ENC_Z_INDEX MOTOR_ENC_Z_INDEX_NO
+#define DEFAULT_VERSUS_ROTATION MOTOR_ROTATION_COUNTERCLOCKWISE
+#define DEFAULT_MOTOR_ENABLE MOTOR_ENABLE_LOW
+
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
@@ -79,6 +99,12 @@ gpio_adc_t ADCmotor[2][2] = {
     GPIO_ADC(B, 1, AD1PCFGL, 3,   3*ADC_BUFF, ADC_BUFF)},
 };
 
+/**
+ * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
+ * on zip file: asm/pid.s
+ */
+fractional abcCoefficient[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
+fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
 typedef struct _motor_firmware {
     MOTOR_t motor;
     ICdata ICinfo;
@@ -89,6 +115,24 @@ motor_firmware_t motor_fw[NUM_MOTORS];
 /*****************************************************************************/
 /* User Functions                                                            */
 /*****************************************************************************/
+
+motor_parameter_t Motor_init_parameters() {
+    motor_parameter_t parameter;
+    parameter.ratio = (float) DEFAULT_RATIO; //Gain to convert QEI value to rotation movement
+    parameter.rotation = DEFAULT_VERSUS_ROTATION;
+    parameter.bridge.enable = DEFAULT_MOTOR_ENABLE;
+    parameter.bridge.pwm_dead_zone = 0;
+    parameter.bridge.pwm_frequency = 0;
+    parameter.bridge.volt_offset = 0;
+    parameter.bridge.volt_gain = 6.06;
+    parameter.bridge.current_offset = 0.8425;
+    parameter.bridge.current_gain = 0.0623;
+    parameter.encoder.cpr = DEFAULT_CPR; //Gain to convert input capture value to velocity
+    parameter.encoder.type.position = DEFAULT_ENC_POSITION;
+    parameter.encoder.type.channels = DEFAULT_ENC_CHANNELS;
+    parameter.encoder.type.z_index = DEFAULT_ENC_Z_INDEX;
+    return parameter;
+}
 
 void InitPWM(void) {
     // Holds the value to be loaded into dutycycle register
@@ -223,7 +267,8 @@ void InitICinfo(ICdata *ICinfo) {
     ICinfo->timePeriod = 0;
 }
 
-void Motor_Init() {
+void Motor_Init(LED_controller_t* led_controller) {
+    unsigned int i;
 #ifdef UNAV_V1
     // Encoders
     _TRISB10 = 1;
@@ -246,8 +291,9 @@ void Motor_Init() {
     _TRISC8 = 1; // QEA_2
     _TRISC9 = 1; // QEB_2
 #endif
-    InitPWM();                                                  ///< Open PWM
-    int i;
+    InitTimer2();               ///< Open Timer2 for InputCapture 1 & 2
+    InitPWM();                  ///< Open PWM
+    // Initialization motors
     for (i = 0; i < NUM_MOTORS; ++i) {
         // Initialization Input Capture
         InitICinfo(&motor_fw[i].ICinfo);
@@ -255,38 +301,49 @@ void Motor_Init() {
         InitQEI(&motor_fw[i].motor);                     ///< Open QEI
         InitIC(&motor_fw[i].motor);                      ///< Open Input Capture
         /// Initialize variables for motors
-        //Motor_init(motor[i].motor, i, &ADCmotor[i][0], 2, &enable[i], &ICinfo[i], &SelectIcPrescaler);
-        
-//void Motor_init(MOTOR_t *motor, unsigned int index, 
-//        fractional *abcCoefficient, fractional *controlHistory, 
-//        ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
-//        pwm_controller_t pwm_cb, unsigned int PWM_LIMIT);
-//        /// Initialize parameters for motors
-//        update_motor_parameters(i, init_motor_parameters());
-//        // Initialize current PID controller
-//        motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
-//        update_motor_pid(i, CONTROL_CURRENT, pid_current);
-//        /// Initialize Velocity PID controller
-//        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1.0, 1000, true};
-//        update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
-//        /// Initialize Position PID controller
-//        motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 0.0, 10, false};
-//        update_motor_pid(i, CONTROL_POSITION, pid_pos);
-//        /// Initialize safety procedure
-//        motor_safety_t safety = {400, 1000, 1000};
-//        update_motor_safety(i, safety);
-//        /// Initialize emergency procedure to stop
-//        motor_emergency_t emergency = {1.0, 2.0, 500};
-//        update_motor_emergency(i, emergency);
-//        /// Initialize constraints motor
-//        update_motor_constraints(i, init_motor_constraints());
-//        /// Initialize state controller
-//        set_motor_state(i, STATE_CONTROL_DISABLE);
+        Motor_init(&motor_fw[i].motor, i, 
+            &abcCoefficient[i][0][0], &controlHistory[i][0][0], 
+            &motor_fw[i].ICinfo, FRTMR2, &SelectIcPrescaler, 
+            &SetDCMCPWM1, DEFAULT_PWM_OFFSET);
+        // Register ADC
+        Motor_register_adc(&motor_fw[i].motor, &ADCmotor[i][0], GAIN_ADC);
+        // Register enable
+        Motor_register_enable(&motor_fw[i].motor, &enable[i]);
+        // Register led controller
+        Motor_register_led_controller(&motor_fw[i].motor, led_controller);
+        /// Initialize parameters for motors
+        motor_parameter_t param = Motor_init_parameters();
+        Motor_update_parameters(&motor_fw[i].motor, &param);
+        // Initialize current PID controller
+        motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
+        Motor_update_pid(&motor_fw[i].motor, CONTROL_CURRENT, &pid_current);
+        /// Initialize Velocity PID controller
+        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1.0, 1000, true};
+        Motor_update_pid(&motor_fw[i].motor, CONTROL_VELOCITY, &pid_vel);
+        /// Initialize Position PID controller
+        motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 0.0, 10, false};
+        Motor_update_pid(&motor_fw[i].motor, CONTROL_POSITION, &pid_pos);
+        /// Initialize safety procedure
+        motor_safety_t safety = {400, 1000, 1000};
+        Motor_update_safety(&motor_fw[i].motor, &safety);
+        /// Initialize emergency procedure to stop
+        motor_emergency_t emergency = {1.0, 2.0, 500};
+        Motor_update_emergency(&motor_fw[i].motor, &emergency);
+        /// Initialize constraints motor
+        motor_t constraints = {MOTOR_CONTROL_MAX, MOTOR_CONTROL_MAX,
+                    MOTOR_CONTROL_MAX, MOTOR_CONTROL_MAX, 0, 0};
+        Motor_update_constraints(&motor_fw[i].motor, &constraints);
+        /// Initialize state controller
+        Motor_set_state(&motor_fw[i].motor, STATE_CONTROL_DISABLE);
         /// Run task controller
-//        task_set(motor_manager, RUN);
+        Motor_run(&motor_fw[i].motor, RUN);
     }
 }
-
+/** 
+ * Safely switch to the new Input Capture prescaler
+ * @param motIdx number motor
+ * @param mode
+ */
 inline void SwitchIcPrescaler(int motIdx, int mode) {
     // here is the assignment of the ICx module to the correct motor
     switch (motIdx) {
@@ -301,7 +358,8 @@ inline void SwitchIcPrescaler(int motIdx, int mode) {
     }
 }
 
-inline void SelectIcPrescaler(MOTOR_t *motor) {
+inline void SelectIcPrescaler(void *_motor) {
+    MOTOR_t *motor = (MOTOR_t*) _motor;
     /** 
      * V = Kvel / timePeriod
      * is equal to:

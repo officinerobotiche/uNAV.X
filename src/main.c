@@ -147,9 +147,6 @@ int16_t main(void) {
     
     Peripherals_Init();     ///< Initialize IO ports and peripherals
     
-    /* Peripherals initialization */
-//    InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
-    
     /* I2C CONFIGURATION */
 //    Init_I2C();     ///< Open I2C module
 //    EEPROM_init(20);  ///< Launch the EEPROM controller

@@ -31,39 +31,16 @@ extern "C" {
     
 #include "motors/motor.h"
 
-    /** 
-     * Initialization QEI motors
-     * @param motIdx number motor
-     */
-    void InitQEI(MOTOR_t *motor);
-    /** 
-     * Initialization Input Capture motors
-     * @param motIdx number motor
-     */
-    void InitIC(MOTOR_t *motor);
-    /** 
-     * Initialization Timer 2 for IC (Input Capture)
-     */
-    void InitTimer2(void);
-
     /**
      * Initialization motor
      */
-    void Motor_Init();
+    void Motor_Init(LED_controller_t* led_controller);
     
     /**
      * Select the correct Input Capture prescaler		
      * @param motIdx number motor				
      */		
-    void SelectIcPrescaler(MOTOR_t *motor);
-    
-    /** 
-     * Safely switch to the new Input Capture prescaler
-     * @param motIdx number motor
-     * @param mode
-     */
-    inline void SwitchIcPrescaler(int motIdx, int mode);
-
+    void SelectIcPrescaler(void *motor);
 
 #ifdef	__cplusplus
 }

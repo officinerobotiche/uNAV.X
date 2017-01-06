@@ -76,7 +76,7 @@ int32_t Motor_measureVelocity(MOTOR_t *motor) {
         vel_mean = vel_qei;
     }
     //Select Pre scaler
-    motor->prescaler_callback(motor->index);
+    motor->prescaler_callback(motor);
     // Evaluate angle position
     if (labs(motor->enc_angle) > motor->angle_limit) {
         motor->enc_angle = 0;
@@ -395,7 +395,7 @@ void Motor_init(MOTOR_t *motor, unsigned int index,
     motor->pwm_cb = pwm_cb;
     // Initialize all controllers
     for(i = 0; i < NUM_CONTROLLERS; i++) {
-        Motor_initialize_controllers(motor, &abcCoefficient[i], &controlHistory[i], i);
+        Motor_initialize_controllers(motor, &abcCoefficient[3 * i], &controlHistory[3 * i], i);
     }
     // Register input capture
     motor->ICinfo = ICinfo;

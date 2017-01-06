@@ -65,7 +65,7 @@ extern "C" {
         REGISTER QEICOUNTER;
     } ICdata;
     
-    typedef void (*event_prescaler_t)(int motIdx);
+    typedef void (*event_prescaler_t)(void *motor);
     typedef void (*pwm_controller_t)(unsigned int, unsigned int, char);
 
     typedef struct _analog {
