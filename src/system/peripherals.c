@@ -305,6 +305,11 @@ void Peripherals_Init(void) {
     // Initialization LED
     LED_Init(&LED_CONTROLLER);
     
+    LED_updateBlink(&LED_CONTROLLER, 0, 1);
+    LED_updateBlink(&LED_CONTROLLER, 1, 2);
+    LED_updateBlink(&LED_CONTROLLER, 2, 3);
+    LED_updateBlink(&LED_CONTROLLER, 3, 4);
+    
 #ifdef TEST_PIN
     TRISCbits.TRISC3 = 0;
 #endif

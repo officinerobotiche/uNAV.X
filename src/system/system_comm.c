@@ -35,44 +35,44 @@
 /* User Functions                                                            */
 /*****************************************************************************/
 
-packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+//packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
+////    message_abstract_u send;
+//    switch (command) {
+////        case SYSTEM_TASK_PRIORITY:
+////        case SYSTEM_TASK_FRQ:
+////            set_process(command, message.system.task);
+////            return CREATE_PACKET_ACK(command, type);
+////            break;
+//        default:
+//            return CREATE_PACKET_NACK(command, type);
+//            break;
+//    }
+//}
+//
+//packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
 //    message_abstract_u send;
-    switch (command) {
-//        case SYSTEM_TASK_PRIORITY:
-//        case SYSTEM_TASK_FRQ:
-//            set_process(command, message.system.task);
-//            return CREATE_PACKET_ACK(command, type);
+//    switch (command) {
+//        case SYSTEM_RESET:
+//            // The board is in reset mode. It's futile to send other message 
+//            // after this function
+//            reset();
 //            break;
-        default:
-            return CREATE_PACKET_NACK(command, type);
-            break;
-    }
-}
-
-packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message) {
-    message_abstract_u send;
-    switch (command) {
-        case SYSTEM_RESET:
-            // The board is in reset mode. It's futile to send other message 
-            // after this function
-            reset();
-            break;
-        case SYSTEM_CODE_DATE:
-        case SYSTEM_CODE_VERSION:
-        case SYSTEM_CODE_AUTHOR:
-        case SYSTEM_CODE_BOARD_TYPE:
-        case SYSTEM_CODE_BOARD_NAME:
-            services(command, &send);
-            break;
-        case SYSTEM_TIME:
-            get_system_time(&send);
-            break;
-//        case SYSTEM_SERIAL_ERROR:
-//            send.system.error_serial = serial_error;
+//        case SYSTEM_CODE_DATE:
+//        case SYSTEM_CODE_VERSION:
+//        case SYSTEM_CODE_AUTHOR:
+//        case SYSTEM_CODE_BOARD_TYPE:
+//        case SYSTEM_CODE_BOARD_NAME:
+//            services(command, &send);
 //            break;
-        default:
-            return CREATE_PACKET_NACK(command, type);
-            break;
-    }
-    return CREATE_PACKET_DATA(command, type, send);
-}
+//        case SYSTEM_TIME:
+//            get_system_time(&send);
+//            break;
+////        case SYSTEM_SERIAL_ERROR:
+////            send.system.error_serial = serial_error;
+////            break;
+//        default:
+//            return CREATE_PACKET_NACK(command, type);
+//            break;
+//    }
+//    return CREATE_PACKET_DATA(command, type, send);
+//}

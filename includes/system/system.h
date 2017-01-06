@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-#include <packet/packet.h>
-    
 #include <or_system/events.h>
 
 /******************************************************************************/
@@ -100,23 +98,23 @@ extern "C" {
      */
     void register_time(system_event_type_t event_type, hEvent_t event );
     
-    /**
-     * Return the time of execution of idle, parsing, adc conversion
-     * @param message
-     */
-    void get_system_time(message_abstract_u *message);
+//    /**
+//     * Return the time of execution of idle, parsing, adc conversion
+//     * @param message
+//     */
+//    void get_system_time(message_abstract_u *message);
     /**
      * Board software reset.
      * Disable all interrupt, wait 200us and reset the board
      */
     void reset();
 
-    /**
-     * Management services messages. 
-     * @param The name of the service
-     * @param The buffer to return the information
-     */
-    void services(unsigned char command, message_abstract_u *message);
+//    /**
+//     * Management services messages. 
+//     * @param The name of the service
+//     * @param The buffer to return the information
+//     */
+//    void services(unsigned char command, message_abstract_u *message);
 
 #ifdef	__cplusplus
 }

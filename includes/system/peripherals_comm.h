@@ -12,11 +12,11 @@
 extern "C" {
 #endif
 
-    #include <or_bus/or_frame.h>
-    
-packet_information_t save_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
-
-packet_information_t send_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+//    #include <or_bus/or_frame.h>
+//    
+//packet_information_t save_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+//
+//packet_information_t send_frame_gpio(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
 
 
 #ifdef	__cplusplus

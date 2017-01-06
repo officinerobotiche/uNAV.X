@@ -38,8 +38,6 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-//system_parameter_t parameter_system = {(frequency_t) SYS_FREQ, (frequency_t) FRTMR1};
-
 const unsigned char _VERSION_DATE[] = __DATE__;
 const unsigned char _VERSION_TIME[] = __TIME__;
 const unsigned char _VERSION_CODE[] = "v0.6";
@@ -152,16 +150,12 @@ void register_time(system_event_type_t event_type, hEvent_t event ) {
     system_events[event_type] = event;
 }
 
-void get_system_time(message_abstract_u *message) {
-    message->system.time.idle = 0;
-    message->system.time.parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
-    message->system.time.i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
-    message->system.time.led = get_time(system_events[SYSTEM_EVENT_LED]);
-    message->system.time.adc = adc_time;
-}
-
-//inline system_parameter_t get_system_parameters(void) {
-//    return parameter_system;
+//void get_system_time(message_abstract_u *message) {
+//    message->system.time.idle = 0;
+//    message->system.time.parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
+//    message->system.time.i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
+//    message->system.time.led = get_time(system_events[SYSTEM_EVENT_LED]);
+//    message->system.time.adc = adc_time;
 //}
 
 void reset() {
@@ -177,24 +171,24 @@ void reset() {
     asm("RESET");
 }
 
-void services(unsigned char command, message_abstract_u *message) {
-    switch(command) {
-        case SYSTEM_CODE_DATE:
-            memcpy(message->system.service, _VERSION_DATE, sizeof (_VERSION_DATE));
-            message->system.service[sizeof (_VERSION_DATE) - 1] = ' ';
-            memcpy(message->system.service + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
-            break;
-        case SYSTEM_CODE_VERSION:
-            memcpy(message->system.service, _VERSION_CODE, sizeof (_VERSION_CODE));
-            break;
-        case SYSTEM_CODE_AUTHOR:
-            memcpy(message->system.service, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
-            break;
-        case SYSTEM_CODE_BOARD_TYPE:
-            memcpy(message->system.service, _BOARD_TYPE, sizeof (_BOARD_TYPE));
-            break;
-        case SYSTEM_CODE_BOARD_NAME:
-            memcpy(message->system.service, _BOARD_NAME, sizeof (_BOARD_NAME));
-            break;
-    }
-}
+//void services(unsigned char command, message_abstract_u *message) {
+//    switch(command) {
+//        case SYSTEM_CODE_DATE:
+//            memcpy(message->system.service, _VERSION_DATE, sizeof (_VERSION_DATE));
+//            message->system.service[sizeof (_VERSION_DATE) - 1] = ' ';
+//            memcpy(message->system.service + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
+//            break;
+//        case SYSTEM_CODE_VERSION:
+//            memcpy(message->system.service, _VERSION_CODE, sizeof (_VERSION_CODE));
+//            break;
+//        case SYSTEM_CODE_AUTHOR:
+//            memcpy(message->system.service, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
+//            break;
+//        case SYSTEM_CODE_BOARD_TYPE:
+//            memcpy(message->system.service, _BOARD_TYPE, sizeof (_BOARD_TYPE));
+//            break;
+//        case SYSTEM_CODE_BOARD_NAME:
+//            memcpy(message->system.service, _BOARD_NAME, sizeof (_BOARD_NAME));
+//            break;
+//    }
+//}

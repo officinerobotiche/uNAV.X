@@ -22,7 +22,6 @@
 extern "C" {
 #endif
 
-#include <packet/packet.h>
 #include "motors/motor_control.h"
 
     //Numbers and names associated at all processes

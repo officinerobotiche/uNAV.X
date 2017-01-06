@@ -16,6 +16,58 @@
  */
 
 /******************************************************************************/
+/*	CONFIGURATION BITS													      */
+/******************************************************************************/
+// FBS
+#pragma config BWRP = WRPROTECT_OFF     // Boot Segment Write Protect (Boot Segment may be written)
+#pragma config BSS = NO_FLASH           // Boot Segment Program Flash Code Protection (No Boot program Flash segment)
+#pragma config RBS = NO_RAM             // Boot Segment RAM Protection (No Boot RAM)
+// FSS
+#pragma config SWRP = WRPROTECT_OFF     // Secure Segment Program Write Protect (Secure segment may be written)
+#pragma config SSS = NO_FLASH           // Secure Segment Program Flash Code Protection (No Secure Segment)
+#pragma config RSS = NO_RAM             // Secure Segment Data RAM Protection (No Secure RAM)
+// FGS
+#pragma config GWRP = OFF               // General Code Segment Write Protect (User program memory is not write-protected)
+#pragma config GSS = OFF                // General Segment Code Protection (User program memory is not code-protected)
+/** 
+ * Oscillator selection configuration
+ * * FNOSC_PRI -> Primary (XT, HS, EC) Oscillator
+ * * IESO_ON -> Start-up device with FRC, then automatically switch to
+ * user-selected oscillator source when ready
+ */
+// FOSCSEL
+#pragma config FNOSC = PRI              // Oscillator Mode (Primary Oscillator (XT, HS, EC))
+#pragma config IESO = ON                // Internal External Switch Over Mode (Start-up device with FRC, then automatically switch to user-selected oscillator source when ready)
+/** Oscillator configuration
+ * * FCKSM_CSECME -> Both Clock Switching and Fail-Safe Clock Monitor are enabled
+ * * OSCIOFNC_OFF -> OSC2 pin has clock out function
+ * * POSCMD_HS -> Primary Oscillator Mode, HS Crystal
+*/
+// FOSC
+#pragma config POSCMD = HS              // Primary Oscillator Source (HS Oscillator Mode)
+#pragma config OSCIOFNC = OFF           // OSC2 Pin Function (OSC2 pin has clock out function)
+#pragma config IOL1WAY = ON             // Peripheral Pin Select Configuration (Allow Only One Re-configuration)
+#pragma config FCKSM = CSECME           // Clock Switching and Monitor (Both Clock Switching and Fail-Safe Clock Monitor are enabled)
+/** 
+ * Watchdog Timer Enabled/disabled by user software
+ * (LPRC can be disabled by clearing SWDTEN bit in RCON register
+ */
+// FWDT
+#pragma config WDTPOST = PS32768        // Watchdog Timer Postscaler (1:32,768)
+#pragma config WDTPRE = PR128           // WDT Prescaler (1:128)
+#pragma config WINDIS = OFF             // Watchdog Timer Window (Watchdog Timer in Non-Window mode)
+#pragma config FWDTEN = OFF             // Watchdog Timer Enable (Watchdog timer enabled/disabled by user software)
+// FPOR
+#pragma config FPWRT = PWR128           // POR Timer Value (128ms)
+#pragma config ALTI2C = OFF             // Alternate I2C  pins (I2C mapped to SDA1/SCL1 pins)
+#pragma config LPOL = ON                // Motor Control PWM Low Side Polarity bit (PWM module low side output pins have active-high output polarity)
+#pragma config HPOL = ON                // Motor Control PWM High Side Polarity bit (PWM module high side output pins have active-high output polarity)
+#pragma config PWMPIN = ON              // Motor Control PWM Module Pin Mode bit (PWM module pins controlled by PORT register at device Reset)
+// FICD
+#pragma config ICS = PGD1               // Comm Channel Select (Communicate on PGC1/EMUC1 and PGD1/EMUD1)
+#pragma config JTAGEN = OFF             // JTAG Port Enable (JTAG is Disabled)
+
+/******************************************************************************/
 /* Files to Include                                                           */
 /******************************************************************************/
 
@@ -24,32 +76,42 @@
 #include <stdint.h>        /* Includes uint16_t definition                    */
 #include <stdbool.h>       /* Includes true/false definition                  */
 
-#include <or_system/events.h>
-
 #include "system/system.h" /* System funct/params, like osc/peripheral config */
-#include "system/system_comm.h"
+#include "system/peripherals.h" /* Peripheral configuration */
+#include "communication/serial.h" /* Serial port configuration */
 
-#include "system/peripherals.h"
-#include "system/peripherals_comm.h"
+//#include "system/system_comm.h"
+//
 
-#include "communication/I2c.h"
-#include <or_peripherals/I2C/MCP24LC256.h>
-
-#include "communication/serial.h"
-
-#include "motors/motor_init.h"
-#include "motors/motor_control.h"
-#include "motors/motor_comm.h"
-
-#include "high_control/manager.h"
-#include "high_control/high_comm.h"
-
-// high level include
-#include "high_control/cartesian.h"
+//#include "system/peripherals_comm.h"
+//
+//#include "communication/I2c.h"
+//#include <or_peripherals/I2C/MCP24LC256.h>
+//
+//#include "communication/serial.h"
+//
+//#include "motors/motor_init.h"
+//#include "motors/motor_control.h"
+//#include "motors/motor_comm.h"
+//
+//#include "high_control/manager.h"
+//#include "high_control/high_comm.h"
+//
+//// high level include
+//#include "high_control/cartesian.h"
 
 /******************************************************************************/
 /* Global Variable Declaration                                                */
 /******************************************************************************/
+
+/** Define and initialization UART2 controller */
+UART_WRITE_t UART1_WRITE_CNT;
+UART_READ_t UART1_READ_CNT;
+UART_t UART1_CNT = UART_INIT(U1STA, U1MODE, U1BRG, FCY, &UART1_WRITE_CNT, &UART1_READ_CNT);
+/** Controller OR BUS messages */
+unsigned char OR_BUS_RX_BUFFER[OR_BUS_FRAME_LNG_FRAME];
+unsigned char OR_BUS_TX_BUFFER[OR_BUS_FRAME_LNG_FRAME];
+OR_BUS_FRAME_t OR_BUS_FRAME;
 
 /** Main Program
  * The uNav board is designed with one dsPIC33FJ64MC804 to both control the
@@ -75,11 +137,6 @@
  * - UART1 RX for incoming communication;
  * - DMA0 used by the ADC to measure the motor current;
  * - DMA1 used by UART TX.
- *
- * Soft interrupts:
- * - OC1 triggers the speed measurement and PIDs control;
- * - OC2 triggers the incoming communication packets parsing;
- * - RTC triggers the dead-reckoning procedures.
  * @return type of error
  */
 int16_t main(void) {
@@ -91,36 +148,46 @@ int16_t main(void) {
     Peripherals_Init();     ///< Initialize IO ports and peripherals
     
     /* Peripherals initialization */
-    InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
+//    InitTimer2(); ///< Open Timer2 for InputCapture 1 & 2
     
     /* I2C CONFIGURATION */
-    Init_I2C();     ///< Open I2C module
-    EEPROM_init(20);  ///< Launch the EEPROM controller
+//    Init_I2C();     ///< Open I2C module
+//    EEPROM_init(20);  ///< Launch the EEPROM controller
     
     /** SERIAL CONFIGURATION **/
-    SerialComm_Init();  ///< Open UART1 for serial communication and Open DMA1 for TX UART1
-    set_frame_reader(HASHMAP_SYSTEM, &send_frame_system, &save_frame_system); ///< Initialize parsing reader
-    set_frame_reader(HASHMAP_PERIPHERALS, &send_frame_gpio, &save_frame_gpio); ///< Initialize parsing reader
+    // Initialization over bus
+    OR_BUS_FRAME_init(&OR_BUS_FRAME, &OR_BUS_RX_BUFFER[0], &OR_BUS_TX_BUFFER[0], OR_BUS_FRAME_LNG_FRAME);
+    // Register callback for system messages
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_SYSTEM, &OR_BUS_FRAME_decoder_system);
+    // Register callback for peripheral messages
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_PERIPHERALS, &OR_BUS_FRAME_decoder_peripheral);
+    // Register callback for motor messages
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_MOTOR, &OR_BUS_FRAME_decoder_motor);
+    // Register callback for differential drive messages
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_DIFF_DRIVE, &OR_BUS_FRAME_decoder_diff_drive);
+    // Register UART write
+    UART_register_write(&UART1_WRITE_CNT, &U1TXREG, &UART1_DMA_write);
+    // Register UART read
+    UART_register_read(&UART1_READ_CNT, &U1RXREG, &IFS1, 14, &UART1_read_callback);
+    // Initialize UART2 
+    UART1_Init(&UART1_CNT, &OR_BUS_FRAME);
     
-    /*** MOTOR INITIALIZATION ***/
-    Motor_Init();
-    set_frame_reader(HASHMAP_MOTOR, &send_frame_motor, &save_frame_motor);  ///< Initialize communication
-    
-    /** HIGH LEVEL INITIALIZATION **/
-    /// Initialize variables for unicycle 
-    update_motion_parameter_unicycle(init_motion_parameter_unicycle());
-    /// Initialize dead reckoning
-    update_motion_coordinate(init_motion_coordinate());
-    /// Initialize motion parameters and controller
-    HighControl_Init();
-    /// Initialize communication
-    set_frame_reader(HASHMAP_DIFF_DRIVE, &send_frame_motion, &save_frame_motion);
-    
+//    /*** MOTOR INITIALIZATION ***/
+//    Motor_Init();
+//    
+//    /** HIGH LEVEL INITIALIZATION **/
+//    /// Initialize variables for unicycle 
+//    update_motion_parameter_unicycle(init_motion_parameter_unicycle());
+//    /// Initialize dead reckoning
+//    update_motion_coordinate(init_motion_coordinate());
+//    /// Initialize motion parameters and controller
+//    HighControl_Init();
+
     /* LOAD high level task */
     //add_task(false, &init_cartesian, &loop_cartesian);
-    
-   // Events controller    
-   EventsController();
+
+    // Events controller    
+    EventsController();
 
     return 0;
 }

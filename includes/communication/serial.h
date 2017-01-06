@@ -22,34 +22,40 @@
 extern "C" {
 #endif
 
-    #include <or_bus/or_message.h>
-    #include <or_bus/or_frame.h>
+/******************************************************************************/
+/*	INCLUDE																	  */
+/******************************************************************************/
+    
+    #include <or_bus/frame.h>
+    #include <or_peripherals/UART/UART.h>
     
     //Dimension of list messages to decode in a packet
     #define BUFFER_LIST_PARSING 10
 
-    /** 
-     * Initialization UART1 for communication and
-     * Initialization DMA1 for UART Tx transmition
+/******************************************************************************/
+/*	FUNCTIONS							 									  */
+/******************************************************************************/
+    
+    /**
+     * Initialization UART1 for communication and Initialization DMA1 for UART transmission
+     * @param uart The UART controller
+     * @param frame The OR BUS Frame controller
      */
-    void SerialComm_Init(void);
+    void UART1_Init(UART_t *uart, OR_BUS_FRAME_t *frame);
+    /**
+     * @brief UART1 callback controller
+     * @param rxdata data received
+     */
+    void UART1_read_callback(unsigned char rxdata);
+    /**
+     * @brief UART writer with DMA
+     * @param uart The UART controller
+     * @param buff The buffer to send
+     * @param size The size of buffer
+     */
+    void UART1_DMA_write(void *uart, unsigned char* buff, size_t size);
 
-    /**
-     * Send serial message to uart
-     * @param packet
-     */
-    void serial_send(packet_t packet);
-    /**
-     * 
-     * @param serial
-     * @return 
-     */
-    bool Serial_set(peripherals_serial_t serial);
-    /**
-     * 
-     * @return 
-     */
-    peripherals_serial_t Serial_get(short idx);
+    
 
 #ifdef	__cplusplus
 }

@@ -22,28 +22,28 @@
 extern "C" {
 #endif
 
-#include <or_bus/or_frame.h>
-
-    /**
-     * Save for all standard messages the data in tail and save in controller.
-     * Others messages, typical for this board are saved with function
-     * save_other_data in file parsing_other_messages.h
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
-
-    /**
-     * Send for all standard messages the data. The information are saved
-     * in a information_packet_t by functions createPacket and createDataPacket
-     * in tail of this file.
-     * @param list_send a pointer to buffer to save information from board
-     * @param len length of list_send list
-     * @param info message to parsing
-     */
-    packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
-
+//#include <or_bus/or_frame.h>
+//
+//    /**
+//     * Save for all standard messages the data in tail and save in controller.
+//     * Others messages, typical for this board are saved with function
+//     * save_other_data in file parsing_other_messages.h
+//     * @param list_send a pointer to buffer to save information from board
+//     * @param len length of list_send list
+//     * @param info message to parsing
+//     */
+//    packet_information_t save_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+//
+//    /**
+//     * Send for all standard messages the data. The information are saved
+//     * in a information_packet_t by functions createPacket and createDataPacket
+//     * in tail of this file.
+//     * @param list_send a pointer to buffer to save information from board
+//     * @param len length of list_send list
+//     * @param info message to parsing
+//     */
+//    packet_information_t send_frame_system(unsigned char option, unsigned char type, unsigned char command, message_abstract_u message);
+//
 
 #ifdef	__cplusplus
 }

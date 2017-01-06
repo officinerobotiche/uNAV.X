@@ -26,6 +26,8 @@
 #include <dsp.h>
 #include <pwm12.h>
 
+#include <or_bus/frame.h>
+
 #include <or_system/task_manager.h>
 #include <or_system/soft_timer.h>
 
@@ -36,7 +38,6 @@
 #include "motors/motor_control.h"      /* variables/params used by motorsPID.c */
 
 #include "system/system.h"
-#include "packet/packet.h"
 
 #define GAIN_KILO 1000
 #define ADC_AVSS 3.3

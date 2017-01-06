@@ -29,6 +29,7 @@ extern "C" {
 
     #include <or_system/task_manager.h>
     #include <or_peripherals/GPIO/adc.h>
+    #include <or_bus/frame.h>
 
     #include "system/peripherals.h"
     
