@@ -39,6 +39,7 @@ echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 echo "- Build or_bus_c.X library           -"
 echo "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
 cd or_bus_c.X/
+git checkout feature/new_bus_controller
 /opt/microchip/mplabx/$MPLABVER/mplab_ide/bin/prjMakefilesGenerator.sh .
 make
 cd ../
