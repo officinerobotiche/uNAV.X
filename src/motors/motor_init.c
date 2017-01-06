@@ -134,7 +134,7 @@ motor_parameter_t Motor_init_parameters() {
     return parameter;
 }
 
-void InitPWM(void) {
+void Motor_init_PWM(void) {
     // Holds the value to be loaded into dutycycle register
     unsigned int period;
     // Holds the value to be loaded into special event compare register
@@ -174,7 +174,7 @@ void InitPWM(void) {
     ConfigIntMCPWM1(PWM1_INT_DIS);
 }
 
-void InitQEI(MOTOR_t *motor) {
+void Motor_init_QEI(MOTOR_t *motor) {
     switch (motor->index) {
         case MOTOR_ZERO:
             //QEI1CONbits.CNTERR= 0; // No position count error has occurred
@@ -211,7 +211,7 @@ void InitQEI(MOTOR_t *motor) {
     }
 }
 
-void InitIC(MOTOR_t *motor) {
+void Motor_init_IC(MOTOR_t *motor) {
     switch (motor->index) {
         case MOTOR_ZERO:
             // Initialize Capture Module
@@ -240,7 +240,7 @@ void InitIC(MOTOR_t *motor) {
     }
 }
 
-void InitTimer2(void) {
+void Motor_init_timer2(void) {
     //T2CON = 10100000 00000000
     T2CONbits.TON = 0; // Disable Timer
     T2CONbits.TSIDL = 1; // Stop in Idle Mode bit
@@ -257,7 +257,7 @@ void InitTimer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
-void InitICinfo(ICdata *ICinfo) {
+void Motor_init_ICinfo(ICdata *ICinfo) {
     //Input capture information
     ICinfo->k_mul = ICMode[ICMODE_DEFAULT].k;
     ICinfo->number = ICMODE_DEFAULT;
@@ -291,15 +291,15 @@ void Motor_Init(LED_controller_t* led_controller) {
     _TRISC8 = 1; // QEA_2
     _TRISC9 = 1; // QEB_2
 #endif
-    InitTimer2();               ///< Open Timer2 for InputCapture 1 & 2
-    InitPWM();                  ///< Open PWM
+    Motor_init_timer2();               ///< Open Timer2 for InputCapture 1 & 2
+    Motor_init_PWM();                  ///< Open PWM
     // Initialization motors
     for (i = 0; i < NUM_MOTORS; ++i) {
         // Initialization Input Capture
-        InitICinfo(&motor_fw[i].ICinfo);
+        Motor_init_ICinfo(&motor_fw[i].ICinfo);
         // End
-        InitQEI(&motor_fw[i].motor);                     ///< Open QEI
-        InitIC(&motor_fw[i].motor);                      ///< Open Input Capture
+        Motor_init_QEI(&motor_fw[i].motor);                     ///< Open QEI
+        Motor_init_IC(&motor_fw[i].motor);                      ///< Open Input Capture
         /// Initialize variables for motors
         Motor_init(&motor_fw[i].motor, i, 
             &abcCoefficient[i][0][0], &controlHistory[i][0][0], 
@@ -385,6 +385,60 @@ inline void SelectIcPrescaler(void *_motor) {
         temp_number++;
     }while(temp_number <= 3);
 }
+
+void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type, 
+        OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet) {
+    motor_command_map_t cmd;
+    cmd.command_message = command;
+    switch (cmd.bitset.command) {
+        case MOTOR_PARAMETER:
+            Motor_update_parameters(&motor_fw[cmd.bitset.motor].motor, &packet->motor.parameter);
+            break;
+        case MOTOR_CONSTRAINT:
+            Motor_update_constraints(&motor_fw[cmd.bitset.motor].motor, &packet->motor.motor);
+            break;
+        case MOTOR_EMERGENCY:
+            Motor_update_emergency(&motor_fw[cmd.bitset.motor].motor, &packet->motor.emergency);
+            break;
+        case MOTOR_STATE:
+            Motor_set_state(&motor_fw[cmd.bitset.motor].motor, packet->motor.state);
+            break;
+        case MOTOR_POS_RESET:
+            Motor_reset_position_measure(&motor_fw[cmd.bitset.motor].motor, packet->motor.reference);
+            break;
+//        case MOTOR_POS_REF:
+//            
+//            break;
+        case MOTOR_POS_PID:
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_POSITION, &packet->motor.pid))
+//                return CREATE_PACKET_NACK(command, type);
+            break;
+        case MOTOR_VEL_REF:
+            Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, packet->motor.reference);
+            break;
+        case MOTOR_VEL_PID:
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, &packet->motor.pid))
+//                return CREATE_PACKET_NACK(command, type);
+            break;
+        case MOTOR_CURRENT_REF:
+            Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, packet->motor.reference);
+            break;
+        case MOTOR_CURRENT_PID:
+            // If the PID is not true return a NACK otherwhise return ACK
+            if( ! Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, &packet->motor.pid))
+//                return CREATE_PACKET_NACK(command, type);
+            break;
+        case MOTOR_SAFETY:
+            Motor_update_safety(&motor_fw[cmd.bitset.motor].motor, &packet->motor.safety);
+            break;
+        default:
+//            return CREATE_PACKET_NACK(command, type);
+            break;
+    }
+}
+
 
 void __attribute__((interrupt, no_auto_psv)) _IC1Interrupt(void) {
     // Run the Input Capture controller

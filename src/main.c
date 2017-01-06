@@ -80,6 +80,8 @@
 #include "system/peripherals.h" /* Peripheral configuration */
 #include "communication/serial.h" /* Serial port configuration */
 
+#include "motors/motor_init.h"
+
 //#include "system/system_comm.h"
 //
 
@@ -89,8 +91,6 @@
 //#include <or_peripherals/I2C/MCP24LC256.h>
 //
 //#include "communication/serial.h"
-//
-//#include "motors/motor_init.h"
 //#include "motors/motor_control.h"
 //#include "motors/motor_comm.h"
 //
@@ -155,13 +155,13 @@ int16_t main(void) {
     // Initialization over bus
     OR_BUS_FRAME_init(&OR_BUS_FRAME, &OR_BUS_RX_BUFFER[0], &OR_BUS_TX_BUFFER[0], OR_BUS_FRAME_LNG_FRAME);
     // Register callback for system messages
-    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_SYSTEM, &OR_BUS_FRAME_decoder_system);
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_SYSTEM, &OR_BUS_FRAME_decoder_system, NULL);
     // Register callback for peripheral messages
-    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_PERIPHERALS, &OR_BUS_FRAME_decoder_peripheral);
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_PERIPHERALS, &OR_BUS_FRAME_decoder_peripheral, NULL);
     // Register callback for motor messages
-    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_MOTOR, &OR_BUS_FRAME_decoder_motor);
+    OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_MOTOR, &OR_BUS_FRAME_decoder_motor, NULL);
     // Register callback for differential drive messages
-    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_DIFF_DRIVE, &OR_BUS_FRAME_decoder_diff_drive);
+    //OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_DIFF_DRIVE, &OR_BUS_FRAME_decoder_diff_drive, NULL);
     // Register UART write
     UART_register_write(&UART1_WRITE_CNT, &U1TXREG, &UART1_DMA_write);
     // Register UART read

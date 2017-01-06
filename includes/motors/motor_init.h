@@ -35,12 +35,20 @@ extern "C" {
      * Initialization motor
      */
     void Motor_Init(LED_controller_t* led_controller);
-    
     /**
      * Select the correct Input Capture prescaler		
      * @param motIdx number motor				
      */		
     void SelectIcPrescaler(void *motor);
+    /**
+     * 
+     * @param obj
+     * @param type
+     * @param command
+     * @param packet
+     */
+    void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type, 
+        OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet);
 
 #ifdef	__cplusplus
 }

@@ -59,7 +59,6 @@ int32_t Motor_measureVelocity(MOTOR_t *motor) {
     temp.SIG_VEL = motor->ICinfo->SIG_VEL;
     motor->ICinfo->SIG_VEL = 0;
     if (temp.SIG_VEL) {
-
         temp.k_mul = motor->ICinfo->k_mul;
         // Evaluate velocity
         int32_t temp_f = temp.k_mul * motor->k_vel_ic;
@@ -691,7 +690,7 @@ inline void Motor_IC_controller(MOTOR_t *motor, REGISTER ICBUF, bool QEIDIR) {
     // Store old time period
     motor->ICinfo->oldTime = newTime;
     
-    /// Save sign Vel motor 0
+    /// Save sign rotation motor
     (QEIDIR ? motor->ICinfo->SIG_VEL++ : motor->ICinfo->SIG_VEL--); 
 }
 
