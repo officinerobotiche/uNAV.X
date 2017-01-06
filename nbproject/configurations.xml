@@ -17,6 +17,7 @@
         <itemPath>includes/motors/motor_comm.h</itemPath>
         <itemPath>includes/motors/motor_control.h</itemPath>
         <itemPath>includes/motors/motor_init.h</itemPath>
+        <itemPath>includes/motors/motor.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="system" projectFiles="true">
         <itemPath>includes/system/system.h</itemPath>
@@ -59,6 +60,7 @@
         <itemPath>src/motors/motor_control.c</itemPath>
         <itemPath>src/motors/motor_comm.c</itemPath>
         <itemPath>src/motors/motor_init.c</itemPath>
+        <itemPath>src/motors/motor.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
