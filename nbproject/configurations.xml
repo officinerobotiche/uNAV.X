@@ -65,7 +65,6 @@
       <logicalFolder name="f2" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
         <itemPath>src/system/traps.c</itemPath>
-        <itemPath>src/system/interrupts.c</itemPath>
         <itemPath>src/system/peripherals.c</itemPath>
         <itemPath>src/system/system_comm.c</itemPath>
         <itemPath>src/system/peripherals_comm.c</itemPath>

@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 #include "motors/motor_control.h"
+#include <or_bus/frame.h>
 
     //Numbers and names associated at all processes
 #define PROCESS_MOTION_LENGTH 2

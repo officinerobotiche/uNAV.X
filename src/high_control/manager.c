@@ -134,9 +134,9 @@ void HighLevelTaskController(int argc, int *argv) {
         set_motion_state(STATE_CONTROL_HIGH_DISABLE);
     }
 
-#ifndef MOTION_CONTROL
-    UpdateBlink(3, control_state);
-#endif
+//#ifndef MOTION_CONTROL
+//    UpdateBlink(3, control_state);
+//#endif
 }
 
 diff_drive_parameter_unicycle_t init_motion_parameter_unicycle(void) {
@@ -187,17 +187,17 @@ diff_drive_state_t get_motion_state(void) {
 void set_motion_state(diff_drive_state_t state) {
     if (state != control_state) {
         control_state = state;
-        if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
-            set_motor_state(MOTOR_LEFT, STATE_CONTROL_VELOCITY);
-            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_VELOCITY);
-        } else if(control_state - 1 < counter_task) {
-            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
-            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
-        } else {
-            control_state = STATE_CONTROL_HIGH_DISABLE;
-            set_motor_state(MOTOR_LEFT, STATE_CONTROL_EMERGENCY);
-            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_EMERGENCY);
-        }
+//        if (control_state == STATE_CONTROL_HIGH_VELOCITY) {
+//            set_motor_state(MOTOR_LEFT, STATE_CONTROL_VELOCITY);
+//            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_VELOCITY);
+//        } else if(control_state - 1 < counter_task) {
+//            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
+//            set_motor_state(MOTOR_LEFT, high_level_task[control_state - 1].state);
+//        } else {
+//            control_state = STATE_CONTROL_HIGH_DISABLE;
+//            set_motor_state(MOTOR_LEFT, STATE_CONTROL_EMERGENCY);
+//            set_motor_state(MOTOR_RIGHT, STATE_CONTROL_EMERGENCY);
+//        }
     }
 }
 
@@ -206,26 +206,26 @@ inline diff_drive_velocity_t get_motion_velocity_ref_unicycle(void) {
 }
 
 void set_motion_velocity_ref_unicycle(diff_drive_velocity_t velocity) {
-    reference = velocity;
-    // >>>>> Second part: references calculation
-    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(velocity.v - (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
-    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(velocity.v + (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
+//    reference = velocity;
+//    // >>>>> Second part: references calculation
+//    long int motor_left_refer = (long int) ((1.0f / parameter_unicycle.radius_l)*(velocity.v - (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
+//    long int motor_right_refer = (long int) ((1.0f / parameter_unicycle.radius_r)*(velocity.v + (0.5f*parameter_unicycle.wheelbase * (velocity.w)))*1000);
 
     // >>>>> Saturation on 16 bit values
-    if(motor_left_refer > INT16_MAX) {
-        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MAX);
-    } else if (motor_left_refer < INT16_MIN) {
-        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MIN);
-    } else {
-        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, motor_left_refer);
-    }
-    if(motor_right_refer > INT16_MIN) {
-        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
-    } else if (motor_right_refer < INT16_MIN) {
-        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
-    } else {
-        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, motor_right_refer);
-    }
+//    if(motor_left_refer > INT16_MAX) {
+//        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MAX);
+//    } else if (motor_left_refer < INT16_MIN) {
+//        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, INT16_MIN);
+//    } else {
+//        set_motor_reference(MOTOR_ZERO, CONTROL_VELOCITY, motor_left_refer);
+//    }
+//    if(motor_right_refer > INT16_MIN) {
+//        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
+//    } else if (motor_right_refer < INT16_MIN) {
+//        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, INT16_MIN);
+//    } else {
+//        set_motor_reference(MOTOR_ONE, CONTROL_VELOCITY, motor_right_refer);
+//    }
     // <<<<< Saturation on 16 bit values
 }
 
@@ -235,53 +235,53 @@ inline diff_drive_velocity_t get_motion_velocity_meas_unicycle(void) {
 
 int VelocityMeasure(void) {
     unsigned int t = TMR1; // Timing function
-    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / 2;
-    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
-    measure.v = ((float) vel_v / 1000000);
-    measure.w = ((float) vel_w / 1000);
+//    long vel_v = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity + parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / 2;
+//    long vel_w = (parameter_unicycle_int.radius_r * get_motor_measures(MOTOR_ONE).velocity - parameter_unicycle_int.radius_l * get_motor_measures(MOTOR_ZERO).velocity) / (2 * parameter_unicycle_int.wheelbase);
+//    measure.v = ((float) vel_v / 1000000);
+//    measure.w = ((float) vel_w / 1000);
 
     return TMR1 - t; // Time of execution
 }
 
 int deadReckoning(void) {
     unsigned int t = TMR1; // Timing function
-    volatile diff_drive_coordinate_t delta;
-    float WheelSpL = parameter_unicycle.radius_l * get_motor_measures(MOTOR_ZERO).position;
-    float WheelSpR = parameter_unicycle.radius_r * get_motor_measures(MOTOR_ONE).position;
-    float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote
-    float DifSp = WheelSpR - WheelSpL; // Calcolo della differenza degli spostamenti delle ruote
+//    volatile diff_drive_coordinate_t delta;
+//    float WheelSpL = parameter_unicycle.radius_l * get_motor_measures(MOTOR_ZERO).position;
+//    float WheelSpR = parameter_unicycle.radius_r * get_motor_measures(MOTOR_ONE).position;
+//    float SumSp = WheelSpR + WheelSpL; // Calcolo della somma degli spostamenti delle ruote
+//    float DifSp = WheelSpR - WheelSpL; // Calcolo della differenza degli spostamenti delle ruote
 
-    if (fabs(DifSp) <= parameter_unicycle.sp_min) {
-        delta.theta = 0;
-        delta.space = WheelSpR;
-        delta.x = delta.space * cosTh_old;
-        delta.y = delta.space * sinTh_old;
-    } else if (fabs(SumSp) <= parameter_unicycle.sp_min) {
-        delta.theta = DifSp / parameter_unicycle.wheelbase;
-        coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
-        sinTh_old = sinf(coordinate.theta);
-        cosTh_old = cosf(coordinate.theta);
-        delta.x = 0;
-        delta.y = 0;
-        delta.space = 0;
-    } else {
-        delta.theta = DifSp / parameter_unicycle.wheelbase;
-        coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
-        float cosTh_new = cosf(coordinate.theta);
-        float sinTh_new = sinf(coordinate.theta);
-        delta.space = SumSp / 2;
-        float radius = wheel_m * (SumSp / DifSp);
-
-        delta.x = radius * (sinTh_new - sinTh_old);
-        delta.y = radius * (cosTh_old - cosTh_new);
-        sinTh_old = sinTh_new;
-        cosTh_old = cosTh_new;
-    }
-
-    // Calculate odometry
-    coordinate.space += delta.space;
-    coordinate.x += delta.x;
-    coordinate.y += delta.y;
+//    if (fabs(DifSp) <= parameter_unicycle.sp_min) {
+//        delta.theta = 0;
+//        delta.space = WheelSpR;
+//        delta.x = delta.space * cosTh_old;
+//        delta.y = delta.space * sinTh_old;
+//    } else if (fabs(SumSp) <= parameter_unicycle.sp_min) {
+//        delta.theta = DifSp / parameter_unicycle.wheelbase;
+//        coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
+//        sinTh_old = sinf(coordinate.theta);
+//        cosTh_old = cosf(coordinate.theta);
+//        delta.x = 0;
+//        delta.y = 0;
+//        delta.space = 0;
+//    } else {
+//        delta.theta = DifSp / parameter_unicycle.wheelbase;
+//        coordinate.theta = fmodf(coordinate.theta + delta.theta, 2 * PI); // Angolo normalizzato tra [0,2*PI]
+//        float cosTh_new = cosf(coordinate.theta);
+//        float sinTh_new = sinf(coordinate.theta);
+//        delta.space = SumSp / 2;
+//        float radius = wheel_m * (SumSp / DifSp);
+//
+//        delta.x = radius * (sinTh_new - sinTh_old);
+//        delta.y = radius * (cosTh_old - cosTh_new);
+//        sinTh_old = sinTh_new;
+//        cosTh_old = cosTh_new;
+//    }
+//
+//    // Calculate odometry
+//    coordinate.space += delta.space;
+//    coordinate.x += delta.x;
+//    coordinate.y += delta.y;
 
     return TMR1 - t; // Time of execution
 }

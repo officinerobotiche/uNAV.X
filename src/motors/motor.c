@@ -39,7 +39,7 @@
 /* Communication Functions                                                    */
 /******************************************************************************/
 
-int32_t Motor_measureVelocity(motor_firmware_t *motor) {
+int32_t Motor_measureVelocity(MOTOR_t *motor) {
     volatile ICdata temp;
     int QEICNTtmp = 0;
     int32_t vel_mean = 0;
@@ -85,7 +85,7 @@ int32_t Motor_measureVelocity(motor_firmware_t *motor) {
 }
 
 #define SATURATION
-inline int Motor_write_PWM(motor_firmware_t *motor, int duty_cycle) {
+inline int Motor_write_PWM(MOTOR_t *motor, int duty_cycle) {
     // Store the real value send to the PWM
     motor->reference.pwm = duty_cycle;
 #ifdef SATURATION
@@ -135,7 +135,7 @@ inline __attribute__((always_inline)) int Motor_castToDSP(motor_control_t value,
     }
 }
 
-inline int __attribute__((always_inline)) Motor_control_velocity(motor_firmware_t *motor, 
+inline int __attribute__((always_inline)) Motor_control_velocity(MOTOR_t *motor, 
         motor_control_t reference, volatile fractional saturation) {
 #define CONTROLLER_VEL GET_CONTROLLER_NUM(CONTROL_VELOCITY)
     // Set reference
@@ -162,7 +162,7 @@ inline int __attribute__((always_inline)) Motor_control_velocity(motor_firmware_
 }
 
 void Motor_TaskController(int argc, int *argv) {
-    motor_firmware_t *motor = (motor_firmware_t*) argv[0];
+    MOTOR_t *motor = (MOTOR_t*) argv[0];
     
     // ================ SAFETY CHECK ===========================
     /// Check for emergency mode or in safety mode
@@ -270,7 +270,7 @@ void Motor_TaskController(int argc, int *argv) {
 }
 
 void Motor_Emergency(int argc, int *argv) {
-    motor_firmware_t *motor = (motor_firmware_t*) argv[0];
+    MOTOR_t *motor = (MOTOR_t*) argv[0];
     if (motor->external_reference != 0) {
         motor->external_reference -= motor->last_reference / motor->motor_emergency.step;
         if (SGN(motor->external_reference) * motor->last_reference < 0) {
@@ -283,7 +283,7 @@ void Motor_Emergency(int argc, int *argv) {
     }
 }
 
-void Motor_restore_safety_control(motor_firmware_t *motor) {
+void Motor_restore_safety_control(MOTOR_t *motor) {
     // Reset stop time
     reset_timer(&motor->motor_safety.stop);
     // Stop safety controller
@@ -291,7 +291,7 @@ void Motor_restore_safety_control(motor_firmware_t *motor) {
 }
 
 void Motor_Safety(int argc, int *argv) {
-    motor_firmware_t *motor = (motor_firmware_t*) argv[0];
+    MOTOR_t *motor = (MOTOR_t*) argv[0];
     // Reduction external reference
     if(labs(motor->measure.current) > motor->safety.critical_zone) {
         if (motor->external_reference != 0) {
@@ -317,7 +317,7 @@ void Motor_Safety(int argc, int *argv) {
 }
 
 void Motor_ADC_callback(void* obj) {
-    motor_firmware_t *motor = (motor_firmware_t*) &obj;
+    MOTOR_t *motor = (MOTOR_t*) &obj;
 #define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
     motor->measure.current = - motor->current.gain * motor->adc[0].value + motor->current.offset;
     motor->diagnostic.volt = motor->volt.gain * motor->adc[1].value + motor->volt.offset;
@@ -362,7 +362,7 @@ void Motor_reset_data(volatile motor_t* motor) {
  * @param controlHistory History structure for PID
  * @param i The number of controller
  */
-void Motor_initialize_controllers(motor_firmware_t *motor, 
+void Motor_initialize_controllers(MOTOR_t *motor, 
         fractional *abcCoefficient, fractional *controlHistory, unsigned int i) {
     //Initialize the PID data structure: PIDstruct
     //Set up pointer to derived coefficients
@@ -379,7 +379,7 @@ void Motor_initialize_controllers(motor_firmware_t *motor,
     motor->controller[i].k_aw = 0;
 }
 
-void Motor_init(motor_firmware_t *motor, unsigned int index, 
+void Motor_init(MOTOR_t *motor, unsigned int index, 
         fractional *abcCoefficient, fractional *controlHistory, 
         ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
         pwm_controller_t pwm_cb, unsigned int PWM_LIMIT) {
@@ -433,32 +433,32 @@ void Motor_init(motor_firmware_t *motor, unsigned int index,
     motor->motor_safety.task_safety = task_load_data(safety_event, DEFAULT_FREQ_MOTOR_CONTROL_SAFETY, 1, motor);
 }
 
-void Motor_register_adc(motor_firmware_t *motor, gpio_adc_t *adc, float gain_adc) {
+void Motor_register_adc(MOTOR_t *motor, gpio_adc_t *adc, float gain_adc) {
     /// Setup ADC current and temperature
     motor->adc = adc;
     motor->gain_adc = gain_adc;
     gpio_adc_register(adc, MOTOR_DEFAULT_ADC_PORTS, &Motor_ADC_callback, motor);
 }
 
-void Motor_register_enable(motor_firmware_t *motor, const gpio_t* enable) {
+void Motor_register_enable(MOTOR_t *motor, const gpio_t* enable) {
     /// Setup bit enable
     motor->pin_enable = (gpio_t*) enable;
     gpio_init_pin(motor->pin_enable);
 }
 
-void Motor_register_led_controller(motor_firmware_t *motor, LED_controller_t* led_controller) {
+void Motor_register_led_controller(MOTOR_t *motor, LED_controller_t* led_controller) {
     motor->led_controller = led_controller;
 }
 
-void Motor_run(motor_firmware_t *motor, task_status_t state) {
+void Motor_run(MOTOR_t *motor, task_status_t state) {
     task_set(motor->task_manager, state);
 }
 
-inline motor_t Motor_get_constraints(motor_firmware_t *motor) {
+inline motor_t Motor_get_constraints(MOTOR_t *motor) {
     return motor->constraint;
 }
 
-void Motor_update_constraints(motor_firmware_t *motor, motor_t *constraints) {
+void Motor_update_constraints(MOTOR_t *motor, motor_t *constraints) {
     //Update parameter constraints
     memcpy(&motor->constraint, constraints, sizeof(motor_t));
     //Update PWM max value
@@ -467,11 +467,11 @@ void Motor_update_constraints(motor_firmware_t *motor, motor_t *constraints) {
     motor->pwm_limit = motor->constraint.pwm >> 20;
 }
 
-inline motor_parameter_t Motor_get_parameters(motor_firmware_t *motor) {
+inline motor_parameter_t Motor_get_parameters(MOTOR_t *motor) {
     return motor->parameter_motor;
 }
 
-void Motor_update_parameters(motor_firmware_t *motor, motor_parameter_t *parameters) {
+void Motor_update_parameters(MOTOR_t *motor, motor_parameter_t *parameters) {
     //Update parameter configuration
     memcpy(&motor->parameter_motor, parameters, sizeof(motor_parameter_t));
     // If CPR is before ratio
@@ -507,11 +507,11 @@ void Motor_update_parameters(motor_firmware_t *motor, motor_parameter_t *paramet
     Motor_set_state(motor, motor->state);
 }
 
-inline motor_state_t Motor_get_state(motor_firmware_t *motor) {
+inline motor_state_t Motor_get_state(MOTOR_t *motor) {
     return motor->diagnostic.state;
 }
 
-void Motor_set_state(motor_firmware_t *motor, motor_state_t state) {
+void Motor_set_state(MOTOR_t *motor, motor_state_t state) {
     bool enable = (state == CONTROL_DISABLE) ? false : true;
     // For all error controller the blinks are disabled
     int led_state = (state < CONTROL_DISABLE) ? state : state + 1;
@@ -540,12 +540,12 @@ void Motor_set_state(motor_firmware_t *motor, motor_state_t state) {
     }
 }
 
-inline motor_pid_t Motor_get_pid(motor_firmware_t *motor, motor_state_t state) {
+inline motor_pid_t Motor_get_pid(MOTOR_t *motor, motor_state_t state) {
     int num_control = GET_CONTROLLER_NUM(state);
     return motor->controller[num_control].pid;
 }
 
-bool Motor_update_pid(motor_firmware_t *motor, motor_state_t state, motor_pid_t *pid) {
+bool Motor_update_pid(MOTOR_t *motor, motor_state_t state, motor_pid_t *pid) {
     // If the motor control is the same in action you can not disable
     if(motor->diagnostic.state == state && pid->enable == false) {
         return false;
@@ -596,11 +596,11 @@ bool Motor_update_pid(motor_firmware_t *motor, motor_state_t state, motor_pid_t 
         return false;
 }
 
-inline motor_emergency_t Motor_get_emergency(motor_firmware_t *motor) {
+inline motor_emergency_t Motor_get_emergency(MOTOR_t *motor) {
     return motor->emergency;
 }
 
-void Motor_update_emergency(motor_firmware_t *motor, motor_emergency_t *emergency_data) {
+void Motor_update_emergency(MOTOR_t *motor, motor_emergency_t *emergency_data) {
     // Store emergency data
     memcpy(&motor->emergency, emergency_data, sizeof(motor_emergency_t));
     // Reset counter alive reference message
@@ -611,11 +611,11 @@ void Motor_update_emergency(motor_firmware_t *motor, motor_emergency_t *emergenc
     motor->motor_emergency.step = motor->emergency.slope_time * motor->manager_freq;
 }
 
-inline motor_safety_t Motor_get_safety(motor_firmware_t *motor) {
+inline motor_safety_t Motor_get_safety(MOTOR_t *motor) {
     return motor->safety;
 }
 
-void Motor_update_safety(motor_firmware_t *motor, motor_safety_t *safety) {
+void Motor_update_safety(MOTOR_t *motor, motor_safety_t *safety) {
     // Store safety data
     memcpy(&motor->safety, safety, sizeof(motor_safety_t));
     // Initialization safety controller
@@ -626,7 +626,7 @@ void Motor_update_safety(motor_firmware_t *motor, motor_safety_t *safety) {
     motor->motor_safety.step = (safety->timeout * motor->manager_freq) / 1000;
 }
 
-inline motor_t Motor_get_measures(motor_firmware_t *motor) {
+inline motor_t Motor_get_measures(MOTOR_t *motor) {
     motor->measure.position_delta = motor->k_ang * motor->PulsEnc;
     motor->measure.position = motor->k_ang * motor->enc_angle;
     motor->measure.current = motor->parameter_motor.rotation * motor->measure.current;
@@ -636,12 +636,12 @@ inline motor_t Motor_get_measures(motor_firmware_t *motor) {
     return motor->measure;
 }
 
-inline motor_t Motor_get_control(motor_firmware_t *motor) {
+inline motor_t Motor_get_control(MOTOR_t *motor) {
     motor->controlOut.current = motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
     return motor->controlOut;
 }
 
-inline motor_diagnostic_t Motor_get_diagnostic(motor_firmware_t *motor) {
+inline motor_diagnostic_t Motor_get_diagnostic(MOTOR_t *motor) {
     // get time execution
     motor->diagnostic.time_control = get_time(motor->motor_manager_event);
     // Evaluate the Watt required [mW]
@@ -649,16 +649,16 @@ inline motor_diagnostic_t Motor_get_diagnostic(motor_firmware_t *motor) {
     return motor->diagnostic;
 }
 
-inline motor_t Motor_get_reference(motor_firmware_t *motor) {
+inline motor_t Motor_get_reference(MOTOR_t *motor) {
     return motor->reference;
 }
              
-inline void Motor_reset_position_measure(motor_firmware_t *motor, motor_control_t value) {
+inline void Motor_reset_position_measure(MOTOR_t *motor, motor_control_t value) {
     motor->enc_angle = (int)((value / ((float)motor->k_ang) ));
     motor->measure.position = (float) value;  
 }
              
-void Motor_set_reference(motor_firmware_t *motor, motor_state_t state, motor_control_t reference) {
+void Motor_set_reference(MOTOR_t *motor, motor_state_t state, motor_control_t reference) {
     // If the controller is in safety state the new reference is skipped
     if(motor->diagnostic.state != CONTROL_SAFETY) {
         // Check state
@@ -673,4 +673,28 @@ void Motor_set_reference(motor_firmware_t *motor, motor_state_t state, motor_con
     }
     // Reset time emergency
     reset_timer(&motor->motor_emergency.alive);
+}
+
+inline void Motor_IC_controller(MOTOR_t *motor, REGISTER ICBUF, bool QEIDIR) {
+    unsigned int newTime = *ICBUF; // Reading ICBUF every interrupt
+    
+    // Detail in Microchip Application Note: AN545
+    if(motor->ICinfo->overTmr == 0) {
+        motor->ICinfo->delta = newTime - motor->ICinfo->oldTime;
+        motor->ICinfo->timePeriod += motor->ICinfo->delta;
+    } else {
+        motor->ICinfo->delta = (newTime + (0xFFFF - motor->ICinfo->oldTime)
+                + (0xFFFF * (motor->ICinfo->overTmr - 1)));
+        motor->ICinfo->timePeriod += motor->ICinfo->delta;
+        motor->ICinfo->overTmr = 0;
+    }
+    // Store old time period
+    motor->ICinfo->oldTime = newTime;
+    
+    /// Save sign Vel motor 0
+    (QEIDIR ? motor->ICinfo->SIG_VEL++ : motor->ICinfo->SIG_VEL--); 
+}
+
+inline void Motor_IC_timer(MOTOR_t *motor) {
+    motor->ICinfo->overTmr++; // timer overflow counter
 }

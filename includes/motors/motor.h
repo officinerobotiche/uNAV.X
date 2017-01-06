@@ -93,7 +93,7 @@ extern "C" {
         volatile fractional saturation;
     } pid_controller_t;
 
-    typedef struct _motor_firmware {
+    typedef struct _MOTOR {
         unsigned int index;
         // led controller
         LED_controller_t* led_controller;
@@ -158,7 +158,7 @@ extern "C" {
         volatile motor_t controlOut;
         volatile motor_t reference;
         volatile motor_t measure;
-    } motor_firmware_t;
+    } MOTOR_t;
 
 /******************************************************************************/
 /* System Function Prototypes                                                 */
@@ -175,7 +175,7 @@ extern "C" {
  * @param pwm_cb
  * @param PWM_LIMIT
  */
-void Motor_init(motor_firmware_t *motor, unsigned int index, 
+void Motor_init(MOTOR_t *motor, unsigned int index, 
         fractional *abcCoefficient, fractional *controlHistory, 
         ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
         pwm_controller_t pwm_cb, unsigned int PWM_LIMIT);
@@ -185,68 +185,68 @@ void Motor_init(motor_firmware_t *motor, unsigned int index,
  * @param adc
  * @param gain_adc
  */
-void Motor_register_adc(motor_firmware_t *motor, gpio_adc_t *adc, float gain_adc);
+void Motor_register_adc(MOTOR_t *motor, gpio_adc_t *adc, float gain_adc);
 /**
  * 
  * @param motor
  * @param enable
  */
-void Motor_register_enable(motor_firmware_t *motor, const gpio_t* enable);
+void Motor_register_enable(MOTOR_t *motor, const gpio_t* enable);
 /**
  * 
  * @param motor
  * @param led_controller
  */
-void Motor_register_led_controller(motor_firmware_t *motor, LED_controller_t* led_controller);
+void Motor_register_led_controller(MOTOR_t *motor, LED_controller_t* led_controller);
 /**
  * 
  * @param motor
  * @param state
  */
-void Motor_run(motor_firmware_t *motor, task_status_t state);
+void Motor_run(MOTOR_t *motor, task_status_t state);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_t Motor_get_constraints(motor_firmware_t *motor);
+inline motor_t Motor_get_constraints(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @param constraints
  */
-void Motor_update_constraints(motor_firmware_t *motor, motor_t *constraints);
+void Motor_update_constraints(MOTOR_t *motor, motor_t *constraints);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_parameter_t Motor_get_parameters(motor_firmware_t *motor);
+inline motor_parameter_t Motor_get_parameters(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @param parameters
  */
-void Motor_update_parameters(motor_firmware_t *motor, motor_parameter_t *parameters);
+void Motor_update_parameters(MOTOR_t *motor, motor_parameter_t *parameters);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_state_t Motor_get_state(motor_firmware_t *motor);
+inline motor_state_t Motor_get_state(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @param state
  */
-void Motor_set_state(motor_firmware_t *motor, motor_state_t state);
+void Motor_set_state(MOTOR_t *motor, motor_state_t state);
 /**
  * 
  * @param motor
  * @param state
  * @return 
  */
-inline motor_pid_t Motor_get_pid(motor_firmware_t *motor, motor_state_t state);
+inline motor_pid_t Motor_get_pid(MOTOR_t *motor, motor_state_t state);
 /**
  * 
  * @param motor
@@ -254,68 +254,80 @@ inline motor_pid_t Motor_get_pid(motor_firmware_t *motor, motor_state_t state);
  * @param pid
  * @return 
  */
-bool Motor_update_pid(motor_firmware_t *motor, motor_state_t state, motor_pid_t *pid);
+bool Motor_update_pid(MOTOR_t *motor, motor_state_t state, motor_pid_t *pid);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_emergency_t Motor_get_emergency(motor_firmware_t *motor);
+inline motor_emergency_t Motor_get_emergency(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @param emergency_data
  */
-void Motor_update_emergency(motor_firmware_t *motor, motor_emergency_t *emergency_data);
+void Motor_update_emergency(MOTOR_t *motor, motor_emergency_t *emergency_data);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_safety_t Motor_get_safety(motor_firmware_t *motor);
+inline motor_safety_t Motor_get_safety(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @param safety
  */
-void Motor_update_safety(motor_firmware_t *motor, motor_safety_t *safety);
+void Motor_update_safety(MOTOR_t *motor, motor_safety_t *safety);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_t Motor_get_measures(motor_firmware_t *motor);
+inline motor_t Motor_get_measures(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_t Motor_get_control(motor_firmware_t *motor);
+inline motor_t Motor_get_control(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_diagnostic_t Motor_get_diagnostic(motor_firmware_t *motor);
+inline motor_diagnostic_t Motor_get_diagnostic(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @return 
  */
-inline motor_t Motor_get_reference(motor_firmware_t *motor);
+inline motor_t Motor_get_reference(MOTOR_t *motor);
 /**
  * 
  * @param motor
  * @param value
  */
-inline void Motor_reset_position_measure(motor_firmware_t *motor, motor_control_t value);
+inline void Motor_reset_position_measure(MOTOR_t *motor, motor_control_t value);
 /**
  * 
  * @param motor
  * @param state
  * @param reference
  */
-void Motor_set_reference(motor_firmware_t *motor, motor_state_t state, motor_control_t reference);
+void Motor_set_reference(MOTOR_t *motor, motor_state_t state, motor_control_t reference);
+/**
+ * 
+ * @param motor
+ * @param ICBUF
+ * @param QEIDIR
+ */
+inline void Motor_IC_controller(MOTOR_t *motor, REGISTER ICBUF, bool QEIDIR);
+/**
+ * 
+ * @param motor
+ */
+inline void Motor_IC_timer(MOTOR_t *motor);
 
 #ifdef	__cplusplus
 }

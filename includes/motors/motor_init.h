@@ -21,22 +21,26 @@
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-    /** 
-     * Initialization PWM for all motors
+    
+    /**
+     * Numbers of motors available in this board
      */
-    void InitPWM(void);
+#define NUM_MOTORS 2
+#define MOTOR_ZERO 0
+#define MOTOR_ONE 1
+    
+#include "motors/motor.h"
 
     /** 
      * Initialization QEI motors
      * @param motIdx number motor
      */
-    void InitQEI(short motIdx);
+    void InitQEI(MOTOR_t *motor);
     /** 
      * Initialization Input Capture motors
      * @param motIdx number motor
      */
-    void InitIC(short motIdx);
+    void InitIC(MOTOR_t *motor);
     /** 
      * Initialization Timer 2 for IC (Input Capture)
      */
@@ -51,7 +55,7 @@ extern "C" {
      * Select the correct Input Capture prescaler		
      * @param motIdx number motor				
      */		
-    inline void SelectIcPrescaler(int motIdx);
+    void SelectIcPrescaler(MOTOR_t *motor);
     
     /** 
      * Safely switch to the new Input Capture prescaler

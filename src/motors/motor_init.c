@@ -27,8 +27,9 @@
 #include <string.h>
 #include <or_peripherals/GPIO/adc.h>
 
+#include "system/peripherals.h"
+
 #include "system/system.h"
-#include "motors/motor_control.h"
 #include "motors/motor_init.h"
 
 /*****************************************************************************/
@@ -52,7 +53,6 @@ const ICMode_t ICMode[4] = {
 #define IC_TIMEPERIOD_TH_MAX 0x8000
 #define IC_TIMEPERIOD_TH_MIN 2000
 
-ICdata ICinfo[NUM_MOTORS];
 #ifdef UNAV_V1
 const gpio_t enable[] = {
     GPIO_INIT(A, 7, GPIO_OUTPUT),   // ENABLE0
@@ -78,6 +78,13 @@ gpio_adc_t ADCmotor[2][2] = {
     { GPIO_ADC(B, 0, AD1PCFGL, 2, 2*ADC_BUFF, ADC_BUFF),
     GPIO_ADC(B, 1, AD1PCFGL, 3,   3*ADC_BUFF, ADC_BUFF)},
 };
+
+typedef struct _motor_firmware {
+    MOTOR_t motor;
+    ICdata ICinfo;
+} motor_firmware_t;
+
+motor_firmware_t motor_fw[NUM_MOTORS];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -123,13 +130,13 @@ void InitPWM(void) {
     ConfigIntMCPWM1(PWM1_INT_DIS);
 }
 
-void InitQEI(short motIdx) {
-    switch (motIdx) {
+void InitQEI(MOTOR_t *motor) {
+    switch (motor->index) {
         case MOTOR_ZERO:
             //QEI1CONbits.CNTERR= 0; // No position count error has occurred
             QEI1CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
             QEI1CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-            QEI1CONbits.SWPAB = (get_motor_parameters(motIdx).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI1CONbits.SWPAB = (Motor_get_parameters(motor).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             QEI1CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
             //QEI1CONbits.TQGATE= 0  // Timer gated time accumulation disabled
             //QEI1CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -145,7 +152,7 @@ void InitQEI(short motIdx) {
             //QEI2CONbits.CNTERR= 0; // No position count error has occurred
             QEI2CONbits.QEISIDL = 1; // Discontinue module operation when device enters Idle mode
             QEI2CONbits.QEIM = 7; // Quadrature Encoder Interface enabled (x4 mode) with position counter reset by match (MAXxCNT)
-            QEI2CONbits.SWPAB = (get_motor_parameters(motIdx).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
+            QEI2CONbits.SWPAB = (Motor_get_parameters(motor).rotation >= 1) ? 1 : 0; // Phase A and Phase B inputs swapped
             QEI2CONbits.PCDOUT = 0; // Position counter direction status output disabled (Normal I/O pin operation)
             //QEI2CONbits.TQGATE= 0  // Timer gated time accumulation disabled
             //QEI2CONbits.TQCKPS = 0b00	// 1:1 prescale value
@@ -160,8 +167,8 @@ void InitQEI(short motIdx) {
     }
 }
 
-void InitIC(short motIdx) {
-    switch (motIdx) {
+void InitIC(MOTOR_t *motor) {
+    switch (motor->index) {
         case MOTOR_ZERO:
             // Initialize Capture Module
             IC1CONbits.ICM = IC_DISABLE; // Disable Input Capture 1 module
@@ -206,14 +213,14 @@ void InitTimer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
-void InitICinfo(int motIdx) {
+void InitICinfo(ICdata *ICinfo) {
     //Input capture information
-    ICinfo[motIdx].k_mul = ICMode[ICMODE_DEFAULT].k;
-    ICinfo[motIdx].number = ICMODE_DEFAULT;
-    ICinfo[motIdx].SIG_VEL = 0;
-    ICinfo[motIdx].overTmr = 0;
-    ICinfo[motIdx].oldTime = 0;
-    ICinfo[motIdx].timePeriod = 0;
+    ICinfo->k_mul = ICMode[ICMODE_DEFAULT].k;
+    ICinfo->number = ICMODE_DEFAULT;
+    ICinfo->SIG_VEL = 0;
+    ICinfo->overTmr = 0;
+    ICinfo->oldTime = 0;
+    ICinfo->timePeriod = 0;
 }
 
 void Motor_Init() {
@@ -243,35 +250,40 @@ void Motor_Init() {
     int i;
     for (i = 0; i < NUM_MOTORS; ++i) {
         // Initialization Input Capture
-        InitICinfo(i);
+        InitICinfo(&motor_fw[i].ICinfo);
         // End
-        InitQEI(i);                     ///< Open QEI
-        InitIC(i);                      ///< Open Input Capture
+        InitQEI(&motor_fw[i].motor);                     ///< Open QEI
+        InitIC(&motor_fw[i].motor);                      ///< Open Input Capture
         /// Initialize variables for motors
-        hTask_t motor_manager = init_motor(i, &ADCmotor[i][0], 2, &enable[i], &ICinfo[i], &SelectIcPrescaler);
-        /// Initialize parameters for motors
-        update_motor_parameters(i, init_motor_parameters());
-        // Initialize current PID controller
-        motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
-        update_motor_pid(i, CONTROL_CURRENT, pid_current);
-        /// Initialize Velocity PID controller
-        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1.0, 1000, true};
-        update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
-        /// Initialize Position PID controller
-        motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 0.0, 10, false};
-        update_motor_pid(i, CONTROL_POSITION, pid_pos);
-        /// Initialize safety procedure
-        motor_safety_t safety = {400, 1000, 1000};
-        update_motor_safety(i, safety);
-        /// Initialize emergency procedure to stop
-        motor_emergency_t emergency = {1.0, 2.0, 500};
-        update_motor_emergency(i, emergency);
-        /// Initialize constraints motor
-        update_motor_constraints(i, init_motor_constraints());
-        /// Initialize state controller
-        set_motor_state(i, STATE_CONTROL_DISABLE);
+        //Motor_init(motor[i].motor, i, &ADCmotor[i][0], 2, &enable[i], &ICinfo[i], &SelectIcPrescaler);
+        
+//void Motor_init(MOTOR_t *motor, unsigned int index, 
+//        fractional *abcCoefficient, fractional *controlHistory, 
+//        ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
+//        pwm_controller_t pwm_cb, unsigned int PWM_LIMIT);
+//        /// Initialize parameters for motors
+//        update_motor_parameters(i, init_motor_parameters());
+//        // Initialize current PID controller
+//        motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
+//        update_motor_pid(i, CONTROL_CURRENT, pid_current);
+//        /// Initialize Velocity PID controller
+//        motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1.0, 1000, true};
+//        update_motor_pid(i, CONTROL_VELOCITY, pid_vel);
+//        /// Initialize Position PID controller
+//        motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 0.0, 10, false};
+//        update_motor_pid(i, CONTROL_POSITION, pid_pos);
+//        /// Initialize safety procedure
+//        motor_safety_t safety = {400, 1000, 1000};
+//        update_motor_safety(i, safety);
+//        /// Initialize emergency procedure to stop
+//        motor_emergency_t emergency = {1.0, 2.0, 500};
+//        update_motor_emergency(i, emergency);
+//        /// Initialize constraints motor
+//        update_motor_constraints(i, init_motor_constraints());
+//        /// Initialize state controller
+//        set_motor_state(i, STATE_CONTROL_DISABLE);
         /// Run task controller
-        task_set(motor_manager, RUN);
+//        task_set(motor_manager, RUN);
     }
 }
 
@@ -289,7 +301,7 @@ inline void SwitchIcPrescaler(int motIdx, int mode) {
     }
 }
 
-inline void SelectIcPrescaler(int motIdx) {
+inline void SelectIcPrescaler(MOTOR_t *motor) {
     /** 
      * V = Kvel / timePeriod
      * is equal to:
@@ -300,18 +312,38 @@ inline void SelectIcPrescaler(int motIdx) {
      * 
      */
     int temp_number = 0;
-    unsigned long doubletimePeriod = ICinfo[motIdx].delta;
-    unsigned long halfPeriod = ICinfo[motIdx].delta;
+    unsigned long doubletimePeriod = motor->ICinfo->delta;
+    unsigned long halfPeriod = motor->ICinfo->delta;
     do {
         doubletimePeriod = doubletimePeriod * ICMode[temp_number].k;
         halfPeriod = halfPeriod / ICMode[temp_number].k;
         if (doubletimePeriod > IC_TIMEPERIOD_TH_MIN) {
             if (halfPeriod < IC_TIMEPERIOD_TH_MAX) {
-                ICinfo[motIdx].k_mul = ICMode[temp_number].k;
+                motor->ICinfo->k_mul = ICMode[temp_number].k;
                 return;
             }
         }
-        ICinfo[motIdx].k_mul = ICMode[temp_number].k;
+        motor->ICinfo->k_mul = ICMode[temp_number].k;
         temp_number++;
     }while(temp_number <= 3);
+}
+
+void __attribute__((interrupt, no_auto_psv)) _IC1Interrupt(void) {
+    // Run the Input Capture controller
+    Motor_IC_controller(&motor_fw[MOTOR_ZERO].motor, &IC1BUF, QEI1CONbits.UPDN);
+    // Clear the interrupt
+    IFS0bits.IC1IF = 0;
+}
+
+void __attribute__((interrupt, no_auto_psv)) _IC2Interrupt(void) {
+    // Run the Input Capture controller
+    Motor_IC_controller(&motor_fw[MOTOR_ONE].motor, &IC2BUF, QEI2CONbits.UPDN);
+    // Clear the interrupt
+    IFS0bits.IC2IF = 0;
+}
+
+void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
+    IFS0bits.T2IF = 0; // interrupt flag reset
+    Motor_IC_timer(&motor_fw[MOTOR_ZERO].motor);
+    Motor_IC_timer(&motor_fw[MOTOR_ONE].motor);
 }

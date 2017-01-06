@@ -32,17 +32,17 @@
 
 void init_cartesian (motor_state_t* state) {
     *state = STATE_CONTROL_VELOCITY;
-    int i;
-    diff_drive_parameter_unicycle_t unicycle;
-    motor_parameter_t motor[NUM_MOTORS];
-    motor_pid_t pid[NUM_MOTORS];
-    /// Update parameter unicycle
-    update_motion_parameter_unicycle(unicycle);
-    // Update parameter motors
-    for(i = 0; i < NUM_MOTORS; ++i) {
-        update_motor_parameters(i, motor[i]);
-        update_motor_pid(i, CONTROL_VELOCITY, pid[i]);
-    }
+//    int i;
+//    diff_drive_parameter_unicycle_t unicycle;
+//    motor_parameter_t motor[NUM_MOTORS];
+//    motor_pid_t pid[NUM_MOTORS];
+//    /// Update parameter unicycle
+//    update_motion_parameter_unicycle(unicycle);
+//    // Update parameter motors
+//    for(i = 0; i < NUM_MOTORS; ++i) {
+//        update_motor_parameters(i, motor[i]);
+//        update_motor_pid(i, CONTROL_VELOCITY, pid[i]);
+//    }
 }
 
 diff_drive_velocity_t loop_cartesian (diff_drive_velocity_t* measure, diff_drive_coordinate_t* coordinate) {
