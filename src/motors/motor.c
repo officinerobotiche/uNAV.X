@@ -38,6 +38,52 @@
 /* Communication Functions                                                    */
 /******************************************************************************/
 
+inline __attribute__((always_inline)) int Motor_castToDSP(motor_control_t value, 
+        motor_control_t constraint, volatile fractional *saturation) {
+    // Check constraint
+    motor_control_t int_const = constraint;
+    if(labs(constraint) > INT16_MAX) {
+        int_const = INT16_MAX;
+    }
+    // Check size
+    if(value > int_const) {
+        *saturation = int_const - value;
+        return int_const;
+    } else if(value < (-int_const-1)) {
+        *saturation = (-int_const-1) - value;
+        return (-int_const-1);
+    } else {
+        *saturation = 0;
+        return value;
+    }
+}
+
+inline int __attribute__((always_inline)) Motor_control_velocity(motor_firmware_t *motor, 
+        motor_control_t reference, volatile fractional saturation) {
+#define CONTROLLER_VEL GET_CONTROLLER_NUM(CONTROL_VELOCITY)
+    // Set reference
+    motor->controller[CONTROLLER_VEL].PIDstruct.controlReference = Motor_castToDSP(reference, motor->constraint.velocity, &motor->controller[CONTROLLER_VEL].saturation);
+    motor->reference.velocity = motor->controller[CONTROLLER_VEL].PIDstruct.controlReference;
+    // Set measure
+    if(motor->measure.velocity > INT16_MAX) {
+        motor->controller[CONTROLLER_VEL].PIDstruct.measuredOutput = INT16_MAX;
+    } else if(motor->measure.velocity < INT16_MIN) {
+        motor->controller[CONTROLLER_VEL].PIDstruct.measuredOutput = INT16_MIN;
+    } else {
+        motor->controller[CONTROLLER_VEL].PIDstruct.measuredOutput = motor->measure.velocity;
+    }
+    // Add anti wind up saturation from PWM
+    // Add coefficient K_back calculation for anti wind up
+    motor->controller[CONTROLLER_VEL].PIDstruct.controlOutput += 
+            motor->controller[CONTROLLER_VEL].k_aw * saturation;
+    // PID execution
+    PID(&motor->controller[CONTROLLER_VEL].PIDstruct);
+    // Set Output
+    motor->controlOut.velocity = motor->controller[CONTROLLER_VEL].PIDstruct.controlOutput;
+    return motor->controlOut.velocity;
+#undef CONTROLLER_VEL
+}
+
 void Motor_TaskController(int argc, int *argv) {
     
 }
@@ -263,32 +309,32 @@ inline motor_pid_t Motor_get_pid(motor_firmware_t *motor, motor_state_t state) {
 
 bool Motor_update_pid(motor_firmware_t *motor, motor_state_t state, motor_pid_t *pid) {
     // If the motor control is the same in action you can not disable
-    if(motor->diagnostic.state == state && pid.enable == false) {
+    if(motor->diagnostic.state == state && pid->enable == false) {
         return false;
     }
     // Check gains value
     // Check1 = | Kp + ki + kd | < 1 = INT16_MAX
     // Check2 = | -(Kp + 2*Kd) | < 1 = INT16_MAX
     // Check3 =      | Kd |      < 1 = INT16_MAX
-    long check1 = labs(1000.0 * (pid.kp + pid.ki + pid.kd));
-    long check2 = labs(1000.0 * (pid.kp + 2 * pid.kd));
-    long check3 = labs(1000.0 * pid.kd);
+    long check1 = labs(1000.0 * (pid->kp + pid->ki + pid->kd));
+    long check2 = labs(1000.0 * (pid->kp + 2 * pid->kd));
+    long check3 = labs(1000.0 * pid->kd);
     
     if(check1 < INT16_MAX && check2 < INT16_MAX && check3 < INT16_MAX) {
         int num_control = GET_CONTROLLER_NUM(state);
         // Update PID struct
-        memcpy(&motor->controller[num_control].pid, &pid, sizeof(motor_pid_t));
+        memcpy(&motor->controller[num_control].pid, pid, sizeof(motor_pid_t));
         // Write new coefficients
-        motor->controller[num_control].kCoeffs[0] = (int) (pid.kp * 1000.0);
-        motor->controller[num_control].kCoeffs[1] = (int) (pid.ki * 1000.0);
-        motor->controller[num_control].kCoeffs[2] = (int) (pid.kd * 1000.0);
+        motor->controller[num_control].kCoeffs[0] = (int) (pid->kp * 1000.0);
+        motor->controller[num_control].kCoeffs[1] = (int) (pid->ki * 1000.0);
+        motor->controller[num_control].kCoeffs[2] = (int) (pid->kd * 1000.0);
         // Derive the a, b and c coefficients from the Kp, Ki & Kd
         PIDCoeffCalc(&motor->controller[num_control].kCoeffs[0], 
                 &motor->controller[num_control].PIDstruct);
         // Clear the controller history and the controller output
         PIDInit(&motor->controller[num_control].PIDstruct);
         // Gain anti wind up
-        motor->controller[num_control].k_aw = (int) (pid.kaw * 1000.0);
+        motor->controller[num_control].k_aw = (int) (pid->kaw * 1000.0);
 #ifdef CURRENT_CONTROL_IN_ADC_LOOP
         if(state == CONTROL_CURRENT) {
             // Manual reset frequency  current loop
@@ -299,13 +345,13 @@ bool Motor_update_pid(motor_firmware_t *motor, motor_state_t state, motor_pid_t 
         }
 #else
         // Initialize soft timer
-        init_soft_timer(&motor->controller[num_control].timer, motor->manager_freq, 1000000 / pid.frequency);
+        init_soft_timer(&motor->controller[num_control].timer, motor->manager_freq, 1000000 / pid->frequency);
 #endif
         // Set enable PID
-        motor->controller[num_control].enable = pid.enable;
+        motor->controller[num_control].enable = pid->enable;
         // Update K_qei
         if(state == CONTROL_VELOCITY) {
-            motor->k_vel_qei = motor->k_ang * 1000.0f *((float) pid.frequency);
+            motor->k_vel_qei = motor->k_ang * 1000.0f *((float) pid->frequency);
         }
         return true;
     } else
@@ -320,7 +366,7 @@ void Motor_update_emergency(motor_firmware_t *motor, motor_emergency_t *emergenc
     // Store emergency data
     memcpy(&motor->emergency, emergency_data, sizeof(motor_emergency_t));
     // Reset counter alive reference message
-    init_soft_timer(&motor->motor_emergency.alive, (motor->manager_freq / 1000), emergency_data.timeout * 1000000);
+    init_soft_timer(&motor->motor_emergency.alive, (motor->manager_freq / 1000), emergency_data->timeout * 1000000);
     // Reset counter Emergency stop
     init_soft_timer(&motor->motor_emergency.stop, motor->manager_freq, motor->emergency.bridge_off * 1000000);
     // Fixed step to slow down the motor
@@ -335,9 +381,58 @@ void Motor_update_safety(motor_firmware_t *motor, motor_safety_t *safety) {
     // Store safety data
     memcpy(&motor->safety, safety, sizeof(motor_safety_t));
     // Initialization safety controller
-    init_soft_timer(&motor->motor_safety.stop, (motor->manager_freq / 1000), safety.timeout * 1000000);
+    init_soft_timer(&motor->motor_safety.stop, (motor->manager_freq / 1000), safety->timeout * 1000000);
     // Initialization auto recovery system
-    init_soft_timer(&motor->motor_safety.restore, (motor->manager_freq / 1000), safety.autorestore * 1000000);
+    init_soft_timer(&motor->motor_safety.restore, (motor->manager_freq / 1000), safety->autorestore * 1000000);
     // Fixed step to slow down the motor in function of stop time
-    motor->motor_safety.step = (safety.timeout * motor->manager_freq) / 1000;
+    motor->motor_safety.step = (safety->timeout * motor->manager_freq) / 1000;
+}
+
+inline motor_t Motor_get_measures(motor_firmware_t *motor) {
+    motor->measure.position_delta = motor->k_ang * motor->PulsEnc;
+    motor->measure.position = motor->k_ang * motor->enc_angle;
+    motor->measure.current = motor->parameter_motor.rotation * motor->measure.current;
+    // Torque in [m Nm]
+    motor->measure.effort = (motor->measure.current * motor->diagnostic.volt) / motor->measure.velocity;
+    motor->PulsEnc = 0;
+    return motor->measure;
+}
+
+inline motor_t Motor_get_control(motor_firmware_t *motor) {
+    motor->controlOut.current = motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlOutput;
+    return motor->controlOut;
+}
+
+inline motor_diagnostic_t Motor_get_diagnostic(motor_firmware_t *motor) {
+    // get time execution
+    motor->diagnostic.time_control = get_time(motor->motor_manager_event);
+    // Evaluate the Watt required [mW]
+    motor->diagnostic.watt = (motor->measure.current * motor->diagnostic.volt) / 1000;
+    return motor->diagnostic;
+}
+
+inline motor_t Motor_get_reference(motor_firmware_t *motor) {
+    return motor->reference;
+}
+             
+inline void Motor_reset_position_measure(motor_firmware_t *motor, motor_control_t value) {
+    motor->enc_angle = (int)((value / ((float)motor->k_ang) ));
+    motor->measure.position = (float) value;  
+}
+             
+void Motor_set_reference(motor_firmware_t *motor, motor_state_t state, motor_control_t reference) {
+    // If the controller is in safety state the new reference is skipped
+    if(motor->diagnostic.state != CONTROL_SAFETY) {
+        // Check state
+        if(state != motor->state) {
+            // Change motor control type
+            Motor_set_state(motor, state);
+            // Update reference
+            motor->state = state;
+        }
+        // Setup reference
+        motor->external_reference = reference;
+    }
+    // Reset time emergency
+    reset_timer(&motor->motor_emergency.alive);
 }
