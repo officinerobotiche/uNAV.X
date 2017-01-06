@@ -170,11 +170,24 @@ void Motor_run(motor_firmware_t *motor, task_status_t state) {
     task_set(motor->task_manager, state);
 }
 
-inline motor_parameter_t Motor_get_motor_parameters(motor_firmware_t *motor) {
+inline motor_t Motor_get_constraints(motor_firmware_t *motor) {
+    return motor->constraint;
+}
+
+void Motor_update_constraints(motor_firmware_t *motor, motor_t *constraints) {
+    //Update parameter constraints
+    memcpy(&motor->constraint, constraints, sizeof(motor_t));
+    //Update PWM max value
+    //Shifted from maximum motor_control_t value to maximum PWM value
+    // 31bit -> 11 bit = 20
+    motor->pwm_limit = motor->constraint.pwm >> 20;
+}
+
+inline motor_parameter_t Motor_get_parameters(motor_firmware_t *motor) {
     return motor->parameter_motor;
 }
 
-void Motor_update_motor_parameters(motor_firmware_t *motor, motor_parameter_t *parameters) {
+void Motor_update_parameters(motor_firmware_t *motor, motor_parameter_t *parameters) {
     //Update parameter configuration
     memcpy(&motor->parameter_motor, parameters, sizeof(motor_parameter_t));
     // If CPR is before ratio
@@ -207,14 +220,14 @@ void Motor_update_motor_parameters(motor_firmware_t *motor, motor_parameter_t *p
         motor->volt.offset = 1000.0 * motor->parameter_motor.bridge.volt_offset;
     }
     // Setup state with new bridge configuration
-    Motor_set_motor_state(motor, motor->state);
+    Motor_set_state(motor, motor->state);
 }
 
-inline motor_state_t Motor_get_motor_state(motor_firmware_t *motor) {
+inline motor_state_t Motor_get_state(motor_firmware_t *motor) {
     return motor->diagnostic.state;
 }
 
-void Motor_set_motor_state(motor_firmware_t *motor, motor_state_t state) {
+void Motor_set_state(motor_firmware_t *motor, motor_state_t state) {
     bool enable = (state == CONTROL_DISABLE) ? false : true;
     // For all error controller the blinks are disabled
     int led_state = (state < CONTROL_DISABLE) ? state : state + 1;
@@ -241,4 +254,90 @@ void Motor_set_motor_state(motor_firmware_t *motor, motor_state_t state) {
     if(motor->led_controller != NULL) {
         LED_updateBlink(motor->led_controller, motor->index, led_state);
     }
+}
+
+inline motor_pid_t Motor_get_pid(motor_firmware_t *motor, motor_state_t state) {
+    int num_control = GET_CONTROLLER_NUM(state);
+    return motor->controller[num_control].pid;
+}
+
+bool Motor_update_pid(motor_firmware_t *motor, motor_state_t state, motor_pid_t *pid) {
+    // If the motor control is the same in action you can not disable
+    if(motor->diagnostic.state == state && pid.enable == false) {
+        return false;
+    }
+    // Check gains value
+    // Check1 = | Kp + ki + kd | < 1 = INT16_MAX
+    // Check2 = | -(Kp + 2*Kd) | < 1 = INT16_MAX
+    // Check3 =      | Kd |      < 1 = INT16_MAX
+    long check1 = labs(1000.0 * (pid.kp + pid.ki + pid.kd));
+    long check2 = labs(1000.0 * (pid.kp + 2 * pid.kd));
+    long check3 = labs(1000.0 * pid.kd);
+    
+    if(check1 < INT16_MAX && check2 < INT16_MAX && check3 < INT16_MAX) {
+        int num_control = GET_CONTROLLER_NUM(state);
+        // Update PID struct
+        memcpy(&motor->controller[num_control].pid, &pid, sizeof(motor_pid_t));
+        // Write new coefficients
+        motor->controller[num_control].kCoeffs[0] = (int) (pid.kp * 1000.0);
+        motor->controller[num_control].kCoeffs[1] = (int) (pid.ki * 1000.0);
+        motor->controller[num_control].kCoeffs[2] = (int) (pid.kd * 1000.0);
+        // Derive the a, b and c coefficients from the Kp, Ki & Kd
+        PIDCoeffCalc(&motor->controller[num_control].kCoeffs[0], 
+                &motor->controller[num_control].PIDstruct);
+        // Clear the controller history and the controller output
+        PIDInit(&motor->controller[num_control].PIDstruct);
+        // Gain anti wind up
+        motor->controller[num_control].k_aw = (int) (pid.kaw * 1000.0);
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
+        if(state == CONTROL_CURRENT) {
+            // Manual reset frequency  current loop
+            motors[motIdx].controller[num_control].pid.frequency = CURRENT_ADC_LOOP_FRQ;
+        } else {
+            // Initialize soft timer
+            init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
+        }
+#else
+        // Initialize soft timer
+        init_soft_timer(&motor->controller[num_control].timer, motor->manager_freq, 1000000 / pid.frequency);
+#endif
+        // Set enable PID
+        motor->controller[num_control].enable = pid.enable;
+        // Update K_qei
+        if(state == CONTROL_VELOCITY) {
+            motor->k_vel_qei = motor->k_ang * 1000.0f *((float) pid.frequency);
+        }
+        return true;
+    } else
+        return false;
+}
+
+inline motor_emergency_t Motor_get_emergency(motor_firmware_t *motor) {
+    return motor->emergency;
+}
+
+void Motor_update_emergency(motor_firmware_t *motor, motor_emergency_t *emergency_data) {
+    // Store emergency data
+    memcpy(&motor->emergency, emergency_data, sizeof(motor_emergency_t));
+    // Reset counter alive reference message
+    init_soft_timer(&motor->motor_emergency.alive, (motor->manager_freq / 1000), emergency_data.timeout * 1000000);
+    // Reset counter Emergency stop
+    init_soft_timer(&motor->motor_emergency.stop, motor->manager_freq, motor->emergency.bridge_off * 1000000);
+    // Fixed step to slow down the motor
+    motor->motor_emergency.step = motor->emergency.slope_time * motor->manager_freq;
+}
+
+inline motor_safety_t Motor_get_safety(motor_firmware_t *motor) {
+    return motor->safety;
+}
+
+void Motor_update_safety(motor_firmware_t *motor, motor_safety_t *safety) {
+    // Store safety data
+    memcpy(&motor->safety, safety, sizeof(motor_safety_t));
+    // Initialization safety controller
+    init_soft_timer(&motor->motor_safety.stop, (motor->manager_freq / 1000), safety.timeout * 1000000);
+    // Initialization auto recovery system
+    init_soft_timer(&motor->motor_safety.restore, (motor->manager_freq / 1000), safety.autorestore * 1000000);
+    // Fixed step to slow down the motor in function of stop time
+    motor->motor_safety.step = (safety.timeout * motor->manager_freq) / 1000;
 }
