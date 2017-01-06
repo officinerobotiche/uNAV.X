@@ -393,6 +393,42 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
     motor_command_map_t cmd;
     cmd.command_message = command;
     switch (cmd.bitset.command) {
+        case MOTOR_MEASURE:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                // Get measures
+                motor_t measure = Motor_get_measures(&motor_fw[cmd.bitset.motor].motor);
+                // Add packet in frame
+                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                        (OR_BUS_FRAME_packet_t*) &measure, LNG_MOTOR);
+            }
+            break;
+        case MOTOR_REFERENCE:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                // Get measures
+                motor_t reference = Motor_get_reference(&motor_fw[cmd.bitset.motor].motor);
+                // Add packet in frame
+                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                        (OR_BUS_FRAME_packet_t*) &reference, LNG_MOTOR);
+            }
+            break;
+        case MOTOR_CONTROL:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                // Get measures
+                motor_t control_data = Motor_get_control(&motor_fw[cmd.bitset.motor].motor);
+                // Add packet in frame
+                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                        (OR_BUS_FRAME_packet_t*) &control_data, LNG_MOTOR);
+            }
+            break;
+        case MOTOR_DIAGNOSTIC:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                // Get measures
+                motor_diagnostic_t diagnostic = Motor_get_diagnostic(&motor_fw[cmd.bitset.motor].motor);
+                // Add packet in frame
+                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                        (OR_BUS_FRAME_packet_t*) &diagnostic, LNG_MOTOR_DIAGNOSTIC);
+            }
+            break;
         case MOTOR_PARAMETER:
             if(type == OR_BUS_FRAME_DATA) {
                 Motor_update_parameters(&motor_fw[cmd.bitset.motor].motor, &packet->motor.parameter);
