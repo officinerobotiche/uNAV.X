@@ -165,7 +165,7 @@ int16_t main(void) {
     // Register UART write
     UART_register_write(&UART1_WRITE_CNT, &U1TXREG, &UART1_DMA_write);
     // Register UART read
-    UART_register_read(&UART1_READ_CNT, &U1RXREG, &IFS1, 14, &UART1_read_callback);
+    UART_register_read(&UART1_READ_CNT, &U1RXREG, &IFS0, 11, &UART1_read_callback);
     // Initialize UART2 
     UART1_Init(&UART1_CNT, &OR_BUS_FRAME);
     
