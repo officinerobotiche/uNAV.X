@@ -62,9 +62,11 @@ extern "C" {
         volatile unsigned long timePeriod; //Time period from Input Capture
         volatile int SIG_VEL; //Sign of versus rotation motor
         volatile unsigned short number; //Mode of Input Capture
+        REGISTER QEICOUNTER;
     } ICdata;
     
     typedef void (*event_prescaler_t)(int motIdx);
+    typedef void (*pwm_controller_t)(unsigned int, unsigned int, char);
 
     typedef struct _analog {
         int32_t gain;
@@ -106,6 +108,7 @@ extern "C" {
         // Frequency manager;
         frequency_t manager_freq;
         volatile int pwm_limit;
+        pwm_controller_t pwm_cb;
         /// Task register
         hEvent_t motor_manager_event;
         hTask_t task_manager;
@@ -169,12 +172,13 @@ extern "C" {
  * @param ICinfo
  * @param ICfreq
  * @param prescaler_event
+ * @param pwm_cb
  * @param PWM_LIMIT
  */
 void Motor_init(motor_firmware_t *motor, unsigned int index, 
         fractional *abcCoefficient, fractional *controlHistory, 
         ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
-        unsigned int PWM_LIMIT);
+        pwm_controller_t pwm_cb, unsigned int PWM_LIMIT);
 /**
  * 
  * @param motor

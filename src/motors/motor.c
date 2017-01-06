@@ -20,6 +20,7 @@
 /******************************************************************************/
 
 #include "motors/motor.h"
+#include <or_math/math.h>
 
 #define MOTOR_DEFAULT_ADC_PORTS 2
 
@@ -37,6 +38,82 @@
 /******************************************************************************/
 /* Communication Functions                                                    */
 /******************************************************************************/
+
+int32_t Motor_measureVelocity(motor_firmware_t *motor) {
+    volatile ICdata temp;
+    int QEICNTtmp = 0;
+    int32_t vel_mean = 0;
+    //Evaluate position
+    QEICNTtmp = (int) motor->ICinfo->QEICOUNTER;
+    *motor->ICinfo->QEICOUNTER = 0;
+    
+    motor->PulsEnc += QEICNTtmp;
+    motor->enc_angle += QEICNTtmp;
+    //Measure velocity from QEI
+    int32_t vel_qei =  QEICNTtmp * motor->k_vel_qei;
+
+    // Store timePeriod
+    temp.timePeriod = motor->ICinfo->timePeriod;
+    motor->ICinfo->timePeriod = 0;
+    // Store value
+    temp.SIG_VEL = motor->ICinfo->SIG_VEL;
+    motor->ICinfo->SIG_VEL = 0;
+    if (temp.SIG_VEL) {
+
+        temp.k_mul = motor->ICinfo->k_mul;
+        // Evaluate velocity
+        int32_t temp_f = temp.k_mul * motor->k_vel_ic;
+        temp_f = temp_f / temp.timePeriod;
+        int32_t vel_ic = temp.SIG_VEL * temp_f;
+
+        if (labs(vel_qei - vel_ic) < 2000) {
+            // Mean velocity between IC and QEI estimation
+            vel_mean = (vel_ic + vel_qei) / 2;
+        } else {
+            vel_mean = vel_qei;
+        }
+    } else {
+        vel_mean = vel_qei;
+    }
+    //Select Pre scaler
+    motor->prescaler_callback(motor->index);
+    // Evaluate angle position
+    if (labs(motor->enc_angle) > motor->angle_limit) {
+        motor->enc_angle = 0;
+    }
+    return update_statistic(&motor->mean_vel, vel_mean);
+}
+
+#define SATURATION
+inline int Motor_write_PWM(motor_firmware_t *motor, int duty_cycle) {
+    // Store the real value send to the PWM
+    motor->reference.pwm = duty_cycle;
+#ifdef SATURATION
+    int error = 0;
+    if(duty_cycle > motor->pwm_limit) {
+        error = motor->pwm_limit - duty_cycle;
+        duty_cycle = motor->pwm_limit;
+    } else if(duty_cycle < (-motor->pwm_limit-1)) {
+        error = (-motor->pwm_limit-1) - duty_cycle;
+        duty_cycle = (-motor->pwm_limit-1);
+    }
+#else
+    // Save PWM value with attenuation => K = 1 / 16
+    duty_cycle = duty_cycle >> 4;
+#endif
+    // Real PWM send
+    motor->measure.pwm = duty_cycle;
+    // PWM output
+    if(motor->state != CONTROL_DISABLE)
+        motor->pwm_cb(motor->index + 1, motor->pwm_limit + ((motor_control_t) motor->parameter_motor.rotation) * duty_cycle, 0);
+    else
+        motor->pwm_cb(motor->index + 1, motor->pwm_limit, 0);
+#ifdef SATURATION
+    return error;
+#else
+    return 0;
+#endif
+}
 
 inline __attribute__((always_inline)) int Motor_castToDSP(motor_control_t value, 
         motor_control_t constraint, volatile fractional *saturation) {
@@ -85,15 +162,125 @@ inline int __attribute__((always_inline)) Motor_control_velocity(motor_firmware_
 }
 
 void Motor_TaskController(int argc, int *argv) {
+    motor_firmware_t *motor = (motor_firmware_t*) argv[0];
     
+    // ================ SAFETY CHECK ===========================
+    /// Check for emergency mode or in safety mode
+    if (motor->state > CONTROL_DISABLE) {
+        // Check safety condition
+        if (labs(motor->measure.current) > motor->safety.critical_zone) {
+            // Run timer if current is too high
+            if (run_timer(&motor->motor_safety.stop)) {
+                // Store old state
+                motor->motor_safety.old_state = motor->state;
+                // Change motor state
+                Motor_set_state(motor, CONTROL_SAFETY);
+            }
+        } else {
+            // Reset the counter if the value is low
+            reset_timer(&motor->motor_safety.stop);
+        }
+    }
+    // Check emergency 
+    if(motor->state != CONTROL_EMERGENCY && motor->state != CONTROL_DISABLE) {
+        // check to run emergency mode
+        if(run_timer(&motor->motor_emergency.alive)) {
+            /// Set Motor in emergency mode
+            Motor_set_state(motor, CONTROL_EMERGENCY);
+            // Reset stop timer
+            reset_timer(&motor->motor_emergency.stop);
+        }
+    }
+    // ================ RUN CONTROLLERS ========================
+    /// Add new task controller
+    if(motor->state != motor->diagnostic.state) {
+        if(motor->state == CONTROL_EMERGENCY) {
+            if(motor->diagnostic.state == CONTROL_SAFETY) {
+                // Stop safety task
+                task_set(motor->motor_safety.task_safety, STOP);
+            }
+            task_set(motor->task_emergency, RUN);
+        } else {
+            task_set(motor->task_emergency, STOP);
+        }
+        if(motor->state == CONTROL_SAFETY) {
+            task_set(motor->motor_safety.task_safety, RUN);
+        }
+        /// Save new state controller
+        motor->diagnostic.state = motor->state;
+    }
+    // ================ READ MEASURES ==========================
+    
+    bool velocity_control = run_timer(&motor->controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].timer);
+    
+    // Check if is the time to run the controller
+    if (velocity_control) {
+        //Measure velocity in milli rad/s
+        motor->measure.velocity = (motor_control_t) Motor_measureVelocity(motor);
+    }
+    
+    // ================ RUN CONTROLLERS ==========================
+    
+    // If some controller is selected
+    if (motor->state != CONTROL_DISABLE) {
+        // ========== CONTROL DIRECT =============
+        if(motor->state == CONTROL_DIRECT) {
+            // Send to motor the value of control
+            Motor_write_PWM(motor, motor->external_reference);
+            return;
+        }
+        // ========= CONTROL VELOCITY ============
+#define ENABLE_VELOCITY_CONTROL
+        // Check if the velocity control is enabled
+        if (motor->controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].enable) {
+            // Check if is the time to run the controller
+            if (velocity_control) {
+                // Run PID control
+                volatile fractional saturation = 0;
+                if(motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable == true) {
+                    saturation = motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation;
+                } else {
+                    saturation = motor->pwm_saturation;
+                }
+#ifdef ENABLE_VELOCITY_CONTROL
+                motor->control_output = Motor_control_velocity(motor, motor->external_reference, saturation);
+#else
+                Motor_control_velocity(motor, motor->external_reference, saturation);
+                motor->control_output = 0;
+#endif
+            }
+        } else {
+            // Set the reference for the other current control the same of the reference
+            motor->control_output = motor->external_reference;
+        }
+        // =======================================
+
+        // If disabled Send the PWM after this line
+        if (motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+            // Set current reference
+            motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = Motor_castToDSP(motor->control_output, 
+                    motor->constraint.current,
+                    &motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
+            motor->reference.current = motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
+        } else {
+            // Send to motor the value of control
+            motor->pwm_saturation = Motor_write_PWM(motor, motor->control_output);
+        }
+    }
 }
 
 void Motor_Emergency(int argc, int *argv) {
-    
-}
-
-void Motor_Safety(int argc, int *argv) {
-    
+    motor_firmware_t *motor = (motor_firmware_t*) argv[0];
+    if (motor->external_reference != 0) {
+        motor->external_reference -= motor->last_reference / motor->motor_emergency.step;
+        if (SGN(motor->external_reference) * motor->last_reference < 0) {
+            motor->external_reference = 0;
+        }
+    } else if (motor->external_reference == 0) {
+        if(run_timer(&motor->motor_emergency.stop)) {
+            Motor_set_state(motor, CONTROL_DISABLE);
+        }
+    }
 }
 
 void Motor_restore_safety_control(motor_firmware_t *motor) {
@@ -103,8 +290,57 @@ void Motor_restore_safety_control(motor_firmware_t *motor) {
     task_set(motor->motor_safety.task_safety, STOP);
 }
 
+void Motor_Safety(int argc, int *argv) {
+    motor_firmware_t *motor = (motor_firmware_t*) argv[0];
+    // Reduction external reference
+    if(labs(motor->measure.current) > motor->safety.critical_zone) {
+        if (motor->external_reference != 0) {
+            motor->external_reference -= motor->last_reference / motor->motor_safety.step;
+            if (SGN(motor->external_reference) * motor->last_reference < 0) {
+                motor->external_reference = 0;
+            }
+        }
+        // Reset recovery time
+        reset_timer(&motor->motor_safety.restore);
+    } else {
+        // Check if auto restore is disabled
+        if(motor->safety.autorestore != 0) {
+            // Run auto recovery timer
+            if(run_timer(&motor->motor_safety.restore)) {
+                // Restore control
+                Motor_restore_safety_control(motor);
+                // Restore old controller
+                Motor_set_state(motor, motor->motor_safety.old_state);
+            }
+        }
+    }
+}
+
 void Motor_ADC_callback(void* obj) {
+    motor_firmware_t *motor = (motor_firmware_t*) &obj;
+#define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
+    motor->measure.current = - motor->current.gain * motor->adc[0].value + motor->current.offset;
+    motor->diagnostic.volt = motor->volt.gain * motor->adc[1].value + motor->volt.offset;
     
+    if(motor->controller[CONTROLLER_CURR].enable) {
+        // Set measure        
+        if(motor->measure.current > INT16_MAX) {
+            motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
+        } else if(motor->measure.current < INT16_MIN) {
+            motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
+        } else {
+            motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motor->measure.current;
+        }
+        // Add anti wind up saturation from PWM
+        // Add coefficient K_back calculation for anti wind up
+        motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
+                motor->controller[CONTROLLER_CURR].k_aw * motor->pwm_saturation;
+        // PID execution
+        PID(&motor->controller[CONTROLLER_CURR].PIDstruct);
+        // Set Output        
+        motor->pwm_saturation = Motor_write_PWM(motor, motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput);
+    }
+#undef CONTROLLER_CURR
 }
 
 /**
@@ -145,7 +381,8 @@ void Motor_initialize_controllers(motor_firmware_t *motor,
 
 void Motor_init(motor_firmware_t *motor, unsigned int index, 
         fractional *abcCoefficient, fractional *controlHistory, 
-        ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, unsigned int PWM_LIMIT) {
+        ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
+        pwm_controller_t pwm_cb, unsigned int PWM_LIMIT) {
     unsigned int i;
     // Set index number
     motor->index = index;
@@ -155,6 +392,7 @@ void Motor_init(motor_firmware_t *motor, unsigned int index,
     Motor_reset_data(&motor->controlOut);
     // PWM limit
     motor->pwm_limit = PWM_LIMIT;
+    motor->pwm_cb = pwm_cb;
     // Initialize all controllers
     for(i = 0; i < NUM_CONTROLLERS; i++) {
         Motor_initialize_controllers(motor, &abcCoefficient[i], &controlHistory[i], i);
