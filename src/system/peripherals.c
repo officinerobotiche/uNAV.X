@@ -29,8 +29,6 @@
 #include "system/peripherals.h"
 #include "system/system.h"
 
-#include "motors/motor_control.h"
-
 // Test pin to check frequency of the code
 //#define TEST_PIN // PIN RC3
 
@@ -43,13 +41,6 @@ unsigned int AdcBufferA[ADC_BUFF] __attribute__((space(dma), aligned(ADC_BUFF*2)
 unsigned int AdcBufferB[ADC_BUFF] __attribute__((space(dma), aligned(ADC_BUFF*2)));
 
 #ifdef UNAV_V1
-// Initialization LED on uNAV
-LED_t leds[] = {
-    GPIO_LED(C, 6), // Led 1 Green
-    GPIO_LED(C, 7), // Led 2 Red
-    GPIO_LED(C, 8), // Led 3 Yellow
-    GPIO_LED(C, 9), // Led 4 Blue
-};
 // Initialization controllable GPIO
 gpio_t portB[] = {
     GPIO_INIT(A, 9, GPIO_OUTPUT),   // GP0
@@ -65,11 +56,6 @@ gpio_t portB[] = {
 /// Number of available GPIOs
 #define NUM_GPIO (sizeof(portB) / ( sizeof(portB[0])))
 #elif ROBOCONTROLLER_V3
-// Initialization LED on RoboController
-LED_t leds[] = {
-    GPIO_LED(A, 8), // Led 1 green
-    GPIO_LED(A, 9), // Led 2 green
-};
 // Initialization controllable GPIO
 gpio_t portB[] = {
     GPIO_INIT(A, 7, GPIO_OUTPUT),   // GP0
@@ -82,18 +68,10 @@ gpio_t portB[] = {
 /// Number of available GPIOs
 #define NUM_GPIO (sizeof(portB) / ( sizeof(portB[0])))
 #elif MOTION_CONTROL
-// Initialization LED on motion control
-LED_t leds[] = {
-    GPIO_LED(A, 4), // Led Blue
-};
 gpio_t portB[] = {};
 /// Number of available GPIOs
 #define NUM_GPIO 0
 #endif
-/// Number of available LEDs
-#define LED_NUM (sizeof(leds) / ( sizeof(leds[0])))
-// Initialization LED controller
-LED_controller_t LED_CONTROLLER = LED_CONTROLLER(leds, LED_NUM, 1000);
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -297,18 +275,11 @@ void Peripherals_Init(void) {
     
     // Initialize analog port
     // When initialized AD1PCFGL = 0xFFFF set all Analog ports as digital
-    gpio_adc_init(&AD1PCFGL);
+    gpio_adc_init(&AD1CON1, &AD1PCFGL);
     InitDMA0();         ///< Open DMA0 for buffering measures ADC
     InitADC_4Sim();     ///< Initialize ADC 4 channels simultaneously
     // Initialize portB
     gpio_init_port(&portB[0], NUM_GPIO);
-    // Initialization LED
-    LED_Init(&LED_CONTROLLER);
-    
-    LED_updateBlink(&LED_CONTROLLER, 0, 1);
-    LED_updateBlink(&LED_CONTROLLER, 1, 2);
-    LED_updateBlink(&LED_CONTROLLER, 2, 3);
-    LED_updateBlink(&LED_CONTROLLER, 3, 4);
     
 #ifdef TEST_PIN
     TRISCbits.TRISC3 = 0;

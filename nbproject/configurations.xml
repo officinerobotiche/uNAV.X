@@ -14,8 +14,6 @@
         <itemPath>includes/high_control/cartesian.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="motors" projectFiles="true">
-        <itemPath>includes/motors/motor_comm.h</itemPath>
-        <itemPath>includes/motors/motor_control.h</itemPath>
         <itemPath>includes/motors/motor_init.h</itemPath>
         <itemPath>includes/motors/motor.h</itemPath>
       </logicalFolder>
@@ -57,8 +55,6 @@
         <itemPath>src/high_control/cartesian.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f4" displayName="motors" projectFiles="true">
-        <itemPath>src/motors/motor_control.c</itemPath>
-        <itemPath>src/motors/motor_comm.c</itemPath>
         <itemPath>src/motors/motor_init.c</itemPath>
         <itemPath>src/motors/motor.c</itemPath>
       </logicalFolder>
@@ -327,6 +323,7 @@
         <property key="UART 1" value="true"/>
         <property key="UART 2" value="true"/>
         <property key="debugoptions.useswbreakpoints" value="false"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="false"/>

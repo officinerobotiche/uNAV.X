@@ -74,17 +74,17 @@ const ICMode_t ICMode[4] = {
 #define IC_TIMEPERIOD_TH_MIN 2000
 
 #ifdef UNAV_V1
-const gpio_t enable[] = {
-    GPIO_INIT(A, 7, GPIO_OUTPUT),   // ENABLE0
+gpio_t enable[] = {
+    GPIO_INIT(A,  7, GPIO_OUTPUT),   // ENABLE0
     GPIO_INIT(A, 10, GPIO_OUTPUT),   // ENABLE1
 };
 #elif ROBOCONTROLLER_V3
-const gpio_t enable[] = {
+gpio_t enable[] = {
     GPIO_INIT(A, 1, GPIO_OUTPUT),   // ENABLE0
     GPIO_INIT(A, 4, GPIO_OUTPUT),   // ENABLE1
 };
 #elif MOTION_CONTROL
-const gpio_t enable[] = {
+gpio_t enable[] = {
     GPIO_INIT(B, 2, GPIO_OUTPUT),   // ENABLE0
     GPIO_INIT(B, 3, GPIO_OUTPUT),   // ENABLE1
 };
@@ -93,10 +93,10 @@ const gpio_t enable[] = {
 gpio_adc_t ADCmotor[2][2] = {
     // Current and Voltage Motor 0
     { GPIO_ADC(A, 0, AD1PCFGL, 0,          0, ADC_BUFF),
-    GPIO_ADC(A, 1, AD1PCFGL, 1,     ADC_BUFF, ADC_BUFF)},
+      GPIO_ADC(A, 1, AD1PCFGL, 1,   ADC_BUFF, ADC_BUFF)},
     // Current and Voltage Motor 1
     { GPIO_ADC(B, 0, AD1PCFGL, 2, 2*ADC_BUFF, ADC_BUFF),
-    GPIO_ADC(B, 1, AD1PCFGL, 3,   3*ADC_BUFF, ADC_BUFF)},
+      GPIO_ADC(B, 1, AD1PCFGL, 3, 3*ADC_BUFF, ADC_BUFF)},
 };
 
 /**
@@ -293,15 +293,13 @@ void Motor_Init(OR_BUS_FRAME_t *frame, LED_controller_t* led_controller) {
     _TRISC8 = 1; // QEA_2
     _TRISC9 = 1; // QEB_2
 #endif
+    // Initialize all pointer
+    _OR_BUS_FRAME_MOTOR = frame;
+    // Load generic motor peripherals
     Motor_init_timer2();               ///< Open Timer2 for InputCapture 1 & 2
     Motor_init_PWM();                  ///< Open PWM
     // Initialization motors
     for (i = 0; i < NUM_MOTORS; ++i) {
-        // Initialization Input Capture
-        Motor_init_ICinfo(&motor_fw[i].ICinfo);
-        // End
-        Motor_init_QEI(&motor_fw[i].motor);                     ///< Open QEI
-        Motor_init_IC(&motor_fw[i].motor);                      ///< Open Input Capture
         /// Initialize variables for motors
         Motor_init(&motor_fw[i].motor, i, 
             &abcCoefficient[i][0][0], &controlHistory[i][0][0], 
@@ -337,6 +335,12 @@ void Motor_Init(OR_BUS_FRAME_t *frame, LED_controller_t* led_controller) {
         Motor_update_constraints(&motor_fw[i].motor, &constraints);
         /// Initialize state controller
         Motor_set_state(&motor_fw[i].motor, STATE_CONTROL_DISABLE);
+        
+        Motor_init_ICinfo(&motor_fw[i].ICinfo);
+        // Open QEI
+        Motor_init_QEI(&motor_fw[i].motor);
+        // Open Input Capture
+        Motor_init_IC(&motor_fw[i].motor);
         /// Run task controller
         Motor_run(&motor_fw[i].motor, RUN);
     }
@@ -390,6 +394,7 @@ inline void SelectIcPrescaler(void *_motor) {
 
 void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type, 
         OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet) {
+    // Decode command message
     motor_command_map_t cmd;
     cmd.command_message = command;
     switch (cmd.bitset.command) {
@@ -569,14 +574,16 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
 
 void __attribute__((interrupt, no_auto_psv)) _IC1Interrupt(void) {
     // Run the Input Capture controller
-    Motor_IC_controller(&motor_fw[MOTOR_ZERO].motor, &IC1BUF, QEI1CONbits.UPDN);
+    bool dir = (QEI1CONbits.UPDN ? true : false); 
+    Motor_IC_controller(&motor_fw[MOTOR_ZERO].motor, &IC1BUF, dir);
     // Clear the interrupt
     IFS0bits.IC1IF = 0;
 }
 
 void __attribute__((interrupt, no_auto_psv)) _IC2Interrupt(void) {
     // Run the Input Capture controller
-    Motor_IC_controller(&motor_fw[MOTOR_ONE].motor, &IC2BUF, QEI2CONbits.UPDN);
+    bool dir = (QEI2CONbits.UPDN ? true : false);
+    Motor_IC_controller(&motor_fw[MOTOR_ONE].motor, &IC2BUF, dir);
     // Clear the interrupt
     IFS0bits.IC2IF = 0;
 }

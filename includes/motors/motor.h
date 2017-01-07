@@ -191,7 +191,7 @@ void Motor_register_adc(MOTOR_t *motor, gpio_adc_t *adc, float gain_adc);
  * @param motor
  * @param enable
  */
-void Motor_register_enable(MOTOR_t *motor, const gpio_t* enable);
+void Motor_register_enable(MOTOR_t *motor, gpio_t* enable);
 /**
  * 
  * @param motor

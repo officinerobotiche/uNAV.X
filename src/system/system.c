@@ -90,11 +90,11 @@ void InitEvents(void) {
     EVENT_PRIORITY_VERY_LOW_P = EVENT_PRIORITY_VERY_LOW_LEVEL;
     register_interrupt(EVENT_PRIORITY_VERY_LOW, &RTC_IT);
     EVENT_PRIORITY_LOW_P = EVENT_PRIORITY_LOW_LEVEL;
-    register_interrupt(EVENT_PRIORITY_LOW, &RTC_IT);
+    register_interrupt(EVENT_PRIORITY_LOW, &OC1_IT);
     EVENT_PRIORITY_MEDIUM_P = EVENT_PRIORITY_MEDIUM_LEVEL;
-    register_interrupt(EVENT_PRIORITY_MEDIUM, &OC1_IT);
+    register_interrupt(EVENT_PRIORITY_MEDIUM, &OC2_IT);
     EVENT_PRIORITY_HIGH_P = EVENT_PRIORITY_HIGH_LEVEL;
-    register_interrupt(EVENT_PRIORITY_HIGH, &OC2_IT);
+    register_interrupt(EVENT_PRIORITY_HIGH, &OC3_IT);
     
     adc_time = 0;
     /// Initialization task controller

@@ -33,7 +33,6 @@
 #include <or_system/task_manager.h>
 
 #include "high_control/manager.h"
-#include "motors/motor_control.h"
 #include "communication/serial.h"
 
 

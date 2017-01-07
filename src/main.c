@@ -104,7 +104,31 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
-/** Define and initialization UART2 controller */
+#ifdef UNAV_V1
+// Initialization LED on uNAV
+LED_t leds[] = {
+    GPIO_LED(C, 6), // Led 1 Green
+    GPIO_LED(C, 7), // Led 2 Red
+    GPIO_LED(C, 8), // Led 3 Yellow
+    GPIO_LED(C, 9), // Led 4 Blue
+};
+#elif ROBOCONTROLLER_V3
+// Initialization LED on RoboController
+LED_t leds[] = {
+    GPIO_LED(A, 8), // Led 1 green
+    GPIO_LED(A, 9), // Led 2 green
+};
+#elif MOTION_CONTROL
+// Initialization LED on motion control
+LED_t leds[] = {
+    GPIO_LED(A, 4), // Led Blue
+};
+#endif
+/// Number of available LEDs
+#define LED_NUM (sizeof(leds) / ( sizeof(leds[0])))
+// Initialization LED controller
+LED_controller_t LED_CONTROLLER = LED_CONTROLLER(leds, LED_NUM, 1000);
+/** Define and initialization UART1 controller */
 UART_WRITE_t UART1_WRITE_CNT;
 UART_READ_t UART1_READ_CNT;
 UART_t UART1_CNT = UART_INIT(U1STA, U1MODE, U1BRG, FCY, &UART1_WRITE_CNT, &UART1_READ_CNT);
@@ -146,6 +170,13 @@ int16_t main(void) {
     InitTimer1();           ///< Open Timer1 for clock system
     
     Peripherals_Init();     ///< Initialize IO ports and peripherals
+    // Initialization LED
+    LED_Init(&LED_CONTROLLER);
+    
+//    LED_updateBlink(&LED_CONTROLLER, 0, 1);
+//    LED_updateBlink(&LED_CONTROLLER, 1, 2);
+//    LED_updateBlink(&LED_CONTROLLER, 2, 3);
+//    LED_updateBlink(&LED_CONTROLLER, 3, LED_ALWAYS_HIGH);
     
     /* I2C CONFIGURATION */
 //    Init_I2C();     ///< Open I2C module
@@ -169,8 +200,8 @@ int16_t main(void) {
     // Initialize UART2 
     UART1_Init(&UART1_CNT, &OR_BUS_FRAME);
     
-//    /*** MOTOR INITIALIZATION ***/
-//    Motor_Init();
+    /*** MOTOR INITIALIZATION ***/
+    Motor_Init(&OR_BUS_FRAME, &LED_CONTROLLER);
 //    
 //    /** HIGH LEVEL INITIALIZATION **/
 //    /// Initialize variables for unicycle 

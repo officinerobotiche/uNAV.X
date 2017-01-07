@@ -316,7 +316,7 @@ void Motor_Safety(int argc, int *argv) {
 }
 
 void Motor_ADC_callback(void* obj) {
-    MOTOR_t *motor = (MOTOR_t*) &obj;
+    MOTOR_t *motor = (MOTOR_t*) obj;
 #define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
     motor->measure.current = - motor->current.gain * motor->adc[0].value + motor->current.offset;
     motor->diagnostic.volt = motor->volt.gain * motor->adc[1].value + motor->volt.offset;
@@ -439,9 +439,9 @@ void Motor_register_adc(MOTOR_t *motor, gpio_adc_t *adc, float gain_adc) {
     gpio_adc_register(adc, MOTOR_DEFAULT_ADC_PORTS, &Motor_ADC_callback, motor);
 }
 
-void Motor_register_enable(MOTOR_t *motor, const gpio_t* enable) {
+void Motor_register_enable(MOTOR_t *motor, gpio_t* enable) {
     /// Setup bit enable
-    motor->pin_enable = (gpio_t*) enable;
+    motor->pin_enable = enable;
     gpio_init_pin(motor->pin_enable);
 }
 
