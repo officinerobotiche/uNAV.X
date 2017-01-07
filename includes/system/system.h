@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 #include <or_system/events.h>
+#include <or_bus/frame.h>
 
 /******************************************************************************/
 /* System Level #define Macros                                                */
@@ -98,23 +99,8 @@ extern "C" {
      */
     void register_time(system_event_type_t event_type, hEvent_t event );
     
-//    /**
-//     * Return the time of execution of idle, parsing, adc conversion
-//     * @param message
-//     */
-//    void get_system_time(message_abstract_u *message);
-    /**
-     * Board software reset.
-     * Disable all interrupt, wait 200us and reset the board
-     */
-    void reset();
-
-//    /**
-//     * Management services messages. 
-//     * @param The name of the service
-//     * @param The buffer to return the information
-//     */
-//    void services(unsigned char command, message_abstract_u *message);
+    void OR_BUS_FRAME_decoder_system(void* obj, OR_BUS_FRAME_type_t type, 
+        OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet);
 
 #ifdef	__cplusplus
 }

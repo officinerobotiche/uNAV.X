@@ -34,7 +34,7 @@ extern "C" {
     /**
      * Initialization motor
      */
-    void Motor_Init(OR_BUS_FRAME_t *frame, LED_controller_t* led_controller);
+    void Motor_Init(LED_controller_t* led_controller);
     /**
      * Select the correct Input Capture pre scaler		
      * @param motIdx motor pointer reference

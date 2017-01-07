@@ -149,15 +149,21 @@ void update_adc_time(uint16_t t2, uint16_t t1) {
 void register_time(system_event_type_t event_type, hEvent_t event ) {
     system_events[event_type] = event;
 }
-
-//void get_system_time(message_abstract_u *message) {
-//    message->system.time.idle = 0;
-//    message->system.time.parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
-//    message->system.time.i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
-//    message->system.time.led = get_time(system_events[SYSTEM_EVENT_LED]);
-//    message->system.time.adc = adc_time;
-//}
-
+/**
+ * Return the time of execution of idle, parsing, adc conversion
+ * @param message
+ */
+void get_system_time(system_time_t *time) {
+    time->idle = 0;
+    time->parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
+    time->i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
+    time->led = get_time(system_events[SYSTEM_EVENT_LED]);
+    time->adc = adc_time;
+}
+/**
+ * Board software reset.
+ * Disable all interrupt, wait 200us and reset the board
+ */
 void reset() {
     // disable all user interrupts
     SET_CPU_IPL(7);
@@ -170,25 +176,64 @@ void reset() {
     // System reset
     asm("RESET");
 }
+/**
+ * Management services messages. 
+ * @param The name of the service
+ * @param The buffer to return the information
+ */
+void services(unsigned char command, system_frame_u *system) {
+    switch(command) {
+        case SYSTEM_CODE_DATE:
+            memcpy(system->service, _VERSION_DATE, sizeof (_VERSION_DATE));
+            system->service[sizeof (_VERSION_DATE) - 1] = ' ';
+            memcpy(system->service + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
+            break;
+        case SYSTEM_CODE_VERSION:
+            memcpy(system->service, _VERSION_CODE, sizeof (_VERSION_CODE));
+            break;
+        case SYSTEM_CODE_AUTHOR:
+            memcpy(system->service, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
+            break;
+        case SYSTEM_CODE_BOARD_TYPE:
+            memcpy(system->service, _BOARD_TYPE, sizeof (_BOARD_TYPE));
+            break;
+        case SYSTEM_CODE_BOARD_NAME:
+            memcpy(system->service, _BOARD_NAME, sizeof (_BOARD_NAME));
+            break;
+    }
+}
 
-//void services(unsigned char command, message_abstract_u *message) {
-//    switch(command) {
-//        case SYSTEM_CODE_DATE:
-//            memcpy(message->system.service, _VERSION_DATE, sizeof (_VERSION_DATE));
-//            message->system.service[sizeof (_VERSION_DATE) - 1] = ' ';
-//            memcpy(message->system.service + sizeof (_VERSION_DATE), _VERSION_TIME, sizeof (_VERSION_TIME));
+void OR_BUS_FRAME_decoder_system(void* obj, OR_BUS_FRAME_type_t type, 
+        OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet) {
+    switch (command) {
+        case SYSTEM_RESET:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                // The board is in reset mode. It's futile to send other message 
+                // after this function
+                reset();
+            }
+            break;
+        case SYSTEM_CODE_DATE:
+        case SYSTEM_CODE_VERSION:
+        case SYSTEM_CODE_AUTHOR:
+        case SYSTEM_CODE_BOARD_TYPE:
+        case SYSTEM_CODE_BOARD_NAME:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                services(command, &packet->system);
+            }
+            break;
+        case SYSTEM_TIME:
+            if(type == OR_BUS_FRAME_REQUEST) {
+                get_system_time(&packet->system.time);
+            }
+            break;
+//        case SYSTEM_SERIAL_ERROR:
+//            send.system.error_serial = serial_error;
 //            break;
-//        case SYSTEM_CODE_VERSION:
-//            memcpy(message->system.service, _VERSION_CODE, sizeof (_VERSION_CODE));
-//            break;
-//        case SYSTEM_CODE_AUTHOR:
-//            memcpy(message->system.service, _AUTHOR_CODE, sizeof (_AUTHOR_CODE));
-//            break;
-//        case SYSTEM_CODE_BOARD_TYPE:
-//            memcpy(message->system.service, _BOARD_TYPE, sizeof (_BOARD_TYPE));
-//            break;
-//        case SYSTEM_CODE_BOARD_NAME:
-//            memcpy(message->system.service, _BOARD_NAME, sizeof (_BOARD_NAME));
-//            break;
-//    }
-//}
+        default:
+            // Send NACK message
+            OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_NACK,
+                    HASHMAP_SYSTEM, command);
+            break;
+    }
+}

@@ -112,8 +112,6 @@ typedef struct _motor_firmware {
 
 motor_firmware_t motor_fw[NUM_MOTORS];
 
-OR_BUS_FRAME_t *_OR_BUS_FRAME_MOTOR;
-
 /*****************************************************************************/
 /* User Functions                                                            */
 /*****************************************************************************/
@@ -269,7 +267,7 @@ void Motor_init_ICinfo(ICdata *ICinfo) {
     ICinfo->timePeriod = 0;
 }
 
-void Motor_Init(OR_BUS_FRAME_t *frame, LED_controller_t* led_controller) {
+void Motor_Init(LED_controller_t* led_controller) {
     unsigned int i;
 #ifdef UNAV_V1
     // Encoders
@@ -293,8 +291,6 @@ void Motor_Init(OR_BUS_FRAME_t *frame, LED_controller_t* led_controller) {
     _TRISC8 = 1; // QEA_2
     _TRISC9 = 1; // QEB_2
 #endif
-    // Initialize all pointer
-    _OR_BUS_FRAME_MOTOR = frame;
     // Load generic motor peripherals
     Motor_init_timer2();               ///< Open Timer2 for InputCapture 1 & 2
     Motor_init_PWM();                  ///< Open PWM
@@ -403,7 +399,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get measures
                 motor_t measure = Motor_get_measures(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &measure, LNG_MOTOR);
             }
             break;
@@ -412,7 +408,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get measures
                 motor_t reference = Motor_get_reference(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &reference, LNG_MOTOR);
             }
             break;
@@ -421,7 +417,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get measures
                 motor_t control_data = Motor_get_control(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &control_data, LNG_MOTOR);
             }
             break;
@@ -430,7 +426,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get measures
                 motor_diagnostic_t diagnostic = Motor_get_diagnostic(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &diagnostic, LNG_MOTOR_DIAGNOSTIC);
             }
             break;
@@ -441,7 +437,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get parameter
                 motor_parameter_t parameter = Motor_get_parameters(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &parameter, LNG_MOTOR_PARAMETER);
             }
             break;
@@ -452,7 +448,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get parameter
                 motor_t constraint = Motor_get_constraints(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command, 
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &constraint, LNG_MOTOR);
             }
             break;
@@ -463,7 +459,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get parameter
                 motor_emergency_t emergency = Motor_get_emergency(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command,
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) & emergency, LNG_MOTOR_EMERGENCY);
             }
             break;
@@ -474,7 +470,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get parameter
                 motor_state_t state = Motor_get_state(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command,
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) &state, LNG_MOTOR_STATE);
             }
             break;
@@ -491,11 +487,11 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // If the PID is not true return a NACK otherwise return ACK
                 if (Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_POSITION, &packet->motor.pid)) {
                     // Send ACK message
-                    OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_ACK,
+                    OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                             HASHMAP_MOTOR, command);
                 } else {
                     // Send NACK message
-                    OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_NACK,
+                    OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_NACK,
                             HASHMAP_MOTOR, command);
                 }
             } else if (type == OR_BUS_FRAME_REQUEST) {
@@ -514,11 +510,11 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // If the PID is not true return a NACK otherwise return ACK
                 if (Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, &packet->motor.pid)) {
                     // Send ACK message
-                    OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_ACK,
+                    OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                             HASHMAP_MOTOR, command);
                 } else {
                     // Send NACK message
-                    OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_NACK,
+                    OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_NACK,
                             HASHMAP_MOTOR, command);
                 }
             } else if (type == OR_BUS_FRAME_REQUEST) {
@@ -537,11 +533,11 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // If the PID is not true return a NACK otherwise return ACK
                 if (Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, &packet->motor.pid)) {
                     // Send ACK message
-                    OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_ACK,
+                    OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                             HASHMAP_MOTOR, command);
                 } else {
                     // Send NACK message
-                    OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_NACK,
+                    OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_NACK,
                             HASHMAP_MOTOR, command);
                 }
             } else if (type == OR_BUS_FRAME_REQUEST) {
@@ -559,13 +555,13 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 // Get parameter
                 motor_safety_t safety = Motor_get_safety(&motor_fw[cmd.bitset.motor].motor);
                 // Add packet in frame
-                OR_BUS_FRAME_add_data(_OR_BUS_FRAME_MOTOR, HASHMAP_MOTOR, command,
+                OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) & safety, LNG_MOTOR_SAFETY);
             }
             break;
         default:
             // Send NACK message
-            OR_BUS_FRAME_add_request(_OR_BUS_FRAME_MOTOR, OR_BUS_FRAME_NACK,
+            OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_NACK,
                     HASHMAP_MOTOR, command);
             break;
     }

@@ -119,7 +119,7 @@ void UART1_read_callback(unsigned char rxdata) {
             // initialize and run timer
             break;
         case OR_BUS_DONE:
-            // Trigger event decode message
+            // Event decoded message
             break;
         default:
             break;
