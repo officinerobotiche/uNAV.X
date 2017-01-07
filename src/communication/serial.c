@@ -120,6 +120,12 @@ void UART1_read_callback(unsigned char rxdata) {
             break;
         case OR_BUS_DONE:
             // Event decoded message
+            // Build the message and send
+            if(OR_BUS_FRAME_build(_OR_BUS_FRAME_CNT)) {
+                // Send the message
+                UART_write(_UART1_CNT, _OR_BUS_FRAME_CNT->or_bus.tx.buff, 
+                        _OR_BUS_FRAME_CNT->or_bus.tx.length);
+            }
             break;
         default:
             break;

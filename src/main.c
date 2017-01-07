@@ -184,7 +184,7 @@ int16_t main(void) {
     
     /** SERIAL CONFIGURATION **/
     // Initialization over bus
-    OR_BUS_FRAME_init(&OR_BUS_FRAME, &OR_BUS_RX_BUFFER[0], &OR_BUS_TX_BUFFER[0], OR_BUS_FRAME_LNG_FRAME);
+    OR_BUS_FRAME_init(&OR_BUS_FRAME, &OR_BUS_TX_BUFFER[0], &OR_BUS_RX_BUFFER[0], OR_BUS_FRAME_LNG_FRAME);
     // Register callback for system messages
     OR_BUS_FRAME_register(&OR_BUS_FRAME, HASHMAP_SYSTEM, &OR_BUS_FRAME_decoder_system, &OR_BUS_FRAME);
     // Register callback for peripheral messages

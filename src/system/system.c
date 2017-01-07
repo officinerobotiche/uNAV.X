@@ -63,6 +63,7 @@ const interrupt_controller_t OC3_IT = EVENT_INTERRUPT_INIT(IFS1, 9, IEC1, 9);
 
 uint32_t adc_time;
 hEvent_t system_events[NUM_SYSTEM_EVENTS];
+system_time_t system_time;
 
 /******************************************************************************/
 /* System Level Functions                                                     */
@@ -151,14 +152,13 @@ void register_time(system_event_type_t event_type, hEvent_t event ) {
 }
 /**
  * Return the time of execution of idle, parsing, adc conversion
- * @param message
  */
-void get_system_time(system_time_t *time) {
-    time->idle = 0;
-    time->parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
-    time->i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
-    time->led = get_time(system_events[SYSTEM_EVENT_LED]);
-    time->adc = adc_time;
+void get_system_time() {
+    system_time.idle = 0;
+    system_time.parser = get_time(system_events[SYSTEM_EVENT_PARSER]);
+    system_time.i2c = get_time(system_events[SYSTEM_EVENT_I2C]);
+    system_time.led = get_time(system_events[SYSTEM_EVENT_LED]);
+    system_time.adc = adc_time;
 }
 /**
  * Board software reset.
@@ -219,12 +219,20 @@ void OR_BUS_FRAME_decoder_system(void* obj, OR_BUS_FRAME_type_t type,
         case SYSTEM_CODE_BOARD_TYPE:
         case SYSTEM_CODE_BOARD_NAME:
             if(type == OR_BUS_FRAME_REQUEST) {
-                services(command, &packet->system);
+                system_frame_u service;
+                services(command, &service);
+                // Add packet in frame
+                OR_BUS_FRAME_add_data(obj, HASHMAP_SYSTEM, command,
+                        (OR_BUS_FRAME_packet_t*) & service, LNG_SYSTEM_SERVICE);
             }
             break;
         case SYSTEM_TIME:
             if(type == OR_BUS_FRAME_REQUEST) {
-                get_system_time(&packet->system.time);
+                // Evaluate the time
+                get_system_time();
+                // Add packet in frame
+                OR_BUS_FRAME_add_data(obj, HASHMAP_SYSTEM, command,
+                        (OR_BUS_FRAME_packet_t*) & system_time, LNG_SYSTEM_TIME);
             }
             break;
 //        case SYSTEM_SERIAL_ERROR:
