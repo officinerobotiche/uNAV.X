@@ -42,6 +42,14 @@ extern "C" {
 /* Prototype              													  */
 /******************************************************************************/
 
+    /**** RUN THE CURRENT CONTROL IN ADC LOOP *****/
+    #define CURRENT_CONTROL_IN_ADC_LOOP
+    /**********************************************/
+    
+#ifdef CURRENT_CONTROL_IN_ADC_LOOP
+#define CURRENT_ADC_LOOP_FRQ 33200
+#endif
+    
 #define NUM_CONTROLLERS 3
 
     typedef enum {

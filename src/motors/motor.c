@@ -160,6 +160,32 @@ inline int __attribute__((always_inline)) Motor_control_velocity(MOTOR_t *motor,
 #undef CONTROLLER_VEL
 }
 
+inline int __attribute__((always_inline)) Motor_control_current(MOTOR_t *motor, motor_control_t reference, volatile fractional saturation) {
+#define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
+    // Set reference
+    motor->controller[CONTROLLER_CURR].PIDstruct.controlReference = 
+            Motor_castToDSP(reference, motor->constraint.current, 
+            &motor->controller[CONTROLLER_CURR].saturation);
+    motor->reference.current = motor->controller[CONTROLLER_CURR].PIDstruct.controlReference;
+    // Set measure        
+    if(motor->measure.current > INT16_MAX) {
+        motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MAX;
+    } else if(motor->measure.current < INT16_MIN) {
+        motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = INT16_MIN;
+    } else {
+        motor->controller[CONTROLLER_CURR].PIDstruct.measuredOutput = motor->measure.current;
+    }
+    // Add anti wind up saturation from PWM
+    // Add coefficient K_back calculation for anti wind up
+    motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput += 
+            motor->controller[CONTROLLER_CURR].k_aw * saturation;
+    // PID execution
+    PID(&motor->controller[CONTROLLER_CURR].PIDstruct);
+    // Get Output
+    return motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput;
+#undef CONTROLLER_CURR
+}
+
 void Motor_TaskController(int argc, int *argv) {
     MOTOR_t *motor = (MOTOR_t*) argv[0];
     
@@ -254,17 +280,40 @@ void Motor_TaskController(int argc, int *argv) {
         }
         // =======================================
 
+#ifndef CURRENT_CONTROL_IN_ADC_LOOP
+        // ========= CONTROL CURRENT =============
+        // Check if the current control is enabled
+        if (motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+            // Check if is the time to run the controller
+            if (run_controller(&motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)])) {
+                // The current is evaluated with sign of motor rotation
+                // Update current and volt values;
+                motor->measure.current = -motor->current.gain * motor->adc[0].value;
+                        + motor->current.offset;
+                motor->diagnostic.volt = motor->volt.gain * motor->adc[1].value;
+                        + motor->volt.offset;
+                // Run PID control
+                motor->control_output = Motor_control_current(motor, motor->external_reference, motor->pwm_saturation);
+
+                // Send to motor the value of control
+                Motor_write_PWM(motor, motor->parameter_motor.rotation * motor->control_output);
+            }
+        }
+        // =======================================
+#else
         // If disabled Send the PWM after this line
         if (motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
             // Set current reference
-            motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = Motor_castToDSP(motor->control_output, 
-                    motor->constraint.current,
+            motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = 
+                    Motor_castToDSP(motor->control_output, motor->constraint.current,
                     &motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
-            motor->reference.current = motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
+            motor->reference.current = 
+                    motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
         } else {
             // Send to motor the value of control
             motor->pwm_saturation = Motor_write_PWM(motor, motor->control_output);
         }
+#endif
     }
 }
 
@@ -575,10 +624,10 @@ bool Motor_update_pid(MOTOR_t *motor, motor_state_t state, motor_pid_t *pid) {
 #ifdef CURRENT_CONTROL_IN_ADC_LOOP
         if(state == CONTROL_CURRENT) {
             // Manual reset frequency  current loop
-            motors[motIdx].controller[num_control].pid.frequency = CURRENT_ADC_LOOP_FRQ;
+            motor->controller[num_control].pid.frequency = CURRENT_ADC_LOOP_FRQ;
         } else {
             // Initialize soft timer
-            init_soft_timer(&motors[motIdx].controller[num_control].timer, motors[motIdx].manager_freq, 1000000 / pid.frequency);
+            init_soft_timer(&motor->controller[num_control].timer, motor->manager_freq, 1000000 / pid->frequency);
         }
 #else
         // Initialize soft timer
@@ -586,7 +635,7 @@ bool Motor_update_pid(MOTOR_t *motor, motor_state_t state, motor_pid_t *pid) {
 #endif
         // Set enable PID
         motor->controller[num_control].enable = pid->enable;
-        // Update K_qei
+        // Update K_QEI (Quadrature Encoder Interface)
         if(state == CONTROL_VELOCITY) {
             motor->k_vel_qei = motor->k_ang * 1000.0f *((float) pid->frequency);
         }

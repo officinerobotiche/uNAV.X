@@ -338,7 +338,7 @@ void Motor_Init(LED_controller_t* led_controller) {
         // Open Input Capture
         Motor_init_IC(&motor_fw[i].motor);
         /// Run task controller
-        Motor_run(&motor_fw[i].motor, RUN);
+//        Motor_run(&motor_fw[i].motor, RUN);
     }
 }
 /** 
@@ -433,6 +433,9 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_PARAMETER:
             if(type == OR_BUS_FRAME_DATA) {
                 Motor_update_parameters(&motor_fw[cmd.bitset.motor].motor, &packet->motor.parameter);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
             } else if(type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
                 motor_parameter_t parameter = Motor_get_parameters(&motor_fw[cmd.bitset.motor].motor);
@@ -444,6 +447,9 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_CONSTRAINT:
             if(type == OR_BUS_FRAME_DATA) {
                 Motor_update_constraints(&motor_fw[cmd.bitset.motor].motor, &packet->motor.motor);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
             } else if(type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
                 motor_t constraint = Motor_get_constraints(&motor_fw[cmd.bitset.motor].motor);
@@ -455,6 +461,9 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_EMERGENCY:
             if (type == OR_BUS_FRAME_DATA) {
                 Motor_update_emergency(&motor_fw[cmd.bitset.motor].motor, &packet->motor.emergency);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
                 motor_emergency_t emergency = Motor_get_emergency(&motor_fw[cmd.bitset.motor].motor);
@@ -466,6 +475,9 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_STATE:
             if (type == OR_BUS_FRAME_DATA) {
                 Motor_set_state(&motor_fw[cmd.bitset.motor].motor, packet->motor.state);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
                 motor_state_t state = Motor_get_state(&motor_fw[cmd.bitset.motor].motor);
@@ -477,6 +489,9 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_POS_RESET:
             if (type == OR_BUS_FRAME_DATA) {
                 Motor_reset_position_measure(&motor_fw[cmd.bitset.motor].motor, packet->motor.reference);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
             }
             break;
 //        case MOTOR_POS_REF:
@@ -503,7 +518,12 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             }
             break;
         case MOTOR_VEL_REF:
-            Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, packet->motor.reference);
+            if (type == OR_BUS_FRAME_DATA) {
+                Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, packet->motor.reference);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
+            }
             break;
         case MOTOR_VEL_PID:
             if (type == OR_BUS_FRAME_DATA) {
@@ -526,7 +546,12 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             }
             break;
         case MOTOR_CURRENT_REF:
-            Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, packet->motor.reference);
+            if (type == OR_BUS_FRAME_DATA) {
+                Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, packet->motor.reference);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
+            }
             break;
         case MOTOR_CURRENT_PID:
             if (type == OR_BUS_FRAME_DATA) {
@@ -551,6 +576,9 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_SAFETY:
             if (type == OR_BUS_FRAME_DATA) {
                 Motor_update_safety(&motor_fw[cmd.bitset.motor].motor, &packet->motor.safety);
+                // Send ACK message
+                OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
+                        HASHMAP_MOTOR, command);
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
                 motor_safety_t safety = Motor_get_safety(&motor_fw[cmd.bitset.motor].motor);
