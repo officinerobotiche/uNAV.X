@@ -29,6 +29,8 @@ extern "C" {
 #else
 #define ADC_BUFF 16
 #endif
+    
+#define ADC_BUFF_PIN (ADC_BUFF / 4)
 
     /**
      * I/O and Peripheral Initialization

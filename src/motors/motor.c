@@ -23,6 +23,7 @@
 #include <or_math/math.h>
 
 #define MOTOR_DEFAULT_ADC_PORTS 2
+#define MOTOR_DEFAULT_LEVEL_LOCK 6
 
 #define DEFAULT_FREQ_MOTOR_MANAGER 1000.0             // Task Manager 10Khz
 #define DEFAULT_FREQ_MOTOR_CONTROL_EMERGENCY 1000.0   // In Herts
@@ -303,12 +304,16 @@ void Motor_TaskController(int argc, int *argv) {
 #else
         // If disabled Send the PWM after this line
         if (motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].enable) {
+            // Lock ADC current loop controller
+            spin_lock(&motor->lock, MOTOR_DEFAULT_LEVEL_LOCK);
             // Set current reference
             motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference = 
                     Motor_castToDSP(motor->control_output, motor->constraint.current,
                     &motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].saturation);
             motor->reference.current = 
                     motor->controller[GET_CONTROLLER_NUM(CONTROL_CURRENT)].PIDstruct.controlReference;
+            // Unlock ADC current loop controller
+            spin_unlock(&motor->lock);
         } else {
             // Send to motor the value of control
             motor->pwm_saturation = Motor_write_PWM(motor, motor->control_output);
@@ -367,6 +372,8 @@ void Motor_Safety(int argc, int *argv) {
 void Motor_ADC_callback(void* obj) {
     MOTOR_t *motor = (MOTOR_t*) obj;
 #define CONTROLLER_CURR GET_CONTROLLER_NUM(CONTROL_CURRENT)
+    // Lock all events
+    lock(&motor->lock, true);
     motor->measure.current = - motor->current.gain * motor->adc[0].value + motor->current.offset;
     motor->diagnostic.volt = motor->volt.gain * motor->adc[1].value + motor->volt.offset;
     
@@ -388,6 +395,8 @@ void Motor_ADC_callback(void* obj) {
         // Set Output        
         motor->pwm_saturation = Motor_write_PWM(motor, motor->controller[CONTROLLER_CURR].PIDstruct.controlOutput);
     }
+    // Unlock the controller
+    lock(&motor->lock, false);
 #undef CONTROLLER_CURR
 }
 
@@ -607,6 +616,7 @@ bool Motor_update_pid(MOTOR_t *motor, motor_state_t state, motor_pid_t *pid) {
     long check3 = labs(1000.0 * pid->kd);
     
     if(check1 < INT16_MAX && check2 < INT16_MAX && check3 < INT16_MAX) {
+        spin_lock(&motor->lock, MOTOR_DEFAULT_LEVEL_LOCK);
         int num_control = GET_CONTROLLER_NUM(state);
         // Update PID struct
         memcpy(&motor->controller[num_control].pid, pid, sizeof(motor_pid_t));
@@ -639,6 +649,7 @@ bool Motor_update_pid(MOTOR_t *motor, motor_state_t state, motor_pid_t *pid) {
         if(state == CONTROL_VELOCITY) {
             motor->k_vel_qei = motor->k_ang * 1000.0f *((float) pid->frequency);
         }
+        spin_unlock(&motor->lock);
         return true;
     } else
         return false;

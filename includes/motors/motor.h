@@ -33,6 +33,7 @@ extern "C" {
 #include <or_bus/frame.h>
 #include <or_system/soft_timer.h>
 #include <or_system/task_manager.h>
+#include <or_system/spinlock.h>
 #include <or_peripherals/GPIO/adc.h>
 #include <or_peripherals/GPIO/led.h>
 
@@ -102,6 +103,7 @@ extern "C" {
     } pid_controller_t;
 
     typedef struct _MOTOR {
+        lock_t lock;
         unsigned int index;
         // led controller
         LED_controller_t* led_controller;

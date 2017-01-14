@@ -49,11 +49,10 @@ extern "C" {
     void UART1_read_callback(unsigned char rxdata);
     /**
      * @brief UART writer with DMA
-     * @param uart The UART controller
      * @param buff The buffer to send
      * @param size The size of buffer
      */
-    void UART1_DMA_write(void *uart, unsigned char* buff, size_t size);
+    void UART1_DMA_write(unsigned char* buff, size_t size);
 
     
 

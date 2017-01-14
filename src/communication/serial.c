@@ -98,9 +98,7 @@ void UART1_Init(UART_t *uart, OR_BUS_FRAME_t *frame) {
     UART1_DMA1_conf();
 }
 
-void UART1_DMA_write(void *uart, unsigned char* buff, size_t size) {
-    //Lock the UART communication
-    ((UART_t*)uart)->write->lock = true;
+void UART1_DMA_write(unsigned char* buff, size_t size) {
     //Wait to complete send packet from UART1 and DMA1.
     while ((U1STAbits.TRMT == 0) && (DMA1CONbits.CHEN == 0));
     //Copy the message on Buffer DMA TX
@@ -143,8 +141,8 @@ void __attribute__((interrupt, auto_psv)) _U1RXInterrupt(void) {
  */
 void __attribute__((interrupt, no_auto_psv)) _DMA1Interrupt(void) {
     IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
-    // Unlock the UART write
-    _UART1_CNT->write->lock = false;
+    // Flush buffer
+    UART_write_flush_buffer(_UART1_CNT);
 }
 /**
  * @brief Clear the UART1 Error Interrupt Flag

@@ -92,11 +92,11 @@ gpio_t enable[] = {
 
 gpio_adc_t ADCmotor[2][2] = {
     // Current and Voltage Motor 0
-    { GPIO_ADC(A, 0, AD1PCFGL, 0,          0, ADC_BUFF),
-      GPIO_ADC(A, 1, AD1PCFGL, 1,   ADC_BUFF, ADC_BUFF)},
+    { GPIO_ADC(A, 0, AD1PCFGL, 0,              0, ADC_BUFF_PIN),
+      GPIO_ADC(A, 1, AD1PCFGL, 1,   ADC_BUFF_PIN, ADC_BUFF_PIN)},
     // Current and Voltage Motor 1
-    { GPIO_ADC(B, 0, AD1PCFGL, 2, 2*ADC_BUFF, ADC_BUFF),
-      GPIO_ADC(B, 1, AD1PCFGL, 3, 3*ADC_BUFF, ADC_BUFF)},
+    { GPIO_ADC(B, 0, AD1PCFGL, 2, 2*ADC_BUFF_PIN, ADC_BUFF_PIN),
+      GPIO_ADC(B, 1, AD1PCFGL, 3, 3*ADC_BUFF_PIN, ADC_BUFF_PIN)},
 };
 
 /**

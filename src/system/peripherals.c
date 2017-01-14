@@ -286,7 +286,7 @@ void Peripherals_Init(void) {
 #endif
 }
 
-void __attribute__((interrupt, auto_psv)) _DMA0Interrupt(void) {
+void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void) {
     unsigned int t = TMR1; // Timing function
     static unsigned short DmaBuffer = 0;
     if(DmaBuffer == 0) {
