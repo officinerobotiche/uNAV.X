@@ -36,11 +36,6 @@ extern "C" {
      */
     void Motor_Init(LED_controller_t* led_controller);
     /**
-     * Select the correct Input Capture pre scaler		
-     * @param motIdx motor pointer reference
-     */		
-    void SelectIcPrescaler(void *motor);
-    /**
      * 
      * @param obj
      * @param type

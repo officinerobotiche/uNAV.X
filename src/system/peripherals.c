@@ -142,7 +142,7 @@ void InitADC_2Sim() {
     
     AD1CSSL = 0;
     
-    AD1CON1bits.ADON = 1;       //< Enable ADC
+    AD1CON1bits.ADON = 0;       //< Disable ADC
 }
 /**
  * Initialization ADC with read CH0, CH1, CH2, CH3 simultaneously 
@@ -188,7 +188,7 @@ void InitADC_4Sim() {
     
     AD1CSSL = 0;
     
-    AD1CON1bits.ADON = 1;       //< Enable ADC
+    AD1CON1bits.ADON = 0;       //< Disable ADC
 }
 /**
  * Initialization remappable peripherals and setup GPIO library
@@ -287,7 +287,9 @@ void Peripherals_Init(void) {
 }
 
 void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void) {
-    unsigned int t = TMR1; // Timing function
+    IFS0bits.DMA0IF = 0;    // Clear the DMA0 Interrupt Flag
+    
+    unsigned int t = TMR1;  // Timing function
     static unsigned short DmaBuffer = 0;
     if(DmaBuffer == 0) {
         ADC_controller(&AdcBufferA[0]);
@@ -302,5 +304,4 @@ void __attribute__((interrupt, no_auto_psv)) _DMA0Interrupt(void) {
 #ifdef TEST_PIN
     __builtin_btg ((unsigned int*)&LATC, 3); //LATCbits.LATC3 ^= 1;
 #endif
-    IFS0bits.DMA0IF = 0; // Clear the DMA0 Interrupt Flag
 }

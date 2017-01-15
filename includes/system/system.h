@@ -52,7 +52,7 @@ extern "C" {
 #define EVENT_PRIORITY_LOW_LEVEL 2
 #define EVENT_PRIORITY_VERY_LOW_LEVEL 1
 
-#define UART_TX_LEVEL 1
+#define UART_TX_LEVEL 7
     
     // Definition events
     
@@ -98,7 +98,13 @@ extern "C" {
      * @param event 
      */
     void register_time(system_event_type_t event_type, hEvent_t event );
-    
+    /**
+     * 
+     * @param obj
+     * @param type
+     * @param command
+     * @param packet
+     */
     void OR_BUS_FRAME_decoder_system(void* obj, OR_BUS_FRAME_type_t type, 
         OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet);
 

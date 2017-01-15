@@ -163,22 +163,22 @@ void __attribute__((interrupt, no_auto_psv)) _OscillatorFail(void) {
 void __attribute__((interrupt, no_auto_psv)) _AddressError(void) {
     INTCON1bits.ADDRERR = 0; /* Clear the trap flag */
     // Disable all peripheral enabled    
-//    disable_routine();
-//    // LED blink error
-//    while (1) {
-//        LED1_BIT = 1;
-//        __delay32(2000000);
-//        LED1_BIT = 0;
-//        __delay32(2000000);
-//        // fatal error 2
-//#ifdef UNAV_V1
-//        LED2_BIT = 0;
-//        LED3_BIT = 1;
-//        LED4_BIT = 0;
-//#elif ROBOCONTROLLER_V3
-//        LED2_BIT = 0;
-//#endif
-//    };
+    disable_routine();
+    // LED blink error
+    while (1) {
+        LED1_BIT = 1;
+        __delay32(2000000);
+        LED1_BIT = 0;
+        __delay32(2000000);
+        // fatal error 2
+#ifdef UNAV_V1
+        LED2_BIT = 0;
+        LED3_BIT = 1;
+        LED4_BIT = 0;
+#elif ROBOCONTROLLER_V3
+        LED2_BIT = 0;
+#endif
+    };
 }
 
 void __attribute__((interrupt, no_auto_psv)) _StackError(void) {

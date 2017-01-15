@@ -44,9 +44,10 @@ extern "C" {
     void UART1_Init(UART_t *uart, OR_BUS_FRAME_t *frame);
     /**
      * @brief UART1 callback controller
+     * @param status UART communication
      * @param rxdata data received
      */
-    void UART1_read_callback(unsigned char rxdata);
+    void UART1_read_callback(UART_status_type_t type, unsigned char rxdata);
     /**
      * @brief UART writer with DMA
      * @param buff The buffer to send

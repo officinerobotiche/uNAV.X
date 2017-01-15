@@ -55,11 +55,6 @@
 /*****************************************************************************/
 /* Global Variable Declaration                                               */
 /*****************************************************************************/
-typedef struct _icMode {
-    short mode;
-    short k;
-} ICMode_t;
-
 // Dynamic Interrupt Capture
 const ICMode_t ICMode[4] = {
     {0b001, 1}, // 2X mode (default)
@@ -67,11 +62,10 @@ const ICMode_t ICMode[4] = {
     {0b100, 8}, // 1/4X mode
     {0b101, 32} // 1/16X mode
 };
+#define LNG_ICMODE 4
 #define IC_DISABLE  0b000
 
 #define ICMODE_DEFAULT 0
-#define IC_TIMEPERIOD_TH_MAX 0x8000
-#define IC_TIMEPERIOD_TH_MIN 2000
 
 #ifdef UNAV_V1
 gpio_t enable[] = {
@@ -99,18 +93,19 @@ gpio_adc_t ADCmotor[2][2] = {
       GPIO_ADC(B, 1, AD1PCFGL, 3, 3*ADC_BUFF_PIN, ADC_BUFF_PIN)},
 };
 
+QEI_t QEIMotor[2] = {
+    MOTOR_QEI_INIT(POS1CNT, QEI1CON, 8),
+    MOTOR_QEI_INIT(POS2CNT, QEI2CON, 8)
+};
+
 /**
  * xc16 PID source in: folder_install_microchip_software/xc16/1.2x/src/libdsp.zip
  * on zip file: asm/pid.s
  */
 fractional abcCoefficient[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".xbss, bss, xmemory")));
 fractional controlHistory[NUM_MOTORS][NUM_CONTROLLERS][3] __attribute__((section(".ybss, bss, ymemory")));
-typedef struct _motor_firmware {
-    MOTOR_t motor;
-    ICdata ICinfo;
-} motor_firmware_t;
-
-motor_firmware_t motor_fw[NUM_MOTORS];
+// Initialization motors
+MOTOR_t motor_fw[NUM_MOTORS];
 
 /*****************************************************************************/
 /* User Functions                                                            */
@@ -257,16 +252,6 @@ void Motor_init_timer2(void) {
     T2CONbits.TON = 1; // Start Timer
 }
 
-void Motor_init_ICinfo(ICdata *ICinfo) {
-    //Input capture information
-    ICinfo->k_mul = ICMode[ICMODE_DEFAULT].k;
-    ICinfo->number = ICMODE_DEFAULT;
-    ICinfo->SIG_VEL = 0;
-    ICinfo->overTmr = 0;
-    ICinfo->oldTime = 0;
-    ICinfo->timePeriod = 0;
-}
-
 void Motor_Init(LED_controller_t* led_controller) {
     unsigned int i;
 #ifdef UNAV_V1
@@ -297,48 +282,48 @@ void Motor_Init(LED_controller_t* led_controller) {
     // Initialization motors
     for (i = 0; i < NUM_MOTORS; ++i) {
         /// Initialize variables for motors
-        Motor_init(&motor_fw[i].motor, i, 
-            &abcCoefficient[i][0][0], &controlHistory[i][0][0], 
-            &motor_fw[i].ICinfo, FRTMR2, &SelectIcPrescaler, 
+        Motor_init(&motor_fw[i], i, 
+            &abcCoefficient[i][0][0], &controlHistory[i][0][0],  
             &SetDCMCPWM1, DEFAULT_PWM_OFFSET);
+        // Register QEI and Input Capture (IC)
+        Motor_register_QEI_IC(&motor_fw[i], &QEIMotor[i],
+                &ICMode[0], LNG_ICMODE, ICMODE_DEFAULT, FRTMR2);
         // Register ADC
-        Motor_register_adc(&motor_fw[i].motor, &ADCmotor[i][0], GAIN_ADC);
+        Motor_register_adc(&motor_fw[i], &ADCmotor[i][0], GAIN_ADC);
         // Register enable
-        Motor_register_enable(&motor_fw[i].motor, &enable[i]);
+        Motor_register_enable(&motor_fw[i], &enable[i]);
         // Register led controller
-        Motor_register_led_controller(&motor_fw[i].motor, led_controller);
+        Motor_register_led_controller(&motor_fw[i], led_controller);
         /// Initialize parameters for motors
         motor_parameter_t param = Motor_init_parameters();
-        Motor_update_parameters(&motor_fw[i].motor, &param);
+        Motor_update_parameters(&motor_fw[i], &param);
         // Initialize current PID controller
         motor_pid_t pid_current = {5, 0.001, 0.01, 1.0, 12000, false};
-        Motor_update_pid(&motor_fw[i].motor, CONTROL_CURRENT, &pid_current);
+        Motor_update_pid(&motor_fw[i], CONTROL_CURRENT, &pid_current);
         /// Initialize Velocity PID controller
         motor_pid_t pid_vel = { 6.0, 1.5, 0.2, 1.0, 1000, true};
-        Motor_update_pid(&motor_fw[i].motor, CONTROL_VELOCITY, &pid_vel);
+        Motor_update_pid(&motor_fw[i], CONTROL_VELOCITY, &pid_vel);
         /// Initialize Position PID controller
         motor_pid_t pid_pos = { 0.0, 0.0, 0.0, 0.0, 10, false};
-        Motor_update_pid(&motor_fw[i].motor, CONTROL_POSITION, &pid_pos);
+        Motor_update_pid(&motor_fw[i], CONTROL_POSITION, &pid_pos);
         /// Initialize safety procedure
         motor_safety_t safety = {400, 1000, 1000};
-        Motor_update_safety(&motor_fw[i].motor, &safety);
+        Motor_update_safety(&motor_fw[i], &safety);
         /// Initialize emergency procedure to stop
         motor_emergency_t emergency = {1.0, 2.0, 500};
-        Motor_update_emergency(&motor_fw[i].motor, &emergency);
+        Motor_update_emergency(&motor_fw[i], &emergency);
         /// Initialize constraints motor
         motor_t constraints = {MOTOR_CONTROL_MAX, MOTOR_CONTROL_MAX,
                     MOTOR_CONTROL_MAX, MOTOR_CONTROL_MAX, 0, 0};
-        Motor_update_constraints(&motor_fw[i].motor, &constraints);
+        Motor_update_constraints(&motor_fw[i], &constraints);
         /// Initialize state controller
-        Motor_set_state(&motor_fw[i].motor, STATE_CONTROL_DISABLE);
-        
-        Motor_init_ICinfo(&motor_fw[i].ICinfo);
+        Motor_set_state(&motor_fw[i], STATE_CONTROL_DISABLE);
         // Open QEI
-        Motor_init_QEI(&motor_fw[i].motor);
+        Motor_init_QEI(&motor_fw[i]);
         // Open Input Capture
-        Motor_init_IC(&motor_fw[i].motor);
+        Motor_init_IC(&motor_fw[i]);
         /// Run task controller
-//        Motor_run(&motor_fw[i].motor, RUN);
+        Motor_run(&motor_fw[i], RUN);
     }
 }
 /** 
@@ -360,34 +345,6 @@ inline void SwitchIcPrescaler(int motIdx, int mode) {
     }
 }
 
-inline void SelectIcPrescaler(void *_motor) {
-    MOTOR_t *motor = (MOTOR_t*) _motor;
-    /** 
-     * V = Kvel / timePeriod
-     * is equal to:
-     * timePeriod = Kvel / V = # Adimensional value
-     * 
-     * V -> inf , timePeriod -> 0   , ICmode -> 3 decrease pulses
-     * V -> 0   , timePeriod -> inf , ICmode -> 0 increase pulses
-     * 
-     */
-    int temp_number = 0;
-    unsigned long doubletimePeriod = motor->ICinfo->delta;
-    unsigned long halfPeriod = motor->ICinfo->delta;
-    do {
-        doubletimePeriod = doubletimePeriod * ICMode[temp_number].k;
-        halfPeriod = halfPeriod / ICMode[temp_number].k;
-        if (doubletimePeriod > IC_TIMEPERIOD_TH_MIN) {
-            if (halfPeriod < IC_TIMEPERIOD_TH_MAX) {
-                motor->ICinfo->k_mul = ICMode[temp_number].k;
-                return;
-            }
-        }
-        motor->ICinfo->k_mul = ICMode[temp_number].k;
-        temp_number++;
-    }while(temp_number <= 3);
-}
-
 void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type, 
         OR_BUS_FRAME_command_t command, OR_BUS_FRAME_packet_t *packet) {
     // Decode command message
@@ -397,7 +354,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_MEASURE:
             if(type == OR_BUS_FRAME_REQUEST) {
                 // Get measures
-                motor_t measure = Motor_get_measures(&motor_fw[cmd.bitset.motor].motor);
+                motor_t measure = Motor_get_measures(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &measure, LNG_MOTOR);
@@ -406,7 +363,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_REFERENCE:
             if(type == OR_BUS_FRAME_REQUEST) {
                 // Get measures
-                motor_t reference = Motor_get_reference(&motor_fw[cmd.bitset.motor].motor);
+                motor_t reference = Motor_get_reference(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &reference, LNG_MOTOR);
@@ -415,7 +372,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_CONTROL:
             if(type == OR_BUS_FRAME_REQUEST) {
                 // Get measures
-                motor_t control_data = Motor_get_control(&motor_fw[cmd.bitset.motor].motor);
+                motor_t control_data = Motor_get_control(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &control_data, LNG_MOTOR);
@@ -424,7 +381,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_DIAGNOSTIC:
             if(type == OR_BUS_FRAME_REQUEST) {
                 // Get measures
-                motor_diagnostic_t diagnostic = Motor_get_diagnostic(&motor_fw[cmd.bitset.motor].motor);
+                motor_diagnostic_t diagnostic = Motor_get_diagnostic(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &diagnostic, LNG_MOTOR_DIAGNOSTIC);
@@ -432,13 +389,13 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_PARAMETER:
             if(type == OR_BUS_FRAME_DATA) {
-                Motor_update_parameters(&motor_fw[cmd.bitset.motor].motor, &packet->motor.parameter);
+                Motor_update_parameters(&motor_fw[cmd.bitset.motor], &packet->motor.parameter);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
             } else if(type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_parameter_t parameter = Motor_get_parameters(&motor_fw[cmd.bitset.motor].motor);
+                motor_parameter_t parameter = Motor_get_parameters(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &parameter, LNG_MOTOR_PARAMETER);
@@ -446,13 +403,13 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_CONSTRAINT:
             if(type == OR_BUS_FRAME_DATA) {
-                Motor_update_constraints(&motor_fw[cmd.bitset.motor].motor, &packet->motor.motor);
+                Motor_update_constraints(&motor_fw[cmd.bitset.motor], &packet->motor.motor);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
             } else if(type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_t constraint = Motor_get_constraints(&motor_fw[cmd.bitset.motor].motor);
+                motor_t constraint = Motor_get_constraints(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command, 
                         (OR_BUS_FRAME_packet_t*) &constraint, LNG_MOTOR);
@@ -460,13 +417,13 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_EMERGENCY:
             if (type == OR_BUS_FRAME_DATA) {
-                Motor_update_emergency(&motor_fw[cmd.bitset.motor].motor, &packet->motor.emergency);
+                Motor_update_emergency(&motor_fw[cmd.bitset.motor], &packet->motor.emergency);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_emergency_t emergency = Motor_get_emergency(&motor_fw[cmd.bitset.motor].motor);
+                motor_emergency_t emergency = Motor_get_emergency(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) & emergency, LNG_MOTOR_EMERGENCY);
@@ -474,13 +431,13 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_STATE:
             if (type == OR_BUS_FRAME_DATA) {
-                Motor_set_state(&motor_fw[cmd.bitset.motor].motor, packet->motor.state);
+                Motor_set_state(&motor_fw[cmd.bitset.motor], packet->motor.state);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_state_t state = Motor_get_state(&motor_fw[cmd.bitset.motor].motor);
+                motor_state_t state = Motor_get_state(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) &state, LNG_MOTOR_STATE);
@@ -488,7 +445,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_POS_RESET:
             if (type == OR_BUS_FRAME_DATA) {
-                Motor_reset_position_measure(&motor_fw[cmd.bitset.motor].motor, packet->motor.reference);
+                Motor_reset_position_measure(&motor_fw[cmd.bitset.motor], packet->motor.reference);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
@@ -500,7 +457,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_POS_PID:
             if (type == OR_BUS_FRAME_DATA) {
                 // If the PID is not true return a NACK otherwise return ACK
-                if (Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_POSITION, &packet->motor.pid)) {
+                if (Motor_update_pid(&motor_fw[cmd.bitset.motor], CONTROL_POSITION, &packet->motor.pid)) {
                     // Send ACK message
                     OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                             HASHMAP_MOTOR, command);
@@ -511,7 +468,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 }
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_pid_t pid = Motor_get_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_POSITION);
+                motor_pid_t pid = Motor_get_pid(&motor_fw[cmd.bitset.motor], CONTROL_POSITION);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(NULL, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) &pid, LNG_MOTOR_PID);
@@ -519,7 +476,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_VEL_REF:
             if (type == OR_BUS_FRAME_DATA) {
-                Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, packet->motor.reference);
+                Motor_set_reference(&motor_fw[cmd.bitset.motor], CONTROL_VELOCITY, packet->motor.reference);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
@@ -528,7 +485,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_VEL_PID:
             if (type == OR_BUS_FRAME_DATA) {
                 // If the PID is not true return a NACK otherwise return ACK
-                if (Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY, &packet->motor.pid)) {
+                if (Motor_update_pid(&motor_fw[cmd.bitset.motor], CONTROL_VELOCITY, &packet->motor.pid)) {
                     // Send ACK message
                     OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                             HASHMAP_MOTOR, command);
@@ -539,7 +496,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 }
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_pid_t pid = Motor_get_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_VELOCITY);
+                motor_pid_t pid = Motor_get_pid(&motor_fw[cmd.bitset.motor], CONTROL_VELOCITY);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(NULL, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) &pid, LNG_MOTOR_PID);
@@ -547,7 +504,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_CURRENT_REF:
             if (type == OR_BUS_FRAME_DATA) {
-                Motor_set_reference(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, packet->motor.reference);
+                Motor_set_reference(&motor_fw[cmd.bitset.motor], CONTROL_CURRENT, packet->motor.reference);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
@@ -556,7 +513,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
         case MOTOR_CURRENT_PID:
             if (type == OR_BUS_FRAME_DATA) {
                 // If the PID is not true return a NACK otherwise return ACK
-                if (Motor_update_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT, &packet->motor.pid)) {
+                if (Motor_update_pid(&motor_fw[cmd.bitset.motor], CONTROL_CURRENT, &packet->motor.pid)) {
                     // Send ACK message
                     OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                             HASHMAP_MOTOR, command);
@@ -567,7 +524,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
                 }
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_pid_t pid = Motor_get_pid(&motor_fw[cmd.bitset.motor].motor, CONTROL_CURRENT);
+                motor_pid_t pid = Motor_get_pid(&motor_fw[cmd.bitset.motor], CONTROL_CURRENT);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(NULL, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) &pid, LNG_MOTOR_PID);
@@ -575,13 +532,13 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
             break;
         case MOTOR_SAFETY:
             if (type == OR_BUS_FRAME_DATA) {
-                Motor_update_safety(&motor_fw[cmd.bitset.motor].motor, &packet->motor.safety);
+                Motor_update_safety(&motor_fw[cmd.bitset.motor], &packet->motor.safety);
                 // Send ACK message
                 OR_BUS_FRAME_add_request(obj, OR_BUS_FRAME_ACK,
                         HASHMAP_MOTOR, command);
             } else if (type == OR_BUS_FRAME_REQUEST) {
                 // Get parameter
-                motor_safety_t safety = Motor_get_safety(&motor_fw[cmd.bitset.motor].motor);
+                motor_safety_t safety = Motor_get_safety(&motor_fw[cmd.bitset.motor]);
                 // Add packet in frame
                 OR_BUS_FRAME_add_data(obj, HASHMAP_MOTOR, command,
                         (OR_BUS_FRAME_packet_t*) & safety, LNG_MOTOR_SAFETY);
@@ -599,7 +556,7 @@ void OR_BUS_FRAME_decoder_motor(void* obj, OR_BUS_FRAME_type_t type,
 void __attribute__((interrupt, no_auto_psv)) _IC1Interrupt(void) {
     // Run the Input Capture controller
     bool dir = (QEI1CONbits.UPDN ? true : false); 
-    Motor_IC_controller(&motor_fw[MOTOR_ZERO].motor, &IC1BUF, dir);
+    Motor_IC_controller(&motor_fw[MOTOR_ZERO], &IC1BUF, dir);
     // Clear the interrupt
     IFS0bits.IC1IF = 0;
 }
@@ -607,13 +564,13 @@ void __attribute__((interrupt, no_auto_psv)) _IC1Interrupt(void) {
 void __attribute__((interrupt, no_auto_psv)) _IC2Interrupt(void) {
     // Run the Input Capture controller
     bool dir = (QEI2CONbits.UPDN ? true : false);
-    Motor_IC_controller(&motor_fw[MOTOR_ONE].motor, &IC2BUF, dir);
+    Motor_IC_controller(&motor_fw[MOTOR_ONE], &IC2BUF, dir);
     // Clear the interrupt
     IFS0bits.IC2IF = 0;
 }
 
 void __attribute__((interrupt, auto_psv, shadow)) _T2Interrupt(void) {
     IFS0bits.T2IF = 0; // interrupt flag reset
-    Motor_IC_timer(&motor_fw[MOTOR_ZERO].motor);
-    Motor_IC_timer(&motor_fw[MOTOR_ONE].motor);
+    Motor_IC_timer(&motor_fw[MOTOR_ZERO]);
+    Motor_IC_timer(&motor_fw[MOTOR_ONE]);
 }

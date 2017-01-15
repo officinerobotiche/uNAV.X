@@ -109,23 +109,36 @@ void UART1_DMA_write(unsigned char* buff, size_t size) {
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
 }
 
-void UART1_read_callback(unsigned char rxdata) {
+static int temp = 0;    // TODO - TO REMOVE
+
+void UART1_read_callback(UART_status_type_t type, unsigned char rxdata) {
     // decode message from  UART and parse
-    // TODO If receive the header start a timer for timeout
-    switch (OR_BUS_FRAME_decoder(_OR_BUS_FRAME_CNT, rxdata)) {
-        case OR_BUS_PENDING:
-            // initialize and run timer
-            break;
-        case OR_BUS_DONE:
-            // Event decoded message
-            // Build the message and send
-            if(OR_BUS_FRAME_build(_OR_BUS_FRAME_CNT)) {
-                // Send the message
-                UART_write(_UART1_CNT, _OR_BUS_FRAME_CNT->or_bus.tx.buff, 
-                        _OR_BUS_FRAME_CNT->or_bus.tx.length);
+    switch(type) {
+        case UART_DONE:     // If data DONE launch decoder function
+        {
+            OR_BUS_State_t state = OR_BUS_FRAME_decoder(_OR_BUS_FRAME_CNT, rxdata);
+            switch (state) {
+                case OR_BUS_PENDING:
+                    // initialize and run timer
+                    break;
+                case OR_BUS_DONE:
+                    // Event decoded message
+                    // Build the message and send
+                    if(OR_BUS_FRAME_build(_OR_BUS_FRAME_CNT)) {
+                        // Send the message
+                        UART_write(_UART1_CNT, _OR_BUS_FRAME_CNT->or_bus.tx.buff, 
+                                _OR_BUS_FRAME_CNT->or_bus.tx.length);
+                    }
+                    break;
+                default:
+                    temp = temp + 1;    // TODO - TO REMOVE
+                    break;
             }
             break;
-        default:
+        }
+        default:            // All error reset the parser
+            OR_BUS_FRAME_reset(_OR_BUS_FRAME_CNT);
+            temp = temp + 2;    // TODO - TO REMOVE
             break;
     }
     // Reset timer
@@ -148,6 +161,5 @@ void __attribute__((interrupt, no_auto_psv)) _DMA1Interrupt(void) {
  * @brief Clear the UART1 Error Interrupt Flag
  */
 void __attribute__((interrupt, no_auto_psv)) _U1ErrInterrupt(void) {
-
     IFS4bits.U1EIF = 0;
 }

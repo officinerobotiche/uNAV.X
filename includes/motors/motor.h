@@ -54,25 +54,37 @@ extern "C" {
 #define NUM_CONTROLLERS 3
 
     typedef enum {
-        CONTROL_SAFETY = -2, ///< Motor disabled for high current
+        CONTROL_SAFETY = -2,    ///< Motor disabled for high current
         CONTROL_EMERGENCY = -1, ///< Motor slow down to zero speed, then the bridge is turned off
-        CONTROL_DISABLE = 0, ///< Motor disabled
-        CONTROL_POSITION = 1, ///< Motor controlled in position
-        CONTROL_VELOCITY = 2, ///< Motor controlled in velocity
-        CONTROL_CURRENT = 3, ///< Motor controller in torque
-        CONTROL_DIRECT = 4, ///< Motor controlled using direct PWM signals
+        CONTROL_DISABLE = 0,    ///< Motor disabled
+        CONTROL_POSITION = 1,   ///< Motor controlled in position
+        CONTROL_VELOCITY = 2,   ///< Motor controlled in velocity
+        CONTROL_CURRENT = 3,    ///< Motor controller in torque
+        CONTROL_DIRECT = 4,     ///< Motor controlled using direct PWM signals
     } enum_state_t;
+    
+    typedef struct _icMode {
+        short mode;
+        short k;
+    } ICMode_t;
 
-    typedef struct _ICdata {
+    typedef struct _InputCapture {
         volatile unsigned int delta;
-        volatile unsigned int k_mul; // k_vel multiplier according to IC scale
-        volatile unsigned int overTmr; //Overflow timer
-        volatile unsigned int oldTime; //Old time stored
-        volatile unsigned long timePeriod; //Time period from Input Capture
+        volatile unsigned int k_mul;        // k_vel multiplier according to IC scale
+        volatile unsigned int overTmr;      //Overflow timer
+        volatile unsigned int oldTime;      //Old time stored
+        volatile unsigned long timePeriod;  //Time period from Input Capture
+        volatile unsigned short number;     //Mode of Input Capture
+        const ICMode_t *ICmode;
+        size_t ICMode_size;
+    } InputCapture_t;
+    
+    typedef struct _QEI {
+        REGISTER COUNTER;
+        hardware_bit_t swap;
         volatile int SIG_VEL; //Sign of versus rotation motor
-        volatile unsigned short number; //Mode of Input Capture
-        REGISTER QEICOUNTER;
-    } ICdata;
+    } QEI_t;
+#define MOTOR_QEI_INIT(counter, reg, x) {&(counter), REGISTER_INIT(reg, x), 0}
     
     typedef void (*event_prescaler_t)(void *motor);
     typedef void (*pwm_controller_t)(unsigned int, unsigned int, char);
@@ -108,13 +120,13 @@ extern "C" {
         // led controller
         LED_controller_t* led_controller;
         // Information for Input Capture
-        ICdata* ICinfo;
+        InputCapture_t ICinfo;
+        QEI_t *QEIinfo;
         frequency_t ICfreq;
         // Enable pin for H-bridge
         gpio_t* pin_enable;
         gpio_adc_t *adc;
         float gain_adc;
-        event_prescaler_t prescaler_callback;
         // Frequency manager;
         frequency_t manager_freq;
         volatile int pwm_limit;
@@ -179,16 +191,24 @@ extern "C" {
  * @param index
  * @param abcCoefficient
  * @param controlHistory
- * @param ICinfo
- * @param ICfreq
- * @param prescaler_event
  * @param pwm_cb
  * @param PWM_LIMIT
  */
 void Motor_init(MOTOR_t *motor, unsigned int index, 
         fractional *abcCoefficient, fractional *controlHistory, 
-        ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
         pwm_controller_t pwm_cb, unsigned int PWM_LIMIT);
+/**
+ * 
+ * @param motor
+ * @param qei
+ * @param ICMode
+ * @param ICMode_size
+ * @param default_num
+ * @param ICfreq
+ */
+void Motor_register_QEI_IC(MOTOR_t *motor, QEI_t *qei,
+        const ICMode_t *ICMode, size_t ICMode_size, 
+        unsigned short default_num, frequency_t ICfreq);
 /**
  * 
  * @param motor

@@ -22,6 +22,9 @@
 #include "motors/motor.h"
 #include <or_math/math.h>
 
+#define IC_TIMEPERIOD_TH_MAX 0x8000
+#define IC_TIMEPERIOD_TH_MIN 2000
+
 #define MOTOR_DEFAULT_ADC_PORTS 2
 #define MOTOR_DEFAULT_LEVEL_LOCK 6
 
@@ -39,14 +42,44 @@
 /******************************************************************************/
 /* Communication Functions                                                    */
 /******************************************************************************/
+/**
+ * Select the correct Input Capture pre scaler		
+ * @param motIdx motor pointer reference
+ */		
+inline void Motor_SelectIcPrescaler(MOTOR_t *motor) {
+    /** 
+     * V = Kvel / timePeriod
+     * is equal to:
+     * timePeriod = Kvel / V = # Adimensional value
+     * 
+     * V -> inf , timePeriod -> 0   , ICmode -> 3 decrease pulses
+     * V -> 0   , timePeriod -> inf , ICmode -> 0 increase pulses
+     * 
+     */
+    int temp_number = 0;
+    unsigned long doubletimePeriod = motor->ICinfo.delta;
+    unsigned long halfPeriod = motor->ICinfo.delta;
+    do {
+        doubletimePeriod = doubletimePeriod * motor->ICinfo.ICmode[temp_number].k;
+        halfPeriod = halfPeriod / motor->ICinfo.ICmode[temp_number].k;
+        if (doubletimePeriod > IC_TIMEPERIOD_TH_MIN) {
+            if (halfPeriod < IC_TIMEPERIOD_TH_MAX) {
+                motor->ICinfo.k_mul = motor->ICinfo.ICmode[temp_number].k;
+                return;
+            }
+        }
+        motor->ICinfo.k_mul = motor->ICinfo.ICmode[temp_number].k;
+        temp_number++;
+    }while(temp_number <= (motor->ICinfo.ICMode_size - 1));
+}
 
 int32_t Motor_measureVelocity(MOTOR_t *motor) {
-    volatile ICdata temp;
+    volatile InputCapture_t temp;
     int QEICNTtmp = 0;
     int32_t vel_mean = 0;
     //Evaluate position
-    QEICNTtmp = (int) motor->ICinfo->QEICOUNTER;
-    *motor->ICinfo->QEICOUNTER = 0;
+    QEICNTtmp = (int) motor->QEIinfo->COUNTER;
+    *motor->QEIinfo->COUNTER = 0;
     
     motor->PulsEnc += QEICNTtmp;
     motor->enc_angle += QEICNTtmp;
@@ -54,17 +87,17 @@ int32_t Motor_measureVelocity(MOTOR_t *motor) {
     int32_t vel_qei =  QEICNTtmp * motor->k_vel_qei;
 
     // Store timePeriod
-    temp.timePeriod = motor->ICinfo->timePeriod;
-    motor->ICinfo->timePeriod = 0;
+    temp.timePeriod = motor->ICinfo.timePeriod;
+    motor->ICinfo.timePeriod = 0;
     // Store value
-    temp.SIG_VEL = motor->ICinfo->SIG_VEL;
-    motor->ICinfo->SIG_VEL = 0;
-    if (temp.SIG_VEL) {
-        temp.k_mul = motor->ICinfo->k_mul;
+    unsigned int SIG_VEL = motor->QEIinfo->SIG_VEL;
+    motor->QEIinfo->SIG_VEL = 0;
+    if (SIG_VEL) {
+        temp.k_mul = motor->ICinfo.k_mul;
         // Evaluate velocity
         int32_t temp_f = temp.k_mul * motor->k_vel_ic;
         temp_f = temp_f / temp.timePeriod;
-        int32_t vel_ic = temp.SIG_VEL * temp_f;
+        int32_t vel_ic = SIG_VEL * temp_f;
 
         if (labs(vel_qei - vel_ic) < 2000) {
             // Mean velocity between IC and QEI estimation
@@ -76,7 +109,7 @@ int32_t Motor_measureVelocity(MOTOR_t *motor) {
         vel_mean = vel_qei;
     }
     //Select Pre scaler
-    motor->prescaler_callback(motor);
+    Motor_SelectIcPrescaler(motor);
     // Evaluate angle position
     if (labs(motor->enc_angle) > motor->angle_limit) {
         motor->enc_angle = 0;
@@ -436,10 +469,8 @@ void Motor_initialize_controllers(MOTOR_t *motor,
     motor->controller[i].k_aw = 0;
 }
 
-void Motor_init(MOTOR_t *motor, unsigned int index, 
-        fractional *abcCoefficient, fractional *controlHistory, 
-        ICdata* ICinfo, frequency_t ICfreq, event_prescaler_t prescaler_event, 
-        pwm_controller_t pwm_cb, unsigned int PWM_LIMIT) {
+void Motor_init(MOTOR_t *motor, unsigned int index, fractional *abcCoefficient, 
+        fractional *controlHistory, pwm_controller_t pwm_cb, unsigned int PWM_LIMIT) {
     unsigned int i;
     // Set index number
     motor->index = index;
@@ -454,10 +485,6 @@ void Motor_init(MOTOR_t *motor, unsigned int index,
     for(i = 0; i < NUM_CONTROLLERS; i++) {
         Motor_initialize_controllers(motor, &abcCoefficient[3 * i], &controlHistory[3 * i], i);
     }
-    // Register input capture
-    motor->ICinfo = ICinfo;
-    motor->prescaler_callback = prescaler_event;
-    motor->ICfreq = ICfreq;
     // Set null ADC ports
     motor->adc = NULL;
     // Set null enable ports
@@ -488,6 +515,24 @@ void Motor_init(MOTOR_t *motor, unsigned int index,
     /// Load controller SAFETY - Working at 1KHz
     hEvent_t safety_event = register_event_p(&Motor_Safety, EVENT_PRIORITY_HIGH);
     motor->motor_safety.task_safety = task_load_data(safety_event, DEFAULT_FREQ_MOTOR_CONTROL_SAFETY, 1, motor);
+}
+
+void Motor_register_QEI_IC(MOTOR_t *motor, QEI_t *qei,
+        const ICMode_t *ICMode, size_t ICMode_size, 
+        unsigned short default_num, frequency_t ICfreq) {
+    motor->QEIinfo = qei;
+    motor->QEIinfo->SIG_VEL = 0;
+    // Register input capture
+    motor->ICfreq = ICfreq;
+    // Reset all values
+    motor->ICinfo.overTmr = 0;
+    motor->ICinfo.oldTime = 0;
+    motor->ICinfo.timePeriod = 0;
+    //Input capture information
+    motor->ICinfo.ICmode = ICMode;
+    motor->ICinfo.ICMode_size = ICMode_size;
+    motor->ICinfo.k_mul = motor->ICinfo.ICmode[default_num].k;
+    motor->ICinfo.number = default_num;
 }
 
 void Motor_register_adc(MOTOR_t *motor, gpio_adc_t *adc, float gain_adc) {
@@ -552,6 +597,14 @@ void Motor_update_parameters(MOTOR_t *motor, motor_parameter_t *parameters) {
     // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
     //motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * motors[motIdx].manager_freq);
     motor->k_vel_qei = (motor->k_ang * 1000.0f * ((float) motor->controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].pid.frequency));
+    // Set Swap bit
+    // Phase A and Phase B inputs swapped
+    if(motor->parameter_motor.rotation >= 1) {
+        REGISTER_MASK_SET_HIGH(motor->QEIinfo->swap.REG, motor->QEIinfo->swap.CS_mask);
+    } else {
+        REGISTER_MASK_SET_LOW(motor->QEIinfo->swap.REG, motor->QEIinfo->swap.CS_mask);
+    }
+    // Configuration current and voltage gain
     if (motor->adc != NULL) {
         // Convert gain current in [mA]
         motor->current.gain = (1000.0 * motor->gain_adc) / motor->parameter_motor.bridge.current_gain + 0.5f;
@@ -738,22 +791,22 @@ inline void Motor_IC_controller(MOTOR_t *motor, REGISTER ICBUF, bool QEIDIR) {
     unsigned int newTime = *ICBUF; // Reading ICBUF every interrupt
     
     // Detail in Microchip Application Note: AN545
-    if(motor->ICinfo->overTmr == 0) {
-        motor->ICinfo->delta = newTime - motor->ICinfo->oldTime;
-        motor->ICinfo->timePeriod += motor->ICinfo->delta;
+    if(motor->ICinfo.overTmr == 0) {
+        motor->ICinfo.delta = newTime - motor->ICinfo.oldTime;
+        motor->ICinfo.timePeriod += motor->ICinfo.delta;
     } else {
-        motor->ICinfo->delta = (newTime + (0xFFFF - motor->ICinfo->oldTime)
-                + (0xFFFF * (motor->ICinfo->overTmr - 1)));
-        motor->ICinfo->timePeriod += motor->ICinfo->delta;
-        motor->ICinfo->overTmr = 0;
+        motor->ICinfo.delta = (newTime + (0xFFFF - motor->ICinfo.oldTime)
+                + (0xFFFF * (motor->ICinfo.overTmr - 1)));
+        motor->ICinfo.timePeriod += motor->ICinfo.delta;
+        motor->ICinfo.overTmr = 0;
     }
     // Store old time period
-    motor->ICinfo->oldTime = newTime;
+    motor->ICinfo.oldTime = newTime;
     
     /// Save sign rotation motor
-    (QEIDIR ? motor->ICinfo->SIG_VEL++ : motor->ICinfo->SIG_VEL--); 
+    (QEIDIR ? motor->QEIinfo->SIG_VEL++ : motor->QEIinfo->SIG_VEL--); 
 }
 
 inline void Motor_IC_timer(MOTOR_t *motor) {
-    motor->ICinfo->overTmr++; // timer overflow counter
+    motor->ICinfo.overTmr++; // timer overflow counter
 }
