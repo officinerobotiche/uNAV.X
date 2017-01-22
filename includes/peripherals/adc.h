@@ -14,9 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
  */
-
-#ifndef PERIPHERALS_H
-#define	PERIPHERALS_H
+#ifndef ADC_H
+#define	ADC_H
 
 #ifdef	__cplusplus
 extern "C" {
@@ -26,29 +25,41 @@ extern "C" {
 /* Files to Include                                                           */
 /******************************************************************************/
     
-#include <or_peripherals/GPIO/led.h>
+#include <or_peripherals/GPIO/adc.h>
     
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
 
+//#define ADC_HIGH_FREQ
+
+#ifdef ADC_HIGH_FREQ
+#define ADC_BUFF 8
+#else
+#define ADC_BUFF 16
+#endif
+    
+#define ADC_BUFF_PIN (ADC_BUFF / 4)
+    
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
 /**
- * Initialization all peripherals
+ * Initialization DMA for ADC
  */
-void Peripherals_Init(void);
+void InitDMA0(void);
 /**
- * Wrapper from LED controller 
- * @param num number of LED
- * @param blink type of blink
+ * Initialization ADC with 2 simultaneous channels
  */
-inline void LED_update(short num, short blink);
-    
+void InitADC_2Sim(void);
+/**
+ * Initialization ADC with 4 simultaneous channels
+ */
+void InitADC_4Sim(void);
+
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* PERIPHERALS_H */
+#endif	/* ADC_H */
 

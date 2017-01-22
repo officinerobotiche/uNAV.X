@@ -28,13 +28,14 @@
 
 #include <or_bus/frame.h>
 
+#include "peripherals/adc.h"
 #include "peripherals/peripherals.h"
 #include "peripherals/serial.h"
 
 #define comSTACK_SIZE				configMINIMAL_STACK_SIZE
 #define mainCOM_TEST_PRIORITY				( 2 )
 
-/* Baud rate used by the comtest tasks. */
+/* Baud rate used by the com tasks. */
 #define mainCOM_TEST_BAUD_RATE				( 115200 )
 /* We should find that each character can be queued for Tx immediately and we
 don't have to block to send. */
@@ -66,7 +67,6 @@ LED_controller_t LED_CONTROLLER = LED_CONTROLLER(leds, mainLED_TASK_PERIOD);
 
 /******************************************************************************/
 /* System Level Functions                                                     */
-
 /******************************************************************************/
 
 static portTASK_FUNCTION(vComRxTask, pvParameters) {
@@ -129,25 +129,33 @@ void Peripherals_Init(void) {
     
     // Peripheral PIN re mapping **********************************
     __builtin_write_OSCCONL(OSCCON & 0xbf); // Unlock Registers
-    /********************/
-    RPINR7bits.IC1R = 10; // IC1 To Pin RP10
-    RPINR7bits.IC2R = 6; // IC2 To Pin RP6
+    /*************************************************************/
+    RPINR7bits.IC1R = 10;       // IC1 To Pin RP10
+    RPINR7bits.IC2R = 6;        // IC2 To Pin RP6
     // QEI
-    RPINR14bits.QEA1R = 10; // QEA1 To Pin RP10
-    RPINR14bits.QEB1R = 11; // QEB1 To Pin RP11
-    RPINR16bits.QEA2R = 5; // QEA2 To Pin RP5
-    RPINR16bits.QEB2R = 6; // QEB2 To Pin RP6
+    RPINR14bits.QEA1R = 10;     // QEA1 To Pin RP10
+    RPINR14bits.QEB1R = 11;     // QEB1 To Pin RP11
+    RPINR16bits.QEA2R = 5;      // QEA2 To Pin RP5
+    RPINR16bits.QEB2R = 6;      // QEB2 To Pin RP6
     // UART
-    RPINR18bits.U1RXR = 21; // U1RX To Pin RP21, CTS tied Vss
+    RPINR18bits.U1RXR = 21;     // U1RX To Pin RP21, CTS tied Vss
     RPINR18bits.U1CTSR = 0x1f;
-    RPOR10bits.RP20R = 3; // U1Tx To Pin RP20
+    RPOR10bits.RP20R = 3;       // U1Tx To Pin RP20
 
-    RPINR19bits.U2RXR = 3; // U2RX To Pin RP3, CTS tied Vss
+    RPINR19bits.U2RXR = 3;      // U2RX To Pin RP3, CTS tied Vss
     RPINR19bits.U2CTSR = 0x1f;
-    RPOR1bits.RP2R = 5; // U2Tx To Pin RP2
-    /********************/
+    RPOR1bits.RP2R = 5;         // U2Tx To Pin RP2
+    /*************************************************************/
     __builtin_write_OSCCONL(OSCCON | 0x40); // Lock Registers
     // *********************************** Peripheral PIN selection
+    
+    // Initialization ADC
+    InitDMA0();
+    InitADC_4Sim();
+    // When initialized AD1PCFGL = 0xFFFF set all Analog ports as digital
+    gpio_adc_init(&AD1CON1, &AD1PCFGL);
+    // Enable ADC conversion
+    gpio_adc_enable(true);
     
     // Initialization LED controller
     LED_Init(&LED_CONTROLLER);
