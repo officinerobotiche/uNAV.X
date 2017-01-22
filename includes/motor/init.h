@@ -15,27 +15,37 @@
  * Public License for more details
  */
 
-#ifndef SYSTEM_H
-#define	SYSTEM_H
+#ifndef MOTOR_INIT_H
+#define	MOTOR_INIT_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
-    
+
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
 
+#include "motor/motor.h"
+    
+/**
+ * Numbers of motors available in this board
+ */
+#define MOTOR_SIZE 2
+#define MOTOR_ZERO 0
+#define MOTOR_ONE  1
+    
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
-/** 
- * Handles clock switching/oscillator initialization
+/**
+ * Initialization all motor
  */
-void ConfigureOscillator(void);
-
+void Motor_start(void);
+    
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* SYSTEM_H */
+#endif	/* MOTOR_INIT_H */
+

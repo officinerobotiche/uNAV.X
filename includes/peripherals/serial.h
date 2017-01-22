@@ -15,27 +15,51 @@
  * Public License for more details
  */
 
-#ifndef SYSTEM_H
-#define	SYSTEM_H
+#ifndef SERIAL_H
+#define	SERIAL_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+/* Standard include file. */
+#include <stdlib.h>
+
+/* Scheduler include files. */
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "task.h"
     
 /******************************************************************************/
 /* System Level #define Macros                                                */
 /******************************************************************************/
-
+    
+typedef void * xComPortHandle;
+    
 /******************************************************************************/
 /* System Function Prototypes                                                 */
 /******************************************************************************/
-/** 
- * Handles clock switching/oscillator initialization
+/**
+ * Physical initialization Serial port
+ * @param ulWantedBaud The required baud rate
+ * @param uxQueueLength The length of the queue
+ * @return the status of serial port initialization
  */
-void ConfigureOscillator(void);
+xComPortHandle xSerialPortInitMinimal( unsigned long ulWantedBaud, unsigned portBASE_TYPE uxQueueLength );
+
+signed portBASE_TYPE xSerialPutBuff(xComPortHandle pxPort, signed char* buff, size_t size);
+/**
+ * Get char from serial port
+ * @param pxPort The number of serial port
+ * @param pcRxedChar The data to save
+ * @param xBlockTime The time to wait
+ * @return The status of function
+ */
+signed portBASE_TYPE xSerialGetChar( xComPortHandle pxPort, signed char *pcRxedChar, TickType_t xBlockTime );
 
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* SYSTEM_H */
+#endif	/* SERIAL_H */
+

@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2014 Officine Robotiche
- * Authors: Guido Ottaviani, Raffaello Bonghi
- * email:  guido@guiott.com, raffaello.bonghi@officinerobotiche.it
+ * Copyright (C) 2014-2017 Officine Robotiche
+ * Author: Raffaello Bonghi
+ * email:  raffaello.bonghi@officinerobotiche.it
  * Permission is granted to copy, distribute, and/or modify this program
  * under the terms of the GNU Lesser General Public License, version 2 or any
  * later version published by the Free Software Foundation.
@@ -13,14 +13,20 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details
-*/
+ */
 
-#ifndef I2C_H
-#define	I2C_H
+#ifndef PERIPHERALS_H
+#define	PERIPHERALS_H
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
+
+/******************************************************************************/
+/* Files to Include                                                           */
+/******************************************************************************/
+    
+#include <or_peripherals/GPIO/led.h>
     
 /******************************************************************************/
 /* System Level #define Macros                                                */
@@ -30,15 +36,13 @@ extern "C" {
 /* System Function Prototypes                                                 */
 /******************************************************************************/
 
-    /**
-     * Trigger the I2C service routine to run at low priority in libUDB.c
-     * initialize the I2C peripheral
-     */
-    void Init_I2C(void);
+void Peripherals_Init(void);
 
+inline void LED_update(short num, short blink);
+    
 #ifdef	__cplusplus
 }
 #endif
 
-#endif	/* I2C_H */
+#endif	/* PERIPHERALS_H */
 
