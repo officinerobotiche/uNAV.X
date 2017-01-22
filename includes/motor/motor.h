@@ -37,6 +37,7 @@ extern "C" {
 #include "queue.h"
 #include "croutine.h"
     
+#include <or_peripherals/GPIO/adc.h> /* Include ADC controller                */
 #include <or_bus/frame.h>  /* Include frame messages                          */
     
 #include "peripherals/peripherals.h"
@@ -63,6 +64,15 @@ extern "C" {
         // Motor controlled using direct PWM signals
         CONTROL_DIRECT = 4,
     } enum_state_t;
+    
+    /** Conversion from ADC value to physical */
+    typedef struct _analog {
+        // Gain
+        int32_t gain;
+        // Offset
+        int32_t offset;
+    } analog_t;
+#define MOTOR_ANALOG_INIT {0, 0}
     
     typedef struct _icMode {
         // Configuration bit pre scaler Input capture
@@ -122,7 +132,6 @@ extern "C" {
         // anti wind up correction
         volatile fractional saturation;
     } pid_controller_t;
-#define MOTOR_INIT_CONTROLLER() {}
     
     typedef struct {
         // physical motor number definition
@@ -131,11 +140,27 @@ extern "C" {
         InputCapture_t ICinfo;
         // Quadrature Encoder Interface configuration
         QEI_t qei;
+        //Internal value volt and current
+        analog_t volt, current;
+        // Constraints
+        motor_t constraint;
+        // PWM limit
+        int pwm_limit;
+        // Parameters
+        motor_parameter_t parameter_motor;
+        // Gain velocity conversion from Input capture and QEI
+        int32_t k_vel_ic, k_vel_qei;
+        // Angular gain
+        float k_ang;
+        // Conversion from maximum angle (2PI) to equivalent in encoder tick
+        uint32_t angle_limit;
+        // ???
+        float ICfreq;
         // List of all PID controllers
         pid_controller_t controller[NUM_CONTROLLERS];
     } MOTOR_t;
     
-#define MOTOR_INIT(Idx, ICmode, QEI) {Idx, MOTOR_IC_INIT(ICmode), QEI}
+#define MOTOR_INIT(Idx, ICmode, QEI) {Idx, MOTOR_IC_INIT(ICmode), QEI, MOTOR_ANALOG_INIT, MOTOR_ANALOG_INIT, FRAME_MOTOR_INIT, 0}
     
 /******************************************************************************/
 /* System Function Prototypes                                                 */
@@ -148,6 +173,24 @@ extern "C" {
  * @param controlHistory PID history in DSP space
  */
 void Motor_Init(MOTOR_t *motor, fractional *abcCoefficient, fractional *controlHistory);
+/**
+ * Get motor constraints
+ * @param motor The motor structure definition
+ * @return All motor constraints
+ */
+inline motor_t Motor_get_constraints(MOTOR_t *motor);
+/**
+ * Update constraints parameters in motor
+ * @param motor The motor structure definition
+ * @param constraints new constraints to upgrade
+ */
+void Motor_update_constraints(MOTOR_t *motor, motor_t *constraints);
+/**
+ * Get all motor parameters
+ * @param motor The motor structure definition
+ * @return All motor parameters
+ */
+inline motor_parameter_t Motor_get_parameters(MOTOR_t *motor);
 /**
  * Evaluate the time between an encoder tick
  * @param motor The motor structure definition

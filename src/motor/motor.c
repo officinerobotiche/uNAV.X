@@ -28,6 +28,9 @@
 /* Global Variable Declaration                                                */
 /******************************************************************************/
 
+// Get the number in controller array from enum_state_t
+#define GET_CONTROLLER_NUM(X) ((X) - 1)
+
 #define mainMOTOR_TASK_PRIORITY				( tskIDLE_PRIORITY + 3 )
 
 /* The check task may require a bit more stack as it calls sprintf(). */
@@ -56,14 +59,6 @@ static void vMotorTask(void *pvParameters) {
         // TEMP
         LED_update(motor->Idx, 1);
     }
-
-    /* Tasks must not attempt to return from their implementing
-    function or otherwise exit.  In newer FreeRTOS port
-        attempting to do so will result in an configASSERT() being
-        called if it is defined.  If it is necessary for a task to
-        exit then have the task call vTaskDelete( NULL ) to ensure
-        its exit is clean. */
-    //vTaskDelete( NULL );
 
 }
 /**
@@ -105,6 +100,67 @@ void Motor_Init(MOTOR_t *motor, fractional *abcCoefficient, fractional *controlH
     LED_update(motor->Idx, 1);
 }
 
+/*------------------------ CONSTRAINTS ---------------------------------------*/
+inline motor_t Motor_get_constraints(MOTOR_t *motor) {
+    return motor->constraint;
+}
+
+void Motor_update_constraints(MOTOR_t *motor, motor_t *constraints) {
+    //Update parameter constraints
+    memcpy(&motor->constraint, constraints, sizeof(motor_t));
+    //Update PWM max value
+    //Shifted from maximum motor_control_t value to maximum PWM value
+    // 31bit -> 11 bit = 20
+    motor->pwm_limit = motor->constraint.pwm >> 20;
+}
+/*------------------------ PARAMETERS ----------------------------------------*/
+inline motor_parameter_t Motor_get_parameters(MOTOR_t *motor) {
+    return motor->parameter_motor;
+}
+
+void Motor_update_parameters(MOTOR_t *motor, motor_parameter_t *parameters) {
+    //Update parameter configuration
+    memcpy(&motor->parameter_motor, parameters, sizeof(motor_parameter_t));
+    // If CPR is before ratio
+    //    ThC = CPR * RATIO   
+    // else
+    //    ThC = RATIO
+    uint32_t angle_ratio;
+    if(motor->parameter_motor.encoder.type.position) {
+        angle_ratio = motor->parameter_motor.encoder.cpr * ((uint32_t) 1000 * motor->parameter_motor.ratio);
+    } else {
+        angle_ratio = (uint32_t) 1000 * motor->parameter_motor.encoder.cpr;
+    }
+    // Evaluate angle limit
+    motor->angle_limit = (angle_ratio * 4) / 1000;
+    //Start define with fixed K_vel conversion velocity
+    // KVEL = FRTMR2 *  [ 2*pi / ( ThC * 2 ) ] * 1000 (velocity in milliradiant)
+    motor->k_vel_ic = 1000000.0f * motor->ICfreq * 2 * PI / (angle_ratio * 2);
+    //Start define with fixed K_ang conversion angular
+    // K_ANG = 2*PI / ( ThC * (QUADRATURE = 4) )
+    motor->k_ang = (float) 2000.0f *PI / (angle_ratio * 4);
+    // vel_qei = 1000 * QEICNT * Kang / Tc = 1000 * QEICNT * Kang * Fc
+    //motors[motIdx].k_vel_qei = (motors[motIdx].k_ang * 1000.0f * motors[motIdx].manager_freq);
+    motor->k_vel_qei = (motor->k_ang * 1000.0f * ((float) motor->controller[GET_CONTROLLER_NUM(CONTROL_VELOCITY)].pid.frequency));
+    // Set Swap bit
+    // Phase A and Phase B inputs swapped
+    if(motor->parameter_motor.rotation >= 1) {
+        REGISTER_MASK_SET_HIGH(motor->qei.CONFIG, motor->qei.swap_mask);
+    } else {
+        REGISTER_MASK_SET_LOW(motor->qei.CONFIG, motor->qei.swap_mask);
+    }
+    // Configuration current and voltage gain
+    // Convert gain current in [mA]
+    motor->current.gain = (1000.0 * GAIN_ADC) / motor->parameter_motor.bridge.current_gain + 0.5f;
+    motor->current.offset = (1000.0 * motor->parameter_motor.bridge.current_offset) / motor->parameter_motor.bridge.current_gain + 0.5f;
+    // Convert gain volt in [mV]
+    motor->volt.gain = 1000.0 * motor->parameter_motor.bridge.volt_gain * GAIN_ADC;
+    motor->volt.offset = 1000.0 * motor->parameter_motor.bridge.volt_offset;
+    // Setup state with new bridge configuration
+//    Motor_set_state(motor, motor->state);
+}
+
+/*----------------------------------------------------------------------------*/
 inline void Motor_IC_controller(MOTOR_t *motor, unsigned int newTime, int QEIDIR) {
     // Detail in Microchip Application Note: AN545
     if(motor->ICinfo.overTmr == 0) {

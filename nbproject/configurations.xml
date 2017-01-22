@@ -83,8 +83,8 @@
       <logicalFolder name="f4" displayName="system" projectFiles="true">
         <itemPath>src/system/system.c</itemPath>
       </logicalFolder>
-      <itemPath>../uNavRTOS.X/src/main.c</itemPath>
-      <itemPath>../uNavRTOS.X/src/traps.c</itemPath>
+      <itemPath>src/main.c</itemPath>
+      <itemPath>src/traps.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -93,13 +93,10 @@
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
-    <Elem>src/communication</Elem>
     <Elem>../uNavRTOS.X/src</Elem>
     <Elem>includes</Elem>
     <Elem>../FreeRTOSv9.0.0/FreeRTOS/Source</Elem>
-    <Elem>src/motor</Elem>
-    <Elem>src/peripherals</Elem>
-    <Elem>src/system</Elem>
+    <Elem>src</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
