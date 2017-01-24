@@ -173,11 +173,6 @@ int16_t main(void) {
     // Initialization LED
     LED_Init(&LED_CONTROLLER);
     
-//    LED_updateBlink(&LED_CONTROLLER, 0, 1);
-//    LED_updateBlink(&LED_CONTROLLER, 1, 2);
-//    LED_updateBlink(&LED_CONTROLLER, 2, 3);
-//    LED_updateBlink(&LED_CONTROLLER, 3, LED_ALWAYS_HIGH);
-    
     /* I2C CONFIGURATION */
 //    Init_I2C();     ///< Open I2C module
 //    EEPROM_init(20);  ///< Launch the EEPROM controller

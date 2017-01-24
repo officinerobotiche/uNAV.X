@@ -138,9 +138,9 @@ inline int Motor_write_PWM(MOTOR_t *motor, int duty_cycle) {
     motor->measure.pwm = duty_cycle;
     // PWM output
     if(motor->state != CONTROL_DISABLE)
-        motor->pwm_cb(motor->index + 1, motor->pwm_limit + ((motor_control_t) motor->parameter_motor.rotation) * duty_cycle, 0);
+        gpio_pwm_set(motor->index + 1, motor->pwm_limit + ((motor_control_t) motor->parameter_motor.rotation) * duty_cycle, 0);
     else
-        motor->pwm_cb(motor->index + 1, motor->pwm_limit, 0);
+        gpio_pwm_set(motor->index + 1, motor->pwm_limit, 0);
 #ifdef SATURATION
     return error;
 #else
@@ -470,7 +470,7 @@ void Motor_initialize_controllers(MOTOR_t *motor,
 }
 
 void Motor_init(MOTOR_t *motor, unsigned int index, fractional *abcCoefficient, 
-        fractional *controlHistory, pwm_controller_t pwm_cb, unsigned int PWM_LIMIT) {
+        fractional *controlHistory, unsigned int PWM_LIMIT) {
     unsigned int i;
     // Set index number
     motor->index = index;
@@ -480,7 +480,6 @@ void Motor_init(MOTOR_t *motor, unsigned int index, fractional *abcCoefficient,
     Motor_reset_data(&motor->controlOut);
     // PWM limit
     motor->pwm_limit = PWM_LIMIT;
-    motor->pwm_cb = pwm_cb;
     // Initialize all controllers
     for(i = 0; i < NUM_CONTROLLERS; i++) {
         Motor_initialize_controllers(motor, &abcCoefficient[3 * i], &controlHistory[3 * i], i);
@@ -640,6 +639,9 @@ void Motor_set_state(MOTOR_t *motor, motor_state_t state) {
             gpio_set_pin(motor->pin_enable, GPIO_LOW);
         }
     }
+    // Enable or disable PWM controller
+    bool enable_pwm = (state != CONTROL_DISABLE) ? true : false;
+    gpio_pwm_enable(motor->index, enable_pwm);
     // Store last velocity if run some error mode
     if (state < CONTROL_DISABLE) {
         motor->last_reference = motor->reference.velocity;

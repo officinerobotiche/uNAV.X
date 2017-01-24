@@ -188,7 +188,7 @@ void InitADC_4Sim() {
     
     AD1CSSL = 0;
     
-    AD1CON1bits.ADON = 0;       //< Disable ADC
+    AD1CON1bits.ADON = 1;       //< Disable ADC
 }
 /**
  * Initialization remappable peripherals and setup GPIO library

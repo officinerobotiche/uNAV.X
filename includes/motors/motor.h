@@ -36,6 +36,7 @@ extern "C" {
 #include <or_system/spinlock.h>
 #include <or_peripherals/GPIO/adc.h>
 #include <or_peripherals/GPIO/led.h>
+#include <or_peripherals/GPIO/pwm.h>
 
 #include <or_math/statistics.h>
 
@@ -87,7 +88,6 @@ extern "C" {
 #define MOTOR_QEI_INIT(counter, reg, x) {&(counter), REGISTER_INIT(reg, x), 0}
     
     typedef void (*event_prescaler_t)(void *motor);
-    typedef void (*pwm_controller_t)(unsigned int, unsigned int, char);
 
     typedef struct _analog {
         int32_t gain;
@@ -130,7 +130,6 @@ extern "C" {
         // Frequency manager;
         frequency_t manager_freq;
         volatile int pwm_limit;
-        pwm_controller_t pwm_cb;
         /// Task register
         hEvent_t motor_manager_event;
         hTask_t task_manager;
@@ -191,12 +190,10 @@ extern "C" {
  * @param index
  * @param abcCoefficient
  * @param controlHistory
- * @param pwm_cb
  * @param PWM_LIMIT
  */
-void Motor_init(MOTOR_t *motor, unsigned int index, 
-        fractional *abcCoefficient, fractional *controlHistory, 
-        pwm_controller_t pwm_cb, unsigned int PWM_LIMIT);
+void Motor_init(MOTOR_t *motor, unsigned int index,
+        fractional *abcCoefficient, fractional *controlHistory, unsigned int PWM_LIMIT);
 /**
  * 
  * @param motor

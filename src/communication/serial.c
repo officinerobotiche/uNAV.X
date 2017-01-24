@@ -109,8 +109,6 @@ void UART1_DMA_write(unsigned char* buff, size_t size) {
     DMA1REQbits.FORCE = 1; // Manual mode: Kick-start the 1st transfer
 }
 
-static int temp = 0;    // TODO - TO REMOVE
-
 void UART1_read_callback(UART_status_type_t type, unsigned char rxdata) {
     // decode message from  UART and parse
     switch(type) {
@@ -131,14 +129,12 @@ void UART1_read_callback(UART_status_type_t type, unsigned char rxdata) {
                     }
                     break;
                 default:
-                    temp = temp + 1;    // TODO - TO REMOVE
                     break;
             }
             break;
         }
         default:            // All error reset the parser
             OR_BUS_FRAME_reset(_OR_BUS_FRAME_CNT);
-            temp = temp + 2;    // TODO - TO REMOVE
             break;
     }
     // Reset timer
@@ -156,10 +152,4 @@ void __attribute__((interrupt, no_auto_psv)) _DMA1Interrupt(void) {
     IFS0bits.DMA1IF = 0; // Clear the DMA1 Interrupt Flag
     // Flush buffer
     UART_write_flush_buffer(_UART1_CNT);
-}
-/**
- * @brief Clear the UART1 Error Interrupt Flag
- */
-void __attribute__((interrupt, no_auto_psv)) _U1ErrInterrupt(void) {
-    IFS4bits.U1EIF = 0;
 }
